@@ -1,6 +1,6 @@
-// Prisma schema — CHORE-001 scaffold.
-// Only a throwaway HealthPing model so `prisma migrate` has something to create.
-// Real domain models (Society, Round, Job, ...) arrive with FEAT-001+.
+// Prisma schema — FEAT-001 (society onboarding + phone-OTP auth).
+// Shared-schema multi-tenancy (ADR-0003): every tenant-scoped row carries societyId.
+// Real domain models (Round, Job, ...) arrive with later features.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +11,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model HealthPing {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
+enum Role {
+  RESIDENT
+  SUPER_ADMIN
+}
+
+model Society {
+  id         String     @id @default(cuid())
+  name       String
+  city       String
+  inviteCode String     @unique
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  residents  Resident[]
+}
+
+model Resident {
+  id         String    @id @default(cuid())
+  societyId  String
+  society    Society   @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  phone      String
+  name       String?
+  role       Role      @default(RESIDENT)
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([societyId, phone])
 }

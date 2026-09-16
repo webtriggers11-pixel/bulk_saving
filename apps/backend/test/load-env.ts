@@ -15,5 +15,24 @@ try {
     }
   }
 } catch {
-  // No .env present — fall back to process defaults (localhost:6379 / 5432).
+  // No .env present — fall back to the test defaults below.
+}
+
+/**
+ * Test-only fixtures. Guarantee the vars that boot-time validation (and the auth
+ * services) require are present even when no .env file exists (e.g. CI), so
+ * integration tests can boot. These are throwaway test values, never real secrets.
+ */
+const TEST_DEFAULTS: Record<string, string> = {
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5442/bulk_saving?schema=public',
+  REDIS_HOST: 'localhost',
+  REDIS_PORT: '6399',
+  JWT_ACCESS_SECRET: 'test-access-secret-0123456789',
+  JWT_REFRESH_SECRET: 'test-refresh-secret-0123456789',
+  OTP_HASH_SECRET: 'test-otp-hash-secret-0123456789',
+};
+for (const [key, value] of Object.entries(TEST_DEFAULTS)) {
+  if (!process.env[key]) {
+    process.env[key] = value;
+  }
 }

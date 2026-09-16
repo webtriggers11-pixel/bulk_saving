@@ -76,3 +76,27 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: n/a (plan only)
 - Decisions: ADR-0007
 - By: agent (pending human plan approval)
+
+## 2026-09-16 — FEAT-001 — plan approved; backend build started (T1–T9)
+- What: Human approved the plan (execute backend-first, then PWA) and approved the one new dependency `@nestjs/jwt`. Status → in-progress. Building T1–T9 (Prisma model, shared types, notifications stub, OtpService, AuthService+JWT, endpoints, guards/roles, tenant-isolation test, seed script).
+- Evidence: pending (verify.sh at task completion)
+- Decisions: ADR-0003, ADR-0007; dependency @nestjs/jwt approved
+- By: human-approved
+
+## 2026-09-16 — FEAT-001 — backend T1–T9 built (pre-review)
+- What: Backend implemented: Society/Resident model (+migration, HealthPing removed), notifications stub, OtpService (Redis, hashed OTP, attempt/rate limits), AuthService+JWT rotating refresh, auth endpoints, role guards, GET /residents/:id (society-scoped), tenant-isolation test, seed script. Dep @nestjs/jwt@^11 (pinned CommonJS).
+- Evidence: verify.sh exit 0 (backend 27 tests/9 suites, web 3) per builder.
+- Decisions: ADR-0003, ADR-0007
+- By: agent (build subagent)
+
+## 2026-09-16 — FEAT-001 — V2 independent review: CHANGES REQUESTED
+- What: Independent reviewer ran verify.sh itself (27/27 backend, 3/3 web, exit 0 ×2) and audited auth+tenancy. All acceptance criteria MET; tenant isolation verified genuinely enforced; tests real (HTTP + real DB/Redis, OTP never leaked). No active auth-bypass/tenant-leak. Findings: P1 hardcoded fallback secrets + no env validation (missing from .env.example); P2s: non-atomic OTP verify counter, INCR/EXPIRE split, JWT alg not pinned, seed Node-20 portability.
+- Evidence: reviewer verify.sh exit 0 ×2; grep clean (no any/ts-ignore/console); Lua atomic refresh confirmed.
+- Decisions: none (fixes tracked under ADR-0007 hardening)
+- By: agent (independent reviewer subagent)
+
+## 2026-09-16 — FEAT-001 — applying V2 fixes (P1 + security P2s)
+- What: Sent fixes to builder: remove hardcoded secret fallbacks + add fail-fast env validation via class-validator (no new dep) + add secret keys to .env/.env.example; make OTP verify-attempt + hourly-resend counters atomic (Lua); pin JWT alg HS256; fix seed Node portability. Re-verify to follow.
+- Evidence: pending re-verify
+- Decisions: none
+- By: human-approved (fixes directed by reviewer findings)

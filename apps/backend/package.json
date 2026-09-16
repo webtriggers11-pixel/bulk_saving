@@ -10,7 +10,8 @@
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "seed": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js"
   },
   "dependencies": {
     "@bulk/shared": "workspace:*",
@@ -18,6 +19,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.2.1",
     "bullmq": "^5.34.0",

@@ -9,6 +9,13 @@ export const ErrorCode = {
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
+  // Auth / onboarding (FEAT-001)
+  INVALID_INVITE_CODE: 'INVALID_INVITE_CODE',
+  OTP_INVALID: 'OTP_INVALID',
+  OTP_EXPIRED: 'OTP_EXPIRED',
+  OTP_LOCKED: 'OTP_LOCKED',
+  OTP_RATE_LIMITED: 'OTP_RATE_LIMITED',
+  TOKEN_REVOKED: 'TOKEN_REVOKED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

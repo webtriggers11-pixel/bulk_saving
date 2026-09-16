@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "noEmit": false,
+    "incremental": false,
+    "declaration": false,
+    "sourceMap": false,
+    "skipLibCheck": true
+  },
+  "include": ["seed.ts"],
+  "exclude": []
+}
