@@ -202,3 +202,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0 identical.
 - Decisions: ADR-0003, ADR-0004, ADR-0010
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-004 — opened + planned (autonomous); backend build started
+- What: Round lifecycle state machine + scheduled closing. Wrote spec, ADR-0011 (full status set, "met"=units>=lowest tier, BullMQ delayed-job scheduler, guarded transition() in RoundsService), plan, tasks (T1–T7). Building T1–T5: enum extend + migration, transition guard matrix, close-met/expired + cancel, BullMQ round-closing queue + processor + enqueue-on-create, scheduler + join-rejection tests. Backend-only. Status → in-progress.
+- Evidence: pending (verify.sh)
+- Decisions: ADR-0004, ADR-0011
+- By: agent (autonomous)
