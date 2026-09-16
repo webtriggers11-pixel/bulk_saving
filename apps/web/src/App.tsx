@@ -3,6 +3,7 @@ import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
 import { ServicesPage } from './features/catalog/ServicesPage';
 import { HomePage } from './features/home/HomePage';
+import { RoundsPage } from './features/rounds/RoundsPage';
 
 export default function App() {
   return (
@@ -28,6 +29,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ServicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rounds"
+        element={
+          <ProtectedRoute>
+            <RoundsPage />
           </ProtectedRoute>
         }
       />

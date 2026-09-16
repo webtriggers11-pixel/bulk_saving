@@ -64,9 +64,14 @@ export function HomePage() {
               <CardDescription>Explore</CardDescription>
               <CardTitle>Services in your society</CardTitle>
             </CardHeader>
-            <Button className="w-full" onClick={() => navigate('/services')}>
-              Browse services
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button className="w-full" onClick={() => navigate('/services')}>
+                Browse services
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => navigate('/rounds')}>
+                Group buys
+              </Button>
+            </div>
           </Card>
         </>
       )}

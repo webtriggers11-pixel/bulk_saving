@@ -184,3 +184,21 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: reviewer analysis rounds.service.ts:60-194; test gap identified.
 - Decisions: none (fixes apply ADR-0004 canonical pattern more strictly)
 - By: agent (independent reviewer subagent)
+
+## 2026-09-17 — FEAT-003 — backend concurrency fixes verified + committed (T1–T7 checkpoint)
+- What: Row lock (SELECT ... FOR UPDATE) added to every mutating round tx; status-guarded increment (where id+OPEN); close() serialized; units @Max(50); +2 same-resident concurrency tests. Closer independently re-ran verify.sh (exit 0, backend 71/web 16) and read the lock code (lockOpenRoundForWrite called first in join/update/leave). Backend chunk committed 3aca323. Feature stays in-progress (PWA T8–T10 + V3 pending).
+- Evidence: verify.sh exit 0; grep confirms FOR UPDATE lock + status:'OPEN' guard + @Max(50). Commit 3aca323.
+- Decisions: ADR-0004 (canonical pattern enforced)
+- By: agent (autonomous)
+
+## 2026-09-17 — FEAT-003 — PWA T8–T10 built + V2 APPROVE
+- What: /rounds screen (cards: progress, current price, unlocks-hint, deadline countdown, join/update/leave, units 1–50), TanStack Query hooks with 20s polling + invalidation. web 25 tests (+9). V2 frontend review APPROVE (no P0/P1; 4 cosmetic/coverage P2s logged as follow-ups). No new deps.
+- Evidence: reviewer verify.sh exit 0 ×2 (backend 71, web 25); PWA build ok; contract matches backend.
+- Decisions: none
+- By: agent (build + independent reviewer subagents)
+
+## 2026-09-17 — FEAT-003 — CLOSED (V3 + commit)
+- What: Closer ran V3 double-run: verify.sh ×2, both exit 0, identical (backend 71, web 25) → not flaky. REGISTRY → done. Core group-buy mechanic complete (admin-opened rounds, atomic units-join, tiered pricing, resident /rounds screen). 5 P2 follow-ups recorded in tasks.md.
+- Evidence: V3 RUN1=0, RUN2=0 identical.
+- Decisions: ADR-0003, ADR-0004, ADR-0010
+- By: agent (autonomous)
