@@ -3,16 +3,17 @@
 Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
 After each checked task: commit (`feat(FEAT-001): ...`) AND append a LOG.md entry.
 
-## Backend
-- [ ] T1: Prisma model — add `Society`, `Resident`, `Role` enum; remove `HealthPing`; migration applies clean. Update `/health` to not depend on HealthPing. — depends: —
-- [ ] T2: `packages/shared` — add auth DTO types, `Role`, `ResidentDto`, consumed by backend. — depends: T1
-- [ ] T3: `notifications` module — `NotificationChannel` interface + stub SMS adapter (logs OTP in dev) + BullMQ-friendly wiring (OTP send may be sync). Unit test the stub. — depends: —
-- [ ] T4: `OtpService` — generate/store/verify OTP in Redis with TTL, attempt cap, resend rate-limit (atomic counters). Unit tests: happy path, wrong code, lock after N, expiry, rate-limit. — depends: T3
-- [ ] T5: `AuthService` + JWT — access + rotating refresh (Redis-tracked), issue/verify, revocation of reused refresh. Unit tests incl. reused-refresh rejection. — depends: T1, T4
-- [ ] T6: Auth endpoints — `POST /auth/otp/request`, `/auth/otp/verify`, `/auth/refresh`, `GET /me`; DTO + class-validator; standard envelope; `societyId` bound from invite code / token only. Integration tests (supertest) for the OTP happy path + invalid invite code. — depends: T5
-- [ ] T7: Guards + roles — access-token guard populating tenant context; `@Roles()` + roles guard; `GET /admin/ping` restricted. Integration tests: 403 for resident, 200 for super-admin. — depends: T6
-- [ ] T8: **Tenant isolation** integration test — resident in Society A cannot read Society B's data. — depends: T7
-- [ ] T9: Seed script — insert societies (+ invite codes) + a SUPER_ADMIN resident by phone; documented run command. — depends: T1
+## Backend — DONE (commit 32db18c; verify.sh exit 0, 27 backend tests; V2 reviewed + hardened)
+- [x] T1: Prisma model — Society, Resident, Role enum; HealthPing removed; migration 20260916081001 clean; /health independent.
+- [x] T2: `packages/shared` — auth DTO types, Role, ResidentDto/SocietyDto/MeResponse, consumed by backend.
+- [x] T3: `notifications` module — NotificationChannel + stub SMS adapter (redacted; code only behind DEV flag). Unit tested.
+- [x] T4: `OtpService` — 6-digit OTP, HMAC-hashed in Redis, 5-min TTL, atomic Lua verify-attempt cap + resend rate-limit. Unit tests: happy/wrong/lock/expiry/rate-limit.
+- [x] T5: `AuthService` + JWT — access + rotating refresh (atomic Lua CAS), HS256 pinned, reuse → TOKEN_REVOKED. Unit tested incl. reuse rejection.
+- [x] T6: Auth endpoints — /auth/otp/request|verify|refresh, /me; DTO + class-validator; envelope; societyId from invite/token only. Integration tests.
+- [x] T7: Guards + roles — access-token guard + tenant context; @Roles + roles guard; /admin/ping restricted. Integration: 403 resident / 200 admin / 401 none.
+- [x] T8: Tenant-isolation integration test — resident in Society A denied Society B's record (record proven to exist → 404 via scoping).
+- [x] T9: Seed script — societies + SUPER_ADMIN by phone; `pnpm --filter backend seed` (tsc-compiled, Node-portable).
+- [x] SEC (V2): removed hardcoded fallback secrets; fail-fast env validation (class-validator, secrets ≥16 chars); atomic Redis Lua; HS256 pin.
 
 ## Frontend (React PWA)
 - [ ] T10: Auth store (Zustand) + API client with refresh interceptor + token persistence. — depends: T6

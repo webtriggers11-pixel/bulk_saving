@@ -100,3 +100,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: pending re-verify
 - Decisions: none
 - By: human-approved (fixes directed by reviewer findings)
+
+## 2026-09-16 — FEAT-001 — backend hardening verified; T1–T9 CHECKPOINT (committed)
+- What: Closer independently re-ran verify.sh (exit 0; backend 27/27, web 3/3) and read the security fixes: env.validation.ts (fail-fast, secrets ≥16), auth.service HS256 + throwing secret getters (grep confirms no fallback), otp.service atomic VERIFY_LUA + RESEND_HOURLY_LUA. .env gitignored; .env.example placeholders only. Backend (T1–T9) committed 32db18c. Feature remains in-progress (PWA T10–T13 + V3 close pending). Backend checkpoint passed → awaiting go for PWA chunk.
+- Evidence: verify.sh exit 0 (27 backend / 3 web); fail-fast boot confirmed by reviewer (missing secret → BOOT_EXIT=1); commit 32db18c.
+- Decisions: ADR-0003, ADR-0007
+- By: human-approved
