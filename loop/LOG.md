@@ -172,3 +172,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: pending (verify.sh)
 - Decisions: ADR-0003, ADR-0004, ADR-0010
 - By: agent (autonomous)
+
+## 2026-09-16 — FEAT-003 — backend T1–T7 built
+- What: rounds module — Round/RoundTier/RoundParticipant, partial-unique (one OPEN per society+service), admin open/close, GET /rounds (tier calc), atomic units join/update/leave (relative increment in tx), demo seed round. Backend 69 tests (+28); concurrency test 20 distinct residents → exact 210.
+- Evidence: verify.sh exit 0 ×2 per builder.
+- Decisions: ADR-0004, ADR-0010
+- By: agent (build subagent)
+
+## 2026-09-17 — FEAT-003 — V2 review: CHANGES REQUESTED (concurrency defect)
+- What: Reviewer ran verify.sh ×2 (exit 0, backend 69, web 16). Multi-resident concurrency proven correct; tier math + tenant isolation + admin protection all correct. BUT P1: same-resident concurrent mutations drift unitsCount from sum(participant.units) — delta computed from an UNLOCKED participant read (no SELECT FOR UPDATE) → oversell risk. P2: increment not status-guarded (post-close join window) + close() not transactional; concurrency test gap (no same-resident case); no upper bound on units. Sending row-lock fix.
+- Evidence: reviewer analysis rounds.service.ts:60-194; test gap identified.
+- Decisions: none (fixes apply ADR-0004 canonical pattern more strictly)
+- By: agent (independent reviewer subagent)

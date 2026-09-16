@@ -18,6 +18,9 @@ export const ErrorCode = {
   TOKEN_REVOKED: 'TOKEN_REVOKED',
   // Catalog (FEAT-002)
   SERVICE_SLUG_TAKEN: 'SERVICE_SLUG_TAKEN',
+  // Rounds (FEAT-003)
+  ROUND_ALREADY_OPEN: 'ROUND_ALREADY_OPEN',
+  ROUND_CLOSED: 'ROUND_CLOSED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

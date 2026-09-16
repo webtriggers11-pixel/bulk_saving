@@ -119,6 +119,31 @@ async function main(): Promise<void> {
     }
   }
 
+  // FEAT-003 (ADR-0010): open ONE demo group-buy round — AC Servicing in
+  // GREEN001, tiers 5→₹900 / 10→₹700, deadline ~7 days out. Idempotent: skip if
+  // an OPEN round for the pair already exists (also enforced by a partial unique
+  // index), so re-running the seed never creates a duplicate open round.
+  const acService = await prisma.service.findUniqueOrThrow({ where: { slug: 'ac-servicing' } });
+  const existingOpenRound = await prisma.round.findFirst({
+    where: { societyId: green.id, serviceId: acService.id, status: 'OPEN' },
+  });
+  if (!existingOpenRound) {
+    const deadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await prisma.round.create({
+      data: {
+        societyId: green.id,
+        serviceId: acService.id,
+        deadline,
+        tiers: {
+          create: [
+            { threshold: 5, price: 900 },
+            { threshold: 10, price: 700 },
+          ],
+        },
+      },
+    });
+  }
+
   console.log('Seed complete:');
   for (const s of SOCIETIES) {
     console.log(`  Society: ${s.inviteCode} — ${s.name} (${s.city})`);
@@ -126,6 +151,7 @@ async function main(): Promise<void> {
   console.log(`  Super-admin resident: ${SUPER_ADMIN_PHONE} in Green Meadows (GREEN001)`);
   console.log(`  Master services: ${SERVICES.length} (${SERVICES.map((s) => s.slug).join(', ')})`);
   console.log(`  Service offerings created/updated: ${offeringCount} (enabled for both societies)`);
+  console.log('  Demo round: AC Servicing in GREEN001 (OPEN, tiers 5->900 / 10->700, ~7d deadline)');
 }
 
 main()

@@ -162,3 +162,64 @@ export interface UpsertOfferingBody {
   enabled: boolean;
   indicativePrice?: number | null;
 }
+
+/* ---------------------------------------------------------------------------
+ * Group-buy rounds (FEAT-003, ADR-0010)
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Round status. Mirrors the Prisma `RoundStatus` enum. v1 is a two-state machine
+ * (FEAT-004 extends it). Exported as a const + type so both apps share one name.
+ */
+export const RoundStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED',
+} as const;
+export type RoundStatus = (typeof RoundStatus)[keyof typeof RoundStatus];
+
+/** One price tier of a round: `price` (integer rupees) applies once `threshold` units are pledged. */
+export interface RoundTierDto {
+  threshold: number;
+  price: number;
+}
+
+/** Compact service summary embedded in a {@link RoundDto} (mirrors the round's service). */
+export interface RoundServiceSummary {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  imageUrl?: string;
+}
+
+/**
+ * Resident-facing view of a group-buy round (`GET /rounds`, join/update/leave).
+ * `currentPrice` is the price of the highest tier whose threshold is met (or the
+ * lowest tier's starting price when below the first threshold). `nextTier` is the
+ * next threshold to unlock, absent once the top tier is reached. `myUnits` is the
+ * caller's own pledged units (0 if not joined). `deadline` is an ISO timestamp.
+ */
+export interface RoundDto {
+  id: string;
+  service: RoundServiceSummary;
+  status: RoundStatus;
+  unitsCount: number;
+  currentPrice: number;
+  nextTier?: RoundTierDto;
+  deadline: string;
+  tiers: RoundTierDto[];
+  myUnits: number;
+}
+
+/** `POST /admin/rounds` body — open a round for a (society, service) with tiers. */
+export interface CreateRoundBody {
+  societyId: string;
+  serviceId: string;
+  deadline: string;
+  tiers: RoundTierDto[];
+}
+
+/** `POST`/`PATCH /rounds/:id/join` body — pledge (or change) a number of units (>=1). */
+export interface JoinRoundBody {
+  units: number;
+}

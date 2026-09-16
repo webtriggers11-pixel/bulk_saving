@@ -16,6 +16,13 @@ enum Role {
   SUPER_ADMIN
 }
 
+// Round lifecycle (FEAT-003, ADR-0010). v1 is a two-state machine; FEAT-004
+// extends it with the full lifecycle (CLOSED_MET/EXPIRED, ASSIGNED, ...).
+enum RoundStatus {
+  OPEN
+  CLOSED
+}
+
 model Society {
   id         String             @id @default(cuid())
   name       String
@@ -25,6 +32,7 @@ model Society {
   updatedAt  DateTime           @updatedAt
   residents  Resident[]
   offerings  ServiceOffering[]
+  rounds     Round[]
 }
 
 model Resident {
@@ -37,6 +45,8 @@ model Resident {
   verifiedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  roundParticipations RoundParticipant[]
 
   @@unique([societyId, phone])
 }
@@ -55,6 +65,7 @@ model Service {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   offerings   ServiceOffering[]
+  rounds      Round[]
 }
 
 model ServiceOffering {
@@ -69,4 +80,55 @@ model ServiceOffering {
   updatedAt       DateTime @updatedAt
 
   @@unique([societyId, serviceId])
+}
+
+// Group-buy rounds (FEAT-003, ADR-0010). A round is a time-boxed group-buy for
+// one Service in one Society with ascending unit-threshold price tiers.
+// `unitsCount` is the AUTHORITATIVE unit total, mutated only inside atomic
+// transactions together with the participant rows (ADR-0004). At most one OPEN
+// round per (societyId, serviceId) — enforced by a partial unique index added
+// in the migration (Prisma has no declarative partial-unique).
+model Round {
+  id           String             @id @default(cuid())
+  societyId    String
+  society      Society            @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  serviceId    String
+  service      Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status       RoundStatus        @default(OPEN)
+  unitsCount   Int                @default(0)
+  deadline     DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  tiers        RoundTier[]
+  participants RoundParticipant[]
+
+  @@index([societyId, status])
+}
+
+// A price tier: when the round's unitsCount reaches `threshold`, `price`
+// (integer rupees) becomes the current price. Thresholds are strictly ascending.
+model RoundTier {
+  id        String @id @default(cuid())
+  roundId   String
+  round     Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  threshold Int
+  price     Int
+
+  @@index([roundId])
+}
+
+// One resident's pledge in a round. `units` (>=1) is this resident's contribution
+// to the round's authoritative unitsCount. One row per (round, resident).
+model RoundParticipant {
+  id         String   @id @default(cuid())
+  roundId    String
+  round      Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  units      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([roundId, residentId])
+  @@index([residentId])
 }
