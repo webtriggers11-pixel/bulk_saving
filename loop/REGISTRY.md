@@ -9,7 +9,7 @@
 
 | ID | Title | Status | Priority | Opened | Closed | Folder | Decisions |
 |----|-------|--------|----------|--------|--------|--------|-----------|
-| CHORE-001 | Monorepo scaffold + stack bootstrap (verify.sh, CI) | in-progress | P1 | 2026-09-16 | — | loop/work/CHORE-001-bootstrap-scaffold/ | ADR-0002, ADR-0005, ADR-0006 |
+| CHORE-001 | Monorepo scaffold + stack bootstrap (verify.sh, CI) | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/CHORE-001-bootstrap-scaffold/ | ADR-0002, ADR-0005, ADR-0006 |
 | FEAT-001 | Society onboarding + phone-OTP auth (multi-tenant foundation) | triaged | P1 | 2026-09-16 | — | pending | ADR-0003 |
 | FEAT-002 | Service catalog per society | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-003 | Group-buy rounds — join, units, tiers, live counter (core) | triaged | P1 | 2026-09-16 | — | pending | ADR-0004 |

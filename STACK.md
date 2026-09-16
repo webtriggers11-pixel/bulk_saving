@@ -21,6 +21,13 @@
 | Build         | `pnpm -r build`             |
 | Verify (all)  | `bash scripts/verify.sh`    |
 | Lint          | `pnpm -r lint`              |
+| Infra up      | `docker compose up -d`      |
+| Infra down    | `docker compose down`       |
+
+> **Dev infra (Docker Compose, ADR-0006):** Postgres 16 + Redis 7. Host ports are
+> remapped — **Postgres `localhost:5442`, Redis `localhost:6399`** (5432/6379 were
+> occupied on the dev machine). Connection strings live in `.env` / `apps/backend/.env`
+> (both gitignored; see `.env.example`). Integration tests require infra to be up.
 
 > Dev/build commands become live once CHORE-001 scaffolds the apps. `verify.sh`
 > is wired to real lint+test during CHORE-001 — until then it exits non-zero by design.

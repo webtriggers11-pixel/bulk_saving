@@ -1,20 +1,22 @@
 # Tasks CHORE-001 — Monorepo scaffold + stack bootstrap
 
-Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
-After each checked task: commit (`chore(CHORE-001): ...`) AND append a LOG.md entry.
+Dependency-ordered. Checked when `bash scripts/verify.sh` passed.
+Completed 2026-09-16. Commit: `efd1526`. All three verification checkpoints green.
 
-> ⚠️ BLOCKED pending human approval: every task below installs dependencies.
-> `CLAUDE.md` → "Ask the human before adding any dependency." Do not start until approved.
+- [x] T1: Init pnpm workspace root (`pnpm-workspace.yaml`, root `package.json`, base `tsconfig`, `.gitignore`, `docker-compose.yml`).
+- [x] T2: Scaffold `apps/backend` NestJS 11 + /health endpoint returning the standard success envelope.
+- [x] T3: Add Prisma to backend (`PrismaService`, `HealthPing` schema, `prisma migrate dev --name init` on local Postgres — clean).
+- [x] T4: Wire Redis + BullMQ (demo queue enqueue/consume proven by an integration test against real Redis).
+- [x] T5: Scaffold `apps/web` React 19 + Vite PWA (`vite-plugin-pwa` manifest + SW; icons 192/512 + maskable — installable).
+- [x] T6: Tailwind + shadcn/ui + TanStack Query + Zustand (demo screen: health query + counter store).
+- [x] T7: `packages/shared` with `ApiResponse`/`ApiError`/`HealthStatus`, imported by both apps.
+- [x] T8: Backend tests — Jest unit (exception filter) + supertest integration (/health). Pass.
+- [x] T9: Web tests — Vitest + RTL (render + health query + counter click). Pass.
+- [x] T10: ESLint strict (`no-explicit-any: error`) + Prettier in all workspaces; `pnpm -r lint` green.
+- [x] T11: `scripts/verify.sh` wired to build shared → prisma generate → lint → typecheck → test, both apps; exits 0.
+- [ ] T12 (optional, deferred): GitHub Actions CI running `verify.sh` — out of scope for this chore.
 
-- [ ] T1: Init pnpm workspace root (`pnpm-workspace.yaml`, root `package.json`, base `tsconfig`, `.gitignore`).
-- [ ] T2: Scaffold `apps/backend` NestJS 11 app + health endpoint returning the standard success envelope — depends: T1.
-- [ ] T3: Add Prisma to backend (`PrismaService`, empty/throwaway schema, `prisma migrate` on local Postgres) — depends: T2.
-- [ ] T4: Wire Redis + BullMQ in backend (trivial enqueue/consume proven by a test) — depends: T2.
-- [ ] T5: Scaffold `apps/web` React 19 + Vite PWA (`vite-plugin-pwa` manifest + SW) — depends: T1.
-- [ ] T6: Add Tailwind + shadcn/ui + TanStack Query + Zustand to web (one demo screen) — depends: T5.
-- [ ] T7: Create `packages/shared` with one shared type consumed by both apps — depends: T2, T5.
-- [ ] T8: Backend tests — 1 Jest unit + 1 supertest integration (health endpoint) — depends: T2.
-- [ ] T9: Web tests — 1 Vitest + RTL test — depends: T6.
-- [ ] T10: ESLint (strict, no `any`) + Prettier in both apps; `pnpm -r lint` green — depends: T2, T6.
-- [ ] T11: Wire `scripts/verify.sh` to run lint + tests for BOTH apps; exits 0 — depends: T8, T9, T10.
-- [ ] T12 (optional): GitHub Actions workflow running `bash scripts/verify.sh` on push — depends: T11.
+## Verification evidence
+- V1 (implementer): verify.sh green per task.
+- V2 (independent review): reviewer ran verify.sh itself + audited vs spec/ARCHITECTURE → APPROVE (after F1 PWA icons, F2 counter-test click, F3 web typecheck fixed). No P0.
+- V3 (close): verify.sh run 3× back-to-back by the closer — all exit 0, identical counts (backend 5 tests/3 suites, web 3 tests). Not flaky.

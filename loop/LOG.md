@@ -46,3 +46,21 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: n/a
 - Decisions: ADR-0002, ADR-0005
 - By: agent
+
+## 2026-09-16 — CHORE-001 — approved + executed (scaffold built)
+- What: Human approved dependency install + Docker Compose (ADR-0006) + pnpm. Monorepo scaffolded (apps/backend NestJS+Prisma+BullMQ, apps/web React PWA + TanStack Query + Zustand, packages/shared). Dev DB/Redis via Docker Compose; host ports remapped to 5442/6399 (5432/6379 occupied). verify.sh wired: build shared → prisma generate → lint → typecheck → test.
+- Evidence: prisma migrate dev --name init clean (HealthPing created); verify.sh exit 0.
+- Decisions: ADR-0002, ADR-0005, ADR-0006
+- By: human-approved (build via subagent)
+
+## 2026-09-16 — CHORE-001 — V2 independent review
+- What: Independent reviewer ran verify.sh itself + audited scaffold vs spec + ARCHITECTURE. Verdict APPROVE after 3 minor fixes: F1 PWA icons (192/512 + maskable) so app is installable, F2 counter test now actually clicks, F3 web typecheck added to verify.sh. No P0.
+- Evidence: reviewer verify.sh exit 0 (backend 5/5, web 3/3); grep found zero `any`/`@ts-ignore`/`eslint-disable`; BullMQ test confirmed real (not mocked).
+- Decisions: none
+- By: agent (independent reviewer subagent)
+
+## 2026-09-16 — CHORE-001 — CLOSED (V3 + commit)
+- What: Closer ran verify.sh 3× back-to-back — all exit 0, identical (backend 5 tests/3 suites, web 3 tests) → not flaky. git repo initialized; scaffold committed. REGISTRY → done.
+- Evidence: verify.sh exit 0 ×3 (RUN1_EXIT=0, RUN2 identical, third run exit 0). Commit efd1526.
+- Decisions: ADR-0002, ADR-0005, ADR-0006
+- By: human-approved

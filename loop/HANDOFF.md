@@ -6,33 +6,36 @@
 ## Last session
 
 - **Date:** 2026-09-16
-- **Goal:** Brainstorm the Bulk Saving product, design architecture, and bootstrap the Loop framework onto it.
-- **Result:** partial — planning + doc bootstrap complete; scaffold execution blocked on approval.
+- **Goal:** Brainstorm Bulk Saving, design architecture, bootstrap Loop, and scaffold the monorepo (CHORE-001).
+- **Result:** complete — CHORE-001 built, verified (V1/V2/V3), and committed.
 
 ## Verification evidence
 
-— No code written this session (docs only). `scripts/verify.sh` still unconfigured
-by design until CHORE-001 scaffolds the apps. Spec-review of BRIEF.md: 0 P0 / 0 P1.
+- `bash scripts/verify.sh` → exit 0, run 3× back-to-back with identical results
+  (backend: 5 tests / 3 suites incl. supertest /health + real BullMQ→Redis; web: 3 Vitest+RTL). Not flaky.
+- `prisma migrate dev --name init` ran clean (HealthPing table created).
+- Scaffold commit: `efd1526`.
 
 ## Unverified assumptions
 
-- pnpm is available/acceptable on the dev machine (open question in CHORE-001).
-- Local Postgres + Redis available, or Docker Compose acceptable (open question in CHORE-001).
 - Footprint "10+ societies" target — treat first 1–3 as a proving ground (BRIEF risk R5).
+- WhatsApp Business API approval timing — plan SMS-first (BRIEF risk R1); confirmed as build order (FEAT-006 SMS pulled into FEAT-001 OTP).
 
 ## Decisions made this session
 
-- ADR-0002 (pnpm monorepo / stack layout), ADR-0003 (shared-schema multi-tenancy),
-  ADR-0004 (Postgres-authoritative round concurrency), ADR-0005 (Prisma over TypeORM).
+- ADR-0002 (pnpm monorepo/stack), ADR-0003 (shared-schema multi-tenancy),
+  ADR-0004 (Postgres-authoritative round concurrency), ADR-0005 (Prisma over TypeORM),
+  ADR-0006 (Docker Compose local dev).
 
 ## Blockers
 
-- **CHORE-001 execution needs human approval** — scaffolding installs dependencies
-  (CLAUDE.md: "Ask the human before adding any dependency").
-- Two open questions in CHORE-001/spec.md (pnpm confirmation; dev DB/Redis via Docker vs local).
+- None. Docker infra (Postgres 5442 / Redis 6399) is up; bring back with `docker compose up -d`.
 
 ## Next safe action
 
-Answer the two CHORE-001 open questions and approve dependency install, then execute
-CHORE-001 tasks T1→T11 (scaffold monorepo, wire verify.sh). After it closes, triage
-opens FEAT-001 (society onboarding + phone-OTP auth).
+Triage-open **FEAT-001 — Society onboarding + phone-OTP auth (multi-tenant foundation)**:
+create `loop/work/FEAT-001-*/` with spec.md, get the spec approved (Loop rule 2: no code
+before an approved plan), then plan → tasks. FEAT-001 establishes the real Prisma domain
+model (Society, Resident, membership with `societyId`) per ADR-0003 and the phone-OTP auth
+(OTP in Redis TTL + rate-limit), pulling in the SMS-OTP slice of FEAT-006. The throwaway
+`HealthPing` model is replaced here.
