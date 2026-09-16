@@ -12,7 +12,7 @@
 | CHORE-001 | Monorepo scaffold + stack bootstrap (verify.sh, CI) | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/CHORE-001-bootstrap-scaffold/ | ADR-0002, ADR-0005, ADR-0006 |
 | FEAT-001 | Society onboarding + phone-OTP auth (multi-tenant foundation) | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/FEAT-001-society-onboarding-otp-auth/ | ADR-0003, ADR-0007, ADR-0008 |
 | FEAT-002 | Service catalog per society | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/FEAT-002-service-catalog/ | ADR-0003, ADR-0009 |
-| FEAT-003 | Group-buy rounds — join, units, tiers, live counter (core) | triaged | P1 | 2026-09-16 | — | pending | ADR-0004 |
+| FEAT-003 | Group-buy rounds — join, units, tiers, live counter (core) | in-progress | P1 | 2026-09-16 | — | loop/work/FEAT-003-group-buy-rounds/ | ADR-0003, ADR-0004, ADR-0010 |
 | FEAT-004 | Round lifecycle state machine + scheduled closing (BullMQ) | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-005 | Super-admin dashboard — demand, assign vendor, mark delivered/paid | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-006 | Notifications — SMS-first (OTP + round alerts) | triaged | P1 | 2026-09-16 | — | pending | — |

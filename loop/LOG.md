@@ -166,3 +166,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0 identical.
 - Decisions: ADR-0003, ADR-0009
 - By: agent (autonomous — per owner directive to run the loop without per-step approval)
+
+## 2026-09-16 — FEAT-003 — opened + planned (autonomous); backend build started
+- What: Core group-buy rounds. Wrote spec (decisions baked in), ADR-0010 (admin-opened rounds, units-join, one-open-per-service), plan, tasks (T1–T12). Building backend chunk T1–T7 (Round/RoundTier/RoundParticipant model, admin open/close, GET /rounds with tier calc, atomic join/update/leave per ADR-0004, concurrency test, seed). Status → in-progress. No user approval gate (owner directive).
+- Evidence: pending (verify.sh)
+- Decisions: ADR-0003, ADR-0004, ADR-0010
+- By: agent (autonomous)
