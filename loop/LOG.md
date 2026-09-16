@@ -130,3 +130,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 verify.sh RUN1_EXIT=0, RUN2_EXIT=0 identical.
 - Decisions: ADR-0008
 - By: human-approved
+
+## 2026-09-16 — FEAT-002 — opened, spec drafted (awaiting approval)
+- What: Created loop/work/FEAT-002-service-catalog/ with spec.md (Service master + per-society ServiceOffering, resident GET /catalog scoped by society, super-admin catalog API, resident catalog screen, seed). 3 open questions (visibility model, admin-UI scope, categories) pending. No code until spec/plan approved (rule 2).
+- Evidence: n/a (spec only)
+- Decisions: ADR-0003 (applies)
+- By: agent
+
+## 2026-09-16 — FEAT-002 — open questions resolved; plan + tasks drafted
+- What: Human resolved: per-society ServiceOffering (ADR-0009), admin API+seed now (UI in FEAT-005), free-text categories. Wrote ADR-0009, plan.md, tasks.md (T1–T6 backend, T7–T9 frontend, T10–T11 close). Status → planned. Awaiting plan approval before code (rule 2).
+- Evidence: n/a (plan only)
+- Decisions: ADR-0009
+- By: agent (pending human plan approval)
