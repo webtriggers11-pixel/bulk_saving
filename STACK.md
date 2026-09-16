@@ -5,7 +5,7 @@
 
 ## Stack
 
-- **Frontend:** React 19 + Vite 6, PWA via `vite-plugin-pwa` · Tailwind CSS + shadcn/ui · TanStack Query (server state) + Zustand (UI state) · TypeScript strict
+- **Frontend:** React 19 + Vite 6, PWA via `vite-plugin-pwa` · Tailwind CSS + hand-rolled shadcn-style UI primitives (ADR-0008; shadcn CLI may be adopted later) · TanStack Query (server state) + Zustand (UI state) · TypeScript strict
 - **Backend:** NestJS 11 on Node 20 LTS · TypeScript strict · Prisma 6 ORM
 - **Database:** PostgreSQL 16 (source of truth) · Redis 7 (cache, OTP TTL, BullMQ queues)
 - **Package manager:** pnpm (workspaces monorepo)

@@ -72,5 +72,5 @@ Details, versions, and run commands: see `STACK.md`. Product scope: `BRIEF.md`. 
 - **API envelope:** `{ success: true, data }` / `{ success: false, error: { code, message } }` via a global exception filter. Validate every request with a DTO + `class-validator`.
 - **Auth:** phone+OTP (OTP in Redis w/ TTL + rate-limit, never logged/returned), JWT access+refresh, roles `RESIDENT | SUPER_ADMIN`.
 - **Notifications:** one `NotificationChannel` interface; SMS-first, WhatsApp fast-follow; non-OTP sends queued via BullMQ.
-- **Frontend:** feature-based folders; TanStack Query for server state, Zustand for UI/auth only (no server-data duplication); Tailwind + shadcn/ui; TypeScript strict, no `any`.
+- **Frontend:** feature-based folders; TanStack Query for server state, Zustand for UI/auth only (no server-data duplication); Tailwind + hand-rolled shadcn-style primitives (ADR-0008); TypeScript strict, no `any`.
 - Full boundary rules (Always / Ask-first / Never) live in `ARCHITECTURE.md`.

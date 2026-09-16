@@ -15,12 +15,17 @@ After each checked task: commit (`feat(FEAT-001): ...`) AND append a LOG.md entr
 - [x] T9: Seed script — societies + SUPER_ADMIN by phone; `pnpm --filter backend seed` (tsc-compiled, Node-portable).
 - [x] SEC (V2): removed hardcoded fallback secrets; fail-fast env validation (class-validator, secrets ≥16 chars); atomic Redis Lua; HS256 pin.
 
-## Frontend (React PWA)
-- [ ] T10: Auth store (Zustand) + API client with refresh interceptor + token persistence. — depends: T6
-- [ ] T11: Onboarding flow UI — step 1 invite code, step 2 phone, step 3 OTP entry → logged-in state; TanStack Query mutations; shadcn/ui; mobile-first. — depends: T10
-- [ ] T12: Authenticated landing (shows resident + society) + logout; route guard for authed vs anon. — depends: T11
-- [ ] T13: Frontend tests (Vitest + RTL) — onboarding flow renders + submits (mocked API), auth store transitions. — depends: T11
+## Frontend (React PWA) — DONE (commit 32db18c range; verify.sh exit 0, 13 web tests; V2 APPROVE)
+- [x] T10: Auth store (Zustand, persisted) + API client with single-flight refresh + retry + token persistence (safeStorage try/catch).
+- [x] T11: Onboarding wizard — invite code → phone → 6-digit OTP (+ resend, optional name) → logged-in; TanStack Query mutations; friendly error-code messages; mobile-first; hand-rolled shadcn-style primitives (ADR-0008).
+- [x] T12: react-router-dom; ProtectedRoute/AnonymousRoute guards; authed landing shows resident + society from GET /me (TanStack Query); logout.
+- [x] T13: Vitest + RTL — onboarding flow (mocked API) + error render, auth store transitions, refresh single-flight/failure, ProtectedRoute redirect. 13 web tests.
 
-## Close
-- [ ] T14: V2 independent review (code-reviewer runs verify.sh itself + audits vs spec/ARCHITECTURE). — depends: T1–T13
-- [ ] T15: V3 fresh double-run of verify.sh; log both; then close (REGISTRY → done, commit). — depends: T14
+## Close — DONE
+- [x] T14: V2 independent review — backend (CHANGES REQUESTED → fixed) + frontend (APPROVE). Reviewer ran verify.sh itself both times.
+- [x] T15: V3 fresh double-run of verify.sh by closer — both exit 0, identical (web 13/6, backend 27/9), not flaky. Docs drift (shadcn) fixed via ADR-0008.
+
+## Known P2 follow-ups (non-blocking, from V2 — triage later)
+- Vestigial `society` field in auth store (set null on login, unused for display).
+- No direct component test for HomePage (/me render) or AnonymousRoute redirect.
+- Leftover CHORE-001 demo files (src/api/health.ts, src/store/ui.store.ts) outside feature layout.

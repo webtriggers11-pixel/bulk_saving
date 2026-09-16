@@ -19,7 +19,7 @@
 | Cache / queue | **Redis** + **BullMQ** | Redis 7 |
 | Auth | phone + OTP, JWT (access + refresh), role-based | — |
 | Notifications | SMS-first adapter, WhatsApp adapter fast-follow | — |
-| UI | **Tailwind CSS + shadcn/ui** | — |
+| UI | **Tailwind CSS + hand-rolled shadcn-style primitives** (ADR-0008) | — |
 | Server state | **TanStack Query** | — |
 | Client state | **Zustand** (auth/UI only) | — |
 | Language | **TypeScript, strict, no `any`** (both apps) | TS 5.x |
@@ -59,7 +59,7 @@ bulk_saving/
 │       ├── src/
 │       │   ├── features/        # feature-based: rounds/, catalog/, auth/, admin/, profile/
 │       │   │   └── <feature>/   # components, hooks, api, types co-located
-│       │   ├── components/ui/   # shadcn/ui primitives
+│       │   ├── components/ui/   # hand-rolled shadcn-style primitives (ADR-0008)
 │       │   ├── lib/             # api client, query client, utils
 │       │   ├── stores/          # zustand (auth, ui)
 │       │   └── main.tsx
@@ -174,7 +174,7 @@ Concurrent joins must never oversell a tier or miscount.
 - **Server state = TanStack Query.** Client/UI state = Zustand (auth, ephemeral UI only).
   Do not duplicate server data into Zustand.
 - **TypeScript strict, no `any`.** Shared DTO/enum types imported from `packages/shared`.
-- **UI:** Tailwind + shadcn/ui. Mobile-first. Round cards make count/deadline/price/urgency vivid.
+- **UI:** Tailwind + hand-rolled shadcn-style primitives (ADR-0008). Mobile-first. Round cards make count/deadline/price/urgency vivid.
 - **PWA:** `vite-plugin-pwa` service worker; installable; graceful on flaky connections.
 
 ---

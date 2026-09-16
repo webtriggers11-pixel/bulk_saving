@@ -1,49 +1,53 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ApiResponse, HealthStatus } from '@bulk/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { useUiStore } from './store/ui.store';
+import { useAuthStore } from './features/auth/auth.store';
 
-function renderApp() {
+function renderAppAt(path: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <App />
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-describe('App', () => {
+describe('App routing', () => {
   beforeEach(() => {
-    const envelope: ApiResponse<HealthStatus> = {
-      success: true,
-      data: { status: 'ok', service: 'backend', timestamp: new Date().toISOString() },
-    };
-    const mockFetch = vi.fn().mockResolvedValue({
-      json: () => Promise.resolve(envelope),
-    });
-    vi.stubGlobal('fetch', mockFetch);
+    try {
+      localStorage.clear();
+    } catch {
+      /* ignore */
+    }
+    useAuthStore.getState().logout();
+    // A stub so the health/me queries never hit the network in these tests.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ success: true, data: {} }),
+      }),
+    );
   });
 
-  it('renders the heading', () => {
-    renderApp();
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders the onboarding screen at /onboard', () => {
+    renderAppAt('/onboard');
     expect(screen.getByRole('heading', { name: 'Bulk Saving' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Invite code')).toBeInTheDocument();
   });
 
-  it('shows backend health once the query resolves', async () => {
-    renderApp();
-    await waitFor(() => {
-      expect(screen.getByTestId('health-status')).toHaveTextContent('ok — backend');
-    });
-  });
-
-  it('increments the Zustand counter demo on click', () => {
-    useUiStore.setState({ count: 0 });
-    renderApp();
-    const button = screen.getByRole('button', { name: /Count:/ });
-    expect(button).toHaveTextContent('Count: 0');
-    fireEvent.click(button);
-    expect(button).toHaveTextContent('Count: 1');
+  it('ProtectedRoute redirects an unauthenticated visitor from / to onboarding', () => {
+    renderAppAt('/');
+    // The protected home never renders; we land on the onboarding invite step.
+    expect(screen.getByLabelText('Invite code')).toBeInTheDocument();
   });
 });

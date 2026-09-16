@@ -106,3 +106,27 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 (27 backend / 3 web); fail-fast boot confirmed by reviewer (missing secret → BOOT_EXIT=1); commit 32db18c.
 - Decisions: ADR-0003, ADR-0007
 - By: human-approved
+
+## 2026-09-16 — FEAT-001 — PWA chunk started (T10–T13); dep react-router-dom approved
+- What: Human approved proceeding to the PWA onboarding UI and adding react-router-dom. Building: Zustand auth store + API client with refresh interceptor + token persistence, 3-step onboarding (invite→phone→OTP→logged-in), authed landing + logout, route guards, Vitest/RTL tests.
+- Evidence: pending (verify.sh at completion)
+- Decisions: dependency react-router-dom approved
+- By: human-approved
+
+## 2026-09-16 — FEAT-001 — PWA T10–T13 built
+- What: React PWA onboarding: Zustand auth store (persisted), api client with single-flight refresh+retry, 3-step wizard (invite→phone→OTP), react-router-dom guards, authed landing from /me, logout, Vitest/RTL tests. Only new dep react-router-dom. Discovered shadcn/ui was never installed by scaffold → hand-rolled shadcn-style primitives (no new deps).
+- Evidence: verify.sh exit 0 (web 13 tests/6 files, backend 27) per builder; web PWA build intact.
+- Decisions: react-router-dom
+- By: agent (build subagent)
+
+## 2026-09-16 — FEAT-001 — frontend V2 review: APPROVE
+- What: Independent reviewer ran verify.sh itself ×2 (exit 0, web 13/6 + backend 27/9) + PWA build. Refresh single-flight/no-loop verified, route guards correct, server state via TanStack Query (not duplicated in store), API contract matches backend exactly, tests real. No P0/P1. P2 notes: shadcn doc-drift, vestigial society field, missing HomePage/AnonymousRoute tests, leftover demo files.
+- Evidence: reviewer verify.sh exit 0 ×2; grep clean (no any/ts-ignore); only react-router-dom added.
+- Decisions: none
+- By: agent (independent reviewer subagent)
+
+## 2026-09-16 — FEAT-001 — CLOSED (V3 + doc fix + commit)
+- What: Fixed shadcn doc-drift honestly — ADR-0008 (hand-rolled shadcn-style primitives) + corrected STACK.md/ARCHITECTURE.md/CLAUDE.md. Closer ran V3: verify.sh ×2 back-to-back, both exit 0, identical (web 13/6, backend 27/9) → not flaky. REGISTRY → done. 3 P2 follow-ups recorded in tasks.md for later triage.
+- Evidence: V3 verify.sh RUN1_EXIT=0, RUN2_EXIT=0 identical.
+- Decisions: ADR-0008
+- By: human-approved
