@@ -1,0 +1,17 @@
+// Prisma schema — CHORE-001 scaffold.
+// Only a throwaway HealthPing model so `prisma migrate` has something to create.
+// Real domain models (Society, Round, Job, ...) arrive with FEAT-001+.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model HealthPing {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
