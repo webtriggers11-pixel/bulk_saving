@@ -64,3 +64,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 ×3 (RUN1_EXIT=0, RUN2 identical, third run exit 0). Commit efd1526.
 - Decisions: ADR-0002, ADR-0005, ADR-0006
 - By: human-approved
+
+## 2026-09-16 — FEAT-001 — opened, spec drafted (awaiting approval)
+- What: Created loop/work/FEAT-001-society-onboarding-otp-auth/ with spec.md (Society+Resident model, invite-code + phone-OTP onboarding, JWT access+refresh, roles, tenant isolation). 6 open questions pending human answers. No code until spec/plan approved (Loop rule 2).
+- Evidence: n/a (spec only)
+- Decisions: ADR-0003 (applies); JWT-auth + OTP-storage ADRs to be written at plan time
+- By: agent
+
+## 2026-09-16 — FEAT-001 — open questions resolved; plan + tasks drafted
+- What: Human resolved all 6 open questions (full-stack scope, stub SMS adapter, seed-script super-admin, default OTP policy). Wrote ADR-0007 (phone-OTP + JWT rotating refresh, OTP in Redis), plan.md, and tasks.md (15 tasks: backend T1–T9, frontend T10–T13, V2/V3 close). Status → planned. Awaiting plan approval before code (Loop rule 2).
+- Evidence: n/a (plan only)
+- Decisions: ADR-0007
+- By: agent (pending human plan approval)
