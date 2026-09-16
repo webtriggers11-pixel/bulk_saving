@@ -5,6 +5,7 @@ import { validateEnv } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ResidentsModule } from './modules/residents/residents.module';
 import { SocietiesModule } from './modules/societies/societies.module';
@@ -30,6 +31,7 @@ import { RedisModule } from './redis/redis.module';
     ResidentsModule,
     AuthModule,
     AdminModule,
+    CatalogModule,
   ],
 })
 export class AppModule {}

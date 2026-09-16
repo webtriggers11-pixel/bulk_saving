@@ -58,6 +58,16 @@ export function HomePage() {
               {data.society.city}
             </p>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardDescription>Explore</CardDescription>
+              <CardTitle>Services in your society</CardTitle>
+            </CardHeader>
+            <Button className="w-full" onClick={() => navigate('/services')}>
+              Browse services
+            </Button>
+          </Card>
         </>
       )}
     </main>

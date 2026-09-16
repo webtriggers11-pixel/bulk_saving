@@ -142,3 +142,27 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: n/a (plan only)
 - Decisions: ADR-0009
 - By: agent (pending human plan approval)
+
+## 2026-09-16 — FEAT-002 — plan approved; full build started (T1–T9)
+- What: Human approved the plan (build all in one chunk). Status → in-progress. Building catalog model + resident GET /catalog + super-admin catalog API + seed + resident catalog screen + tests. No new deps.
+- Evidence: pending (verify.sh at completion)
+- Decisions: ADR-0003, ADR-0009
+- By: human-approved
+
+## 2026-09-16 — FEAT-002 — T1–T9 built
+- What: Catalog model (Service + ServiceOffering), society-scoped GET /catalog (single joined query), super-admin catalog API (services + offerings), seed +5 services enabled for both societies, resident /services screen (cards + empty/error/loading). No new deps.
+- Evidence: verify.sh exit 0 (backend 38/11, web 16/7) per builder; seed idempotent; web PWA build ok.
+- Decisions: ADR-0003, ADR-0009
+- By: agent (build subagent)
+
+## 2026-09-16 — FEAT-002 — V2 independent review: APPROVE
+- What: Reviewer ran verify.sh itself ×2 (exit 0, backend 38/38, web 16/16, identical) + web build + seed idempotency (2×, no dupes). Tenant isolation verified genuine (B-only offering absent from A's /catalog; societyId only from verified JWT; single joined query, no N+1). All /admin/* class-guarded @Roles(SUPER_ADMIN), resident→403, slug→409, unknown→404. No P0/P1. P2: missing 403 assertion on PATCH + 404-path assertions (code correct, tests absent) → being added before close.
+- Evidence: reviewer verify.sh exit 0 ×2; grep clean; no new dep.
+- Decisions: none
+- By: agent (independent reviewer subagent)
+
+## 2026-09-16 — FEAT-002 — CLOSED (V3 + commit)
+- What: Added 2 P2 test-coverage items (PATCH 403 + 404 not-found paths → backend 41 tests). Closer ran V3: verify.sh ×2 back-to-back, both exit 0, identical (backend 41, web 16) → not flaky. REGISTRY → done.
+- Evidence: V3 RUN1=0, RUN2=0 identical.
+- Decisions: ADR-0003, ADR-0009
+- By: agent (autonomous — per owner directive to run the loop without per-step approval)

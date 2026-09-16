@@ -16,6 +16,8 @@ export const ErrorCode = {
   OTP_LOCKED: 'OTP_LOCKED',
   OTP_RATE_LIMITED: 'OTP_RATE_LIMITED',
   TOKEN_REVOKED: 'TOKEN_REVOKED',
+  // Catalog (FEAT-002)
+  SERVICE_SLUG_TAKEN: 'SERVICE_SLUG_TAKEN',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
+import { ServicesPage } from './features/catalog/ServicesPage';
 import { HomePage } from './features/home/HomePage';
 
 export default function App() {
@@ -19,6 +20,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services"
+        element={
+          <ProtectedRoute>
+            <ServicesPage />
           </ProtectedRoute>
         }
       />

@@ -17,13 +17,14 @@ enum Role {
 }
 
 model Society {
-  id         String     @id @default(cuid())
+  id         String             @id @default(cuid())
   name       String
   city       String
-  inviteCode String     @unique
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  inviteCode String             @unique
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
   residents  Resident[]
+  offerings  ServiceOffering[]
 }
 
 model Resident {
@@ -38,4 +39,34 @@ model Resident {
   updatedAt  DateTime  @updatedAt
 
   @@unique([societyId, phone])
+}
+
+// Catalog (FEAT-002, ADR-0009): a global Service master (super-admin managed)
+// + per-society ServiceOffering availability. Service is a platform-wide table;
+// ServiceOffering is tenant-scoped (carries societyId per ADR-0003).
+model Service {
+  id          String            @id @default(cuid())
+  name        String
+  slug        String            @unique
+  description String
+  category    String
+  imageUrl    String?
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  offerings   ServiceOffering[]
+}
+
+model ServiceOffering {
+  id              String   @id @default(cuid())
+  societyId       String
+  society         Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(true)
+  indicativePrice Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([societyId, serviceId])
 }

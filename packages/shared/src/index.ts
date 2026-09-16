@@ -96,3 +96,69 @@ export interface MeResponse {
   resident: ResidentDto;
   society: SocietyDto;
 }
+
+/**
+ * Resident-facing view of a service available in the caller's society (FEAT-002).
+ * Returned by `GET /catalog` — one entry per enabled offering ⋈ active service.
+ * `indicativePrice` is display-only (integer rupees), present only when set for
+ * the society's offering; it is NOT the group-buy round price (that's FEAT-003).
+ */
+export interface ServiceDto {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  imageUrl?: string;
+  indicativePrice?: number;
+}
+
+/**
+ * Full super-admin view of a master service (FEAT-002). Includes the moderation
+ * fields (`active`, timestamps) that the resident-facing {@link ServiceDto} omits.
+ */
+export interface AdminServiceDto {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  imageUrl: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `POST /admin/services` body — create a master service. */
+export interface CreateServiceBody {
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  imageUrl?: string;
+}
+
+/** `PATCH /admin/services/:id` body — update fields / toggle active (all optional). */
+export interface UpdateServiceBody {
+  name?: string;
+  slug?: string;
+  description?: string;
+  category?: string;
+  imageUrl?: string | null;
+  active?: boolean;
+}
+
+/** Super-admin view of a per-society offering (FEAT-002). */
+export interface ServiceOfferingDto {
+  id: string;
+  societyId: string;
+  serviceId: string;
+  enabled: boolean;
+  indicativePrice: number | null;
+}
+
+/** `PUT /admin/societies/:societyId/offerings/:serviceId` body — upsert an offering. */
+export interface UpsertOfferingBody {
+  enabled: boolean;
+  indicativePrice?: number | null;
+}

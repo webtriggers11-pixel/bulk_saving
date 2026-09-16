@@ -3,19 +3,15 @@
 Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
 After each checked task: commit (`feat(FEAT-002): ...`) AND append a LOG.md entry.
 
-## Backend
-- [ ] T1: Prisma `Service` + `ServiceOffering` (ADR-0009); migration applies clean. — depends: —
-- [ ] T2: `packages/shared` — `ServiceDto`; consumed by backend. — depends: T1
-- [ ] T3: `catalog` module — `CatalogService` + `GET /catalog` (authed) scoped by JWT societyId; enabled offerings ⋈ active services. Integration tests: returns society's services + tenant-isolation (A can't see B-only offering). — depends: T2
-- [ ] T4: Admin services API — `POST/GET/PATCH /admin/services` (SUPER_ADMIN); slug-unique → `SERVICE_SLUG_TAKEN`. Integration tests incl. 403 for resident. — depends: T3
-- [ ] T5: Admin offerings API — `PUT /admin/societies/:societyId/offerings/:serviceId` (SUPER_ADMIN, enable/disable + indicativePrice). Integration test. — depends: T4
-- [ ] T6: Extend seed — ~5 master services + enable for GREEN001 & BLUE0002; idempotent. — depends: T1
-
-## Frontend (resident PWA)
-- [ ] T7: Catalog API client + TanStack Query hook (`GET /catalog`). — depends: T3
-- [ ] T8: Catalog screen (`/services` or home) — service cards (name, category, indicative price, image), empty state; mobile-first, hand-rolled primitives (ADR-0008); route wired + linked from authed home. — depends: T7
-- [ ] T9: Frontend tests (Vitest + RTL) — catalog renders list (mocked API) + empty state. — depends: T8
-
-## Close
-- [ ] T10: V2 independent review (reviewer runs verify.sh itself + audits vs spec/ARCHITECTURE; catalog tenant-isolation scrutiny). — depends: T1–T9
-- [ ] T11: V3 fresh double-run of verify.sh; log both; close (REGISTRY → done, commit). — depends: T10
+## DONE — verify.sh exit 0 (backend 41 / web 16); V2 APPROVE; V3 identical double-run
+- [x] T1: Prisma `Service` + `ServiceOffering` (ADR-0009); migration 20260916134455 clean.
+- [x] T2: `packages/shared` — `ServiceDto` (+ admin contract types); consumed by both apps.
+- [x] T3: `catalog` module — `GET /catalog` scoped by JWT societyId (single joined query); returns-services + tenant-isolation integration tests.
+- [x] T4: Admin services API — POST/GET/PATCH /admin/services (SUPER_ADMIN); slug → SERVICE_SLUG_TAKEN; 403-for-resident + 404 tests.
+- [x] T5: Admin offerings API — PUT /admin/societies/:societyId/offerings/:serviceId (SUPER_ADMIN, enable/disable + indicativePrice); 403 + 404 tests.
+- [x] T6: Seed extended — 5 master services enabled for GREEN001 & BLUE0002; idempotent.
+- [x] T7: Catalog API client + `useCatalog` TanStack Query hook.
+- [x] T8: `/services` screen — cards (name, category, ₹ price, image), loading/error/empty states; linked from home.
+- [x] T9: Frontend tests — list render + empty + error states.
+- [x] T10: V2 independent review — APPROVE (no P0/P1; 2 P2 test-assertion gaps then filled → 41 backend tests).
+- [x] T11: V3 double-run by closer — both exit 0, identical (backend 41, web 16), not flaky.
