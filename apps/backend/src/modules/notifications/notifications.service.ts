@@ -18,6 +18,17 @@ export interface NotificationJobData {
 /** Send retries: a transient provider/Redis error must not drop a message. */
 export const NOTIFICATION_SEND_ATTEMPTS = 5;
 
+/**
+ * How stale a PENDING row may be and still be worth sending. Bodies are rendered
+ * at stage time (ADR-0013), so a row recovered after a long outage would text
+ * "the round closes 16 Sep" about a round that closed days ago. One reminder
+ * lead is the natural cutoff: anything older is no longer news.
+ */
+export const MAX_PENDING_AGE_MS = 24 * 60 * 60 * 1_000;
+
+/** Cap on one reconciliation pass, so a huge backlog cannot stall boot. */
+export const PENDING_SCAN_LIMIT = 500;
+
 /** Prisma transaction client — staging always runs inside the caller's transaction. */
 type Tx = Prisma.TransactionClient;
 
@@ -149,13 +160,31 @@ export class NotificationsService {
     });
   }
 
-  /** Every still-PENDING row, oldest first — the reconciler's input. */
-  async listPending(limit = 500): Promise<Array<{ id: string }>> {
+  /**
+   * Still-PENDING rows recent enough to be worth sending, oldest first — the
+   * reconciler's input (V2 P2-3). Rows older than {@link MAX_PENDING_AGE_MS} are
+   * deliberately left behind rather than delivered as stale news; they stay in
+   * the table as a record of what did not go out.
+   */
+  async listPending(limit = PENDING_SCAN_LIMIT): Promise<Array<{ id: string }>> {
     return this.prisma.notification.findMany({
-      where: { status: NotificationStatus.PENDING },
+      where: {
+        status: NotificationStatus.PENDING,
+        createdAt: { gte: new Date(Date.now() - MAX_PENDING_AGE_MS) },
+      },
       select: { id: true },
       orderBy: { createdAt: 'asc' },
       take: limit,
+    });
+  }
+
+  /** How many PENDING rows were skipped as too old to send (observability). */
+  async countStalePending(): Promise<number> {
+    return this.prisma.notification.count({
+      where: {
+        status: NotificationStatus.PENDING,
+        createdAt: { lt: new Date(Date.now() - MAX_PENDING_AGE_MS) },
+      },
     });
   }
 

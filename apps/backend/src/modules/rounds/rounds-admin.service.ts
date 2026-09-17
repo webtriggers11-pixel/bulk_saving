@@ -28,7 +28,7 @@ import {
   computePaymentSummary,
 } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
-import { RoundsService } from './rounds.service';
+import { ROUND_TX_OPTIONS, RoundsService } from './rounds.service';
 
 /**
  * Super-admin round management (FEAT-003 + FEAT-004, ADR-0010/0011): open a round
@@ -77,6 +77,9 @@ export class RoundsAdminService {
     await this.assertNoOpenRound(societyId, serviceId);
 
     try {
+      // ROUND_TX_OPTIONS (V2 P2-4): this transaction now makes TWO sets of Redis
+      // round-trips (close job + reminder job), and Prisma's default 5s budget
+      // covers all of it — a slow Redis would otherwise abort a valid create.
       // Create + enqueue are coupled: the deadline job is added INSIDE the
       // transaction, so an enqueue failure (Redis down) rolls the round back
       // instead of leaving an OPEN round that never auto-closes. If the enqueue
@@ -107,7 +110,7 @@ export class RoundsAdminService {
         // window is shorter than the 24h lead simply gets no reminder.
         await this.reminders.schedule(round.id, round.deadline);
         return round;
-      });
+      }, ROUND_TX_OPTIONS);
       return buildRoundDto(created as RoundWithView);
     } catch (err) {
       // Partial unique index race: a concurrent open won → surface 409, never 500.

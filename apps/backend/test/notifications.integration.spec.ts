@@ -1,5 +1,5 @@
 import { getQueueToken } from '@nestjs/bullmq';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import {
   type Notification,
   NotificationStatus,
@@ -172,11 +172,15 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
       attemptsMade,
     } as Job<NotificationJobData>);
 
+  /** The unmocked `stage`, kept so a test can stage for real and then throw. */
+  let realStage: NotificationsService['stage'];
+
   beforeAll(async () => {
     channel = new CapturingChannel();
     app = await createTestApp(channel);
     prisma = app.get(PrismaService);
     notifications = app.get(NotificationsService);
+    realStage = notifications.stage.bind(notifications);
     rounds = app.get(RoundsService);
     adminRounds = app.get(RoundsAdminService);
     dispatchProcessor = app.get(NotificationDispatchProcessor);
@@ -375,6 +379,65 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
       expect(after.attempts).toBe(1);
     });
 
+    it('a real join DISPATCHES the row it staged (the stage → queue link)', async () => {
+      // V2 P1: without this, deleting the dispatch call in RoundsService would
+      // leave the whole suite green while no resident ever got an SMS. A spy is
+      // used rather than reading the queue back, because parallel suites share
+      // Redis and a live worker elsewhere can consume the job mid-assertion.
+      const round = await createRound();
+      const dispatch = jest.spyOn(notifications, 'dispatch');
+
+      await rounds.join(round.id, society.id, alice.id, 2);
+
+      const [row] = await rowsFor(round.id);
+      expect(dispatch).toHaveBeenCalledWith([row.id]);
+      // …and the job carries the row id as its jobId, so a re-dispatch dedupes.
+      const add = await sendQueue.getJob(row.id);
+      expect(add === undefined || add.data.notificationId === row.id).toBe(true);
+      dispatch.mockRestore();
+      await tryRemoveJob(sendQueue, row.id);
+    });
+
+    it('a close that throws AFTER staging leaves no row behind (true rollback)', async () => {
+      // The other "stages nothing" tests are rejected BEFORE staging runs, so
+      // they prove ordering, not rollback (V2 P2-6). This one stages first and
+      // then forces the transaction to fail.
+      const round = await createRound('OPEN', 0, new Date(Date.now() - 1_000));
+      await addParticipant(round, alice, 3);
+      const boom = jest.spyOn(notifications, 'stage').mockImplementation(async (tx, rows) => {
+        const ids = await realStage.call(notifications, tx, rows);
+        expect(ids.length).toBeGreaterThan(0); // rows really were written in-tx
+        throw new Error('forced failure after staging');
+      });
+
+      await expect(rounds.closeRound(round.id)).rejects.toThrow('forced failure after staging');
+
+      boom.mockRestore();
+      expect(await rowsFor(round.id)).toHaveLength(0);
+      // …and the round itself rolled back with it.
+      expect((await prisma.round.findUniqueOrThrow({ where: { id: round.id } })).status).toBe('OPEN');
+    });
+
+    it('logs the recipient only as a redacted phone number', async () => {
+      const round = await createRound();
+      const row = await stageDirect(round.id, alice);
+      const logged: string[] = [];
+      const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation((message) => {
+        logged.push(String(message));
+      });
+
+      await runSend(row.id);
+
+      logSpy.mockRestore();
+      const ours = logged.filter((line) => line.includes(row.id));
+      expect(ours.length).toBeGreaterThan(0);
+      for (const line of ours) {
+        expect(line).not.toContain(alice.phone);
+        expect(line).toContain(alice.phone.slice(-4));
+        expect(line).toContain('X');
+      }
+    });
+
     it('a duplicate job for an already-sent row sends nothing a second time', async () => {
       const round = await createRound();
       const row = await stageDirect(round.id, alice);
@@ -529,6 +592,37 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
 
       expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeDefined();
       await adminRounds.close(dto.id, alice.id);
+      expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeUndefined();
+    });
+
+    it('cancelling a round also removes its pending reminder', async () => {
+      const service = await prisma.service.create({
+        data: {
+          name: `Notify cancel ${suffix}`,
+          slug: `nt-cancel-${suffix}`,
+          description: 'x',
+          category: 'Home',
+          active: true,
+        },
+      });
+      serviceIds.push(service.id);
+      await prisma.serviceOffering.create({
+        data: { societyId: society.id, serviceId: service.id, enabled: true },
+      });
+
+      const dto = await adminRounds.createRound(
+        {
+          societyId: society.id,
+          serviceId: service.id,
+          deadline: new Date(Date.now() + 3 * REMINDER_LEAD_MS).toISOString(),
+          tiers: TIERS,
+        },
+        alice.id,
+      );
+      expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeDefined();
+
+      await adminRounds.cancel(dto.id, alice.id);
+
       expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeUndefined();
     });
 

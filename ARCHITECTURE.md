@@ -48,7 +48,7 @@ bulk_saving/
 │   │   │   │   ├── rounds/      # group-buy rounds + state machine
 │   │   │   │   ├── jobs/        # assigned/delivered jobs + ratings
 │   │   │   │   ├── vendors/     # minimal vendor list (admin-managed)
-│   │   │   │   ├── notifications/ # channel interface + adapters + queue
+│   │   │   │   ├── notifications/ # channel + adapters + outbox, send processor, reconciler
 │   │   │   │   └── admin/       # super-admin dashboard endpoints
 │   │   │   ├── common/          # filters, interceptors, decorators, pipes
 │   │   │   ├── prisma/          # PrismaService, module
@@ -79,6 +79,11 @@ bulk_saving/
 
 - Every tenant-scoped table (`Round`, `Job`, `ServiceOffering`, resident membership)
   carries `societyId`. Global tables (`Service` catalog master, `Vendor`) may be shared.
+- **Known exception — `Notification` (FEAT-006):** it has no `societyId` and is scoped
+  transitively through `residentId` (the same shape as `RoundParticipant`). Reads are
+  per-resident or per-round, so nothing cross-tenant is reachable today. Denormalising
+  the column later means a migration plus a backfill, so it is **an open decision for
+  the owner**, recorded in ADR-0013's amendment rather than silently settled.
 - **Isolation is enforced at the service/repository layer** — a resident's requests
   are always scoped to their society via the authenticated context, never trusted from
   client input. Super-admin can query across societies explicitly.
@@ -145,11 +150,39 @@ Concurrent joins must never oversell a tier or miscount.
 
 ## Notifications
 
-- One `NotificationChannel` interface (`send(to, template, data)`).
+- One `NotificationChannel` interface (`sendOtp(phone, code)` / `send(to, message)`).
 - **SMS adapter ships first** (OTP + round alerts). **WhatsApp adapter is a
   fast-follow** behind the same interface — no caller changes when it lands.
 - All non-OTP sends are **queued via BullMQ** (retryable, non-blocking).
 - OTP SMS may send synchronously with strict rate-limiting.
+
+### Transactional outbox (FEAT-006, ADR-0013)
+
+Lifecycle messages are not fired from the code that changes a round. They are
+staged as `Notification` rows **inside the same transaction as the state change**,
+then dispatched after it commits:
+
+- **`Notification` table** — the outbox. `dedupeKey` is unique, so an idempotent
+  re-close, a retried job or a double-fired scheduler stages nothing new. Status is
+  `PENDING → SENT | FAILED`, with `attempts` and `lastError` kept for support.
+  It carries **no `societyId`** — see Multi-tenancy below.
+- **`notifications` queue** — ONE job per recipient (`jobId` = row id), 5 attempts
+  with exponential backoff. Per-recipient, so one resident's provider failure can
+  never re-send to everyone else.
+- **`round-reminder` queue** — one delayed job per round at `deadline − 24h`
+  (`jobId` = `reminder-<roundId>`; BullMQ rejects `:` in a custom id). It fans out
+  at FIRE time to the participants that exist then, and no-ops unless the round is
+  still OPEN.
+- **`NotificationDispatchProcessor` is the only lifecycle caller of `send()`**; the
+  OTP path stays synchronous and is never persisted (an OTP row would be a stored
+  credential).
+- **Boot reconciler** re-dispatches PENDING rows with no job, skipping rows older
+  than 24h (a body is rendered at stage time, so stale news is not worth sending).
+- **Delivery is at-least-once**: staging is exactly-once, but a send that succeeds
+  before its `markSent` write can be retried. Provider-side idempotency closes this
+  when a real provider lands.
+- Round knowledge lives in `RoundNotificationsService` (rounds module); the outbox
+  service stays domain-agnostic, so a new event adds a file rather than editing it.
 
 ---
 
@@ -247,8 +280,12 @@ transition MUST have integration tests — this is the highest-risk code.
 | A7 | `NotificationChannel` interface, SMS-first / WhatsApp fast-follow | WhatsApp API approval never blocks the 4–6 week launch |
 | A8 | TanStack Query (server) + Zustand (UI) | Clear split; avoids state duplication |
 | A9 | BullMQ delayed jobs for round closing | Reliable deadline-driven transitions |
+| A10 | Transactional notification outbox + one queue job per recipient (ADR-0013) | A message can never outlive a rolled-back change, nor be lost by a committed one; one recipient's failure cannot re-send to the rest |
 
 ---
 
 ## Changelog
+- **2026-09-18** — FEAT-006: notification outbox documented (Notifications section,
+  the two new queues, the `Notification` multi-tenancy exception, decision A10). The
+  `NotificationChannel` signature above was stale and is corrected.
 - **2026-09-16** — Initial architecture established from BRIEF.md (`architect:`).

@@ -378,17 +378,22 @@ export class RoundsService {
    * Returns null if the round is gone (the processor retries, then gives up), 0
    * if it is no longer OPEN or has no participants, else the number of residents
    * staged. Recipients are read AT FIRE TIME, so everyone who joined since the
-   * job was scheduled is included. It takes no row lock — it changes no round
-   * state — but it re-reads the status inside the same transaction as the
-   * staging, so a round that closed a moment ago cannot be reminded.
+   * job was scheduled is included.
+   *
+   * It takes the exclusive round row lock even though it writes no round state
+   * (V2 P2-1): an unlocked status read under read-committed can see OPEN while a
+   * close/cancel commits underneath, which would text "closes soon — invite a
+   * neighbour" AFTER "this round was cancelled". The lock makes the status read
+   * and the staging one serialized unit against every other round mutation. The
+   * critical section is three fast local queries.
    */
   async remindClosingSoon(roundId: string): Promise<number | null> {
     const staged = await this.inRoundTx(async (tx) => {
-      const round = await tx.round.findUnique({ where: { id: roundId }, select: { status: true } });
-      if (!round) {
+      const locked = await this.lockRoundForUpdate(tx, roundId);
+      if (!locked) {
         return null;
       }
-      if (round.status !== RoundStatus.OPEN) {
+      if (locked.status !== RoundStatus.OPEN) {
         return [];
       }
       return this.roundNotifications.stageForParticipants(

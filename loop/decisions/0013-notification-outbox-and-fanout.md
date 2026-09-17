@@ -55,7 +55,9 @@ Option 2, with per-recipient jobs (rejecting option 4's fan-out-inside-the-job).
 - `dedupeKey` is unique in the DB: `<TYPE>:<roundId>:<residentId>` for lifecycle fan-outs, and
   `ROUND_JOINED:<participantId>` for join confirmations (the participant row is deleted on leave, so
   a rejoin legitimately gets a new key and a new confirmation). A collision is swallowed as
-  "already staged", which is what makes idempotent re-closes and retried jobs safe.
+  "already staged", which is what makes idempotent re-closes and retried jobs safe. Note what this
+  does and does not buy: it de-duplicates STAGING exactly, and delivery remains at-least-once (see
+  the amendment below).
 - After the transaction commits, the caller dispatches the staged ids: one BullMQ job per
   notification, `jobId = notification id`, with retries and exponential backoff. Dispatch is
   best-effort — a Redis outage leaves rows PENDING and never fails the round operation.
@@ -64,7 +66,8 @@ Option 2, with per-recipient jobs (rejecting option 4's fan-out-inside-the-job).
 - The processor is the ONLY code that calls `NotificationChannel.send` for lifecycle messages; it
   marks the row SENT, or FAILED with `lastError` after the final attempt.
 - The "closing soon" reminder is its own delayed job per round at `deadline − 24h`
-  (`jobId = reminder:<roundId>`), which fans out at FIRE time to the participants that exist then
+  (`jobId = reminder-<roundId>` — corrected 2026-09-18: BullMQ rejects a custom job
+  id containing `:`, which it reserves for its own Redis key namespacing), which fans out at FIRE time to the participants that exist then
   and no-ops unless the round is still OPEN. Removed when the round closes or is cancelled.
 - OTP delivery is unchanged: synchronous, direct, never persisted (an OTP in an outbox row would be
   a stored credential).
@@ -82,9 +85,36 @@ fix does not retroactively change a queued message.
 ## Revisit trigger
 
 - A real provider lands (ADR for provider + cost) → revisit per-channel routing, rate limits and
-  provider-side dedupe.
+  provider-side dedupe (an idempotency key would close the at-least-once gap above). Indian
+  transactional SMS also needs DLT-registered templates with fixed variable slots, which these
+  free-form bodies will have to be restructured into.
 - Boot-only reconciliation proves insufficient (messages delayed by a Redis outage without a
   restart) → add a periodic sweep (shared trigger with the FEAT-004 follow-up).
 - Ops or residents report the 24h reminder lead is wrong, or ask for more than one reminder → make
   the lead configurable per society/service.
 - Volume grows to where per-recipient jobs are costly, or residents ask for opt-out/quiet hours.
+
+## Amendments
+
+**2026-09-18 (V2, FEAT-006).** Corrections to the text above, no change of decision:
+
+1. The reminder job id uses a hyphen (`reminder-<roundId>`), not a colon — BullMQ
+   validation rejects `:` in a custom job id.
+2. **Delivery is at-least-once, not exactly-once.** The dedupe key makes STAGING exactly-once,
+   and the processor's PENDING-only guard stops a duplicate job re-sending a row that is already
+   terminal — but if `channel.send()` succeeds and the subsequent `markSent()` write fails (a DB
+   blip), the job retries and the same SMS goes out twice. That is ordinary at-least-once
+   messaging and is accepted for v1; any claim that a retried job "can never double-send" is too
+   strong. Added to the revisit trigger: when a real provider lands, use its idempotency key.
+3. One place deliberately breaks the "messaging never fails a round operation" rule:
+   the reminder is scheduled INSIDE the round-create transaction (as the FEAT-004
+   close job already was), so a Redis failure rolls the new round back rather than
+   opening a round whose queued follow-ups silently went missing. Post-creation
+   dispatch remains best-effort as described.
+
+**Open, for the owner (V2 P2-6):** `Notification` carries no `societyId`, while
+CLAUDE.md says every tenant-scoped row carries one; today a notification is scoped
+transitively through `residentId`. Neither this ADR nor the spec asked for the column.
+Adding it later is a migration plus a backfill, so the decision is worth taking before
+volume: denormalise `societyId`, or record the transitive-scoping exception in
+ARCHITECTURE.md. Not decided here.

@@ -18,8 +18,9 @@ const ALL_INPUTS: TemplateInput[] = [
     round,
     units: 2,
     unitsCount: 6,
-    target: 10,
+    target: 5,
     currentPrice: 800,
+    nextTier: { threshold: 10, price: 700 },
   },
   { type: NotificationType.ROUND_CLOSED_MET, round, units: 2, currentPrice: 700 },
   { type: NotificationType.ROUND_CLOSED_EXPIRED, round },
@@ -62,24 +63,42 @@ describe('renderNotification — per type', () => {
     expect(body).not.toContain('₹');
   });
 
-  it('ROUND_CLOSING_SOON states progress, the gap to target and the deadline', () => {
+  it('ROUND_CLOSING_SOON states the deadline, the met target and the next tier', () => {
     const body = renderNotification(ALL_INPUTS[1]);
-    expect(body).toContain('6 of 10 units pledged');
-    expect(body).toContain('4 units to go');
     expect(body).toContain('18 Sep, 11:30 pm');
+    expect(body).toContain('6 units pledged — the target is met at ₹800/unit');
+    expect(body).toContain('4 units more unlock ₹700/unit');
   });
 
-  it('ROUND_CLOSING_SOON says the target is met once it is reached', () => {
+  it('ROUND_CLOSING_SOON spells out the consequence while the target is unmet', () => {
+    const body = renderNotification({
+      type: NotificationType.ROUND_CLOSING_SOON,
+      round,
+      units: 2,
+      unitsCount: 3,
+      target: 5,
+      currentPrice: null,
+      nextTier: { threshold: 5, price: 900 },
+    });
+    expect(body).toContain('3 of 5 units pledged — 2 units to go');
+    expect(body).toContain("doesn't reach 5 units by then, it won't go ahead");
+  });
+
+  it('ROUND_CLOSING_SOON never renders a fraction larger than its target (over-subscribed)', () => {
     const body = renderNotification({
       type: NotificationType.ROUND_CLOSING_SOON,
       round,
       units: 2,
       unitsCount: 12,
-      target: 10,
+      target: 5,
       currentPrice: 700,
+      nextTier: null,
     });
-    expect(body).toContain('the target is met');
+    expect(body).toContain('12 units pledged — the target is met');
+    expect(body).not.toContain('12 of 5');
     expect(body).not.toContain('to go');
+    // Nothing left to unlock → no "invite a neighbour" ask.
+    expect(body).not.toContain('invite a neighbour');
   });
 
   it('ROUND_CLOSING_SOON falls back to a plain count when the round has no tiers', () => {
@@ -90,15 +109,20 @@ describe('renderNotification — per type', () => {
       unitsCount: 3,
       target: null,
       currentPrice: null,
+      nextTier: null,
     });
     expect(body).toContain('3 units pledged so far');
     expect(body).not.toContain('NaN');
   });
 
-  it('ROUND_CLOSED_MET gives the unlocked price and this resident’s total', () => {
+  it('ROUND_CLOSED_MET quotes the tier total as INDICATIVE, not as the amount owed', () => {
     const body = renderNotification(ALL_INPUTS[2]);
     expect(body).toContain('₹700/unit');
-    expect(body).toContain('₹1400');
+    expect(body).toContain('about ₹1400');
+    // The binding amount comes with the vendor (ROUND_ASSIGNED), so this message
+    // must not read as final — V2 P1-2.
+    expect(body).toContain("we'll confirm the final amount");
+    expect(body).not.toContain('schedule');
   });
 
   it('ROUND_CLOSED_EXPIRED makes clear there is nothing to pay', () => {
@@ -107,15 +131,34 @@ describe('renderNotification — per type', () => {
     expect(body).toContain('AC servicing');
   });
 
-  it('ROUND_ASSIGNED names the vendor and the amount due', () => {
+  it('ROUND_ASSIGNED names the vendor, the amount due and who is paid', () => {
     const body = renderNotification(ALL_INPUTS[4]);
     expect(body).toContain('CoolAir Services');
     expect(body).toContain('₹700/unit');
     expect(body).toContain('₹1400');
+    expect(body).toContain('payable to the vendor on completion');
   });
 
   it('ROUND_DELIVERED reports completion', () => {
     expect(renderNotification(ALL_INPUTS[5])).toContain('complete');
+  });
+
+  it('no message promises a follow-up the system does not send', () => {
+    // V2 P1-3: there is no scheduling message, no "a new round opened" broadcast
+    // and no rating request in v1, so no template may imply one.
+    const forbidden = [
+      'text you the schedule',
+      'confirm the visit time',
+      'when the next one opens',
+      'open a fresh round',
+      'ask how it went',
+    ];
+    for (const input of ALL_INPUTS) {
+      const body = renderNotification(input);
+      for (const phrase of forbidden) {
+        expect(body).not.toContain(phrase);
+      }
+    }
   });
 
   it('ROUND_CANCELLED reports the cancellation and that nothing is owed', () => {

@@ -9,7 +9,10 @@ import { NotificationType } from '@prisma/client';
  *  - a body NEVER contains an OTP, a token, or a phone number — none of those
  *    are even reachable from {@link TemplateInput};
  *  - a body stays within {@link MAX_SMS_LENGTH}, so a long service name can
- *    never produce a message the provider would split or reject.
+ *    never produce a message the provider would split or reject;
+ *  - a body promises only what the system actually sends. There is no scheduling
+ *    message, no "a new round opened" broadcast and no rating request in v1, so
+ *    no template may imply one (V2 P1-3).
  */
 
 /** Hard cap on a rendered body. Long inputs are truncated, never dropped. */
@@ -49,6 +52,8 @@ export type TemplateInput =
       /** Lowest tier threshold — the target that unlocks a price. Null if the round has no tiers. */
       target: number | null;
       currentPrice: number | null;
+      /** The next threshold that would unlock a better price, or null if none is left. */
+      nextTier: { threshold: number; price: number } | null;
     }
   | {
       type: typeof NotificationType.ROUND_CLOSED_MET;
@@ -120,34 +125,52 @@ function joined(input: Extract<TemplateInput, { type: 'ROUND_JOINED' }>): string
 }
 
 function closingSoon(input: Extract<TemplateInput, { type: 'ROUND_CLOSING_SOON' }>): string {
-  const price = input.currentPrice === null ? '' : ` Price now ${rupees(input.currentPrice)}/unit.`;
+  const deadline = formatDeadline(input.round.deadline);
   const gap = input.target === null ? 0 : Math.max(0, input.target - input.unitsCount);
-  const progress =
-    input.target === null
-      ? `${units(input.unitsCount)} pledged so far.`
-      : gap > 0
-        ? `${input.unitsCount} of ${input.target} units pledged — ${units(gap)} to go.`
-        : `${input.unitsCount} of ${input.target} units pledged — the target is met.`;
-  return (
-    `${SENDER}: ${input.round.serviceName} closes ${formatDeadline(input.round.deadline)}. ` +
-    `${progress}${price} Invite a neighbour to unlock a better price.`
-  );
+
+  // Progress: once the target is met the "x of y" fraction is nonsense (an
+  // over-subscribed round would read "12 of 5"), so it is dropped.
+  let progress: string;
+  if (input.target === null) {
+    progress = `${units(input.unitsCount)} pledged so far.`;
+  } else if (gap > 0) {
+    progress =
+      `${input.unitsCount} of ${input.target} units pledged — ${units(gap)} to go. ` +
+      `If the round doesn't reach ${input.target} units by then, it won't go ahead.`;
+  } else {
+    const price = input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/unit`;
+    progress = `${units(input.unitsCount)} pledged — the target is met${price}.`;
+  }
+
+  // Only ask for more neighbours when there is actually a better price to unlock.
+  const invite = input.nextTier
+    ? ` ${units(Math.max(1, input.nextTier.threshold - input.unitsCount))} more unlock ` +
+      `${rupees(input.nextTier.price)}/unit — invite a neighbour.`
+    : '';
+
+  return `${SENDER}: ${input.round.serviceName} closes ${deadline}. ${progress}${invite}`;
 }
 
 function closedMet(input: Extract<TemplateInput, { type: 'ROUND_CLOSED_MET' }>): string {
-  const price = input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/unit`;
-  const total =
-    input.currentPrice === null ? '' : ` Your ${units(input.units)}: ${rupees(input.currentPrice * input.units)}.`;
+  // The tier price is INDICATIVE: the amount actually owed is the admin's
+  // negotiated finalPrice, quoted in the ROUND_ASSIGNED message. Saying so here
+  // stops the two SMS contradicting each other (V2 P1-2).
+  const indicative =
+    input.currentPrice === null
+      ? ''
+      : ` At today's ${rupees(input.currentPrice)}/unit that's about ` +
+        `${rupees(input.currentPrice * input.units)} for your ${units(input.units)} — ` +
+        `we'll confirm the final amount when a vendor is assigned.`;
   return (
-    `${SENDER}: Target reached! The ${input.round.serviceName} round closed${price}.${total} ` +
-    `We're lining up a vendor and will text you the schedule.`
+    `${SENDER}: Target reached! The ${input.round.serviceName} round has closed.${indicative} ` +
+    `We'll text you when a vendor is assigned.`
   );
 }
 
 function closedExpired(input: Extract<TemplateInput, { type: 'ROUND_CLOSED_EXPIRED' }>): string {
   return (
     `${SENDER}: The ${input.round.serviceName} round closed without reaching its target, ` +
-    `so it won't go ahead and there's nothing to pay. We'll let you know when the next one opens.`
+    `so it won't go ahead and there's nothing to pay.`
   );
 }
 
@@ -155,22 +178,21 @@ function assigned(input: Extract<TemplateInput, { type: 'ROUND_ASSIGNED' }>): st
   return (
     `${SENDER}: ${input.vendorName} is scheduled for ${input.round.serviceName}. ` +
     `Your ${units(input.units)} at ${rupees(input.finalPrice)}/unit = ` +
-    `${rupees(input.finalPrice * input.units)}, payable on completion. ` +
-    `We'll confirm the visit time.`
+    `${rupees(input.finalPrice * input.units)}, payable to the vendor on completion.`
   );
 }
 
 function delivered(input: Extract<TemplateInput, { type: 'ROUND_DELIVERED' }>): string {
   return (
     `${SENDER}: Your ${input.round.serviceName} job is marked complete. ` +
-    `Thanks for pooling with your society — we'll ask how it went.`
+    `Thanks for pooling with your society.`
   );
 }
 
 function cancelled(input: Extract<TemplateInput, { type: 'ROUND_CANCELLED' }>): string {
   return (
     `${SENDER}: The ${input.round.serviceName} round has been cancelled and there's nothing to pay. ` +
-    `Sorry for the change — we'll open a fresh round soon.`
+    `Sorry for the change.`
   );
 }
 

@@ -2,6 +2,34 @@
 
 **Derived from:** spec.md · **Approved by:** Vivek (standing autonomous authorization) on 2026-09-17
 
+## Implemented as (amendment, 2026-09-18 — V2 P2-1)
+
+The design below is what was approved; three things changed during the build and
+this section is the correction, so a later reader does not trust a stale plan:
+
+1. **Module split.** §3's `stageForParticipant` / `stageForRoundParticipants` did
+   NOT stay on `NotificationsService`. The real split is: `NotificationsService`
+   = generic outbox (`stage` / `dispatch` / `markSent` / `recordAttemptFailure` /
+   `findForSend` / `listPending` / `hasPendingJob`), and `RoundNotificationsService`
+   (rounds module) = all round knowledge (`stageJoined`, `stageForParticipants`).
+   `RoundsModule` imports `NotificationsModule`, so the round query + pricing +
+   vendor loading the plan put in the outbox would have been a circular domain
+   dependency.
+2. **Reminder scheduler ownership.** §4 had `RoundsService` taking
+   `RoundReminderScheduler`; it went to `RoundsAdminService` instead (that is
+   where round creation, close and cancel live). Consequence: only the admin
+   close/cancel paths remove a pending reminder — the deadline-driven close does
+   not (harmless: the reminder has already fired by then, and a stale job no-ops
+   on the OPEN check).
+3. **Module exports.** §8's `NotificationsModule` does NOT export the reminder
+   scheduler; it exports `NOTIFICATION_CHANNEL`, `NotificationsService` and
+   `NotificationDispatchReconciler`. `RoundsModule` exports the reminder scheduler.
+4. **`stage()` returns ids to dispatch**, which includes rows that were already
+   staged and are still PENDING — not only newly created ones (§3 said "actually
+   created"). Safe because dispatch is idempotent on `jobId`.
+5. **Job id separator:** `reminder-<roundId>`, not `reminder:<roundId>` — BullMQ
+   rejects a custom job id containing `:`.
+
 ## Technical approach
 
 Backend only. A transactional outbox (ADR-0013) bolted onto the existing state machine, using

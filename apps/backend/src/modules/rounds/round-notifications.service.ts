@@ -81,7 +81,7 @@ export class RoundNotificationsService {
     if (!round || round.participants.length === 0) {
       return [];
     }
-    const { currentPrice, target } = this.pricing(round);
+    const { currentPrice, target, nextTier } = this.pricing(round);
     const forMessage = this.forMessage(round);
 
     if (type === NotificationType.ROUND_ASSIGNED && (!round.vendor || round.finalPrice === null)) {
@@ -98,6 +98,7 @@ export class RoundNotificationsService {
         unitsCount: round.unitsCount,
         currentPrice,
         target,
+        nextTier,
         vendorName: round.vendor?.name ?? '',
         finalPrice: round.finalPrice ?? 0,
       });
@@ -126,6 +127,7 @@ export class RoundNotificationsService {
       unitsCount: number;
       currentPrice: number | null;
       target: number | null;
+      nextTier: { threshold: number; price: number } | null;
       vendorName: string;
       finalPrice: number;
     },
@@ -139,6 +141,7 @@ export class RoundNotificationsService {
           unitsCount: ctx.unitsCount,
           target: ctx.target,
           currentPrice: ctx.currentPrice,
+          nextTier: ctx.nextTier,
         };
       case NotificationType.ROUND_CLOSED_MET:
         return { type, round: ctx.round, units: ctx.units, currentPrice: ctx.currentPrice };
@@ -173,7 +176,9 @@ export class RoundNotificationsService {
   }
 
   /**
-   * The price a message may quote, and the target that unlocks one.
+   * The price a message may quote, the target that unlocks one, and the next
+   * tier (so a message only asks for more neighbours when a better price is
+   * actually still available — V2 P2-4).
    *
    * `currentPrice` is null until the lowest threshold is actually met: below it
    * `computePricing` returns the lowest tier's price as a not-yet-unlocked
@@ -184,6 +189,7 @@ export class RoundNotificationsService {
   private pricing(round: { unitsCount: number; tiers: Array<{ threshold: number; price: number }> }): {
     currentPrice: number | null;
     target: number | null;
+    nextTier: { threshold: number; price: number } | null;
   } {
     const tiers = round.tiers.map((t) => ({ threshold: t.threshold, price: t.price }));
     const lowest = tiers.reduce<{ threshold: number; price: number } | null>(
@@ -191,11 +197,15 @@ export class RoundNotificationsService {
       null,
     );
     if (!lowest) {
-      return { currentPrice: null, target: null };
+      return { currentPrice: null, target: null, nextTier: null };
     }
     const unlocked = round.unitsCount >= lowest.threshold;
-    const { currentPrice } = computePricing(tiers, round.unitsCount);
-    return { currentPrice: unlocked ? currentPrice : null, target: lowest.threshold };
+    const { currentPrice, nextTier } = computePricing(tiers, round.unitsCount);
+    return {
+      currentPrice: unlocked ? currentPrice : null,
+      target: lowest.threshold,
+      nextTier: nextTier ? { threshold: nextTier.threshold, price: nextTier.price } : null,
+    };
   }
 
   private forMessage(round: { service: { name: string }; deadline: Date }): RoundForMessage {

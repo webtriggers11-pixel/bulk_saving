@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { NotificationsService } from './notifications.service';
+import { PENDING_SCAN_LIMIT, NotificationsService } from './notifications.service';
 
 /**
  * Safety net for the outbox (FEAT-006, ADR-0013). Staging is transactional but
@@ -27,6 +27,13 @@ export class NotificationDispatchReconciler implements OnApplicationBootstrap {
       if (count > 0) {
         this.logger.log(`Re-dispatched ${count} PENDING notification(s) with no job`);
       }
+      const stale = await this.notifications.countStalePending();
+      if (stale > 0) {
+        this.logger.warn(
+          `${stale} PENDING notification(s) are too old to send and were skipped — ` +
+            `they are recorded but were never delivered`,
+        );
+      }
     } catch (err) {
       // Never block boot on the safety net; the next boot retries.
       this.logger.error(
@@ -43,7 +50,14 @@ export class NotificationDispatchReconciler implements OnApplicationBootstrap {
    * re-dispatched.
    */
   async reconcile(ids?: string[]): Promise<number> {
-    const candidates = ids ?? (await this.notifications.listPending()).map((n) => n.id);
+    const pending = ids ?? (await this.notifications.listPending()).map((n) => n.id);
+    if (!ids && pending.length === PENDING_SCAN_LIMIT) {
+      this.logger.warn(
+        `Notification backlog hit the ${PENDING_SCAN_LIMIT}-row scan cap; ` +
+          `the remainder waits for the next boot`,
+      );
+    }
+    const candidates = pending;
     const orphaned: string[] = [];
     for (const id of candidates) {
       if (!(await this.notifications.hasPendingJob(id))) {
