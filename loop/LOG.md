@@ -232,3 +232,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0 identical.
 - Decisions: ADR-0004, ADR-0011
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-005 — opened + planned (autonomous)
+- What: Super-admin dashboard. Wrote spec, ADR-0012 (global Vendor list; vendorId/finalPrice/assignedAt/deliveredAt on Round; per-participant paymentCollectedAt manual flag; assign/deliver data written inside the guarded transition), plan, tasks T1–T14. The approach freezes the shared DTO contract first (T2), then builds backend (T1, T3–T7) and frontend (T8–T12) in parallel. Status → in-progress. No new deps planned.
+- Evidence: pending (verify.sh)
+- Decisions: ADR-0003, ADR-0011, ADR-0012
+- By: agent (autonomous)
