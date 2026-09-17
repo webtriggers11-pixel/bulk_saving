@@ -4,12 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { NotificationType, type Prisma } from '@prisma/client';
 import type { AdminRoundParticipantDto, RoundDto } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { VendorsService } from '../vendors/vendors.service';
+import { RoundNotificationsService } from './round-notifications.service';
 import { buildAdminParticipant } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { isLegalTransition } from './rounds.transitions';
@@ -71,11 +72,28 @@ export class RoundsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vendors: VendorsService,
+    private readonly roundNotifications: RoundNotificationsService,
   ) {}
 
   /** Run a round mutation in an interactive transaction with {@link ROUND_TX_OPTIONS}. */
   private inRoundTx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
     return this.prisma.$transaction(fn, ROUND_TX_OPTIONS);
+  }
+
+  /**
+   * Run a round mutation that also stages notifications (FEAT-006, ADR-0013).
+   * The callback returns its result together with the ids it staged INSIDE the
+   * transaction; those ids reach the queue only after the transaction commits,
+   * so a rolled-back change can never send a message. Dispatch is best-effort
+   * and never throws, so the messaging side cannot fail a committed round
+   * operation — undispatched rows stay PENDING for the boot reconciler.
+   */
+  private async inRoundTxNotifying<T>(
+    fn: (tx: Tx) => Promise<{ result: T; staged: string[] }>,
+  ): Promise<T> {
+    const { result, staged } = await this.inRoundTx(fn);
+    await this.roundNotifications.dispatch(staged);
+    return result;
   }
 
   /** The include needed to shape a {@link RoundDto} for a specific caller. */
@@ -114,7 +132,7 @@ export class RoundsService {
    * missing or in another society; 409 ROUND_CLOSED if it is not OPEN.
    */
   async join(roundId: string, societyId: string, residentId: string, units: number): Promise<RoundDto> {
-    return this.inRoundTx(async (tx) => {
+    return this.inRoundTxNotifying(async (tx) => {
       await this.lockOpenRoundForWrite(tx, roundId, societyId);
 
       const existing = await tx.roundParticipant.findUnique({
@@ -128,7 +146,14 @@ export class RoundsService {
         update: { units },
       });
 
-      return this.applyDeltaAndBuild(tx, roundId, residentId, delta);
+      const result = await this.applyDeltaAndBuild(tx, roundId, residentId, delta);
+      // Confirmation only for a genuinely new pledge — changing an existing one
+      // sends nothing (and the dedupe key is the participant row, so a rejoin
+      // after leaving does get a fresh confirmation).
+      const staged = existing
+        ? []
+        : await this.roundNotifications.stageJoined(tx, roundId, residentId);
+      return { result, staged };
     });
   }
 
@@ -215,14 +240,15 @@ export class RoundsService {
    * passes none and ignores it).
    */
   async closeRound(roundId: string, viewerResidentId = ''): Promise<RoundDto | null> {
-    return this.inRoundTx(async (tx) => {
+    return this.inRoundTxNotifying(async (tx) => {
       const locked = await this.lockRoundForUpdate(tx, roundId);
       if (!locked) {
-        return null;
+        return { result: null, staged: [] };
       }
       if (locked.status !== RoundStatus.OPEN) {
         // Idempotent no-op: already closed/cancelled — return the current view.
-        return this.buildRoundById(tx, roundId, viewerResidentId);
+        // Nothing is staged, so a re-close never produces a second message.
+        return { result: await this.buildRoundById(tx, roundId, viewerResidentId), staged: [] };
       }
 
       const lowest = await tx.roundTier.findFirst({
@@ -232,7 +258,13 @@ export class RoundsService {
       });
       const met = lowest !== null && locked.unitsCount >= lowest.threshold;
       const to = met ? RoundStatus.CLOSED_MET : RoundStatus.CLOSED_EXPIRED;
-      return this.transition(tx, roundId, to, viewerResidentId);
+      const result = await this.transition(tx, roundId, to, viewerResidentId);
+      const staged = await this.roundNotifications.stageForParticipants(
+        tx,
+        roundId,
+        met ? NotificationType.ROUND_CLOSED_MET : NotificationType.ROUND_CLOSED_EXPIRED,
+      );
+      return { result, staged };
     });
   }
 
@@ -245,20 +277,32 @@ export class RoundsService {
    * (refund) them first rather than let collected money become invisible.
    */
   async cancel(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
-    return this.inRoundTx((tx) =>
-      this.transition(tx, roundId, RoundStatus.CANCELLED, viewerResidentId, async () => {
-        const collected = await tx.roundParticipant.count({
-          where: { roundId, paymentCollectedAt: { not: null } },
-        });
-        if (collected > 0) {
-          throw new ConflictException({
-            code: ErrorCode.PAYMENTS_COLLECTED,
-            message: `Undo the ${collected} collected payment(s) before cancelling this round.`,
+    return this.inRoundTxNotifying(async (tx) => {
+      const result = await this.transition(
+        tx,
+        roundId,
+        RoundStatus.CANCELLED,
+        viewerResidentId,
+        async () => {
+          const collected = await tx.roundParticipant.count({
+            where: { roundId, paymentCollectedAt: { not: null } },
           });
-        }
-        return {};
-      }),
-    );
+          if (collected > 0) {
+            throw new ConflictException({
+              code: ErrorCode.PAYMENTS_COLLECTED,
+              message: `Undo the ${collected} collected payment(s) before cancelling this round.`,
+            });
+          }
+          return {};
+        },
+      );
+      const staged = await this.roundNotifications.stageForParticipants(
+        tx,
+        roundId,
+        NotificationType.ROUND_CANCELLED,
+      );
+      return { result, staged };
+    });
   }
 
   /**
@@ -277,30 +321,87 @@ export class RoundsService {
     finalPrice: number,
     viewerResidentId = '',
   ): Promise<RoundDto> {
-    return this.inRoundTx((tx) =>
-      this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId, async () => {
-        // Share-lock the vendor row so a concurrent deactivation can't commit
-        // between this check and the assignment write.
-        await tx.$queryRaw`SELECT "id" FROM "Vendor" WHERE "id" = ${vendorId} FOR SHARE`;
-        const vendor = await this.vendors.getById(vendorId, tx);
-        if (!vendor.active) {
-          throw new BadRequestException({
-            code: ErrorCode.VENDOR_INACTIVE,
-            message: 'This vendor is inactive.',
-          });
-        }
-        return { vendorId: vendor.id, finalPrice, assignedAt: new Date() };
-      }),
-    );
+    return this.inRoundTxNotifying(async (tx) => {
+      const result = await this.transition(
+        tx,
+        roundId,
+        RoundStatus.ASSIGNED,
+        viewerResidentId,
+        async () => {
+          // Share-lock the vendor row so a concurrent deactivation can't commit
+          // between this check and the assignment write.
+          await tx.$queryRaw`SELECT "id" FROM "Vendor" WHERE "id" = ${vendorId} FOR SHARE`;
+          const vendor = await this.vendors.getById(vendorId, tx);
+          if (!vendor.active) {
+            throw new BadRequestException({
+              code: ErrorCode.VENDOR_INACTIVE,
+              message: 'This vendor is inactive.',
+            });
+          }
+          return { vendorId: vendor.id, finalPrice, assignedAt: new Date() };
+        },
+      );
+      // Staged AFTER the transition, so the message quotes the vendor and price
+      // that were just written in the same transaction.
+      const staged = await this.roundNotifications.stageForParticipants(
+        tx,
+        roundId,
+        NotificationType.ROUND_ASSIGNED,
+      );
+      return { result, staged };
+    });
   }
 
   /** ASSIGNED → DELIVERED (service performed), stamping `deliveredAt` in the same guarded write. */
   async deliver(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
-    return this.inRoundTx((tx) =>
-      this.transition(tx, roundId, RoundStatus.DELIVERED, viewerResidentId, async () => ({
-        deliveredAt: new Date(),
-      })),
-    );
+    return this.inRoundTxNotifying(async (tx) => {
+      const result = await this.transition(
+        tx,
+        roundId,
+        RoundStatus.DELIVERED,
+        viewerResidentId,
+        async () => ({ deliveredAt: new Date() }),
+      );
+      const staged = await this.roundNotifications.stageForParticipants(
+        tx,
+        roundId,
+        NotificationType.ROUND_DELIVERED,
+      );
+      return { result, staged };
+    });
+  }
+
+  /**
+   * Fan out the "closing soon" reminder for a round (FEAT-006, ADR-0013) —
+   * called by the delayed {@link RoundReminderProcessor}.
+   *
+   * Returns null if the round is gone (the processor retries, then gives up), 0
+   * if it is no longer OPEN or has no participants, else the number of residents
+   * staged. Recipients are read AT FIRE TIME, so everyone who joined since the
+   * job was scheduled is included. It takes no row lock — it changes no round
+   * state — but it re-reads the status inside the same transaction as the
+   * staging, so a round that closed a moment ago cannot be reminded.
+   */
+  async remindClosingSoon(roundId: string): Promise<number | null> {
+    const staged = await this.inRoundTx(async (tx) => {
+      const round = await tx.round.findUnique({ where: { id: roundId }, select: { status: true } });
+      if (!round) {
+        return null;
+      }
+      if (round.status !== RoundStatus.OPEN) {
+        return [];
+      }
+      return this.roundNotifications.stageForParticipants(
+        tx,
+        roundId,
+        NotificationType.ROUND_CLOSING_SOON,
+      );
+    });
+    if (staged === null) {
+      return null;
+    }
+    await this.roundNotifications.dispatch(staged);
+    return staged.length;
   }
 
   /** DELIVERED → RATED (residents rated the service). Endpoint wired in FEAT-007. */

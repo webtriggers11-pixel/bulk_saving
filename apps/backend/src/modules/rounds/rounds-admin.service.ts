@@ -19,6 +19,7 @@ import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RoundClosingScheduler } from './round-closing.scheduler';
+import { RoundReminderScheduler } from './round-reminder.scheduler';
 import {
   adminRoundDetailInclude,
   adminRoundSummaryInclude,
@@ -57,6 +58,7 @@ export class RoundsAdminService {
     private readonly prisma: PrismaService,
     private readonly rounds: RoundsService,
     private readonly scheduler: RoundClosingScheduler,
+    private readonly reminders: RoundReminderScheduler,
   ) {}
 
   /**
@@ -98,6 +100,12 @@ export class RoundsAdminService {
         });
         // Schedule the deadline-driven close (jobId = round id, delay = deadline − now).
         await this.scheduler.schedule(round.id, round.deadline);
+        // …and the FEAT-006 "closing soon" nudge 24h earlier. Scheduled in the
+        // same transaction for the same reason: Redis is already required here,
+        // so a queue failure should roll the round back rather than open a round
+        // whose queued follow-ups silently went missing. A round whose whole
+        // window is shorter than the 24h lead simply gets no reminder.
+        await this.reminders.schedule(round.id, round.deadline);
         return round;
       });
       return buildRoundDto(created as RoundWithView);
@@ -117,6 +125,7 @@ export class RoundsAdminService {
   async close(roundId: string, viewerResidentId: string): Promise<RoundDto> {
     const dto = await this.rounds.close(roundId, viewerResidentId);
     await this.scheduler.cancel(roundId);
+    await this.reminders.cancel(roundId);
     return dto;
   }
 
@@ -127,6 +136,7 @@ export class RoundsAdminService {
   async cancel(roundId: string, viewerResidentId: string): Promise<RoundDto> {
     const dto = await this.rounds.cancel(roundId, viewerResidentId);
     await this.scheduler.cancel(roundId);
+    await this.reminders.cancel(roundId);
     return dto;
   }
 

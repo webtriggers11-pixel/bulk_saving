@@ -31,6 +31,24 @@ enum RoundStatus {
   CANCELLED
 }
 
+// Notifications (FEAT-006, ADR-0013). Lifecycle SMS types only — the login OTP is
+// sent synchronously and is NEVER persisted (an OTP row would be a stored credential).
+enum NotificationType {
+  ROUND_JOINED
+  ROUND_CLOSING_SOON
+  ROUND_CLOSED_MET
+  ROUND_CLOSED_EXPIRED
+  ROUND_ASSIGNED
+  ROUND_DELIVERED
+  ROUND_CANCELLED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model Society {
   id         String            @id @default(cuid())
   name       String
@@ -55,6 +73,7 @@ model Resident {
   updatedAt  DateTime  @updatedAt
 
   roundParticipations RoundParticipant[]
+  notifications       Notification[]
 
   @@unique([societyId, phone])
 }
@@ -97,18 +116,19 @@ model ServiceOffering {
 // round per (societyId, serviceId) — enforced by a partial unique index added
 // in the migration (Prisma has no declarative partial-unique).
 model Round {
-  id           String             @id @default(cuid())
-  societyId    String
-  society      Society            @relation(fields: [societyId], references: [id], onDelete: Cascade)
-  serviceId    String
-  service      Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  status       RoundStatus        @default(OPEN)
-  unitsCount   Int                @default(0)
-  deadline     DateTime
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  tiers        RoundTier[]
-  participants RoundParticipant[]
+  id            String             @id @default(cuid())
+  societyId     String
+  society       Society            @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status        RoundStatus        @default(OPEN)
+  unitsCount    Int                @default(0)
+  deadline      DateTime
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  tiers         RoundTier[]
+  participants  RoundParticipant[]
+  notifications Notification[]
 
   // Assignment + delivery (FEAT-005, ADR-0012). Written ONLY inside
   // RoundsService.transition() in the same guarded, row-locked update as the
@@ -167,4 +187,35 @@ model Vendor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   rounds    Round[]
+}
+
+// Transactional notification outbox (FEAT-006, ADR-0013). A row is written in the
+// SAME transaction as the round change that caused it, so a rolled-back change can
+// never send and a committed one always has a durable record. Dispatch to the
+// `notifications` BullMQ queue happens AFTER commit (one job per row, jobId = id);
+// `dedupeKey` is unique in the DB, which is what makes a retried job, a double-fired
+// scheduler and an idempotent re-close all safe.
+model Notification {
+  id         String             @id @default(cuid())
+  residentId String
+  resident   Resident           @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  roundId    String?
+  round      Round?             @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  status     NotificationStatus @default(PENDING)
+  // Rendered at stage time by the pure template functions. Never contains an OTP,
+  // a token, or a phone number.
+  body       String
+  // `<TYPE>:<roundId>:<residentId>` for lifecycle fan-outs;
+  // `ROUND_JOINED:<participantId>` for join confirmations (a rejoin after leaving
+  // is a new participant row, so it legitimately gets a new confirmation).
+  dedupeKey  String             @unique
+  attempts   Int                @default(0)
+  lastError  String?
+  sentAt     DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([status, createdAt])
+  @@index([residentId, createdAt])
 }

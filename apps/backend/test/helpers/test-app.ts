@@ -1,22 +1,40 @@
 import { randomBytes, randomInt } from 'node:crypto';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
-import { HttpExceptionFilter } from '../../src/common/http-exception.filter';
-import { ResponseInterceptor } from '../../src/common/response.interceptor';
+import { configureApp } from '../../src/bootstrap';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../../src/modules/notifications/notification-channel';
 
-/** A notification channel that records the last OTP — the ONLY test hook for the code. */
+/**
+ * A notification channel that records what was "delivered" — the ONLY test hook
+ * for the code. `sends` / `lastCode` / `lastPhone` cover OTPs (FEAT-001);
+ * `messages` records the FEAT-006 lifecycle sends, and `failSends` makes the
+ * provider throw so the outbox's retry/FAILED path can be exercised.
+ */
 export class CapturingChannel implements NotificationChannel {
   public lastCode: string | null = null;
   public lastPhone: string | null = null;
   public sends = 0;
+  public messages: Array<{ to: string; body: string }> = [];
+  public failSends = false;
+
   async sendOtp(phone: string, code: string): Promise<void> {
     this.sends += 1;
     this.lastPhone = phone;
     this.lastCode = code;
   }
-  async send(): Promise<void> {}
+
+  async send(to: string, message: string): Promise<void> {
+    if (this.failSends) {
+      throw new Error('provider unavailable');
+    }
+    this.messages.push({ to, body: message });
+  }
+
+  /** Every lifecycle message delivered to one phone number. */
+  messagesTo(phone: string): string[] {
+    return this.messages.filter((m) => m.to === phone).map((m) => m.body);
+  }
 }
 
 /**
@@ -31,9 +49,7 @@ export async function createTestApp(channel: CapturingChannel): Promise<INestApp
     .compile();
 
   const app = moduleRef.createNestApplication();
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  configureApp(app);
   await app.init();
   return app;
 }
