@@ -22,6 +22,16 @@ import { isLegalTransition } from './rounds.transitions';
 type Tx = Prisma.TransactionClient;
 
 /**
+ * Interactive-transaction limits for round mutations (BUG-001). Every round
+ * write first waits on the exclusive row lock, and Prisma's timeout clock
+ * (default 5s) includes that wait — so on a hot round a queued join used to
+ * expire and 500 even though it would have succeeded. The work done while
+ * holding the lock is a handful of fast queries; the generous `timeout` only
+ * covers time spent queued behind other writers.
+ */
+export const ROUND_TX_OPTIONS = { maxWait: 5_000, timeout: 30_000 } as const;
+
+/**
  * Extra round columns a lifecycle transition may write together with the status
  * (FEAT-005, ADR-0012). Deliberately narrow: never `status` or `unitsCount`.
  */
@@ -63,6 +73,11 @@ export class RoundsService {
     private readonly vendors: VendorsService,
   ) {}
 
+  /** Run a round mutation in an interactive transaction with {@link ROUND_TX_OPTIONS}. */
+  private inRoundTx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    return this.prisma.$transaction(fn, ROUND_TX_OPTIONS);
+  }
+
   /** The include needed to shape a {@link RoundDto} for a specific caller. */
   private viewInclude(residentId: string): Prisma.RoundInclude {
     return {
@@ -99,7 +114,7 @@ export class RoundsService {
    * missing or in another society; 409 ROUND_CLOSED if it is not OPEN.
    */
   async join(roundId: string, societyId: string, residentId: string, units: number): Promise<RoundDto> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.inRoundTx(async (tx) => {
       await this.lockOpenRoundForWrite(tx, roundId, societyId);
 
       const existing = await tx.roundParticipant.findUnique({
@@ -127,7 +142,7 @@ export class RoundsService {
     residentId: string,
     units: number,
   ): Promise<RoundDto> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.inRoundTx(async (tx) => {
       await this.lockOpenRoundForWrite(tx, roundId, societyId);
 
       const existing = await tx.roundParticipant.findUnique({
@@ -156,7 +171,7 @@ export class RoundsService {
    * (chosen over an idempotent 200); 404 / 409 for a missing / closed round.
    */
   async leave(roundId: string, societyId: string, residentId: string): Promise<RoundDto> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.inRoundTx(async (tx) => {
       await this.lockOpenRoundForWrite(tx, roundId, societyId);
 
       const existing = await tx.roundParticipant.findUnique({
@@ -200,7 +215,7 @@ export class RoundsService {
    * passes none and ignores it).
    */
   async closeRound(roundId: string, viewerResidentId = ''): Promise<RoundDto | null> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.inRoundTx(async (tx) => {
       const locked = await this.lockRoundForUpdate(tx, roundId);
       if (!locked) {
         return null;
@@ -227,7 +242,7 @@ export class RoundsService {
    * CANCELLED → 409 INVALID_ROUND_TRANSITION. Unknown id → 404.
    */
   async cancel(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
-    return this.prisma.$transaction((tx) =>
+    return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.CANCELLED, viewerResidentId),
     );
   }
@@ -248,7 +263,7 @@ export class RoundsService {
     finalPrice: number,
     viewerResidentId = '',
   ): Promise<RoundDto> {
-    return this.prisma.$transaction((tx) =>
+    return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId, async () => {
         const vendor = await this.vendors.getById(vendorId, tx);
         if (!vendor.active) {
@@ -264,7 +279,7 @@ export class RoundsService {
 
   /** ASSIGNED → DELIVERED (service performed), stamping `deliveredAt` in the same guarded write. */
   async deliver(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
-    return this.prisma.$transaction((tx) =>
+    return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.DELIVERED, viewerResidentId, async () => ({
         deliveredAt: new Date(),
       })),
@@ -273,7 +288,7 @@ export class RoundsService {
 
   /** DELIVERED → RATED (residents rated the service). Endpoint wired in FEAT-007. */
   async markRated(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
-    return this.prisma.$transaction((tx) =>
+    return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.RATED, viewerResidentId),
     );
   }
@@ -290,7 +305,7 @@ export class RoundsService {
     participantId: string,
     collected: boolean,
   ): Promise<AdminRoundParticipantDto> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.inRoundTx(async (tx) => {
       const locked = await this.lockRoundForUpdate(tx, roundId);
       if (!locked) {
         throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });

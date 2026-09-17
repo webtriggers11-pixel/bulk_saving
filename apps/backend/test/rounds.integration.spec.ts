@@ -360,4 +360,39 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
     const finalRound = await prisma.round.findUniqueOrThrow({ where: { id: roundE.id } });
     expect(finalRound.unitsCount).toBe(sum);
   });
+
+  it('BUG-001: a join queued behind a long-held round lock (> 5s) still succeeds, never 500', async () => {
+    const svc = await prisma.service.create({
+      data: { name: 'Lock-wait Svc', slug: `lw-${randomInviteCode().toLowerCase()}`, description: 'x', category: 'Home', active: true },
+    });
+    try {
+      const round = await createRound(societyA.id, svc.id, 'OPEN');
+      let lockHeld!: () => void;
+      const held = new Promise<void>((resolve) => {
+        lockHeld = resolve;
+      });
+      // Another writer holds the exclusive round row lock for 6.5s (longer than
+      // Prisma's default 5s interactive-transaction timeout).
+      const holder = prisma.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "Round" WHERE "id" = ${round.id} FOR UPDATE`;
+          lockHeld();
+          await new Promise((r) => setTimeout(r, 6_500));
+        },
+        { timeout: 20_000 },
+      );
+      await held;
+
+      const res = await request(app.getHttpServer())
+        .post(`/rounds/${round.id}/join`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ units: 3 });
+      await holder;
+
+      expect(res.status).toBe(201);
+      expect((await prisma.round.findUniqueOrThrow({ where: { id: round.id } })).unitsCount).toBe(3);
+    } finally {
+      await prisma.service.delete({ where: { id: svc.id } });
+    }
+  }, 30_000);
 });
