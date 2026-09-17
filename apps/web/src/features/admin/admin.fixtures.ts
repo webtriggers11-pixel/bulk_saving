@@ -50,6 +50,7 @@ export function roundDetail(overrides: Partial<AdminRoundDetailDto> = {}): Admin
         paymentCollected: false,
         paymentCollectedAt: null,
         joinedAt: '2026-09-17T11:00:00.000Z',
+        rating: null,
       },
       {
         id: 'p_2',
@@ -59,8 +60,10 @@ export function roundDetail(overrides: Partial<AdminRoundDetailDto> = {}): Admin
         paymentCollected: false,
         paymentCollectedAt: null,
         joinedAt: '2026-09-17T12:00:00.000Z',
+        rating: null,
       },
     ],
+    ratings: { average: null, count: 0 },
     ...overrides,
   };
 }
@@ -96,6 +99,8 @@ export const activeVendor: VendorDto = {
   active: true,
   createdAt: '2026-09-17T10:00:00.000Z',
   updatedAt: '2026-09-17T10:00:00.000Z',
+  averageRating: null,
+  ratingCount: 0,
 };
 
 export const inactiveVendor: VendorDto = {
@@ -124,6 +129,7 @@ export const dashboard: AdminDashboardDto = {
     },
   ],
   payments: { collectedAmount: 12000, outstandingAmount: 4500 },
+  ratings: { average: 4.5, count: 8 },
 };
 
 export function resident(role: ResidentDto['role']): ResidentDto {

@@ -280,6 +280,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
           paymentCollected: false,
           paymentCollectedAt: null,
           joinedAt: open1Participants[0].createdAt.toISOString(),
+          rating: null, // FEAT-007: nobody has rated an OPEN round
         },
         {
           id: open1Participants[1].id,
@@ -289,6 +290,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
           paymentCollected: false,
           paymentCollectedAt: null,
           joinedAt: open1Participants[1].createdAt.toISOString(),
+          rating: null,
         },
       ]);
     });

@@ -3,15 +3,19 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
-import type { RoundDto } from '@bulk/shared';
+import type { MyRoundDto, RatingDto, RoundDto } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
-import { JoinRoundDto } from './rounds.dto';
+import { RatingsService } from './ratings.service';
+import { JoinRoundDto, RateRoundDto } from './rounds.dto';
 import { RoundsService } from './rounds.service';
 
 /**
@@ -23,11 +27,25 @@ import { RoundsService } from './rounds.service';
 @Controller('rounds')
 @UseGuards(AccessTokenGuard)
 export class RoundsController {
-  constructor(private readonly rounds: RoundsService) {}
+  constructor(
+    private readonly rounds: RoundsService,
+    private readonly ratings: RatingsService,
+  ) {}
 
   @Get()
   list(@CurrentAuth() ctx: AuthContext): Promise<RoundDto[]> {
     return this.rounds.listForSociety(ctx.societyId, ctx.residentId);
+  }
+
+  /**
+   * "My Requests" (FEAT-007): every round the caller has joined, any status, with
+   * their own rating. Declared BEFORE `:id` routes would matter — `mine` is a
+   * literal segment on its own path, so there is no ambiguity, but keeping it next
+   * to `list` documents that this is the second resident feed.
+   */
+  @Get('mine')
+  listMine(@CurrentAuth() ctx: AuthContext): Promise<MyRoundDto[]> {
+    return this.rounds.listMine(ctx.societyId, ctx.residentId);
   }
 
   @Post(':id/join')
@@ -51,5 +69,25 @@ export class RoundsController {
   @Delete(':id/join')
   leave(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
     return this.rounds.leave(id, ctx.societyId, ctx.residentId);
+  }
+
+  /**
+   * Rate a delivered round (FEAT-007, ADR-0017). Idempotent by design: PUT creates
+   * or replaces the caller's own rating, so a resident can correct a mis-tap.
+   */
+  @Put(':id/rating')
+  rate(
+    @Param('id') id: string,
+    @Body() dto: RateRoundDto,
+    @CurrentAuth() ctx: AuthContext,
+  ): Promise<RatingDto> {
+    return this.ratings.rate(id, ctx.societyId, ctx.residentId, dto);
+  }
+
+  /** Withdraw the caller's own rating. The round stays RATED (status never rolls back). */
+  @Delete(':id/rating')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  unrate(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<void> {
+    return this.ratings.remove(id, ctx.societyId, ctx.residentId);
   }
 }

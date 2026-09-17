@@ -16,9 +16,10 @@
 | FEAT-004 | Round lifecycle state machine + scheduled closing (BullMQ) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/FEAT-004-round-lifecycle-scheduler/ | ADR-0004, ADR-0011 |
 | FEAT-005 | Super-admin dashboard — demand, assign vendor, mark delivered/paid | done | P1 | 2026-09-16 | 2026-09-17 | loop/work/FEAT-005-super-admin-dashboard/ | ADR-0003, ADR-0011, ADR-0012 |
 | FEAT-006 | Notifications — SMS-first (OTP + round alerts) | done | P1 | 2026-09-16 | 2026-09-18 | loop/work/FEAT-006-notifications-sms/ | ADR-0013 |
-| FEAT-007 | Post-service rating | triaged | P2 | 2026-09-16 | — | pending | — |
+| FEAT-007 | Post-service rating | in-progress | P2 | 2026-09-16 | — | loop/work/FEAT-007-post-service-rating/ | ADR-0017 |
 | FEAT-008 | PWA shell — installable + offline-friendly | planned | P2 | 2026-09-16 | — | loop/work/FEAT-008-pwa-shell/ | ADR-0015 |
 | CHORE-002 | Dev-only: surface the OTP in a toast (gated, never in production) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-002-dev-otp-toast/ | ADR-0016 |
+| CHORE-003 | Live end-to-end smoke harness (scripts/e2e-smoke.mjs) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-003-e2e-smoke-harness/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |

@@ -139,19 +139,22 @@ describe('renderNotification — per type', () => {
     expect(body).toContain('payable to the vendor on completion');
   });
 
-  it('ROUND_DELIVERED reports completion', () => {
-    expect(renderNotification(ALL_INPUTS[5])).toContain('complete');
+  it('ROUND_DELIVERED reports completion and asks for a rating (FEAT-007)', () => {
+    const body = renderNotification(ALL_INPUTS[5]);
+    expect(body).toContain('complete');
+    expect(body).toContain('rate it out of 5');
   });
 
   it('no message promises a follow-up the system does not send', () => {
-    // V2 P1-3: there is no scheduling message, no "a new round opened" broadcast
-    // and no rating request in v1, so no template may imply one.
+    // V2 P1-3: there is no scheduling message and no "a new round opened"
+    // broadcast, so no template may imply one. NOTE: the rating ask is no longer
+    // forbidden — FEAT-007 ships rating, so ROUND_DELIVERED may (and does) ask for
+    // one. It is asserted positively in its own test below.
     const forbidden = [
       'text you the schedule',
       'confirm the visit time',
       'when the next one opens',
       'open a fresh round',
-      'ask how it went',
     ];
     for (const input of ALL_INPUTS) {
       const body = renderNotification(input);

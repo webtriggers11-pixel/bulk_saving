@@ -5,11 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType, type Prisma } from '@prisma/client';
-import type { AdminRoundParticipantDto, RoundDto } from '@bulk/shared';
+import type { AdminRoundParticipantDto, MyRoundDto, RoundDto } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { VendorsService } from '../vendors/vendors.service';
+import { toRatingDto } from './ratings.mapper';
 import { RoundNotificationsService } from './round-notifications.service';
 import { buildAdminParticipant } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
@@ -113,6 +114,24 @@ export class RoundsService {
       orderBy: { createdAt: 'desc' },
     });
     return (rounds as RoundWithView[]).map(buildRoundDto);
+  }
+
+  /**
+   * Rounds the caller has JOINED, in any status, newest first (FEAT-007) — the
+   * "My Requests" view. `GET /rounds` stays OPEN-only: this is the only way a
+   * resident can see a delivered round, and therefore the only way they can reach
+   * the rating flow. Tenant-scoped like every resident read (ADR-0003).
+   */
+  async listMine(societyId: string, residentId: string): Promise<MyRoundDto[]> {
+    const rounds = await this.prisma.round.findMany({
+      where: { societyId, participants: { some: { residentId } } },
+      include: { ...this.viewInclude(residentId), ratings: { where: { residentId } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rounds.map((round) => ({
+      ...buildRoundDto(round as RoundWithView),
+      myRating: round.ratings[0] ? toRatingDto(round.ratings[0]) : null,
+    }));
   }
 
   /**

@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, Vendor } from '@prisma/client';
-import type { CreateVendorBody, UpdateVendorBody, VendorDto } from '@bulk/shared';
+import type { CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
+import { summarise } from '../rounds/ratings.mapper';
 
 /** A Prisma client usable for vendor reads: the root client or a transaction client. */
 type VendorReader = Pick<Prisma.TransactionClient, 'vendor'>;
@@ -16,12 +17,35 @@ type VendorReader = Pick<Prisma.TransactionClient, 'vendor'>;
 export class VendorsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Every vendor: active first, then by name. */
+  /**
+   * Every vendor: active first, then by name, each with its rating aggregate
+   * (FEAT-007, ADR-0017). The average is computed by joining through the vendor's
+   * rounds rather than read from a denormalised column, so it can never drift; the
+   * count ships with it, because an average of 5.0 from one rating is not the same
+   * claim as 5.0 from fifty.
+   */
   async list(): Promise<VendorDto[]> {
-    const vendors = await this.prisma.vendor.findMany({
-      orderBy: [{ active: 'desc' }, { name: 'asc' }],
-    });
-    return vendors.map(toVendorDto);
+    const [vendors, grouped] = await Promise.all([
+      this.prisma.vendor.findMany({ orderBy: [{ active: 'desc' }, { name: 'asc' }] }),
+      this.prisma.rating.findMany({
+        where: { round: { vendorId: { not: null } } },
+        select: { stars: true, round: { select: { vendorId: true } } },
+      }),
+    ]);
+    const starsByVendor = new Map<string, number[]>();
+    for (const rating of grouped) {
+      const vendorId = rating.round.vendorId;
+      if (!vendorId) {
+        continue;
+      }
+      const bucket = starsByVendor.get(vendorId);
+      if (bucket) {
+        bucket.push(rating.stars);
+      } else {
+        starsByVendor.set(vendorId, [rating.stars]);
+      }
+    }
+    return vendors.map((vendor) => toVendorDto(vendor, summarise(starsByVendor.get(vendor.id) ?? [])));
   }
 
   /** Add a vendor (active by default). */
@@ -67,7 +91,10 @@ export class VendorsService {
 }
 
 /** Map a Prisma Vendor to its super-admin DTO. */
-export function toVendorDto(vendor: Vendor): VendorDto {
+export function toVendorDto(
+  vendor: Vendor,
+  ratings: RatingSummary = { average: null, count: 0 },
+): VendorDto {
   return {
     id: vendor.id,
     name: vendor.name,
@@ -77,5 +104,9 @@ export function toVendorDto(vendor: Vendor): VendorDto {
     active: vendor.active,
     createdAt: vendor.createdAt.toISOString(),
     updatedAt: vendor.updatedAt.toISOString(),
+    // FEAT-007. A freshly created or just-updated vendor is shaped with the empty
+    // default; only the list read joins the aggregate, which is where it is shown.
+    averageRating: ratings.average,
+    ratingCount: ratings.count,
   };
 }

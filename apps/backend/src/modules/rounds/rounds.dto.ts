@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -18,6 +19,7 @@ import type {
   AssignRoundBody,
   CreateRoundBody,
   JoinRoundBody,
+  RateRoundBody,
   RoundTierDto,
   SetPaymentBody,
 } from '@bulk/shared';
@@ -81,6 +83,25 @@ export class AdminRoundsQueryDto implements AdminRoundsQuery {
   @IsString()
   @IsNotEmpty()
   societyId?: string;
+}
+
+/** Max length of a rating comment (FEAT-007) — one SMS-ish paragraph, not an essay. */
+export const MAX_RATING_COMMENT = 500;
+
+/**
+ * `PUT /rounds/:id/rating` (FEAT-007, ADR-0017): 1–5 stars and an optional note.
+ * Integer only — a 4.5 would quietly skew the BRIEF's success metric.
+ */
+export class RateRoundDto implements RateRoundBody {
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  stars!: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_RATING_COMMENT)
+  comment?: string;
 }
 
 /** Upper bound on a negotiated per-unit final price (integer rupees). */

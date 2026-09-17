@@ -183,9 +183,11 @@ function assigned(input: Extract<TemplateInput, { type: 'ROUND_ASSIGNED' }>): st
 }
 
 function delivered(input: Extract<TemplateInput, { type: 'ROUND_DELIVERED' }>): string {
+  // The rating ask was removed in FEAT-006 because nothing delivered it. FEAT-007
+  // ships rating, so it is now a promise the product actually keeps.
   return (
     `${SENDER}: Your ${input.round.serviceName} job is marked complete. ` +
-    `Thanks for pooling with your society.`
+    `Open BulkSaving to rate it out of 5 — it's how we hold vendors to their price and quality.`
   );
 }
 

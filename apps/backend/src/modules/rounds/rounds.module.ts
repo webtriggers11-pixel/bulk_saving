@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { VendorsModule } from '../vendors/vendors.module';
 import { AdminDashboardController } from './admin-dashboard.controller';
+import { RatingsService } from './ratings.service';
 import { RoundCloserProcessor } from './round-closer.processor';
 import { RoundClosingReconciler } from './round-closing.reconciler';
 import { RoundClosingScheduler, ROUND_CLOSING_QUEUE } from './round-closing.scheduler';
@@ -39,6 +40,7 @@ import { RoundsService } from './rounds.service';
   providers: [
     RoundsService,
     RoundsAdminService,
+    RatingsService,
     RoundClosingScheduler,
     RoundCloserProcessor,
     RoundClosingReconciler,
@@ -46,6 +48,12 @@ import { RoundsService } from './rounds.service';
     RoundReminderScheduler,
     RoundReminderProcessor,
   ],
-  exports: [RoundsService, RoundsAdminService, RoundNotificationsService, RoundReminderScheduler],
+  exports: [
+    RoundsService,
+    RoundsAdminService,
+    RatingsService,
+    RoundNotificationsService,
+    RoundReminderScheduler,
+  ],
 })
 export class RoundsModule {}

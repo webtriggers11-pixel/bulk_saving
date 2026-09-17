@@ -18,6 +18,7 @@ import type {
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RatingsService } from './ratings.service';
 import { RoundClosingScheduler } from './round-closing.scheduler';
 import { RoundReminderScheduler } from './round-reminder.scheduler';
 import {
@@ -59,6 +60,7 @@ export class RoundsAdminService {
     private readonly rounds: RoundsService,
     private readonly scheduler: RoundClosingScheduler,
     private readonly reminders: RoundReminderScheduler,
+    private readonly ratings: RatingsService,
   ) {}
 
   /**
@@ -239,7 +241,14 @@ export class RoundsAdminService {
       outstandingAmount += summary.outstandingAmount;
     }
 
-    return { statusCounts, demandBySociety, payments: { collectedAmount, outstandingAmount } };
+    // FEAT-007: the BRIEF's success metric ("delivered jobs average >= 4.0 / 5").
+    const ratings = await this.ratings.platformSummary();
+    return {
+      statusCounts,
+      demandBySociety,
+      payments: { collectedAmount, outstandingAmount },
+      ratings,
+    };
   }
 
   /**

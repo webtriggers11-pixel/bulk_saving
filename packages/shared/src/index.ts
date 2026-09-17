@@ -236,6 +236,42 @@ export interface CreateRoundBody {
   tiers: RoundTierDto[];
 }
 
+/* ---------------------------------------------------------------------------
+ * Post-service rating (FEAT-007, ADR-0017)
+ * ------------------------------------------------------------------------- */
+
+/** One resident's rating of one delivered round. `stars` is an integer 1–5. */
+export interface RatingDto {
+  id: string;
+  roundId: string;
+  residentId: string;
+  stars: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `PUT /rounds/:id/rating` body. Creates or replaces the caller's own rating. */
+export interface RateRoundBody {
+  stars: number;
+  comment?: string;
+}
+
+/**
+ * `GET /rounds/mine` — a round the caller has joined, in ANY status, plus the
+ * rating they left (null until they rate). The resident feed (`GET /rounds`) stays
+ * OPEN-only; this is the "My Requests" view.
+ */
+export interface MyRoundDto extends RoundDto {
+  myRating: RatingDto | null;
+}
+
+/** An aggregate of ratings. `average` is rounded to one decimal, null when count is 0. */
+export interface RatingSummary {
+  average: number | null;
+  count: number;
+}
+
 /** `POST`/`PATCH /rounds/:id/join` body — pledge (or change) a number of units (>=1). */
 export interface JoinRoundBody {
   units: number;
@@ -255,6 +291,10 @@ export interface VendorDto {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Average of every rating on this vendor's rounds, 1 decimal; null when unrated (FEAT-007). */
+  averageRating: number | null;
+  /** How many ratings that average is based on — never read the average without it. */
+  ratingCount: number;
 }
 
 /** `POST /admin/vendors` body. */
@@ -341,11 +381,15 @@ export interface AdminRoundParticipantDto {
   paymentCollected: boolean;
   paymentCollectedAt: string | null;
   joinedAt: string;
+  /** What this resident thought of the job, or null if they have not rated (FEAT-007). */
+  rating: { stars: number; comment: string | null; ratedAt: string } | null;
 }
 
-/** `GET /admin/rounds/:id`: the summary plus every participant. */
+/** `GET /admin/rounds/:id`: the summary plus every participant and the round's ratings. */
 export interface AdminRoundDetailDto extends AdminRoundSummaryDto {
   participants: AdminRoundParticipantDto[];
+  /** Average + count over this round's ratings (FEAT-007). */
+  ratings: RatingSummary;
 }
 
 /** `GET /admin/rounds` query filters (both optional). */
@@ -381,4 +425,10 @@ export interface AdminDashboardDto {
   demandBySociety: AdminSocietyDemand[];
   /** Totals over ASSIGNED / DELIVERED / RATED rounds (integer ₹). */
   payments: { collectedAmount: number; outstandingAmount: number };
+  /**
+   * Platform-wide rating aggregate (FEAT-007) — the BRIEF's success metric
+   * ("delivered jobs average ≥ 4.0 / 5"). `{ average: null, count: 0 }` when nobody
+   * has rated yet.
+   */
+  ratings: RatingSummary;
 }

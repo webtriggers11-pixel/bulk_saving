@@ -74,6 +74,7 @@ model Resident {
 
   roundParticipations RoundParticipant[]
   notifications       Notification[]
+  ratings             Rating[]
 
   @@unique([societyId, phone])
 }
@@ -129,6 +130,7 @@ model Round {
   tiers         RoundTier[]
   participants  RoundParticipant[]
   notifications Notification[]
+  ratings       Rating[]
 
   // Assignment + delivery (FEAT-005, ADR-0012). Written ONLY inside
   // RoundsService.transition() in the same guarded, row-locked update as the
@@ -218,4 +220,24 @@ model Notification {
 
   @@index([status, createdAt])
   @@index([residentId, createdAt])
+}
+
+// Post-service rating (FEAT-007, ADR-0017). One row per (round, resident): the
+// rating hangs off the ROUND, not the vendor, so it is always attributable to the
+// job that was actually done and to the vendor who did it (the round carries
+// `vendorId`, ADR-0012). A vendor's score is aggregated through their rounds on
+// read rather than denormalised here. `stars` is 1..5, enforced by the DTO.
+model Rating {
+  id         String   @id @default(cuid())
+  roundId    String
+  round      Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  stars      Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([roundId, residentId])
+  @@index([roundId])
 }

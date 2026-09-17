@@ -27,6 +27,9 @@ export const ErrorCode = {
   VENDOR_INACTIVE: 'VENDOR_INACTIVE',
   PAYMENT_NOT_ALLOWED: 'PAYMENT_NOT_ALLOWED',
   PAYMENTS_COLLECTED: 'PAYMENTS_COLLECTED',
+  // Ratings (FEAT-007)
+  NOT_A_PARTICIPANT: 'NOT_A_PARTICIPANT',
+  ROUND_NOT_DELIVERED: 'ROUND_NOT_DELIVERED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
