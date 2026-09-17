@@ -13,7 +13,7 @@
 | FEAT-001 | Society onboarding + phone-OTP auth (multi-tenant foundation) | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/FEAT-001-society-onboarding-otp-auth/ | ADR-0003, ADR-0007, ADR-0008 |
 | FEAT-002 | Service catalog per society | done | P1 | 2026-09-16 | 2026-09-16 | loop/work/FEAT-002-service-catalog/ | ADR-0003, ADR-0009 |
 | FEAT-003 | Group-buy rounds — join, units, tiers, live counter (core) | done | P1 | 2026-09-16 | 2026-09-17 | loop/work/FEAT-003-group-buy-rounds/ | ADR-0003, ADR-0004, ADR-0010 |
-| FEAT-004 | Round lifecycle state machine + scheduled closing (BullMQ) | in-progress | P1 | 2026-09-17 | — | loop/work/FEAT-004-round-lifecycle-scheduler/ | ADR-0004, ADR-0011 |
+| FEAT-004 | Round lifecycle state machine + scheduled closing (BullMQ) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/FEAT-004-round-lifecycle-scheduler/ | ADR-0004, ADR-0011 |
 | FEAT-005 | Super-admin dashboard — demand, assign vendor, mark delivered/paid | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-006 | Notifications — SMS-first (OTP + round alerts) | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-007 | Post-service rating | triaged | P2 | 2026-09-16 | — | pending | — |

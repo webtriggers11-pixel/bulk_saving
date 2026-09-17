@@ -53,3 +53,10 @@ dropped Redis job would leave a round open (mitigation/fallback: a periodic swee
 
 If "met" should depend on a configurable target (not the lowest tier), or if job reliability
 needs a safety net, add a periodic reconciliation sweep for past-deadline OPEN rounds.
+
+## Addendum (2026-09-17, FEAT-004 V2)
+
+Hardening applied during review, within this decision: round create + job enqueue run in one
+transaction; close jobs retry 6× with exponential backoff (a not-yet-visible round is retried);
+the revisit-trigger "safety net" is implemented as a **boot-time reconciler** that ensures a job
+for every OPEN round. A periodic sweep remains the next step if retry exhaustion is observed.

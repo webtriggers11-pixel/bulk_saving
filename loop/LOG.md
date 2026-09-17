@@ -220,3 +220,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 — backend 148 / 16 suites, web 25.
 - Decisions: ADR-0011 (its revisit-trigger safety net is now implemented as a boot reconciler, not a periodic sweep)
 - By: agent (independent reviewer subagent + implementer)
+
+## 2026-09-17 — FEAT-004 — V2 re-review: APPROVE; last P2s fixed
+- What: Reviewer re-ran verify.sh (exit 0, backend 148 / web 25, no leaks) and confirmed both P1s fixed, with no new blocking issues. Two P2s fixed right away: the processor now throws on a missing round so backoff retries cover a job that fires before its round is committed (no-op on the final attempt); test/load-env pins NODE_ENV=test so the boot reconciler never runs across the shared test DB. Remaining P2 follow-ups recorded in tasks.md.
+- Evidence: verify.sh exit 0 (backend 148, web 25). Commit aece98d.
+- Decisions: ADR-0011 (addendum)
+- By: agent (independent reviewer subagent + implementer)
+
+## 2026-09-17 — FEAT-004 — CLOSED (V3 + commit)
+- What: V3 double run: verify.sh ×2 back-to-back, both exit 0, identical (backend 148 tests / 16 suites, web 25 / 9 files), so not flaky. REGISTRY → done. The full round lifecycle state machine, BullMQ deadline auto-close (atomic, idempotent, retried, reconciled at boot) and the admin cancel endpoint are complete.
+- Evidence: V3 RUN1=0, RUN2=0 identical.
+- Decisions: ADR-0004, ADR-0011
+- By: agent (autonomous)
