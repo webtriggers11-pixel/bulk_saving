@@ -62,9 +62,19 @@ export interface OtpRequestBody {
   phone: string;
 }
 
-/** `POST /auth/otp/request` success payload — never contains the OTP. */
+/**
+ * `POST /auth/otp/request` success payload.
+ *
+ * In every real environment this is `{ requested: true }` and NOTHING else — the OTP
+ * is not returned (ADR-0007). `devCode` is a DEV-ONLY affordance (CHORE-002, ADR-0016)
+ * that the API populates only when `OTP_DEV_LOG=true` AND `NODE_ENV !== 'production'`,
+ * so a resident can sign in locally without reading Redis. It is OMITTED, not null,
+ * whenever that guard is false — treat it as absent and never build on it.
+ */
 export interface OtpRequestResponse {
   requested: true;
+  /** DEV ONLY. Absent outside local development. */
+  devCode?: string;
 }
 
 /** `POST /auth/otp/verify` body. */

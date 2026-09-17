@@ -32,13 +32,16 @@ function jsonResponse({ ok, status, body }: MockResponse) {
   return { ok, status, json: () => Promise.resolve(body) };
 }
 
-/** Route the mocked fetch by URL; verify can be overridden to fail. */
-function installFetch(verify: MockResponse) {
+/**
+ * Route the mocked fetch by URL; verify can be overridden to fail, and the OTP
+ * request payload can carry the DEV-ONLY `devCode` (CHORE-002).
+ */
+function installFetch(verify: MockResponse, requestData: unknown = { requested: true }) {
   const mock = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith('/auth/otp/request')) {
       return Promise.resolve(
-        jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }),
+        jsonResponse({ ok: true, status: 200, body: { success: true, data: requestData } }),
       );
     }
     if (url.endsWith('/auth/otp/verify')) {
@@ -116,5 +119,43 @@ describe('OnboardingPage', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     expect(screen.getByRole('alert')).toHaveTextContent(/incorrect/i);
     expect(useAuthStore.getState().status).toBe('unauthenticated');
+  });
+
+  it('shows the DEV-ONLY code in a toast when the API returns one', async () => {
+    const mock = installFetch(
+      { ok: true, status: 200, body: { success: true, data: authResult } },
+      { requested: true, devCode: '246813' },
+    );
+    renderOnboarding();
+
+    await walkToOtpStep(mock);
+
+    const toast = await screen.findByRole('status');
+    expect(toast).toHaveTextContent('246813');
+    expect(toast).toHaveTextContent(/dev only/i);
+  });
+
+  it('shows NO toast in a real environment, where the API omits devCode', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+
+    await walkToOtpStep(mock);
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('the dev toast can be dismissed', async () => {
+    const mock = installFetch(
+      { ok: true, status: 200, body: { success: true, data: authResult } },
+      { requested: true, devCode: '135792' },
+    );
+    renderOnboarding();
+
+    await walkToOtpStep(mock);
+    await screen.findByRole('status');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
   });
 });

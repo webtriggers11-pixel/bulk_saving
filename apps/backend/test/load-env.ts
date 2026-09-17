@@ -24,6 +24,14 @@ try {
 process.env.NODE_ENV = 'test';
 
 /**
+ * Pin the DEV OTP echo OFF for the suite (CHORE-002, ADR-0016), whatever the local
+ * .env says. A developer running with `OTP_DEV_LOG=true` must not silently turn the
+ * "the OTP never appears in an API response" assertions into vacuous ones. Tests that
+ * exercise the echo set the variable themselves and restore it.
+ */
+process.env.OTP_DEV_LOG = 'false';
+
+/**
  * Test-only fixtures. Guarantee the vars that boot-time validation (and the auth
  * services) require are present even when no .env file exists (e.g. CI), so
  * integration tests can boot. These are throwaway test values, never real secrets.

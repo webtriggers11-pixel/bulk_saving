@@ -312,3 +312,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0, RUN3=0; backend 257/21 identical ×3.
 - Decisions: ADR-0013
 - By: agent (autonomous)
+
+## 2026-09-18 — CHORE-002 — dev-only OTP toast (owner request)
+- What: "for now show otp in toast". Implemented as a DELIBERATELY gated leak, not a contract change, because ADR-0007 and CLAUDE.md both say the OTP is never returned: `POST /auth/otp/request` is unauthenticated, so echoing the code there is a full auth bypass — anyone with an invite code and a phone number could mint a token for that resident. `OtpRequestResponse.devCode?` is populated only when `OTP_DEV_LOG === 'true'` AND `NODE_ENV !== 'production'`, decided in ONE exported predicate (`devOtpEchoEnabled`) so there is a single place to audit and delete. The field is omitted entirely — not null, not empty — whenever the guard is false. Web side: a new `Toast` primitive (none existed; one caller, no global provider, role=status/aria-live=polite) shown from the onboarding page, labelled DEV ONLY and left up until dismissed so the code can be typed. ADR-0016 records the decision with a MANDATORY pre-launch revisit trigger.
+- Test-environment hazard found and fixed along the way: the suite loads apps/backend/.env, so flipping `OTP_DEV_LOG=true` locally would have silently turned the existing "the OTP never appears in an API response" assertion into a vacuous one. `test/load-env.ts` now pins the flag OFF for the suite; tests that exercise the echo set it themselves.
+- Second hazard found by V1: my first version of these tests flipped `NODE_ENV` to 'production' process-wide to assert the refusal. That broke five unrelated rounds-admin tests, because the round-closing and notification reconcilers skip only when `NODE_ENV === 'test'` — with it flipped, a booting app reconciles across the SHARED dev DB and acts on other suites' fixtures. The tests no longer touch NODE_ENV; the production branch is asserted on the pure predicate instead. Worth remembering: NODE_ENV is effectively global state for every boot-time guard in this codebase.
+- Local `apps/backend/.env` set to `OTP_DEV_LOG=true` (gitignored). `.env.example` stays false and now documents exactly what the flag exposes. The backend must be restarted to pick it up.
+- Evidence: verify.sh exit 0 — backend 262 tests / 21 suites, web 92 / 25 files (web counts include the parallel session's in-flight FEAT-008 work).
+- Decisions: ADR-0016 (deviation from ADR-0007, dev-gated, must be removed before launch)
+- By: agent (autonomous)

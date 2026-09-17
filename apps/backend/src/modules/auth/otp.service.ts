@@ -9,6 +9,32 @@ import {
 /** Result of requesting an OTP. */
 export type OtpRequestResult = 'SENT' | 'RATE_LIMITED';
 
+/**
+ * The outcome of an OTP request. `devCode` is present ONLY under
+ * {@link devOtpEchoEnabled} — see ADR-0016. In every real environment the caller
+ * gets `{ result: 'SENT' }` and the code stays inside this service.
+ */
+export interface OtpRequestOutcome {
+  result: OtpRequestResult;
+  devCode?: string;
+}
+
+/**
+ * DEV ONLY (CHORE-002, ADR-0016): may the raw OTP leave the server?
+ *
+ * TWO independent conditions, because `POST /auth/otp/request` is unauthenticated and
+ * echoing the code there is a full auth bypass — anyone with an invite code and a
+ * phone number could mint a token for that resident:
+ *  1. `OTP_DEV_LOG === 'true'` — the explicit "this is a local box" opt-in; and
+ *  2. `NODE_ENV !== 'production'` — so a flag mis-set in production still fails closed.
+ *
+ * This is the ONLY place that decision is made. It must be deleted before the first
+ * real deployment (ADR-0016 revisit trigger).
+ */
+export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.OTP_DEV_LOG === 'true' && env.NODE_ENV !== 'production';
+}
+
 /** Result of verifying an OTP. */
 export type OtpVerifyResult = 'OK' | 'INVALID' | 'EXPIRED' | 'LOCKED';
 
@@ -101,7 +127,7 @@ export class OtpService {
    * Generate + store a 6-digit OTP and dispatch it via the notification channel.
    * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    */
-  async request(societyId: string, phone: string): Promise<OtpRequestResult> {
+  async request(societyId: string, phone: string): Promise<OtpRequestOutcome> {
     // 1/30s window: SET NX with a 30s TTL. If the key already exists -> too soon.
     const intervalSet = await this.redis.set(
       this.resendIntervalKey(societyId, phone),
@@ -111,7 +137,7 @@ export class OtpService {
       'NX',
     );
     if (intervalSet === null) {
-      return 'RATE_LIMITED';
+      return { result: 'RATE_LIMITED' };
     }
 
     // 5/hour window: atomic INCR + first-hit EXPIRE via a single Lua script.
@@ -122,7 +148,7 @@ export class OtpService {
       String(OTP_RESEND_HOUR_SECONDS),
     )) as number;
     if (hourlyCount > OTP_RESEND_HOURLY_MAX) {
-      return 'RATE_LIMITED';
+      return { result: 'RATE_LIMITED' };
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
@@ -134,10 +160,10 @@ export class OtpService {
       .expire(key, OTP_TTL_SECONDS)
       .exec();
 
-    // Dispatch through the channel boundary. The raw code leaves this service
-    // ONLY here — it is never returned to the caller or written to a log.
+    // Dispatch through the channel boundary. The raw code leaves this service ONLY
+    // here — and, in local development only, through the ADR-0016 dev echo below.
     await this.channel.sendOtp(phone, code);
-    return 'SENT';
+    return devOtpEchoEnabled() ? { result: 'SENT', devCode: code } : { result: 'SENT' };
   }
 
   /**

@@ -103,4 +103,44 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       .send({ inviteCode: 'short', phone: 'nope' })
       .expect(400);
   });
+
+  describe('dev OTP echo over HTTP (CHORE-002, ADR-0016)', () => {
+    const OLD_FLAG = process.env.OTP_DEV_LOG;
+
+    afterEach(() => {
+      process.env.OTP_DEV_LOG = OLD_FLAG;
+    });
+
+    // NODE_ENV is deliberately not touched here — see the note in otp.service.spec.ts.
+    // The production refusal is asserted on the pure guard, not by flipping a global
+    // that other suites' boot-time reconcilers read.
+
+    it('omits devCode entirely by default', async () => {
+      delete process.env.OTP_DEV_LOG;
+      const res = await request(app.getHttpServer())
+        .post('/auth/otp/request')
+        .send({ inviteCode: society.inviteCode, phone: randomPhone() })
+        .expect(200);
+
+      expect(res.body.data).toEqual({ requested: true });
+      expect(res.body.data).not.toHaveProperty('devCode');
+    });
+
+    it('returns the dispatched code when the dev guard is open, and it verifies', async () => {
+      process.env.OTP_DEV_LOG = 'true';
+      const phone = randomPhone();
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/otp/request')
+        .send({ inviteCode: society.inviteCode, phone })
+        .expect(200);
+
+      expect(res.body.data.devCode).toBe(channel.lastCode);
+      await request(app.getHttpServer())
+        .post('/auth/otp/verify')
+        .send({ inviteCode: society.inviteCode, phone, code: res.body.data.devCode })
+        .expect(200);
+    });
+  });
+
 });

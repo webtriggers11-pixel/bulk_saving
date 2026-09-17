@@ -47,14 +47,18 @@ export class AuthController {
       });
     }
     // societyId is derived from the invite code, never from the request body.
-    const result = await this.otp.request(society.id, dto.phone);
-    if (result === 'RATE_LIMITED') {
+    const outcome = await this.otp.request(society.id, dto.phone);
+    if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
         { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
-    return { requested: true };
+    // `devCode` is present only under the ADR-0016 dev guard; outside local
+    // development the field is absent entirely, never null or empty.
+    return outcome.devCode === undefined
+      ? { requested: true }
+      : { requested: true, devCode: outcome.devCode };
   }
 
   @Post('auth/otp/verify')
