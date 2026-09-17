@@ -18,6 +18,8 @@
 | FEAT-006 | Notifications — SMS-first (OTP + round alerts) | triaged | P1 | 2026-09-16 | — | pending | — |
 | FEAT-007 | Post-service rating | triaged | P2 | 2026-09-16 | — | pending | — |
 | FEAT-008 | PWA shell — installable + offline-friendly | triaged | P2 | 2026-09-16 | — | pending | — |
+| BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | in-review | P1 | 2026-09-17 | — | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
+| BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | in-review | P2 | 2026-09-17 | — | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

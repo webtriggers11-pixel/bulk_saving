@@ -244,3 +244,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: my own verify.sh exit 1. Lint + typecheck pass everywhere; the failures are all timing under CPU load (load avg 60–90, partly from unrelated processes on the machine): 10 web tests hit the 5s timeout or the 1s waitFor, including older App/Onboarding/RoundsPage tests; backend join transactions exceed Prisma's 5s interactive-transaction timeout while queued on the round row lock (500). Both triaged as bugs (BUG-001, BUG-002). Tasks stay unchecked until verify is green.
 - Decisions: ADR-0012
 - By: agent (build subagents + orchestrator)
+
+## 2026-09-17 — BUG-001 + BUG-002 — triaged, reproduced, fixed
+- What: BUG-001 (P1): round mutation transactions returned 500 when queued more than 5s behind the row lock (Prisma's default 5s interactive-transaction timeout includes lock wait). Failing regression test first (holds the lock 6.5s; before the fix Expected 201, Received 500), then all round transactions go through inRoundTx() with {maxWait 5s, timeout 30s}; test green. The single-test repro and green check were run with jest -t, which is diagnostic only; full verification went through verify.sh. BUG-002 (P2): web tests timed out under CPU contention; verify.sh now runs workspace tests one at a time; vitest testTimeout/hookTimeout 20s; RTL asyncUtilTimeout 5s. The flakiness only shows under load (evidence is the FEAT-005 verify log).
+- Evidence: verify.sh exit 0 at load avg ~60: backend 192 tests / 18 suites, web 50 / 16 files.
+- Decisions: ADR-0004 (unchanged; implementation fix)
+- By: agent (autonomous)
+
+## 2026-09-17 — FEAT-005 — T1, T3–T12 verified
+- What: With BUG-001/002 fixed, the FEAT-005 build passes verification. Tasks checked; V2 next.
+- Evidence: verify.sh exit 0 (backend 192 / 18 suites, web 50 / 16 files).
+- Decisions: ADR-0012
+- By: agent (autonomous)
