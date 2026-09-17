@@ -6,16 +6,52 @@
 ## Last session
 
 - **Date:** 2026-09-18
-- **Goal:** Build FEAT-006 — notifications, SMS-first.
-- **Result:** complete. FEAT-006 is built, V2-reviewed by two independent reviewers,
-  fixed, V3-verified and **closed**. BUG-003 (CORS) was carried into git by this
-  session and has since been closed by the session that authored it.
+- **Goal:** FEAT-006 (notifications), then the owner asked to exercise the whole
+  application end to end, fix what broke, and keep looping. Then FEAT-007.
+- **Result:** complete. **FEAT-006, CHORE-002, CHORE-003 and FEAT-007 are all closed**
+  (each V2-reviewed and V3 double-run). BUG-003 (CORS) was carried into git by this
+  session and closed by the session that authored it. The v1 feature set from BRIEF.md is
+  now complete except **FEAT-008 (PWA shell)**, in flight in a parallel session.
 
 > **Another session was working in this repo at the same time.** It closed BUG-003
 > and is mid-build on **FEAT-008 (PWA shell, ADR-0015)** — uncommitted files under
 > `apps/web/src/features/shell/`, `apps/web/src/vite-env.d.ts`,
 > `apps/web/src/test/pwa-register.stub.ts`, `apps/web/vite.config.ts`. Nothing in this
 > handoff describes FEAT-008's state; ask that session or read its work folder.
+
+## End-to-end state (the owner's "test everything" ask)
+
+`node scripts/e2e-smoke.mjs` (CHORE-003) drives the REAL HTTP API of a running server —
+onboarding/OTP, catalog, the full round lifecycle, illegal-transition refusals, tenant
+isolation, rating, dashboard aggregates. **77/77 checks, 11 scenarios, no application
+bugs found.** `verify.sh` cannot cover this: it drives Nest in-process, so bootstrap, the
+global wiring, CORS, the HTTP stack and the queues are never exercised assembled.
+
+To run it: backend with `PORT=3100 OTP_DEV_LOG=true pnpm --filter backend dev`, then
+`node scripts/e2e-smoke.mjs`. It logs in through the CHORE-002 dev OTP echo, so that flag
+is required.
+
+**Browser-level E2E is still NOT done.** The Claude-in-Chrome extension could not load any
+localhost page — including the other session's dev server — so it is an extension
+site-permission problem, not an application one. **This needs the owner**: grant the
+extension access to `localhost` / `127.0.0.1`. Until then the resident UI is covered only
+by Vitest component tests, never a real browser.
+
+## What FEAT-007 shipped
+
+Backend only (`apps/web` belongs to FEAT-008 while it runs). Ratings hang off the ROUND,
+one per participant (ADR-0017); the FIRST rating flips DELIVERED → RATED through the
+guarded transition. `PUT`/`DELETE /rounds/:id/rating`, plus **`GET /rounds/mine`** — the
+"My Requests" read, without which a resident cannot even see a delivered round. Admin gets
+per-participant ratings, per-round summary, per-vendor average + count, and the dashboard
+metric the BRIEF names as the success signal.
+
+**The V2 reviewer reproduced a real bug on a live server**: two participants rating the
+same round at once both saved, but the loser of the status race got a 409 for a write that
+had succeeded — and that is the designed traffic pattern, since the delivered SMS asks
+everyone to rate at the same moment. Fixed with `markRatedIfDelivered()` (re-decides under
+the row lock); the regression test was confirmed to fail against the old code before being
+kept.
 
 ## What FEAT-006 shipped
 
@@ -30,13 +66,11 @@ synchronous, direct, never persisted.
 
 ## Verification evidence
 
-- **V3:** `bash scripts/verify.sh` exit 0 three times back-to-back. Backend — all of
-  FEAT-006's scope — identical every run: **257 tests / 21 suites**.
-- Web counts rose across those runs (16 files/50 → 17/52 → 19/57). That is **not
-  flakiness**: the parallel session was landing FEAT-008 web tests between runs. No test
-  failed in any run.
-- **V2:** two independent reviewers, both CHANGES REQUESTED, **no P0**; all P1s and most
-  P2s fixed before close (see `loop/work/FEAT-006-notifications-sms/tasks.md`).
+- **V3 (FEAT-007, at HEAD 15ca284):** `verify.sh` exit 0 twice back-to-back, identical —
+  **backend 287 tests / 22 suites, web 92 / 25 files**. Live E2E 77/77.
+- **V2:** every closed item this session was reviewed by an independent subagent that ran
+  `verify.sh` itself. All returned CHANGES REQUESTED with **no P0**; every P1 was fixed
+  before close (details in each work item's `tasks.md`).
 
 ## Unverified assumptions
 
@@ -50,6 +84,11 @@ synchronous, direct, never persisted.
 - `commit 4000cc2` does not build standalone (its test helper imports `src/bootstrap.ts`,
   which landed in the next commit). HEAD is fine; history was left intact because another
   session shares the repo. Verify at HEAD, not per-commit.
+- **Ratings are API-only.** No admin screen shows an average and no resident screen can
+  leave one, because `apps/web` is FEAT-008's. FEAT-007's user stories 4–6 are true at the
+  contract level and not on anyone's screen yet.
+- Nobody has used this product in a browser this session. Every claim above rests on the
+  test suites and the HTTP-level E2E.
 
 ## Needs the owner
 
@@ -87,8 +126,12 @@ synchronous, direct, never persisted.
 
 ## Next safe action
 
-**FEAT-007 — post-service rating** is the only P1-adjacent item left in the build order
-(FEAT-008 is already in flight elsewhere — check before starting anything in `apps/web`).
-The groundwork exists: `RoundsService.markRated()` and the `DELIVERED → RATED` transition
-are already implemented and tested, and ADR-0012 put the vendor on the round so a rating
-can reference it. Open it through triage: spec → ADR → plan → tasks.
+**The rating UI** — resident (rate a delivered job from "My Requests") and admin (show
+`averageRating` / `ratingCount` on the vendor list and the round detail). The API is done
+and tested; only the screens are missing. **Do not start until FEAT-008 lands**, because
+it owns `App.tsx`, the nav and the resident pages — coordinate with that session first
+(it is `bulk-saving-82`; it has been told `GET /rounds/mine` exists for its My Requests
+tab).
+
+If FEAT-008 is still running, the next safe thing that touches nothing contested is the
+browser E2E, which needs the owner to grant the Chrome extension localhost access.
