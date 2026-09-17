@@ -58,6 +58,15 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   OTP_DEV_LOG?: string;
+
+  /**
+   * Comma-separated CORS allowlist (ADR-0014). Optional: unset outside
+   * production means "any localhost port"; unset in production means no
+   * cross-origin browser access.
+   */
+  @IsOptional()
+  @IsString()
+  CORS_ORIGINS?: string;
 }
 
 /**

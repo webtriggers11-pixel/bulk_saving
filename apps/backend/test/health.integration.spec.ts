@@ -1,9 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { configureApp } from '../src/bootstrap';
 import { HealthModule } from '../src/health/health.module';
-import { HttpExceptionFilter } from '../src/common/http-exception.filter';
-import { ResponseInterceptor } from '../src/common/response.interceptor';
 
 /**
  * Integration test: boots a Nest app with just the health slice + the global
@@ -18,9 +17,7 @@ describe('GET /health (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new ResponseInterceptor());
+    configureApp(app);
     await app.init();
   });
 
