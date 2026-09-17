@@ -24,3 +24,23 @@ After each checked task or chunk: commit (`feat(FEAT-005): ...`) AND append a LO
 ## Close
 - [ ] T13: V2 independent review (backend + frontend); the reviewer runs verify.sh itself. — depends: T1–T12
 - [ ] T14: V3 fresh double run of verify.sh; log both; close (REGISTRY → done, HANDOFF, commit). — depends: T13
+
+## V2 outcome
+- Backend reviewer: APPROVE (verify exit 0; backend 192 / web 50). Frontend reviewer: APPROVE (verify + web build exit 0).
+- P2s fixed before close:
+  - backend: PATCH vendor null for name/phone/active → 400 (was 500);
+  - cancel blocked with 409 PAYMENTS_COLLECTED while any payment is collected (payments on a CANCELLED round would become invisible);
+  - vendor row share-locked during assign;
+  - frontend: round mutations invalidate on settle (a 409 refetches the stale round);
+  - vendor edits refresh rounds that embed the vendor;
+  - Cancel disabled while an assign is in flight.
+
+## P2 follow-ups (not blocking; triage as CHORE)
+- Dashboard aggregates load every participant of OPEN and payable rounds into memory; move to SQL aggregation before volumes grow.
+- A stale action error stays visible after a later successful action (reset mutations on success or status change).
+- Client-side checks: vendor category ≤100 and notes ≤500; the new-round deadline input has no `min` or future check.
+- Detail page tests don't cover CLOSED_EXPIRED, RATED or CANCELLED.
+- 12 act() warnings in AdminRoute.test / HomePage.test (store logout while mounted).
+- The admin role is read from the persisted login snapshot, so a role change needs a fresh login (the server still enforces it).
+- `TransitionData` is restricted at compile time only; consider a runtime pick of allowed keys.
+- Dev DB only: the `_prisma_migrations` table holds a rolled-back FEAT-004 attempt, so `prisma migrate dev` asks for a reset. Committed migrations are consistent (verified against a shadow DB). Fix needs human approval: delete that row, or reset the dev DB.

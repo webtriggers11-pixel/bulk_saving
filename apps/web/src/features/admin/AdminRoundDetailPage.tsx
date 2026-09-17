@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useIsMutating } from '@tanstack/react-query';
 import type { AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -11,6 +12,7 @@ import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
 import {
+  adminKeys,
   useAdminRound,
   useAssignRound,
   useCancelRound,
@@ -188,7 +190,9 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
   const cancel = useCancelRound(round.id);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
-  const busy = close.isPending || deliver.isPending || cancel.isPending;
+  // The assign mutation lives in AssignForm; watch it by key so Cancel can't race it.
+  const assigning = useIsMutating({ mutationKey: adminKeys.assignMutation(round.id) }) > 0;
+  const busy = close.isPending || deliver.isPending || cancel.isPending || assigning;
   // Every status with a forward action (OPEN, CLOSED_MET, ASSIGNED) is also cancellable.
   const canCancel = CANCELLABLE.includes(round.status);
 

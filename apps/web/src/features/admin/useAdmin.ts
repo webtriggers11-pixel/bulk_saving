@@ -47,9 +47,14 @@ export const adminKeys = {
   vendors: ['admin', 'vendors'] as const,
   societies: ['admin', 'societies'] as const,
   services: ['admin', 'services'] as const,
+  /** Mutation key for an in-flight assign, so sibling actions can disable themselves. */
+  assignMutation: (id: string) => ['admin', 'assign', id] as const,
 };
 
 /**
+ * Invalidated on settle (success OR error): a 409 usually means the round moved
+ * underneath the page (e.g. the deadline scheduler closed it), so refetch it.
+ *
  * After any round mutation the round's detail, every filtered rounds list (prefix
  * match on ['admin','rounds']) and the dashboard aggregates may have changed.
  */
@@ -110,7 +115,7 @@ export function useCloseRound(id: string): UseMutationResult<RoundDto, Error, vo
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => closeRound(id),
-    onSuccess: () => invalidateRound(queryClient, id),
+    onSettled: () => invalidateRound(queryClient, id),
   });
 }
 
@@ -119,7 +124,7 @@ export function useCancelRound(id: string): UseMutationResult<RoundDto, Error, v
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => cancelRound(id),
-    onSuccess: () => invalidateRound(queryClient, id),
+    onSettled: () => invalidateRound(queryClient, id),
   });
 }
 
@@ -129,8 +134,9 @@ export function useAssignRound(
 ): UseMutationResult<AdminRoundDetailDto, Error, AssignRoundBody> {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: adminKeys.assignMutation(id),
     mutationFn: (body: AssignRoundBody) => assignRound(id, body),
-    onSuccess: () => invalidateRound(queryClient, id),
+    onSettled: () => invalidateRound(queryClient, id),
   });
 }
 
@@ -139,7 +145,7 @@ export function useDeliverRound(id: string): UseMutationResult<AdminRoundDetailD
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => deliverRound(id),
-    onSuccess: () => invalidateRound(queryClient, id),
+    onSettled: () => invalidateRound(queryClient, id),
   });
 }
 
@@ -157,7 +163,7 @@ export function useSetPayment(
   return useMutation({
     mutationFn: ({ participantId, collected }: PaymentVars) =>
       setPayment(roundId, participantId, { collected }),
-    onSuccess: () => invalidateRound(queryClient, roundId),
+    onSettled: () => invalidateRound(queryClient, roundId),
   });
 }
 
@@ -178,13 +184,16 @@ interface UpdateVendorVars {
   body: UpdateVendorBody;
 }
 
-/** PATCH /admin/vendors/:id; refreshes the vendor list. */
+/** PATCH /admin/vendors/:id; refreshes the vendor list and rounds that embed the vendor. */
 export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVendorVars> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, body }: UpdateVendorVars) => updateVendor(id, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: adminKeys.vendors });
+      // Round summaries/details embed the vendor's name + phone.
+      void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
     },
   });
 }

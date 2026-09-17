@@ -44,13 +44,15 @@ export class CreateVendorDto implements CreateVendorBody {
 
 /** `PATCH /admin/vendors/:id`: partial update; null clears `category` / `notes`. */
 export class UpdateVendorDto implements UpdateVendorBody {
-  @IsOptional()
+  // Non-nullable fields: skip validation only when ABSENT. `@IsOptional()` would
+  // also skip null, which then reached Prisma and surfaced as a 500.
+  @ValidateIf((_o, value) => value !== undefined)
   @Transform(trim)
   @IsString()
   @Length(1, 100)
   name?: string;
 
-  @IsOptional()
+  @ValidateIf((_o, value) => value !== undefined)
   @Transform(trim)
   @IsString()
   @Matches(VENDOR_PHONE, { message: 'phone must be 8–15 digits with an optional leading +.' })
@@ -72,7 +74,7 @@ export class UpdateVendorDto implements UpdateVendorBody {
   @MaxLength(500)
   notes?: string | null;
 
-  @IsOptional()
+  @ValidateIf((_o, value) => value !== undefined)
   @IsBoolean()
   active?: boolean;
 }

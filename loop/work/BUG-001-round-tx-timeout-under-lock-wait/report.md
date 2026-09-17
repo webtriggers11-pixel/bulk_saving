@@ -29,3 +29,7 @@ ADR-0004 (row-lock serialization) lists hot-round serialization as a known trade
 ## Lesson
 
 When using Prisma interactive transactions with row locks, set `timeout` explicitly, because lock-wait time counts toward it.
+
+## Known trade-off (from V2)
+
+A writer queued on a hot round now holds a pooled DB connection for up to 30s (previously it failed after 5s). If the number of concurrent writers on one round approaches the Prisma pool size (default: cores × 2 + 1), unrelated requests can fail with P2024 after `maxWait` (5s). This is acceptable at v1 volumes. **Revisit trigger:** P2024 errors in logs, or a round expected to see bursts of more than ~10 concurrent joins. Options then: set an explicit `connection_limit`, add `SET LOCAL lock_timeout`, or return 503 (retryable) on lock-wait expiry.

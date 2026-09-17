@@ -183,5 +183,7 @@ describe('AdminRoundDetailPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Close round' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Round is no longer open.');
+    // A failed action refetches the round (it likely changed underneath the page).
+    await waitFor(() => expect(fetchAdminRoundMock).toHaveBeenCalledTimes(2));
   });
 });

@@ -276,6 +276,28 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
       expect(await statusOf(delivered.id)).toBe('DELIVERED');
     });
 
+    it('cancel is refused while any payment is collected; allowed after undo', async () => {
+      const payVendor = await prisma.vendor.create({ data: { name: 'Pay Vendor', phone: '+919800000002' } });
+      const round = await createRound('ASSIGNED', 3);
+      try {
+        await prisma.round.update({ where: { id: round.id }, data: { vendorId: payVendor.id, finalPrice: 500 } });
+        const participant = await prisma.roundParticipant.create({
+          data: { roundId: round.id, residentId: resident.id, units: 3, paymentCollectedAt: new Date() },
+        });
+
+        await expect(rounds.cancel(round.id)).rejects.toMatchObject({
+          response: { code: ErrorCode.PAYMENTS_COLLECTED },
+        });
+        expect(await statusOf(round.id)).toBe('ASSIGNED');
+
+        await rounds.setPaymentCollected(round.id, participant.id, false);
+        expect((await rounds.cancel(round.id)).status).toBe('CANCELLED');
+      } finally {
+        await prisma.round.delete({ where: { id: round.id } });
+        await prisma.vendor.delete({ where: { id: payVendor.id } });
+      }
+    });
+
     it('GET /rounds lists only OPEN rounds', async () => {
       const res = await request(app.getHttpServer())
         .get('/rounds')

@@ -26,6 +26,7 @@ export const ErrorCode = {
   // Super-admin dashboard (FEAT-005)
   VENDOR_INACTIVE: 'VENDOR_INACTIVE',
   PAYMENT_NOT_ALLOWED: 'PAYMENT_NOT_ALLOWED',
+  PAYMENTS_COLLECTED: 'PAYMENTS_COLLECTED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

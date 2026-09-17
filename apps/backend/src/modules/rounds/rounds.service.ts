@@ -239,11 +239,25 @@ export class RoundsService {
   /**
    * Cancel a round (SUPER_ADMIN). Guarded: legal only from a pre-DELIVERED state
    * (OPEN / CLOSED_MET / CLOSED_EXPIRED / ASSIGNED); from DELIVERED / RATED /
-   * CANCELLED → 409 INVALID_ROUND_TRANSITION. Unknown id → 404.
+   * CANCELLED → 409 INVALID_ROUND_TRANSITION. Unknown id → 404. A round with any
+   * collected payment → 409 PAYMENTS_COLLECTED: once CANCELLED, payment flags can no
+   * longer be changed and drop out of the dashboard totals, so the admin must undo
+   * (refund) them first rather than let collected money become invisible.
    */
   async cancel(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
     return this.inRoundTx((tx) =>
-      this.transition(tx, roundId, RoundStatus.CANCELLED, viewerResidentId),
+      this.transition(tx, roundId, RoundStatus.CANCELLED, viewerResidentId, async () => {
+        const collected = await tx.roundParticipant.count({
+          where: { roundId, paymentCollectedAt: { not: null } },
+        });
+        if (collected > 0) {
+          throw new ConflictException({
+            code: ErrorCode.PAYMENTS_COLLECTED,
+            message: `Undo the ${collected} collected payment(s) before cancelling this round.`,
+          });
+        }
+        return {};
+      }),
     );
   }
 
@@ -265,6 +279,9 @@ export class RoundsService {
   ): Promise<RoundDto> {
     return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId, async () => {
+        // Share-lock the vendor row so a concurrent deactivation can't commit
+        // between this check and the assignment write.
+        await tx.$queryRaw`SELECT "id" FROM "Vendor" WHERE "id" = ${vendorId} FOR SHARE`;
         const vendor = await this.vendors.getById(vendorId, tx);
         if (!vendor.active) {
           throw new BadRequestException({

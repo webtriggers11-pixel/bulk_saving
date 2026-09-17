@@ -165,6 +165,10 @@ describe('Vendors admin API (integration, needs DB)', () => {
     await patch(createdIds[0], { phone: 'not-a-phone' }).expect(400);
     await patch(createdIds[0], { name: '' }).expect(400);
     await patch(createdIds[0], { active: 'yes' }).expect(400);
+    // null is only valid for the nullable fields (category/notes), never a 500.
+    await patch(createdIds[0], { name: null }).expect(400);
+    await patch(createdIds[0], { phone: null }).expect(400);
+    await patch(createdIds[0], { active: null }).expect(400);
   });
 
   it('returns 404 NOT_FOUND patching an unknown vendor', async () => {
