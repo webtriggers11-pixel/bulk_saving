@@ -34,5 +34,9 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     css: false,
+    // BUG-002: generous limits so RTL flows don't time out when the dev machine
+    // is CPU-saturated (these bound hangs; passing tests are unaffected).
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
   },
 });

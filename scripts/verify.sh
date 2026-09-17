@@ -19,7 +19,9 @@ pnpm -r lint
 echo "==> [verify] typecheck (all workspaces)"
 pnpm -r typecheck
 
-echo "==> [verify] test (all workspaces)"
-pnpm -r test
+echo "==> [verify] test (all workspaces, one at a time)"
+# BUG-002: sequential so backend Jest (real DB/Redis) and web Vitest don't
+# starve each other for CPU and trip timeouts.
+pnpm -r --workspace-concurrency=1 test
 
 echo "==> [verify] OK — lint + tests passed for every workspace"
