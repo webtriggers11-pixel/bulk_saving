@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -100,6 +100,9 @@ export class RateRoundDto implements RateRoundBody {
 
   @IsOptional()
   @IsString()
+  // Trim BEFORE the length check: a 500-char comment with a trailing space is not
+  // a 501-char comment, and rejecting it would be indefensible to the resident.
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @MaxLength(MAX_RATING_COMMENT)
   comment?: string;
 }

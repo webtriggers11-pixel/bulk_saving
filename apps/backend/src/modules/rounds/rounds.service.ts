@@ -428,11 +428,33 @@ export class RoundsService {
     return staged.length;
   }
 
-  /** DELIVERED → RATED (residents rated the service). Endpoint wired in FEAT-007. */
+  /** DELIVERED → RATED, strictly guarded: an illegal move throws 409 as usual. */
   async markRated(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
     return this.inRoundTx((tx) =>
       this.transition(tx, roundId, RoundStatus.RATED, viewerResidentId),
     );
+  }
+
+  /**
+   * DELIVERED → RATED, but a NO-OP when the round has already moved (FEAT-007).
+   *
+   * This is what the rating path uses. The status the rating service read was taken
+   * without the row lock, so two participants rating the same DELIVERED round at the
+   * same moment both believe they are the first; under {@link markRated} the loser
+   * would get a 409 INVALID_ROUND_TRANSITION for a rating that was in fact saved.
+   * That is the DESIGNED traffic pattern — the FEAT-006 delivered SMS asks every
+   * participant to rate at the same instant — so the decision is re-made here, under
+   * the lock, and a round that is no longer DELIVERED simply returns null.
+   */
+  async markRatedIfDelivered(roundId: string, viewerResidentId = ''): Promise<RoundDto | null> {
+    return this.inRoundTx(async (tx) => {
+      const locked = await this.lockRoundForUpdate(tx, roundId);
+      if (!locked || locked.status !== RoundStatus.DELIVERED) {
+        // Missing, or someone else already flipped it (or it moved on) — nothing to do.
+        return null;
+      }
+      return this.transition(tx, roundId, RoundStatus.RATED, viewerResidentId);
+    });
   }
 
   /**
@@ -474,7 +496,13 @@ export class RoundsService {
         data: { paymentCollectedAt },
         include: { resident: true, round: { select: { finalPrice: true } } },
       });
-      return buildAdminParticipant(updated, updated.round.finalPrice);
+      // Load this resident's rating too (FEAT-007): without it the response would
+      // always claim `rating: null`, so a client that merged it rather than
+      // refetching would show a rating vanishing when a payment is toggled.
+      const rating = await tx.rating.findUnique({
+        where: { roundId_residentId: { roundId, residentId: updated.residentId } },
+      });
+      return buildAdminParticipant(updated, updated.round.finalPrice, rating);
     });
   }
 

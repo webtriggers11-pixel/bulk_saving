@@ -1,9 +1,8 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Rating } from '@prisma/client';
 import { RoundStatus, type RateRoundBody, type RatingDto, type RatingSummary } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
-import { summarise, toRatingDto } from './ratings.mapper';
+import { toRatingDto } from './ratings.mapper';
 import { RoundsService } from './rounds.service';
 
 /** Statuses in which a resident may rate: the job has actually been done. */
@@ -15,9 +14,9 @@ const RATEABLE: readonly RoundStatus[] = [RoundStatus.DELIVERED, RoundStatus.RAT
  * A rating hangs off the ROUND, one per participant, so it is always attributable
  * to the job that was done and — through `round.vendorId` (ADR-0012) — to the
  * vendor who did it. The FIRST rating moves the round DELIVERED → RATED, and it
- * does so through {@link RoundsService.markRated}: this service never writes
- * `status` itself, because `RoundsService.transition()` is the only path allowed to
- * (ARCHITECTURE.md, ADR-0011).
+ * does so through {@link RoundsService.markRatedIfDelivered}: this service never
+ * writes `status` itself, because `RoundsService.transition()` is the only path
+ * allowed to (ARCHITECTURE.md, ADR-0011).
  */
 @Injectable()
 export class RatingsService {
@@ -58,10 +57,12 @@ export class RatingsService {
       },
     });
 
-    // First rating on a DELIVERED round closes the lifecycle. Guarded transition
-    // only; a round already RATED is left alone (markRated would 409 on it).
+    // First rating on a DELIVERED round closes the lifecycle. The status read above
+    // was unlocked, so `markRatedIfDelivered` re-decides under the row lock and
+    // no-ops if another participant won the race — their rating and ours are both
+    // saved, and neither resident sees a spurious 409 (V2 P1-1, reproduced live).
     if (round.status === RoundStatus.DELIVERED) {
-      await this.rounds.markRated(roundId, residentId);
+      await this.rounds.markRatedIfDelivered(roundId, residentId);
     }
     return toRatingDto(rating);
   }
@@ -83,47 +84,6 @@ export class RatingsService {
       });
     }
     await this.prisma.rating.delete({ where: { id: existing.id } });
-  }
-
-  /** Every rating on a round, keyed by resident — the admin detail read. */
-  async byResidentForRound(roundId: string): Promise<Map<string, Rating>> {
-    const ratings = await this.prisma.rating.findMany({ where: { roundId } });
-    return new Map(ratings.map((r) => [r.residentId, r]));
-  }
-
-  /** Average + count for one round. */
-  async summaryForRound(roundId: string): Promise<RatingSummary> {
-    const ratings = await this.prisma.rating.findMany({
-      where: { roundId },
-      select: { stars: true },
-    });
-    return summarise(ratings.map((r) => r.stars));
-  }
-
-  /**
-   * Average + count per vendor, aggregated THROUGH their rounds (ADR-0017 keeps no
-   * denormalised column). Returns a map keyed by vendorId; vendors with no ratings
-   * are simply absent.
-   */
-  async summariesByVendor(): Promise<Map<string, RatingSummary>> {
-    const ratings = await this.prisma.rating.findMany({
-      where: { round: { vendorId: { not: null } } },
-      select: { stars: true, round: { select: { vendorId: true } } },
-    });
-    const byVendor = new Map<string, number[]>();
-    for (const rating of ratings) {
-      const vendorId = rating.round.vendorId;
-      if (!vendorId) {
-        continue;
-      }
-      const bucket = byVendor.get(vendorId);
-      if (bucket) {
-        bucket.push(rating.stars);
-      } else {
-        byVendor.set(vendorId, [rating.stars]);
-      }
-    }
-    return new Map([...byVendor].map(([vendorId, stars]) => [vendorId, summarise(stars)]));
   }
 
   /** Platform-wide aggregate — the BRIEF's success metric. */

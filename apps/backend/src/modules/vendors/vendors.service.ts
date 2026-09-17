@@ -3,7 +3,7 @@ import type { Prisma, Vendor } from '@prisma/client';
 import type { CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
-import { summarise } from '../rounds/ratings.mapper';
+import { groupStarsByVendor, summarise } from '../rounds/ratings.mapper';
 
 /** A Prisma client usable for vendor reads: the root client or a transaction client. */
 type VendorReader = Pick<Prisma.TransactionClient, 'vendor'>;
@@ -32,19 +32,7 @@ export class VendorsService {
         select: { stars: true, round: { select: { vendorId: true } } },
       }),
     ]);
-    const starsByVendor = new Map<string, number[]>();
-    for (const rating of grouped) {
-      const vendorId = rating.round.vendorId;
-      if (!vendorId) {
-        continue;
-      }
-      const bucket = starsByVendor.get(vendorId);
-      if (bucket) {
-        bucket.push(rating.stars);
-      } else {
-        starsByVendor.set(vendorId, [rating.stars]);
-      }
-    }
+    const starsByVendor = groupStarsByVendor(grouped);
     return vendors.map((vendor) => toVendorDto(vendor, summarise(starsByVendor.get(vendor.id) ?? [])));
   }
 

@@ -336,16 +336,21 @@ async function main() {
     check('…and cannot join it (404, not 403)', join.status === 404, `status ${join.status}`);
   });
 
-  await scenario('notifications: the outbox recorded the lifecycle', async () => {
-    // No admin API for notifications by design (FEAT-006), so this asserts the
-    // observable proxy: the round reached DELIVERED through the guarded path and
-    // the messages were staged transactionally with it. A direct DB assertion
-    // lives in the integration suite; here we confirm nothing 500s and the
-    // lifecycle completed, which is what the outbox hangs off.
+  await scenario('delivery: the round is fully settled before rating', async () => {
+    // NOTE: this scenario does NOT verify notifications. There is no admin API for
+    // the outbox (FEAT-006 kept it internal), so nothing here can observe a staged
+    // message; that is asserted directly against the DB in the integration suite.
+    // What this checks is the state the outbox hangs off.
     const detail = await api(`/admin/rounds/${state.round.id}`, { token: state.admin.token, expect: 200 });
     check('the round is DELIVERED at the end of the lifecycle', detail.data?.status === 'DELIVERED', detail.data?.status);
     check('delivery is timestamped', Boolean(detail.data?.deliveredAt));
     check('payments are summarised', typeof detail.data?.payments?.collectedAmount === 'number');
+    // Captured BEFORE the rating scenario moves this round to RATED, so the
+    // dashboard check later is about THIS run rather than leftover data.
+    state.deliveredCountAtDelivery = (
+      await api('/admin/dashboard', { token: state.admin.token, expect: 200 })
+    ).data.statusCounts.DELIVERED;
+    check('this run contributes to the DELIVERED count', state.deliveredCountAtDelivery >= 1, String(state.deliveredCountAtDelivery));
   });
 
   await scenario('rating: a participant rates the delivered job (FEAT-007)', async () => {
@@ -440,7 +445,9 @@ async function main() {
   await scenario('dashboard: aggregates reflect the run', async () => {
     const dash = await api('/admin/dashboard', { token: state.admin.token, expect: 200 });
     check('every status key is present', Object.keys(dash.data.statusCounts).length === 7, String(Object.keys(dash.data.statusCounts).length));
-    check('DELIVERED count includes this run', dash.data.statusCounts.DELIVERED >= 1, String(dash.data.statusCounts.DELIVERED));
+    // This run's round is RATED by now, so asserting DELIVERED >= 1 here would pass
+    // only on leftover data from earlier runs. Assert what this run actually produced.
+    check('this run shows up as a RATED round', dash.data.statusCounts.RATED >= 1, String(dash.data.statusCounts.RATED));
     const society = dash.data.demandBySociety.find((d) => d.society.id === state.societyA.id);
     check('the society appears in demand', Boolean(society));
     check('collected payments include this run', dash.data.payments.collectedAmount >= 650, String(dash.data.payments.collectedAmount));
@@ -449,6 +456,17 @@ async function main() {
   });
 
   /* ------------------------------------------------------------- the report */
+
+  // A thrown scenario is one failure, which would otherwise silently shrink the
+  // denominator and make a partial run look like a smaller, greener one.
+  const EXPECTED_CHECKS = 76;
+  if (results.length < EXPECTED_CHECKS) {
+    results.push({
+      scenario: 'harness',
+      label: `ran ${results.length} checks, expected at least ${EXPECTED_CHECKS} — a scenario bailed early`,
+      ok: false,
+    });
+  }
 
   const failed = results.filter((r) => !r.ok);
   const byScenario = [...new Set(results.map((r) => r.scenario))];

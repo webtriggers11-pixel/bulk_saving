@@ -85,3 +85,26 @@ the admin has already acted on it.
 - Anyone asks for disputes, vendor replies, or action on a low score (auto-deactivation,
   alerting) → that is a moderation feature with its own ADR, not an extension of this one.
 - Editable-forever ratings cause a real argument with a vendor → add an edit window.
+
+## Amendments
+
+**2026-09-18 (V2, FEAT-007).** Two clarifications, no change of decision:
+
+1. **The flip is a no-op when someone else won the race.** The rating path calls
+   `RoundsService.markRatedIfDelivered()`, not `markRated()`. The status the rating
+   service reads is taken WITHOUT the row lock, so two participants rating the same
+   DELIVERED round simultaneously both believe they are first; the strict version threw
+   409 INVALID_ROUND_TRANSITION at the loser for a rating that had in fact been saved.
+   The V2 reviewer reproduced this on a live server. It is also the DESIGNED traffic
+   pattern, since the delivered SMS asks every participant to rate at the same moment.
+   The decision is now re-made under the lock and a round that is no longer DELIVERED
+   returns null.
+
+2. **The rating write and the status flip are deliberately NOT one transaction.** They
+   are two transactions: the upsert commits, then the flip is attempted. Wrapping them
+   together would be worse — a conflict would roll the resident's rating back, turning a
+   cosmetic error into a lost rating. The residual exposure is narrow and self-healing:
+   a crash between the two leaves a DELIVERED round that already holds a rating, every
+   aggregate still counts it, and the next rating or edit on that round flips it. The
+   only lasting case is a single-participant round whose sole rater never returns — one
+   round stuck in DELIVERED with an accurate rating attached. Accepted.

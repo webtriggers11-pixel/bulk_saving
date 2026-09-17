@@ -37,6 +37,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
   let vendor: Vendor;
 
   const serviceIds: string[] = [];
+  const extraVendorIds: string[] = [];
   const suffix = randomInviteCode().toLowerCase();
 
   const TIERS = [{ threshold: 2, price: 900 }];
@@ -130,7 +131,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
   afterAll(async () => {
     await prisma.service.deleteMany({ where: { id: { in: serviceIds } } });
     await prisma.society.deleteMany({ where: { id: { in: [society.id, otherSociety.id] } } });
-    await prisma.vendor.delete({ where: { id: vendor.id } });
+    await prisma.vendor.deleteMany({ where: { id: { in: [vendor.id, ...extraVendorIds] } } });
     await app.close();
   });
 
@@ -154,6 +155,23 @@ describe('Ratings (integration, needs DB + Redis)', () => {
 
       await rate(round.id, bobToken, { stars: 2 }).expect(200);
 
+      expect(await statusOf(round.id)).toBe('RATED');
+      expect(await prisma.rating.count({ where: { roundId: round.id } })).toBe(2);
+    });
+
+    it('two participants rating AT THE SAME TIME both get 200 (no spurious 409)', async () => {
+      // V2 P1-1, reproduced live before the fix: both read DELIVERED, both saved,
+      // and the loser of the status race got "A round cannot move from RATED to
+      // RATED" for a rating that WAS written. This is the designed traffic pattern —
+      // the delivered SMS asks every participant to rate at the same moment.
+      const round = await deliveredRoundWithBoth();
+
+      const [first, second] = await Promise.all([
+        rate(round.id, aliceToken, { stars: 5 }),
+        rate(round.id, bobToken, { stars: 4 }),
+      ]);
+
+      expect([first.status, second.status]).toEqual([200, 200]);
       expect(await statusOf(round.id)).toBe('RATED');
       expect(await prisma.rating.count({ where: { roundId: round.id } })).toBe(2);
     });
@@ -292,6 +310,22 @@ describe('Ratings (integration, needs DB + Redis)', () => {
       expect(openRow?.myRating).toBeNull();
     });
 
+    it('returns newest first', async () => {
+      const older = await createRound('DELIVERED');
+      await addParticipant(older, carol, 1);
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      const newer = await createRound('DELIVERED');
+      await addParticipant(newer, carol, 1);
+
+      const res = await request(app.getHttpServer())
+        .get('/rounds/mine')
+        .set('Authorization', `Bearer ${carolToken}`)
+        .expect(200);
+
+      const ids = (res.body.data as MyRoundDto[]).map((r) => r.id);
+      expect(ids.indexOf(newer.id)).toBeLessThan(ids.indexOf(older.id));
+    });
+
     it('never includes a round the caller has not joined', async () => {
       const round = await createRound('DELIVERED');
       await addParticipant(round, bob, 1);
@@ -349,21 +383,66 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .expect(403);
     });
 
-    it('vendor list carries the average of THIS vendor’s rounds and the count', async () => {
-      const round = await deliveredRoundWithBoth();
-      await rate(round.id, aliceToken, { stars: 5 }).expect(200);
-      await rate(round.id, bobToken, { stars: 4 }).expect(200);
+    it('vendor averages are exact, per-vendor, and null before anyone rates', async () => {
+      // V2 P1-3: the previous version asserted only "count >= 2 and 0 < avg <= 5",
+      // which stays green even if every rating is attributed to every vendor.
+      const otherVendor = await prisma.vendor.create({
+        data: { name: `Rating Vendor B ${suffix}`, phone: randomPhone() },
+      });
+      extraVendorIds.push(otherVendor.id);
+      const unratedVendor = await prisma.vendor.create({
+        data: { name: `Rating Vendor C ${suffix}`, phone: randomPhone() },
+      });
+      extraVendorIds.push(unratedVendor.id);
+
+      // Vendor A: one round rated 5 and 4 → 4.5 over 2.
+      const roundA = await deliveredRoundWithBoth();
+      await rate(roundA.id, aliceToken, { stars: 5 }).expect(200);
+      await rate(roundA.id, bobToken, { stars: 4 }).expect(200);
+
+      // Vendor B: a different round rated 2 → 2.0 over 1.
+      const roundB = await createRound('DELIVERED');
+      await prisma.round.update({ where: { id: roundB.id }, data: { vendorId: otherVendor.id } });
+      await addParticipant(roundB, alice, 1);
+      await rate(roundB.id, aliceToken, { stars: 2 }).expect(200);
 
       const res = await request(app.getHttpServer())
         .get('/admin/vendors')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+      const vendors = res.body.data as VendorDto[];
+      const b = vendors.find((v) => v.id === otherVendor.id);
+      const c = vendors.find((v) => v.id === unratedVendor.id);
 
-      const mine = (res.body.data as VendorDto[]).find((v) => v.id === vendor.id);
-      expect(mine?.ratingCount).toBeGreaterThanOrEqual(2);
-      expect(mine?.averageRating).not.toBeNull();
-      expect(mine!.averageRating!).toBeGreaterThan(0);
-      expect(mine!.averageRating!).toBeLessThanOrEqual(5);
+      // Vendor B's average must be ITS rating only — not the platform's.
+      expect(b).toMatchObject({ averageRating: 2, ratingCount: 1 });
+      // A vendor nobody rated reports null, not 0 (which would read as "terrible").
+      expect(c).toMatchObject({ averageRating: null, ratingCount: 0 });
+    });
+
+    it('averages to one decimal', async () => {
+      const vendorD = await prisma.vendor.create({
+        data: { name: `Rating Vendor D ${suffix}`, phone: randomPhone() },
+      });
+      extraVendorIds.push(vendorD.id);
+      const round = await createRound('DELIVERED');
+      await prisma.round.update({ where: { id: round.id }, data: { vendorId: vendorD.id } });
+      await addParticipant(round, alice, 1);
+      await addParticipant(round, bob, 1);
+      await addParticipant(round, carol, 1);
+      await rate(round.id, aliceToken, { stars: 5 }).expect(200);
+      await rate(round.id, bobToken, { stars: 4 }).expect(200);
+      await rate(round.id, carolToken, { stars: 4 }).expect(200);
+
+      const res = await request(app.getHttpServer())
+        .get('/admin/vendors')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      // 13 / 3 = 4.333… → 4.3, not 4.333333.
+      expect((res.body.data as VendorDto[]).find((v) => v.id === vendorD.id)).toMatchObject({
+        averageRating: 4.3,
+        ratingCount: 3,
+      });
     });
 
     it('dashboard reports the platform rating metric, and it MOVES when a rating lands', async () => {
@@ -382,7 +461,9 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .expect(200);
 
       // A delta, not an absolute: parallel suites share this dev database.
-      expect(after.body.data.ratings.count).toBe(countBefore + 1);
+      // >= not ===: parallel suites share this dev DB, and the moment another suite
+      // writes a rating an exact delta would go flaky.
+      expect(after.body.data.ratings.count).toBeGreaterThanOrEqual(countBefore + 1);
       expect(after.body.data.ratings.average).not.toBeNull();
     });
   });
