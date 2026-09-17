@@ -60,6 +60,17 @@ export class RoundsService {
   }
 
   /**
+   * Every OPEN round's id + deadline (optionally one society) — read-only input
+   * for the scheduler reconciler, which re-ensures each has a close job.
+   */
+  async listOpenDeadlines(societyId?: string): Promise<Array<{ id: string; deadline: Date }>> {
+    return this.prisma.round.findMany({
+      where: { status: 'OPEN', ...(societyId ? { societyId } : {}) },
+      select: { id: true, deadline: true },
+    });
+  }
+
+  /**
    * Join a round (or change an existing pledge): upsert the caller's participant
    * row and apply the unit delta to `unitsCount` atomically. 404 if the round is
    * missing or in another society; 409 ROUND_CLOSED if it is not OPEN.

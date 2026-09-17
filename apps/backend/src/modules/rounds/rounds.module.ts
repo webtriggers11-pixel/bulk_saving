@@ -2,6 +2,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { RoundCloserProcessor } from './round-closer.processor';
+import { RoundClosingReconciler } from './round-closing.reconciler';
 import { RoundClosingScheduler, ROUND_CLOSING_QUEUE } from './round-closing.scheduler';
 import { RoundsAdminController } from './rounds-admin.controller';
 import { RoundsAdminService } from './rounds-admin.service';
@@ -18,7 +19,13 @@ import { RoundsService } from './rounds.service';
 @Module({
   imports: [AuthModule, BullModule.registerQueue({ name: ROUND_CLOSING_QUEUE })],
   controllers: [RoundsController, RoundsAdminController],
-  providers: [RoundsService, RoundsAdminService, RoundClosingScheduler, RoundCloserProcessor],
+  providers: [
+    RoundsService,
+    RoundsAdminService,
+    RoundClosingScheduler,
+    RoundCloserProcessor,
+    RoundClosingReconciler,
+  ],
   exports: [RoundsService, RoundsAdminService],
 })
 export class RoundsModule {}

@@ -214,3 +214,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 — backend 145 tests / 16 suites, web 25 / 9 files.
 - Decisions: ADR-0004, ADR-0011
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-004 — V2 independent review: CHANGES REQUESTED → fixes applied
+- What: Reviewer ran verify.sh ×2 (exit 0 both, backend 145 / web 25, identical; no leaked Redis jobs or DB rows). Transition map, row locking, migration and web confirmed correct. P1-1: a Redis enqueue failure after round create left an OPEN round with no job (500 and then 409 on retry, no auto-close). P1-2: close jobs had no retries, so one transient DB error stranded a round OPEN. Fixes: create + enqueue now run in one transaction (a failed enqueue rolls the round back); jobs get 6 attempts with exponential backoff; schedule() replaces a leftover failed/completed job; new RoundClosingReconciler re-ensures jobs for every OPEN round on boot (covers the seeded round, lost Redis state and the rare commit race; skipped under Jest, which calls reconcile() scoped). P2 fixes: typed processor result, deterministic cancelled-job assertion, listener cleanup, corrected scheduler comment. Deferred P2: tests share the dev DB/Redis (predates FEAT-004); moving a pending job on a deadline edit needs cancel() then schedule() (no edit path yet). +3 tests.
+- Evidence: verify.sh exit 0 — backend 148 / 16 suites, web 25.
+- Decisions: ADR-0011 (its revisit-trigger safety net is now implemented as a boot reconciler, not a periodic sweep)
+- By: agent (independent reviewer subagent + implementer)

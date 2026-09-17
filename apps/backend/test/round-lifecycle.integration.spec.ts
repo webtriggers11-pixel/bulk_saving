@@ -1,13 +1,16 @@
 import { INestApplication } from '@nestjs/common';
-import type { Job } from 'bullmq';
+import { getQueueToken } from '@nestjs/bullmq';
+import type { Job, Queue } from 'bullmq';
 import { QueueEvents } from 'bullmq';
 import request from 'supertest';
 import type { Resident, Round, RoundStatus, Society } from '@prisma/client';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { ErrorCode } from '../src/common/error-codes';
-import { RoundCloserProcessor } from '../src/modules/rounds/round-closer.processor';
+import { RoundCloserProcessor, type RoundCloserJobResult } from '../src/modules/rounds/round-closer.processor';
+import { RoundClosingReconciler } from '../src/modules/rounds/round-closing.reconciler';
 import {
+  ROUND_CLOSING_ATTEMPTS,
   ROUND_CLOSING_QUEUE,
   RoundClosingScheduler,
   type RoundClosingJobData,
@@ -23,6 +26,7 @@ import { CapturingChannel, createTestApp, randomInviteCode, randomPhone } from '
  *  - a real BullMQ delayed job with a near-immediate deadline fires and closes the
  *    round (no real-minutes wait);
  *  - join/update/leave on CLOSED_MET / CLOSED_EXPIRED / CANCELLED → 409 ROUND_CLOSED;
+ *  - scheduling is idempotent with retries, and the boot reconciler re-ensures jobs;
  *  - the guarded ASSIGNED → DELIVERED → RATED moves, and illegal jumps → 409.
  */
 describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
@@ -32,6 +36,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
   let processor: RoundCloserProcessor;
   let scheduler: RoundClosingScheduler;
   let queueEvents: QueueEvents;
+  let queue: Queue;
   let society: Society;
   let resident: Resident;
   let token: string;
@@ -49,6 +54,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
     status: RoundStatus,
     unitsCount = 0,
     deadline = new Date(Date.now() - 1_000),
+    societyId = society.id,
   ): Promise<Round> => {
     const service = await prisma.service.create({
       data: {
@@ -61,14 +67,14 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
     });
     serviceIds.push(service.id);
     return prisma.round.create({
-      data: { societyId: society.id, serviceId: service.id, status, unitsCount, deadline, tiers: { create: TIERS } },
+      data: { societyId, serviceId: service.id, status, unitsCount, deadline, tiers: { create: TIERS } },
     });
   };
 
   const statusOf = async (id: string): Promise<RoundStatus> =>
     (await prisma.round.findUniqueOrThrow({ where: { id } })).status;
 
-  const runJob = (roundId: string): Promise<{ status: string | null }> =>
+  const runJob = (roundId: string): Promise<RoundCloserJobResult> =>
     processor.process({ data: { roundId } } as Job<RoundClosingJobData>);
 
   beforeAll(async () => {
@@ -77,6 +83,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
     rounds = app.get(RoundsService);
     processor = app.get(RoundCloserProcessor);
     scheduler = app.get(RoundClosingScheduler);
+    queue = app.get<Queue>(getQueueToken(ROUND_CLOSING_QUEUE));
 
     queueEvents = new QueueEvents(ROUND_CLOSING_QUEUE, {
       connection: {
@@ -141,13 +148,18 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
       const round = await createRound('OPEN', 10, new Date(Date.now() + 300));
       await scheduler.schedule(round.id, round.deadline);
       const finished = new Promise<unknown>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('close job did not complete in time')), 15_000);
-        queueEvents.on('completed', ({ jobId, returnvalue }) => {
+        const onCompleted = ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }): void => {
           if (jobId === round.id) {
             clearTimeout(timer);
+            queueEvents.off('completed', onCompleted);
             resolve(returnvalue);
           }
-        });
+        };
+        const timer = setTimeout(() => {
+          queueEvents.off('completed', onCompleted);
+          reject(new Error('close job did not complete in time'));
+        }, 15_000);
+        queueEvents.on('completed', onCompleted);
       });
       expect(await finished).toEqual({ status: 'CLOSED_MET' });
       expect(await statusOf(round.id)).toBe('CLOSED_MET');
@@ -157,10 +169,48 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
       const round = await createRound('OPEN', 10, new Date(Date.now() + 500));
       await scheduler.schedule(round.id, round.deadline);
       await scheduler.cancel(round.id);
+      expect(await queue.getJob(round.id)).toBeUndefined();
       await new Promise((r) => setTimeout(r, 1_500));
       expect(await statusOf(round.id)).toBe('OPEN');
       // Cleanup so the next assertion set can't be affected by this OPEN round.
       await rounds.cancel(round.id);
+    });
+
+    it('schedule() is idempotent and retries with backoff', async () => {
+      const round = await createRound('OPEN', 0, new Date(Date.now() + 86_400_000));
+      await scheduler.schedule(round.id, round.deadline);
+      await scheduler.schedule(round.id, round.deadline);
+      const job = await queue.getJob(round.id);
+      expect(await job?.getState()).toBe('delayed');
+      expect(job?.opts.attempts).toBe(ROUND_CLOSING_ATTEMPTS);
+      expect(job?.opts.backoff).toEqual({ type: 'exponential', delay: 1_000 });
+      expect((await queue.getDelayed()).filter((j) => j.id === round.id)).toHaveLength(1);
+      await scheduler.cancel(round.id);
+      await rounds.cancel(round.id);
+    });
+
+    it('reconciler ensures a job for OPEN rounds lacking one; past-deadline ones close promptly', async () => {
+      const other = await prisma.society.create({
+        data: { name: 'Reconcile Society', city: 'Pune', inviteCode: randomInviteCode() },
+      });
+      try {
+        const future = await createRound('OPEN', 0, new Date(Date.now() + 86_400_000), other.id);
+        const overdue = await createRound('OPEN', 5, new Date(Date.now() - 60_000), other.id);
+        await createRound('CLOSED_EXPIRED', 0, new Date(Date.now() + 86_400_000), other.id);
+        expect(await queue.getJob(future.id)).toBeUndefined();
+
+        expect(await app.get(RoundClosingReconciler).reconcile(other.id)).toBe(2);
+        expect(await (await queue.getJob(future.id))?.getState()).toBe('delayed');
+
+        const giveUpAt = Date.now() + 15_000;
+        while ((await statusOf(overdue.id)) === 'OPEN' && Date.now() < giveUpAt) {
+          await new Promise((r) => setTimeout(r, 100));
+        }
+        expect(await statusOf(overdue.id)).toBe('CLOSED_MET');
+        await scheduler.cancel(future.id);
+      } finally {
+        await prisma.society.delete({ where: { id: other.id } });
+      }
     });
   });
 

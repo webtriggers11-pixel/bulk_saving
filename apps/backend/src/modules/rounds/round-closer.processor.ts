@@ -1,5 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import type { RoundStatus } from '@bulk/shared';
 import type { Job } from 'bullmq';
 import {
   ROUND_CLOSING_QUEUE,
@@ -9,7 +10,7 @@ import { RoundsService } from './rounds.service';
 
 /** What the processor reports back — the resulting status, or null if it no-oped. */
 export interface RoundCloserJobResult {
-  status: string | null;
+  status: RoundStatus | null;
 }
 
 /**

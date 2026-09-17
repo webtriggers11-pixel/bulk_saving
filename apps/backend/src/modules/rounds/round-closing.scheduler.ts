@@ -13,12 +13,16 @@ export interface RoundClosingJobData {
   roundId: string;
 }
 
+/** Close-job retries: a transient DB error at the deadline must not strand a round OPEN. */
+export const ROUND_CLOSING_ATTEMPTS = 6;
+
 /**
  * Schedules (and unschedules) the deadline-driven close of a round via a BullMQ
- * delayed job. One delayed job per round, `jobId = round id` so a re-schedule is
- * de-duplicated/replaceable and a manual close/cancel can remove it by id. The
- * actual close is idempotent (RoundCloserProcessor -> RoundsService.closeRound),
- * so removing the job is only a best-effort optimisation against a double-fire.
+ * delayed job. One delayed job per round, `jobId = round id`, so scheduling is
+ * de-duplicated and a manual close/cancel can remove it by id. Failed attempts
+ * retry with exponential backoff (~1s → ~16s). The actual close is idempotent
+ * (RoundCloserProcessor -> RoundsService.closeRound), so retries, duplicate
+ * schedules, and a job racing a manual close are all harmless.
  */
 @Injectable()
 export class RoundClosingScheduler {
@@ -28,8 +32,23 @@ export class RoundClosingScheduler {
     @InjectQueue(ROUND_CLOSING_QUEUE) private readonly queue: Queue<RoundClosingJobData>,
   ) {}
 
-  /** Enqueue a delayed close job firing at `deadline` (delay clamped to >= 0). */
+  /**
+   * Ensure a close job exists firing at `deadline` (delay clamped to >= 0).
+   * Idempotent: a pending (delayed/waiting/active) job for the round is kept
+   * as-is. A leftover failed/completed job under the same id would make BullMQ
+   * silently ignore the add, so it is removed first. NOTE: this does not move an
+   * existing pending job to a new deadline — a future deadline-edit path must
+   * `cancel()` then `schedule()`.
+   */
   async schedule(roundId: string, deadline: Date): Promise<void> {
+    const existing = await this.queue.getJob(roundId);
+    if (existing) {
+      const state = await existing.getState();
+      if (state === 'delayed' || state === 'waiting' || state === 'active' || state === 'prioritized') {
+        return;
+      }
+      await existing.remove();
+    }
     const delay = Math.max(0, deadline.getTime() - Date.now());
     await this.queue.add(
       ROUND_CLOSING_JOB,
@@ -37,6 +56,8 @@ export class RoundClosingScheduler {
       {
         jobId: roundId,
         delay,
+        attempts: ROUND_CLOSING_ATTEMPTS,
+        backoff: { type: 'exponential', delay: 1_000 },
         removeOnComplete: true,
         removeOnFail: { age: 24 * 60 * 60 },
       },

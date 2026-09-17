@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { CreateRoundBody, RoundDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
@@ -43,23 +39,31 @@ export class RoundsAdminService {
     await this.assertNoOpenRound(societyId, serviceId);
 
     try {
-      const created = await this.prisma.round.create({
-        data: {
-          societyId,
-          serviceId,
-          deadline: new Date(body.deadline),
-          tiers: {
-            create: tiers.map((t) => ({ threshold: t.threshold, price: t.price })),
+      // Create + enqueue are coupled: the deadline job is added INSIDE the
+      // transaction, so an enqueue failure (Redis down) rolls the round back
+      // instead of leaving an OPEN round that never auto-closes. If the enqueue
+      // succeeds but the commit then fails, the orphan job finds no round and
+      // closeRound no-ops. The boot-time reconciler is the final safety net.
+      const created = await this.prisma.$transaction(async (tx) => {
+        const round = await tx.round.create({
+          data: {
+            societyId,
+            serviceId,
+            deadline: new Date(body.deadline),
+            tiers: {
+              create: tiers.map((t) => ({ threshold: t.threshold, price: t.price })),
+            },
           },
-        },
-        include: {
-          service: true,
-          tiers: { orderBy: { threshold: 'asc' } },
-          participants: { where: { residentId: viewerResidentId } },
-        },
+          include: {
+            service: true,
+            tiers: { orderBy: { threshold: 'asc' } },
+            participants: { where: { residentId: viewerResidentId } },
+          },
+        });
+        // Schedule the deadline-driven close (jobId = round id, delay = deadline − now).
+        await this.scheduler.schedule(round.id, round.deadline);
+        return round;
       });
-      // Schedule the deadline-driven close (jobId = round id, delay = deadline − now).
-      await this.scheduler.schedule(created.id, created.deadline);
       return buildRoundDto(created as RoundWithView);
     } catch (err) {
       // Partial unique index race: a concurrent open won → surface 409, never 500.

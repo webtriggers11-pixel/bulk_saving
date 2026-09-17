@@ -7,7 +7,7 @@ import type { RoundDto } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { ErrorCode } from '../src/common/error-codes';
-import { ROUND_CLOSING_QUEUE } from '../src/modules/rounds/round-closing.scheduler';
+import { ROUND_CLOSING_QUEUE, RoundClosingScheduler } from '../src/modules/rounds/round-closing.scheduler';
 import { CapturingChannel, createTestApp, randomInviteCode, randomPhone } from './helpers/test-app';
 
 /**
@@ -153,6 +153,37 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ ...openBody(), serviceId: disabledService.id, tiers: [] })
       .expect(400);
+  });
+
+  it('if enqueueing the close job fails, the round is rolled back (no orphan OPEN round)', async () => {
+    const scheduler = app.get(RoundClosingScheduler);
+    const spy = jest.spyOn(scheduler, 'schedule').mockRejectedValueOnce(new Error('redis down'));
+    try {
+      await request(app.getHttpServer())
+        .post('/admin/rounds')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ...openBody(), serviceId: disabledService.id })
+        .expect(400); // disabled service is rejected before scheduling — sanity check the spy is unused
+      expect(spy).not.toHaveBeenCalled();
+
+      // A second offered+enabled service with no OPEN round, so create reaches the enqueue.
+      const extra = await prisma.service.create({
+        data: { name: 'Rollback Svc', slug: `rb-${slugSuffix}`, description: 'x', category: 'Home', active: true },
+      });
+      await prisma.serviceOffering.create({ data: { societyId: society.id, serviceId: extra.id, enabled: true } });
+      try {
+        await request(app.getHttpServer())
+          .post('/admin/rounds')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ ...openBody(), serviceId: extra.id })
+          .expect(500);
+        expect(await prisma.round.count({ where: { serviceId: extra.id } })).toBe(0);
+      } finally {
+        await prisma.service.delete({ where: { id: extra.id } });
+      }
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('DENIES POST /admin/rounds to a RESIDENT token with 403', async () => {
