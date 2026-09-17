@@ -18,6 +18,11 @@ try {
   // No .env present — fall back to the test defaults below.
 }
 
+// Pin the test environment (Jest only defaults it when unset): boot-time side
+// effects such as the round close-job reconciler are skipped under test, because
+// parallel suites share one DB.
+process.env.NODE_ENV = 'test';
+
 /**
  * Test-only fixtures. Guarantee the vars that boot-time validation (and the auth
  * services) require are present even when no .env file exists (e.g. CI), so

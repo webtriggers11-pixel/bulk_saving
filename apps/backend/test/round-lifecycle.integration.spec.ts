@@ -75,7 +75,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
     (await prisma.round.findUniqueOrThrow({ where: { id } })).status;
 
   const runJob = (roundId: string): Promise<RoundCloserJobResult> =>
-    processor.process({ data: { roundId } } as Job<RoundClosingJobData>);
+    processor.process({ data: { roundId }, opts: {}, attemptsMade: 0 } as Job<RoundClosingJobData>);
 
   beforeAll(async () => {
     app = await createTestApp(new CapturingChannel());
@@ -131,8 +131,16 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
       },
     );
 
-    it('no-op (status null) when the round no longer exists', async () => {
-      expect(await runJob('does-not-exist')).toEqual({ status: null });
+    it('missing round: throws to retry (maybe uncommitted), no-op on the final attempt', async () => {
+      const attempt = (attemptsMade: number): Promise<RoundCloserJobResult> =>
+        processor.process({
+          data: { roundId: 'does-not-exist' },
+          opts: { attempts: ROUND_CLOSING_ATTEMPTS },
+          attemptsMade,
+        } as Job<RoundClosingJobData>);
+      await expect(attempt(0)).rejects.toThrow(/not found/);
+      await expect(attempt(ROUND_CLOSING_ATTEMPTS - 2)).rejects.toThrow(/not found/);
+      expect(await attempt(ROUND_CLOSING_ATTEMPTS - 1)).toEqual({ status: null });
     });
 
     it('a double-fire (two concurrent close jobs) settles on one terminal state', async () => {
