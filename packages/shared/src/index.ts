@@ -230,3 +230,145 @@ export interface CreateRoundBody {
 export interface JoinRoundBody {
   units: number;
 }
+
+/* ---------------------------------------------------------------------------
+ * Super-admin dashboard (FEAT-005, ADR-0012)
+ * ------------------------------------------------------------------------- */
+
+/** A vendor (global, city-level; admin-managed, no login). Deactivate instead of delete. */
+export interface VendorDto {
+  id: string;
+  name: string;
+  phone: string;
+  category: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `POST /admin/vendors` body. */
+export interface CreateVendorBody {
+  name: string;
+  phone: string;
+  category?: string;
+  notes?: string;
+}
+
+/** `PATCH /admin/vendors/:id` body; all fields optional, null clears an optional field. */
+export interface UpdateVendorBody {
+  name?: string;
+  phone?: string;
+  category?: string | null;
+  notes?: string | null;
+  active?: boolean;
+}
+
+/** `GET /admin/societies` row. */
+export interface AdminSocietyDto {
+  id: string;
+  name: string;
+  city: string;
+  inviteCode: string;
+}
+
+/** Compact society reference embedded in admin round views. */
+export interface AdminSocietySummary {
+  id: string;
+  name: string;
+  city: string;
+}
+
+/** Compact vendor reference embedded in admin round views. */
+export interface AdminVendorSummary {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+/**
+ * Payment collection summary for a round. Amounts are integer rupees, computed as
+ * `finalPrice × units`, and are 0 until a final price is set (no vendor assigned yet).
+ */
+export interface AdminRoundPaymentSummary {
+  participantsCount: number;
+  collectedCount: number;
+  collectedAmount: number;
+  outstandingAmount: number;
+}
+
+/**
+ * Super-admin view of a round across societies (`GET /admin/rounds`). `currentPrice` and
+ * `nextTier` are the tier pricing at the current unit count (as the residents see it); `finalPrice` is
+ * the negotiated per-unit price set at assignment. Timestamps are ISO strings.
+ */
+export interface AdminRoundSummaryDto {
+  id: string;
+  status: RoundStatus;
+  society: AdminSocietySummary;
+  service: RoundServiceSummary;
+  unitsCount: number;
+  participantsCount: number;
+  currentPrice: number;
+  nextTier?: RoundTierDto;
+  tiers: RoundTierDto[];
+  deadline: string;
+  createdAt: string;
+  vendor: AdminVendorSummary | null;
+  finalPrice: number | null;
+  assignedAt: string | null;
+  deliveredAt: string | null;
+  payments: AdminRoundPaymentSummary;
+}
+
+/** One resident's participation as seen by the super-admin (includes PII: admin-only). */
+export interface AdminRoundParticipantDto {
+  id: string;
+  resident: { id: string; name: string | null; phone: string };
+  units: number;
+  /** `finalPrice × units`, or null until a final price is set. */
+  amountDue: number | null;
+  paymentCollected: boolean;
+  paymentCollectedAt: string | null;
+  joinedAt: string;
+}
+
+/** `GET /admin/rounds/:id`: the summary plus every participant. */
+export interface AdminRoundDetailDto extends AdminRoundSummaryDto {
+  participants: AdminRoundParticipantDto[];
+}
+
+/** `GET /admin/rounds` query filters (both optional). */
+export interface AdminRoundsQuery {
+  status?: RoundStatus;
+  societyId?: string;
+}
+
+/** `POST /admin/rounds/:id/assign` body: vendor + negotiated per-unit price (integer ₹, 1–1,000,000). */
+export interface AssignRoundBody {
+  vendorId: string;
+  finalPrice: number;
+}
+
+/** `PUT /admin/rounds/:roundId/participants/:participantId/payment` body. */
+export interface SetPaymentBody {
+  collected: boolean;
+}
+
+/** Demand pledged in OPEN rounds for one society. */
+export interface AdminSocietyDemand {
+  society: AdminSocietySummary;
+  openRounds: number;
+  unitsPledged: number;
+  residentsJoined: number;
+}
+
+/** `GET /admin/dashboard`. */
+export interface AdminDashboardDto {
+  /** Count of rounds in every status (all 7 keys present, zeros included). */
+  statusCounts: Record<RoundStatus, number>;
+  /** One entry per society (including societies with no open rounds), ordered by name. */
+  demandBySociety: AdminSocietyDemand[];
+  /** Totals over ASSIGNED / DELIVERED / RATED rounds (integer ₹). */
+  payments: { collectedAmount: number; outstandingAmount: number };
+}

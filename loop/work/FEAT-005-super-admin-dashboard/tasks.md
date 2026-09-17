@@ -4,7 +4,7 @@ Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
 After each checked task or chunk: commit (`feat(FEAT-005): ...`) AND append a LOG.md entry.
 
 ## Contract (done by the orchestrator before the parallel build)
-- [ ] T2: `packages/shared` admin DTOs (VendorDto, Create/UpdateVendorBody, AdminSocietyDto, AdminRoundSummaryDto, AdminRoundDetailDto, AdminRoundParticipantDto, AssignRoundBody, SetPaymentBody, AdminDashboardDto). — depends: —
+- [x] T2: `packages/shared` admin DTOs (VendorDto, Create/UpdateVendorBody, AdminSocietyDto, AdminRoundSummaryDto, AdminRoundDetailDto, AdminRoundParticipantDto, AssignRoundBody, SetPaymentBody, AdminDashboardDto). — depends: —
 
 ## Backend chunk
 - [ ] T1: Prisma Vendor + Round assignment columns + participant paymentCollectedAt; migration clean. — depends: T2
