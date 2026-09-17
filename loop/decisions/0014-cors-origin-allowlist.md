@@ -5,12 +5,18 @@
 
 ## Confidence
 
-**Level:** High
+**Level:** High for the allow path · **Medium for the refusal path**
 **Basis:** CORS is a settled browser standard and this is the conventional
 server-side shape for it (exact-origin allowlist, no wildcard, no credentials
 because the API is Bearer-only). The Nest/Express `cors` callback signature was
 verified against the installed packages and pinned by the regression test, not
 taken from memory.
+
+The refusal path is Medium because its *observable* behaviour is an artefact of
+the `cors` package rather than something chosen: returning `false` skips the rest
+of the middleware, so a refused preflight 404s and carries no `Vary`. That was
+found by V2 probing the running server, not predicted up front — see
+Consequences. It is now pinned by tests.
 
 ## Research depth
 
@@ -58,10 +64,22 @@ Two constraints shaped the policy:
 `buildCorsOptions()` in `apps/backend/src/bootstrap.ts` builds the policy from env:
 
 - `CORS_ORIGINS` set → exactly those origins, in every environment.
-- Unset and `NODE_ENV !== 'production'` → any `http://localhost:<port>` or
-  `http://127.0.0.1:<port>`.
-- Unset in production → **nothing** is allowed (fail closed; a forgotten env var
-  costs a visibly broken frontend, never a silently open API).
+- Unset **and** `NODE_ENV` is one of unset / `development` / `test` → any
+  `http://localhost:<port>`, `http://127.0.0.1:<port>` or `http://[::1]:<port>`.
+- Unset anywhere else, production included → **nothing** is allowed (fail closed;
+  a forgotten env var costs a visibly broken frontend, never a silently open API).
+
+The environment test is an **allowlist, not a denylist** (V2 P1-1): `prod`,
+`Production`, `staging` or a typo get no localhost fallback. `NODE_ENV` is also
+validated at boot (`@IsIn(['development','test','production'])`), so a typo
+aborts startup instead of quietly widening a security control. Unset stays
+permissive because that is the documented local-dev default — `apps/backend/.env`
+sets no `NODE_ENV`, and requiring one would have reintroduced this very bug for
+every developer.
+
+`CORS_ORIGINS` entries are validated at boot too: each must equal its own
+`new URL(entry).origin`, so a trailing slash, a path or a bare hostname fails
+startup rather than silently matching no browser `Origin` (V2 P2-4).
 
 `credentials: false`. A refused origin is answered *without* CORS headers rather
 than by throwing, so a blocked browser call never shows up as a 500 in the logs.
@@ -77,10 +95,23 @@ function that `main.ts` and all test helpers call.
   radius of a misconfiguration is small.
 - Good: the global wiring can no longer drift between `main.ts` and the tests —
   the drift is what hid this bug from a 193-test suite.
-- Bad: `NODE_ENV` now changes security behaviour. A deploy that forgets to set
-  `NODE_ENV=production` **and** `CORS_ORIGINS` would allow localhost origins —
-  harmless in itself (an attacker's page is not on the victim's localhost), but
-  it means the fail-closed rule silently would not apply.
+- Bad: `NODE_ENV` now changes security behaviour. With the allowlist above, only
+  an entirely **unset** `NODE_ENV` plus an unset `CORS_ORIGINS` still allows
+  localhost origins — harmless in itself (an attacker's page is not on the
+  victim's localhost), but the fail-closed rule would not apply.
+- Bad, and the trap to know about: a refused **preflight** returns
+  `404 {"success":false,"error":{"code":"NOT_FOUND",...}}`, because returning
+  `false` from the origin callback makes the `cors` package skip its own
+  middleware and the `OPTIONS` request falls through to the Nest router. That
+  response is character-for-character the pre-fix BUG-003 signature, so an
+  operator who typos `CORS_ORIGINS` will see what looks like this bug
+  regressing. Pinned by a test so it is documented, not folklore.
+- Bad: a refused response carries no `Vary: Origin` (same cause — the middleware
+  never runs). Allowed responses do carry it, so a cache cannot hand an allowed
+  body to a foreign origin; the reverse is the risk — a CDN could store the
+  unvaried no-CORS 200 and serve it to an allowed origin, which would look like
+  "CORS randomly broken in prod". Check this before putting a CDN in front of the
+  API.
 - Bad: browser clients on a non-localhost dev origin (a phone on the LAN testing
   the PWA, a tunnel URL) must be added to `CORS_ORIGINS` explicitly.
 
@@ -95,3 +126,5 @@ Re-examine when any of these happens:
   `NODE_ENV` are set there, and consider dropping the localhost default entirely.
 - The PWA is tested from a non-localhost origin (LAN IP, ngrok/tunnel) often
   enough that hand-editing `CORS_ORIGINS` becomes friction.
+- A CDN or reverse proxy is put in front of the API — revisit the missing
+  `Vary: Origin` on refused responses before that ships.

@@ -1,5 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, MinLength, validateSync } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, MinLength, validateSync } from 'class-validator';
 
 /** Minimum length for any signing/hashing secret. */
 const SECRET_MIN_LENGTH = 16;
@@ -60,13 +60,22 @@ export class EnvironmentVariables {
   OTP_DEV_LOG?: string;
 
   /**
-   * Comma-separated CORS allowlist (ADR-0014). Optional: unset outside
-   * production means "any localhost port"; unset in production means no
-   * cross-origin browser access.
+   * Comma-separated CORS allowlist (ADR-0014). Optional: unset in a dev/test
+   * environment means "any localhost port"; unset anywhere else (production
+   * included) means no cross-origin browser access at all.
    */
   @IsOptional()
   @IsString()
   CORS_ORIGINS?: string;
+
+  /**
+   * Optional, but when present it must be one of these: NODE_ENV decides the
+   * CORS localhost fallback (ADR-0014), so a typo like 'prod' must abort the
+   * boot loudly rather than quietly change a security control.
+   */
+  @IsOptional()
+  @IsIn(['development', 'test', 'production'])
+  NODE_ENV?: string;
 }
 
 /**

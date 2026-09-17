@@ -1,6 +1,6 @@
 # BUG-003 — Browser calls from the web PWA fail: the API never sends CORS headers
 
-**Status:** in-progress (V2/V3 blocked — see LOG 2026-09-17) · **Priority:** P1 · **Opened:** 2026-09-17 · **Reporter:** human (dev session, "CORS errors")
+**Status:** done · **Priority:** P1 · **Opened:** 2026-09-17 · **Reporter:** human (dev session, "CORS errors")
 
 ## Observed vs expected
 
@@ -42,6 +42,41 @@ No existing ADR covers CORS (grep over `loop/decisions`, `ARCHITECTURE.md`, `STA
 - Origin policy (ADR-0014): `CORS_ORIGINS` (comma-separated) is the allowlist. When it is unset and `NODE_ENV !== 'production'`, any `http://localhost:<port>` / `http://127.0.0.1:<port>` origin is allowed, so a shifting Vite port never breaks local dev. In production an unset/empty `CORS_ORIGINS` allows nothing.
 - No `Access-Control-Allow-Credentials`: auth is Bearer-token only, no cookies (see `apps/web/src/features/auth/auth.store.ts`).
 - **Regression guard:** `apps/backend/test/cors.integration.spec.ts`.
+
+## V2 (independent review) — APPROVE WITH P2s, both P1s taken
+
+The reviewer ran the scoped suite, lint and typecheck itself, probed the live
+server, and proved the guard genuinely reproduces the bug by removing
+`enableCors` (4 of 8 red) and restoring the file checksum-verified. No P0.
+
+Fixed in this commit:
+
+- **P1-1** — the fail-closed rule hung on `NODE_ENV !== 'production'`, a denylist
+  of one literal string that an unvalidated `prod` / `staging` / typo would slip
+  past. Now an allowlist (`unset | development | test`) plus `@IsIn` validation
+  of `NODE_ENV` at boot. Unset stays permissive on purpose: it is the local-dev
+  default, and closing it would reproduce this bug for every developer.
+- **P1-2** — the fail-closed test was vacuous: with CORS entirely absent it still
+  passed, because it only asserted the *absence* of a header. Each fail-closed
+  test now carries a positive control in the same run. Re-ran the reviewer's
+  experiment to prove it: with `enableCors` commented out, 6 of 17 now fail
+  (was 4), including both fail-closed tests.
+- **P2-1 / P2-2** — a refused *preflight* 404s with the standard error envelope
+  (the `cors` package skips its middleware on a refused origin), which is exactly
+  the pre-fix BUG-003 signature; and a refused response carries no `Vary: Origin`.
+  Both are now recorded in ADR-0014's Consequences, the 404 pinned by a test, and
+  the `Vary` gap added as a revisit trigger before any CDN goes in front of the API.
+- **P2-3** — `http://[::1]:<port>` (IPv6 loopback, which Vite binds on some
+  setups) was refused; now matched.
+- **P2-4** — `CORS_ORIGINS` entries must each equal their own `new URL(entry).origin`,
+  so a trailing slash or a path fails the boot instead of silently matching nothing.
+- **P2-5** — `buildCorsOptions(env)` is now exercised directly with an explicit
+  env, including the look-alike origins (`http://localhost.evil.com`,
+  `http://localhost@evil.com`, `http://evil.localhost`, `https://localhost`).
+- **P2-6** — `test/queue.integration.spec.ts` was the last app boot outside
+  `configureApp()`; it now goes through it too.
+- **P2-7** — ADR-0014 confidence split: High for the allow path, Medium for the
+  refusal path, with the reason stated.
 
 ## Lesson
 

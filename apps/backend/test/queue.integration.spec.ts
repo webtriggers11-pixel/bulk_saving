@@ -6,6 +6,7 @@ import { QueueEvents } from 'bullmq';
 import { DemoQueueService } from '../src/queue/demo-queue.service';
 import { DEMO_QUEUE, type DemoJobResult } from '../src/queue/demo.processor';
 import { QueueModule } from '../src/queue/queue.module';
+import { configureApp } from '../src/bootstrap';
 
 /**
  * Integration test: proves BullMQ enqueue -> consume against REAL Redis.
@@ -30,6 +31,7 @@ describe('BullMQ demo queue (integration, needs Redis)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    configureApp(app);
     await app.init();
 
     queueEvents = new QueueEvents(DEMO_QUEUE, { connection });
