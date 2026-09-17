@@ -1,6 +1,6 @@
 # BUG-001 — Round join/update/leave returns 500 when queued > 5s behind the round row lock
 
-**Status:** in-review · **Priority:** P1 · **Opened:** 2026-09-17 · **Reporter:** agent (FEAT-005 build/verify)
+**Status:** done · **Priority:** P1 · **Opened:** 2026-09-17 · **Reporter:** agent (FEAT-005 build/verify)
 
 ## Observed vs expected
 

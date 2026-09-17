@@ -22,8 +22,8 @@ After each checked task or chunk: commit (`feat(FEAT-005): ...`) AND append a LO
 - [x] T12: Vitest + RTL tests: AdminRoute, dashboard, round detail (assign args, action visibility, payment toggle), vendors create, new-round submit. — depends: T9–T11
 
 ## Close
-- [ ] T13: V2 independent review (backend + frontend); the reviewer runs verify.sh itself. — depends: T1–T12
-- [ ] T14: V3 fresh double run of verify.sh; log both; close (REGISTRY → done, HANDOFF, commit). — depends: T13
+- [x] T13: V2 independent review (backend + frontend); the reviewer runs verify.sh itself. — depends: T1–T12
+- [x] T14: V3 fresh double run of verify.sh; log both; close (REGISTRY → done, HANDOFF, commit). — depends: T13
 
 ## V2 outcome
 - Backend reviewer: APPROVE (verify exit 0; backend 192 / web 50). Frontend reviewer: APPROVE (verify + web build exit 0).

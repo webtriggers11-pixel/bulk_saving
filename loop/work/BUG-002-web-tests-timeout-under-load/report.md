@@ -1,6 +1,6 @@
 # BUG-002 — Web (Vitest/RTL) tests time out when the machine is CPU-saturated
 
-**Status:** in-review · **Priority:** P2 · **Opened:** 2026-09-17 · **Reporter:** agent (FEAT-005 verify)
+**Status:** done · **Priority:** P2 · **Opened:** 2026-09-17 · **Reporter:** agent (FEAT-005 verify)
 
 ## Observed vs expected
 

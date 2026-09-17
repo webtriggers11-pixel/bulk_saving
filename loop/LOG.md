@@ -256,3 +256,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 (backend 192 / 18 suites, web 50 / 16 files).
 - Decisions: ADR-0012
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-005 + BUG-001 + BUG-002 — V2 APPROVE (backend + frontend), P2 fixes applied
+- What: Two independent reviewers ran verify.sh themselves (exit 0, backend 192 / web 50; web build OK) and both APPROVED with P2s only. Backend confirmed: the single status write holds (status is spread last, rejected assigns write nothing); the payment flag is correct; the migration is additive and the migration files match the schema (checked on a temporary shadow DB); the FEAT-004 checksum row affects only this dev DB; the BUG-001 fix is complete and its test genuinely reproduces the bug. Fixed before close: vendor PATCH with null → 400 (was 500); cancel refused with 409 PAYMENTS_COLLECTED while payments are collected; vendor share-lock during assign; UI refetch after a failed action; vendor edits refresh rounds; Cancel disabled during assign. BUG-001 connection-pool trade-off recorded with a revisit trigger. The remaining P2s are in FEAT-005 tasks.md.
+- Evidence: verify.sh exit 0 (backend 193 / 18 suites, web 50 / 16 files). Commit a3d66e8.
+- Decisions: ADR-0012; ADR-0004 (unchanged)
+- By: agent (independent reviewer subagents + implementer)
+
+## 2026-09-17 — FEAT-005, BUG-001, BUG-002 — CLOSED (V3 + commit)
+- What: V3 double run: verify.sh ×2 back-to-back, both exit 0, identical (backend 193 tests / 18 suites, web 50 / 16 files), so not flaky, and it ran with load average ~25–50 from unrelated processes, which confirms BUG-002 is fixed. REGISTRY → done for all three.
+- Evidence: V3 RUN1=0, RUN2=0 identical.
+- Decisions: ADR-0012
+- By: agent (autonomous)
