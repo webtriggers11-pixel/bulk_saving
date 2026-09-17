@@ -26,7 +26,7 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
   let serviceSameRes2: Service;
   let serviceB: Service;
   let roundA: Round; // OPEN in A, tiers 5->900 / 10->700
-  let roundClosed: Round; // CLOSED in A
+  let roundClosed: Round; // CLOSED_EXPIRED in A (join-rejection target)
   let roundB: Round; // OPEN in B (tenant-isolation target)
   let resident: Resident;
   let token: string;
@@ -37,7 +37,11 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
   ];
   const future = (): Date => new Date(Date.now() + 7 * 86_400_000);
 
-  const createRound = (societyId: string, serviceId: string, status: 'OPEN' | 'CLOSED'): Promise<Round> =>
+  const createRound = (
+    societyId: string,
+    serviceId: string,
+    status: 'OPEN' | 'CLOSED_EXPIRED',
+  ): Promise<Round> =>
     prisma.round.create({
       data: {
         societyId,
@@ -85,7 +89,7 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
     });
 
     roundA = await createRound(societyA.id, service.id, 'OPEN');
-    roundClosed = await createRound(societyA.id, serviceClosed.id, 'CLOSED');
+    roundClosed = await createRound(societyA.id, serviceClosed.id, 'CLOSED_EXPIRED');
     roundB = await createRound(societyB.id, serviceB.id, 'OPEN');
   });
 

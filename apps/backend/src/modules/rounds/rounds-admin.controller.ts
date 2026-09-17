@@ -30,4 +30,9 @@ export class RoundsAdminController {
   close(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
     return this.admin.close(id, ctx.residentId);
   }
+
+  @Post(':id/cancel')
+  cancel(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
+    return this.admin.cancel(id, ctx.residentId);
+  }
 }

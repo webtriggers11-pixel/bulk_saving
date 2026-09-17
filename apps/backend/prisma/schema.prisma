@@ -16,11 +16,19 @@ enum Role {
   SUPER_ADMIN
 }
 
-// Round lifecycle (FEAT-003, ADR-0010). v1 is a two-state machine; FEAT-004
-// extends it with the full lifecycle (CLOSED_MET/EXPIRED, ASSIGNED, ...).
+// Round lifecycle (FEAT-004, ADR-0011). Full state machine:
+// OPEN -> CLOSED_MET | CLOSED_EXPIRED -> ASSIGNED -> DELIVERED -> RATED,
+// plus CANCELLED (admin, from any pre-DELIVERED state). All transitions are
+// guarded in RoundsService; the deadline-driven OPEN->CLOSED_* transition is
+// performed by the BullMQ RoundCloserProcessor under the round row lock.
 enum RoundStatus {
   OPEN
-  CLOSED
+  CLOSED_MET
+  CLOSED_EXPIRED
+  ASSIGNED
+  DELIVERED
+  RATED
+  CANCELLED
 }
 
 model Society {

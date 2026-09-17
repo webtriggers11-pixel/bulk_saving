@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { RoundDto } from '@bulk/shared';
+import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
+import { isLegalTransition } from './rounds.transitions';
 
 /**
  * Prisma transaction client — the subset of PrismaService available inside
@@ -18,9 +20,11 @@ type Tx = Prisma.TransactionClient;
 
 /**
  * The rounds domain heart: resident reads + the concurrency-critical join /
- * update / leave path, plus the OPEN→CLOSED transition. This is the ONLY place
+ * update / leave path, plus the guarded lifecycle {@link transition} (close /
+ * cancel / and the future assign→deliver→rate moves). This is the ONLY place
  * round `status` and the authoritative `unitsCount` are mutated (ARCHITECTURE.md:
- * "No status field is mutated anywhere else").
+ * "No status field is mutated anywhere else"); every transition is validated
+ * against the legal-transition map under the exclusive round row lock.
  *
  * Concurrency (ADR-0004): `unitsCount` is authoritative in Postgres. Every
  * mutating path (join/update/leave/close) runs inside a `prisma.$transaction`
@@ -140,25 +144,113 @@ export class RoundsService {
   }
 
   /**
-   * Transition a round OPEN→CLOSED (interim manual close; FEAT-004 adds the full
-   * lifecycle + deadline-driven closing). Unknown id → 404. This is the only
-   * status mutation in the app.
+   * Manual admin close (FEAT-003 endpoint, now FEAT-004 semantics): routes
+   * through {@link closeRound} so it yields CLOSED_MET / CLOSED_EXPIRED by the
+   * units-vs-lowest-threshold rule. Unknown id → 404.
    */
   async close(roundId: string, viewerResidentId: string): Promise<RoundDto> {
+    const dto = await this.closeRound(roundId, viewerResidentId);
+    if (!dto) {
+      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+    }
+    return dto;
+  }
+
+  /**
+   * Close a round at its deadline (also the manual-close core). Under the ADR-0004
+   * row lock, in one transaction: no-op if the round is missing (returns null) or
+   * already non-OPEN (returns its current view — idempotent, so the scheduled job
+   * and a manual close can race harmlessly). Otherwise transitions to CLOSED_MET
+   * iff `unitsCount >= the lowest tier threshold`, else CLOSED_EXPIRED. The
+   * `viewerResidentId` only shapes `myUnits` in the returned view (the processor
+   * passes none and ignores it).
+   */
+  async closeRound(roundId: string, viewerResidentId = ''): Promise<RoundDto | null> {
     return this.prisma.$transaction(async (tx) => {
-      // Same exclusive row lock as the join path, so a close can never interleave
-      // with an in-flight join: whichever takes the lock first runs to completion.
-      const locked = await this.lockRoundRow(tx, roundId);
+      const locked = await this.lockRoundForUpdate(tx, roundId);
       if (!locked) {
-        throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+        return null;
       }
-      const updated = await tx.round.update({
-        where: { id: roundId },
-        data: { status: 'CLOSED' },
-        include: this.viewInclude(viewerResidentId),
+      if (locked.status !== RoundStatus.OPEN) {
+        // Idempotent no-op: already closed/cancelled — return the current view.
+        return this.buildRoundById(tx, roundId, viewerResidentId);
+      }
+
+      const lowest = await tx.roundTier.findFirst({
+        where: { roundId },
+        orderBy: { threshold: 'asc' },
+        select: { threshold: true },
       });
-      return buildRoundDto(updated as RoundWithView);
+      const met = lowest !== null && locked.unitsCount >= lowest.threshold;
+      const to = met ? RoundStatus.CLOSED_MET : RoundStatus.CLOSED_EXPIRED;
+      return this.transition(tx, roundId, to, viewerResidentId);
     });
+  }
+
+  /**
+   * Cancel a round (SUPER_ADMIN). Guarded: legal only from a pre-DELIVERED state
+   * (OPEN / CLOSED_MET / CLOSED_EXPIRED / ASSIGNED); from DELIVERED / RATED /
+   * CANCELLED → 409 INVALID_ROUND_TRANSITION. Unknown id → 404.
+   */
+  async cancel(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+    return this.prisma.$transaction((tx) =>
+      this.transition(tx, roundId, RoundStatus.CANCELLED, viewerResidentId),
+    );
+  }
+
+  /**
+   * CLOSED_MET → ASSIGNED (vendor assigned). Guarded like every transition. The
+   * endpoint + vendor/price data are wired in FEAT-005; the move lives here now.
+   */
+  async markAssigned(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+    return this.prisma.$transaction((tx) =>
+      this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId),
+    );
+  }
+
+  /** ASSIGNED → DELIVERED (service performed). Endpoint wired in FEAT-005. */
+  async markDelivered(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+    return this.prisma.$transaction((tx) =>
+      this.transition(tx, roundId, RoundStatus.DELIVERED, viewerResidentId),
+    );
+  }
+
+  /** DELIVERED → RATED (residents rated the service). Endpoint wired in FEAT-007. */
+  async markRated(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+    return this.prisma.$transaction((tx) =>
+      this.transition(tx, roundId, RoundStatus.RATED, viewerResidentId),
+    );
+  }
+
+  /**
+   * The SINGLE guarded status write (ARCHITECTURE invariant). Takes the exclusive
+   * round row lock (so it can never interleave with a join or another transition),
+   * reads the current status, validates the move against the legal-transition map,
+   * and applies it. Illegal move → 409 INVALID_ROUND_TRANSITION; unknown id → 404.
+   * Must run inside a `prisma.$transaction` (callers pass the tx client).
+   */
+  private async transition(
+    tx: Tx,
+    roundId: string,
+    to: RoundStatus,
+    viewerResidentId: string,
+  ): Promise<RoundDto> {
+    const locked = await this.lockRoundForUpdate(tx, roundId);
+    if (!locked) {
+      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+    }
+    if (!isLegalTransition(locked.status, to)) {
+      throw new ConflictException({
+        code: ErrorCode.INVALID_ROUND_TRANSITION,
+        message: `A round cannot move from ${locked.status} to ${to}.`,
+      });
+    }
+    const updated = await tx.round.update({
+      where: { id: roundId },
+      data: { status: to },
+      include: this.viewInclude(viewerResidentId),
+    });
+    return buildRoundDto(updated as RoundWithView);
   }
 
   /**
@@ -185,11 +277,31 @@ export class RoundsService {
     }
   }
 
-  /** Take an exclusive row lock on the round by id (no society scope). */
-  private async lockRoundRow(tx: Tx, roundId: string): Promise<boolean> {
-    const rows = await tx.$queryRaw<Array<{ id: string }>>`
-      SELECT "id" FROM "Round" WHERE "id" = ${roundId} FOR UPDATE`;
-    return rows.length > 0;
+  /**
+   * Take an exclusive row lock on the round by id (no society scope) and return
+   * its current status + authoritative unit count, or null if it does not exist.
+   * The basis for every status transition, so the read is never stale.
+   */
+  private async lockRoundForUpdate(
+    tx: Tx,
+    roundId: string,
+  ): Promise<{ status: RoundStatus; unitsCount: number } | null> {
+    const rows = await tx.$queryRaw<Array<{ status: RoundStatus; unitsCount: number }>>`
+      SELECT "status", "unitsCount" FROM "Round" WHERE "id" = ${roundId} FOR UPDATE`;
+    return rows[0] ?? null;
+  }
+
+  /** Load + shape a round's view by id inside a tx (for idempotent no-op returns). */
+  private async buildRoundById(
+    tx: Tx,
+    roundId: string,
+    viewerResidentId: string,
+  ): Promise<RoundDto> {
+    const round = await tx.round.findUniqueOrThrow({
+      where: { id: roundId },
+      include: this.viewInclude(viewerResidentId),
+    });
+    return buildRoundDto(round as RoundWithView);
   }
 
   /**

@@ -208,3 +208,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: pending (verify.sh)
 - Decisions: ADR-0004, ADR-0011
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-004 — T1–T5 built (resumed interrupted session)
+- What: Resumed a partly built, uncommitted T1–T5. Already there: enum + migration (applied), rounds.transitions map, guarded transition() / closeRound (met vs expired) / cancel, POST /admin/rounds/:id/cancel, round-closing queue + RoundClosingScheduler + RoundCloserProcessor, enqueue on create and job removal on close/cancel. Added this session: markAssigned/markDelivered/markRated service methods, a full 49-pair transition unit matrix, admin integration tests (job enqueued at deadline, close → CLOSED_EXPIRED / CLOSED_MET, idempotent re-close, cancel + job removal, cancel from terminal → 409, 403/404), and a new round-lifecycle integration suite (processor met/expired/idempotent/missing/double-fire, real BullMQ delayed job auto-close, cancelled job never fires, join/update/leave on CLOSED_MET/EXPIRED/CANCELLED → ROUND_CLOSED, ASSIGNED→DELIVERED→RATED + illegal → 409, GET /rounds OPEN-only). Fixed the stale 'CLOSED' assertion. No new deps.
+- Evidence: verify.sh exit 0 — backend 145 tests / 16 suites, web 25 / 9 files.
+- Decisions: ADR-0004, ADR-0011
+- By: agent (autonomous)

@@ -168,12 +168,19 @@ export interface UpsertOfferingBody {
  * ------------------------------------------------------------------------- */
 
 /**
- * Round status. Mirrors the Prisma `RoundStatus` enum. v1 is a two-state machine
- * (FEAT-004 extends it). Exported as a const + type so both apps share one name.
+ * Round status. Mirrors the Prisma `RoundStatus` enum (FEAT-004, ADR-0011). The
+ * full lifecycle: OPEN → CLOSED_MET | CLOSED_EXPIRED → ASSIGNED → DELIVERED →
+ * RATED, plus CANCELLED (reachable by admin from any pre-DELIVERED state).
+ * Exported as a const + type so both apps share one name.
  */
 export const RoundStatus = {
   OPEN: 'OPEN',
-  CLOSED: 'CLOSED',
+  CLOSED_MET: 'CLOSED_MET',
+  CLOSED_EXPIRED: 'CLOSED_EXPIRED',
+  ASSIGNED: 'ASSIGNED',
+  DELIVERED: 'DELIVERED',
+  RATED: 'RATED',
+  CANCELLED: 'CANCELLED',
 } as const;
 export type RoundStatus = (typeof RoundStatus)[keyof typeof RoundStatus];
 

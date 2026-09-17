@@ -21,6 +21,8 @@ export const ErrorCode = {
   // Rounds (FEAT-003)
   ROUND_ALREADY_OPEN: 'ROUND_ALREADY_OPEN',
   ROUND_CLOSED: 'ROUND_CLOSED',
+  // Rounds lifecycle (FEAT-004)
+  INVALID_ROUND_TRANSITION: 'INVALID_ROUND_TRANSITION',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

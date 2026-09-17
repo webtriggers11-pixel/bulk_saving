@@ -7,20 +7,24 @@ import { Prisma } from '@prisma/client';
 import type { CreateRoundBody, RoundDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RoundClosingScheduler } from './round-closing.scheduler';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { RoundsService } from './rounds.service';
 
 /**
- * Super-admin round management (FEAT-003, ADR-0010): open a round for a
- * (society, service) with preset tiers, and close it. All resident-facing reads
- * and the join path live in {@link RoundsService}; status mutations (close) are
- * delegated there so the state machine stays in one place.
+ * Super-admin round management (FEAT-003 + FEAT-004, ADR-0010/0011): open a round
+ * for a (society, service) with preset tiers, close it, and cancel it. All
+ * resident-facing reads and the join path live in {@link RoundsService}; status
+ * mutations (close/cancel) are delegated there so the state machine stays in one
+ * place. Opening a round schedules its deadline close job; closing/cancelling
+ * removes that pending job (best-effort — the close itself is idempotent).
  */
 @Injectable()
 export class RoundsAdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rounds: RoundsService,
+    private readonly scheduler: RoundClosingScheduler,
   ) {}
 
   /**
@@ -54,6 +58,8 @@ export class RoundsAdminService {
           participants: { where: { residentId: viewerResidentId } },
         },
       });
+      // Schedule the deadline-driven close (jobId = round id, delay = deadline − now).
+      await this.scheduler.schedule(created.id, created.deadline);
       return buildRoundDto(created as RoundWithView);
     } catch (err) {
       // Partial unique index race: a concurrent open won → surface 409, never 500.
@@ -64,9 +70,24 @@ export class RoundsAdminService {
     }
   }
 
-  /** Close a round (delegates the status transition to the state-machine owner). */
-  close(roundId: string, viewerResidentId: string): Promise<RoundDto> {
-    return this.rounds.close(roundId, viewerResidentId);
+  /**
+   * Close a round (delegates the guarded transition to the state-machine owner),
+   * then remove its now-redundant scheduled close job.
+   */
+  async close(roundId: string, viewerResidentId: string): Promise<RoundDto> {
+    const dto = await this.rounds.close(roundId, viewerResidentId);
+    await this.scheduler.cancel(roundId);
+    return dto;
+  }
+
+  /**
+   * Cancel a round (SUPER_ADMIN): guarded transition to CANCELLED, then remove its
+   * scheduled close job. Unknown id → 404; illegal from a terminal state → 409.
+   */
+  async cancel(roundId: string, viewerResidentId: string): Promise<RoundDto> {
+    const dto = await this.rounds.cancel(roundId, viewerResidentId);
+    await this.scheduler.cancel(roundId);
+    return dto;
   }
 
   /** Tiers must be non-empty with positive prices and STRICTLY ascending thresholds. */
