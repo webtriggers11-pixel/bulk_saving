@@ -298,3 +298,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0 identical (backend 251 / 21, web 50 / 16). The FEAT-006 migration was applied to the dev DB with explicit owner approval, which is what unblocked this gate.
 - Decisions: ADR-0014
 - By: agent (implementer) + independent reviewer subagent (V2)
+
+## 2026-09-18 — FEAT-006 — V2 (two independent reviewers) → fixes applied
+- What: Two reviewers, both CHANGES REQUESTED, NO P0. One ran verify.sh itself (exit 0 on a settled tree); the other checked spec/ADR/plan conformance and message content without touching the DB. Three P1s, all fixed: (1) nothing proved a round operation actually dispatches — deleting the dispatch call left the suite green, because every delivery test drove the processor by hand; a spy-based test around a real join now asserts the staged id (a spy, not a queue read, because parallel suites share Redis and a live worker elsewhere can consume the job mid-assertion); (2) CLOSED_MET quoted the TIER price × units as if owed, which the ASSIGNED message then contradicts with the negotiated price — now explicitly indicative; (3) five phrases promised follow-ups the system never sends, one of them ("when the next one opens") explicitly out of scope in this feature's own spec — removed, with a test forbidding them. P2s fixed rather than deferred: the reminder read round status WITHOUT the row lock, so "closes soon — invite a neighbour" could arrive after "cancelled" (now FOR UPDATE); an over-subscribed round rendered "12 of 5 units pledged" and asked to unlock a price that did not exist; the boot reconciler had no staleness cutoff (it would text about a round that closed days ago after an outage); round creation ran two sets of Redis round-trips on Prisma's default 5s budget; and three test gaps (true rollback, log redaction, cancel's reminder removal).
+- Honesty corrections: ADR-0013 now states that delivery is AT-LEAST-ONCE — the dedupe key makes staging exactly-once, but a send that succeeds before its markSent write can be retried. The earlier "a retried job can never double-send" was too strong. plan.md amended where the build diverged from it (module split, scheduler ownership, exports, job-id separator). ARCHITECTURE.md gained the outbox section, both queues, decision A10, a changelog entry and a fix to its stale NotificationChannel signature.
+- Known, recorded, NOT fixed: commit 4000cc2 does not build standalone — its test helper imports src/bootstrap.ts, which landed in the next commit (7582c47, BUG-003). History was left intact rather than rewritten, because a parallel session is working in the same repo; V3 was therefore run at HEAD, never per-commit.
+- Evidence: verify.sh exit 0 (backend 257 tests / 21 suites, web 50 / 16 files). Commit c6351b8.
+- Decisions: ADR-0013 (amended)
+- By: agent (two independent reviewer subagents + implementer)
+
+## 2026-09-18 — FEAT-006 — CLOSED (V3)
+- What: V3 ran verify.sh three times back-to-back, all exit 0. BACKEND — the whole of FEAT-006's scope — was identical every run: 257 tests / 21 suites. WEB counts rose across the runs (16 files/50 → 17/52 → 19/57), which is NOT flakiness: a parallel session was landing FEAT-008 (PWA shell) web tests between runs, confirmed by new untracked files under apps/web/src/features/shell/ and ADR-0015. FEAT-006 changes no apps/web file. No test failed in any run. REGISTRY → done.
+- Evidence: V3 RUN1=0, RUN2=0, RUN3=0; backend 257/21 identical ×3.
+- Decisions: ADR-0013
+- By: agent (autonomous)
