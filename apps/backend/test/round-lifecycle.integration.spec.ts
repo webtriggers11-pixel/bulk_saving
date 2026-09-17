@@ -3,7 +3,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { Job, Queue } from 'bullmq';
 import { QueueEvents } from 'bullmq';
 import request from 'supertest';
-import type { Resident, Round, RoundStatus, Society } from '@prisma/client';
+import type { Resident, Round, RoundStatus, Society, Vendor } from '@prisma/client';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { ErrorCode } from '../src/common/error-codes';
@@ -40,6 +40,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
   let society: Society;
   let resident: Resident;
   let token: string;
+  let vendor: Vendor | undefined; // FEAT-005: assign now requires an active vendor
   const serviceIds: string[] = [];
   const suffix = randomInviteCode().toLowerCase();
 
@@ -106,6 +107,10 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
     await queueEvents.close();
     await prisma.service.deleteMany({ where: { id: { in: serviceIds } } });
     await prisma.society.delete({ where: { id: society.id } });
+    // Rounds referencing the vendor are gone (Restrict FK), so the vendor can go too.
+    if (vendor) {
+      await prisma.vendor.delete({ where: { id: vendor.id } });
+    }
     await app.close();
   });
 
@@ -241,22 +246,26 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
   });
 
   describe('guarded later transitions (service-level; endpoints in FEAT-005/007)', () => {
+    beforeAll(async () => {
+      vendor = await prisma.vendor.create({ data: { name: 'Lifecycle Vendor', phone: '+919800000001' } });
+    });
+
     it('CLOSED_MET → ASSIGNED → DELIVERED → RATED', async () => {
       const round = await createRound('CLOSED_MET', 6);
-      expect((await rounds.markAssigned(round.id)).status).toBe('ASSIGNED');
-      expect((await rounds.markDelivered(round.id)).status).toBe('DELIVERED');
+      expect((await rounds.assign(round.id, vendor!.id, 650)).status).toBe('ASSIGNED');
+      expect((await rounds.deliver(round.id)).status).toBe('DELIVERED');
       expect((await rounds.markRated(round.id)).status).toBe('RATED');
     });
 
     it('illegal moves → 409 INVALID_ROUND_TRANSITION and leave status unchanged', async () => {
       const expired = await createRound('CLOSED_EXPIRED');
-      await expect(rounds.markAssigned(expired.id)).rejects.toMatchObject({
+      await expect(rounds.assign(expired.id, vendor!.id, 650)).rejects.toMatchObject({
         response: { code: ErrorCode.INVALID_ROUND_TRANSITION },
       });
       expect(await statusOf(expired.id)).toBe('CLOSED_EXPIRED');
 
       const open = await createRound('OPEN');
-      await expect(rounds.markDelivered(open.id)).rejects.toMatchObject({
+      await expect(rounds.deliver(open.id)).rejects.toMatchObject({
         response: { code: ErrorCode.INVALID_ROUND_TRANSITION },
       });
 

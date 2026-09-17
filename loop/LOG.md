@@ -238,3 +238,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: pending (verify.sh)
 - Decisions: ADR-0003, ADR-0011, ADR-0012
 - By: agent (autonomous)
+
+## 2026-09-17 — FEAT-005 — backend + frontend built (parallel); checkpoint commit, verify RED (triaged)
+- What: Backend builder: migration 20260917120000_feat_005_admin_dashboard (Vendor; Round vendorId/finalPrice/assignedAt/deliveredAt + status index; RoundParticipant paymentCollectedAt). `prisma migrate dev` wanted to RESET the shared dev DB (the FEAT-004 row in _prisma_migrations has a checksum mismatch from an earlier rolled-back attempt), so no reset was done: the SQL was produced with `migrate diff` and applied with `migrate deploy`, with no drift afterwards. Vendors CRUD, GET /admin/societies, /admin/rounds list + detail, /admin/dashboard, assign/deliver via transition(prepareData) (legality is checked before vendor checks, and a rejected assign writes nothing), payment PUT. 48 new backend tests. Frontend builder: features/admin (api, hooks, AdminRoute, AdminLayout, Dashboard, RoundDetail, Vendors, NewRound pages), Badge/Select primitives, home admin link, 25 new web tests; PWA build OK. No new deps.
+- Evidence: my own verify.sh exit 1. Lint + typecheck pass everywhere; the failures are all timing under CPU load (load avg 60–90, partly from unrelated processes on the machine): 10 web tests hit the 5s timeout or the 1s waitFor, including older App/Onboarding/RoundsPage tests; backend join transactions exceed Prisma's 5s interactive-transaction timeout while queued on the round row lock (500). Both triaged as bugs (BUG-001, BUG-002). Tasks stay unchecked until verify is green.
+- Decisions: ADR-0012
+- By: agent (build subagents + orchestrator)

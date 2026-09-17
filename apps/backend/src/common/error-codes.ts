@@ -23,6 +23,9 @@ export const ErrorCode = {
   ROUND_CLOSED: 'ROUND_CLOSED',
   // Rounds lifecycle (FEAT-004)
   INVALID_ROUND_TRANSITION: 'INVALID_ROUND_TRANSITION',
+  // Super-admin dashboard (FEAT-005)
+  VENDOR_INACTIVE: 'VENDOR_INACTIVE',
+  PAYMENT_NOT_ALLOWED: 'PAYMENT_NOT_ALLOWED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

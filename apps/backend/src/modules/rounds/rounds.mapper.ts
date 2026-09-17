@@ -14,7 +14,7 @@ export type RoundWithView = Round & {
 };
 
 /** Compact service summary embedded in a round view. */
-function toServiceSummary(service: Service): RoundServiceSummary {
+export function toServiceSummary(service: Service): RoundServiceSummary {
   return {
     id: service.id,
     name: service.name,

@@ -32,12 +32,12 @@ enum RoundStatus {
 }
 
 model Society {
-  id         String             @id @default(cuid())
+  id         String            @id @default(cuid())
   name       String
   city       String
-  inviteCode String             @unique
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  inviteCode String            @unique
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
   residents  Resident[]
   offerings  ServiceOffering[]
   rounds     Round[]
@@ -110,7 +110,17 @@ model Round {
   tiers        RoundTier[]
   participants RoundParticipant[]
 
+  // Assignment + delivery (FEAT-005, ADR-0012). Written ONLY inside
+  // RoundsService.transition() in the same guarded, row-locked update as the
+  // status change. `finalPrice` is the negotiated integer ₹ per unit.
+  vendorId    String?
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  finalPrice  Int?
+  assignedAt  DateTime?
+  deliveredAt DateTime?
+
   @@index([societyId, status])
+  @@index([status])
 }
 
 // A price tier: when the round's unitsCount reaches `threshold`, `price`
@@ -128,15 +138,33 @@ model RoundTier {
 // One resident's pledge in a round. `units` (>=1) is this resident's contribution
 // to the round's authoritative unitsCount. One row per (round, resident).
 model RoundParticipant {
-  id         String   @id @default(cuid())
-  roundId    String
-  round      Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  residentId String
-  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
-  units      Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  roundId            String
+  round              Round     @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  residentId         String
+  resident           Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  units              Int
+  // Manual payment flag (FEAT-005, ADR-0012): null = not collected. Amount due is
+  // round.finalPrice × units; the admin can set and clear it once a vendor is assigned.
+  paymentCollectedAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@unique([roundId, residentId])
   @@index([residentId])
+}
+
+// Vendors (FEAT-005, ADR-0012): a GLOBAL (city-level, not society-scoped) list the
+// super-admin manages. Vendors have no login. Rounds reference a vendor with
+// onDelete: Restrict, so vendors are deactivated (`active = false`), never deleted.
+model Vendor {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  category  String?
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rounds    Round[]
 }

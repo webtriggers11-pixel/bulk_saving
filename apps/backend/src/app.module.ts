@@ -10,6 +10,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ResidentsModule } from './modules/residents/residents.module';
 import { RoundsModule } from './modules/rounds/rounds.module';
 import { SocietiesModule } from './modules/societies/societies.module';
+import { VendorsModule } from './modules/vendors/vendors.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QueueModule } from './queue/queue.module';
 import { RedisModule } from './redis/redis.module';
@@ -33,6 +34,7 @@ import { RedisModule } from './redis/redis.module';
     AuthModule,
     AdminModule,
     CatalogModule,
+    VendorsModule,
     RoundsModule,
   ],
 })

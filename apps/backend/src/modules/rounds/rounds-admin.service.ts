@@ -1,9 +1,31 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { CreateRoundBody, RoundDto } from '@bulk/shared';
+import type {
+  AdminDashboardDto,
+  AdminRoundDetailDto,
+  AdminRoundParticipantDto,
+  AdminRoundSummaryDto,
+  AdminRoundsQuery,
+  AdminSocietyDemand,
+  CreateRoundBody,
+  RoundDto,
+} from '@bulk/shared';
+import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RoundClosingScheduler } from './round-closing.scheduler';
+import {
+  adminRoundDetailInclude,
+  adminRoundSummaryInclude,
+  buildAdminRoundDetail,
+  buildAdminRoundSummary,
+  computePaymentSummary,
+} from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { RoundsService } from './rounds.service';
 
@@ -14,7 +36,21 @@ import { RoundsService } from './rounds.service';
  * mutations (close/cancel) are delegated there so the state machine stays in one
  * place. Opening a round schedules its deadline close job; closing/cancelling
  * removes that pending job (best-effort — the close itself is idempotent).
+ *
+ * FEAT-005 (ADR-0012) adds the cross-society admin read models (round summaries,
+ * round detail with participants, dashboard aggregates) and the assign / deliver /
+ * payment actions, which again delegate every write to {@link RoundsService}.
  */
+/** v1 cap on the admin rounds list (no pagination yet, FEAT-005 spec). */
+export const ADMIN_ROUNDS_LIMIT = 200;
+
+/** Statuses whose rounds carry a final price and therefore owe payments (ADR-0012). */
+const PAYABLE_STATUSES: RoundStatus[] = [
+  RoundStatus.ASSIGNED,
+  RoundStatus.DELIVERED,
+  RoundStatus.RATED,
+];
+
 @Injectable()
 export class RoundsAdminService {
   constructor(
@@ -92,6 +128,134 @@ export class RoundsAdminService {
     const dto = await this.rounds.cancel(roundId, viewerResidentId);
     await this.scheduler.cancel(roundId);
     return dto;
+  }
+
+  /**
+   * Rounds across ALL societies (the explicit cross-tenant admin read), optionally
+   * filtered by status and society, newest first, capped at {@link ADMIN_ROUNDS_LIMIT}.
+   */
+  async listRounds(query: AdminRoundsQuery): Promise<AdminRoundSummaryDto[]> {
+    const rounds = await this.prisma.round.findMany({
+      where: {
+        ...(query.status ? { status: query.status } : {}),
+        ...(query.societyId ? { societyId: query.societyId } : {}),
+      },
+      include: adminRoundSummaryInclude,
+      orderBy: { createdAt: 'desc' },
+      take: ADMIN_ROUNDS_LIMIT,
+    });
+    return rounds.map(buildAdminRoundSummary);
+  }
+
+  /** One round with every participant (resident name + phone, payment state). Unknown id → 404. */
+  async getRoundDetail(roundId: string): Promise<AdminRoundDetailDto> {
+    const round = await this.prisma.round.findUnique({
+      where: { id: roundId },
+      include: adminRoundDetailInclude,
+    });
+    if (!round) {
+      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+    }
+    return buildAdminRoundDetail(round);
+  }
+
+  /**
+   * Dashboard aggregates in a fixed number of queries (no per-society N+1):
+   *  - `statusCounts`: one groupBy over status, zero-filled for all 7 statuses;
+   *  - `demandBySociety`: every society (by name) with its OPEN round count and
+   *    pledged units (one groupBy) and distinct residents joined in OPEN rounds;
+   *  - `payments`: `finalPrice × units` over ASSIGNED / DELIVERED / RATED rounds,
+   *    split by whether the participant's payment is collected.
+   */
+  async getDashboard(): Promise<AdminDashboardDto> {
+    const [statusGroups, societies, openGroups, openParticipants, payableRounds] =
+      await Promise.all([
+        this.prisma.round.groupBy({ by: ['status'], _count: { _all: true } }),
+        this.prisma.society.findMany({
+          select: { id: true, name: true, city: true },
+          orderBy: { name: 'asc' },
+        }),
+        this.prisma.round.groupBy({
+          by: ['societyId'],
+          where: { status: RoundStatus.OPEN },
+          _count: { _all: true },
+          _sum: { unitsCount: true },
+        }),
+        this.prisma.roundParticipant.findMany({
+          where: { round: { status: RoundStatus.OPEN } },
+          select: { residentId: true, round: { select: { societyId: true } } },
+        }),
+        this.prisma.round.findMany({
+          where: { status: { in: PAYABLE_STATUSES } },
+          select: {
+            finalPrice: true,
+            participants: { select: { units: true, paymentCollectedAt: true } },
+          },
+        }),
+      ]);
+
+    const statusCounts = Object.fromEntries(
+      Object.values(RoundStatus).map((status) => [status, 0]),
+    ) as Record<RoundStatus, number>;
+    for (const group of statusGroups) {
+      statusCounts[group.status as RoundStatus] = group._count._all;
+    }
+
+    const openBySociety = new Map(openGroups.map((g) => [g.societyId, g]));
+    const residentsBySociety = new Map<string, Set<string>>();
+    for (const p of openParticipants) {
+      const set = residentsBySociety.get(p.round.societyId) ?? new Set<string>();
+      set.add(p.residentId);
+      residentsBySociety.set(p.round.societyId, set);
+    }
+    const demandBySociety: AdminSocietyDemand[] = societies.map((society) => {
+      const open = openBySociety.get(society.id);
+      return {
+        society,
+        openRounds: open?._count._all ?? 0,
+        unitsPledged: open?._sum.unitsCount ?? 0,
+        residentsJoined: residentsBySociety.get(society.id)?.size ?? 0,
+      };
+    });
+
+    let collectedAmount = 0;
+    let outstandingAmount = 0;
+    for (const round of payableRounds) {
+      const summary = computePaymentSummary(round.finalPrice, round.participants);
+      collectedAmount += summary.collectedAmount;
+      outstandingAmount += summary.outstandingAmount;
+    }
+
+    return { statusCounts, demandBySociety, payments: { collectedAmount, outstandingAmount } };
+  }
+
+  /**
+   * Assign a CLOSED_MET round to a vendor at the negotiated per-unit price. The
+   * guarded write (lock, legality, vendor checks, one update) lives in
+   * {@link RoundsService.assign}; this returns the refreshed admin detail.
+   */
+  async assign(
+    roundId: string,
+    vendorId: string,
+    finalPrice: number,
+  ): Promise<AdminRoundDetailDto> {
+    await this.rounds.assign(roundId, vendorId, finalPrice);
+    return this.getRoundDetail(roundId);
+  }
+
+  /** Mark an ASSIGNED round delivered (guarded in {@link RoundsService.deliver}); returns the detail. */
+  async deliver(roundId: string): Promise<AdminRoundDetailDto> {
+    await this.rounds.deliver(roundId);
+    return this.getRoundDetail(roundId);
+  }
+
+  /** Set or clear a participant's payment flag (guarded in {@link RoundsService.setPaymentCollected}). */
+  setPayment(
+    roundId: string,
+    participantId: string,
+    collected: boolean,
+  ): Promise<AdminRoundParticipantDto> {
+    return this.rounds.setPaymentCollected(roundId, participantId, collected);
   }
 
   /** Tiers must be non-empty with positive prices and STRICTLY ascending thresholds. */

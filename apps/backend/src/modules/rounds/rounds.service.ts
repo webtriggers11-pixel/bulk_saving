@@ -1,13 +1,16 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { RoundDto } from '@bulk/shared';
+import type { AdminRoundParticipantDto, RoundDto } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
+import { VendorsService } from '../vendors/vendors.service';
+import { buildAdminParticipant } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { isLegalTransition } from './rounds.transitions';
 
@@ -19,11 +22,28 @@ import { isLegalTransition } from './rounds.transitions';
 type Tx = Prisma.TransactionClient;
 
 /**
+ * Extra round columns a lifecycle transition may write together with the status
+ * (FEAT-005, ADR-0012). Deliberately narrow: never `status` or `unitsCount`.
+ */
+type TransitionData = Pick<
+  Prisma.RoundUncheckedUpdateInput,
+  'vendorId' | 'finalPrice' | 'assignedAt' | 'deliveredAt'
+>;
+
+/** Statuses in which a participant's payment may be recorded (a vendor has been assigned). */
+const PAYMENT_STATUSES: readonly RoundStatus[] = [
+  RoundStatus.ASSIGNED,
+  RoundStatus.DELIVERED,
+  RoundStatus.RATED,
+];
+
+/**
  * The rounds domain heart: resident reads + the concurrency-critical join /
  * update / leave path, plus the guarded lifecycle {@link transition} (close /
- * cancel / and the future assign→deliver→rate moves). This is the ONLY place
- * round `status` and the authoritative `unitsCount` are mutated (ARCHITECTURE.md:
- * "No status field is mutated anywhere else"); every transition is validated
+ * cancel / assign / deliver / rate) and the FEAT-005 participant payment flag.
+ * This is the ONLY place round `status` and the authoritative `unitsCount` are
+ * mutated (ARCHITECTURE.md: "No status field is mutated anywhere else"); every
+ * transition is validated
  * against the legal-transition map under the exclusive round row lock.
  *
  * Concurrency (ADR-0004): `unitsCount` is authoritative in Postgres. Every
@@ -38,7 +58,10 @@ type Tx = Prisma.TransactionClient;
  */
 @Injectable()
 export class RoundsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly vendors: VendorsService,
+  ) {}
 
   /** The include needed to shape a {@link RoundDto} for a specific caller. */
   private viewInclude(residentId: string): Prisma.RoundInclude {
@@ -210,19 +233,41 @@ export class RoundsService {
   }
 
   /**
-   * CLOSED_MET → ASSIGNED (vendor assigned). Guarded like every transition. The
-   * endpoint + vendor/price data are wired in FEAT-005; the move lives here now.
+   * CLOSED_MET → ASSIGNED (FEAT-005, ADR-0012): assign a vendor at a negotiated
+   * per-unit `finalPrice`. One transaction, under the round row lock, in this order:
+   *  1. round exists (else 404 NOT_FOUND);
+   *  2. the move is legal from the LOCKED status (else 409 INVALID_ROUND_TRANSITION);
+   *  3. the vendor exists (else 404 NOT_FOUND) and is active (else 400 VENDOR_INACTIVE);
+   *  4. ONE update writes status + vendorId + finalPrice + assignedAt.
+   * Legality is checked first so an illegal assign is always a 409 regardless of the
+   * vendor, and every check runs before the single write, so a rejection writes nothing.
    */
-  async markAssigned(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+  async assign(
+    roundId: string,
+    vendorId: string,
+    finalPrice: number,
+    viewerResidentId = '',
+  ): Promise<RoundDto> {
     return this.prisma.$transaction((tx) =>
-      this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId),
+      this.transition(tx, roundId, RoundStatus.ASSIGNED, viewerResidentId, async () => {
+        const vendor = await this.vendors.getById(vendorId, tx);
+        if (!vendor.active) {
+          throw new BadRequestException({
+            code: ErrorCode.VENDOR_INACTIVE,
+            message: 'This vendor is inactive.',
+          });
+        }
+        return { vendorId: vendor.id, finalPrice, assignedAt: new Date() };
+      }),
     );
   }
 
-  /** ASSIGNED → DELIVERED (service performed). Endpoint wired in FEAT-005. */
-  async markDelivered(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+  /** ASSIGNED → DELIVERED (service performed), stamping `deliveredAt` in the same guarded write. */
+  async deliver(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
     return this.prisma.$transaction((tx) =>
-      this.transition(tx, roundId, RoundStatus.DELIVERED, viewerResidentId),
+      this.transition(tx, roundId, RoundStatus.DELIVERED, viewerResidentId, async () => ({
+        deliveredAt: new Date(),
+      })),
     );
   }
 
@@ -234,17 +279,66 @@ export class RoundsService {
   }
 
   /**
+   * Set or clear one participant's manual payment flag (FEAT-005, ADR-0012). Not a
+   * status transition, but it runs under the round row lock so it serializes with
+   * assign / cancel. Order: round exists (404); the participant belongs to THIS round
+   * (404); the round is ASSIGNED / DELIVERED / RATED (else 409 PAYMENT_NOT_ALLOWED).
+   * `collected: true` keeps an existing timestamp (idempotent); `false` clears it.
+   */
+  async setPaymentCollected(
+    roundId: string,
+    participantId: string,
+    collected: boolean,
+  ): Promise<AdminRoundParticipantDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const locked = await this.lockRoundForUpdate(tx, roundId);
+      if (!locked) {
+        throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+      }
+      const participant = await tx.roundParticipant.findFirst({
+        where: { id: participantId, roundId },
+      });
+      if (!participant) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'Participant not found in this round.',
+        });
+      }
+      if (!PAYMENT_STATUSES.includes(locked.status)) {
+        throw new ConflictException({
+          code: ErrorCode.PAYMENT_NOT_ALLOWED,
+          message: `Payments cannot be recorded for a ${locked.status} round.`,
+        });
+      }
+
+      const paymentCollectedAt = collected ? (participant.paymentCollectedAt ?? new Date()) : null;
+      const updated = await tx.roundParticipant.update({
+        where: { id: participantId },
+        data: { paymentCollectedAt },
+        include: { resident: true, round: { select: { finalPrice: true } } },
+      });
+      return buildAdminParticipant(updated, updated.round.finalPrice);
+    });
+  }
+
+  /**
    * The SINGLE guarded status write (ARCHITECTURE invariant). Takes the exclusive
    * round row lock (so it can never interleave with a join or another transition),
    * reads the current status, validates the move against the legal-transition map,
    * and applies it. Illegal move → 409 INVALID_ROUND_TRANSITION; unknown id → 404.
    * Must run inside a `prisma.$transaction` (callers pass the tx client).
+   *
+   * `prepareData` (FEAT-005) runs AFTER the lock + legality check and BEFORE the
+   * write; it may validate (and throw, aborting with nothing written) and returns
+   * extra columns (vendor, price, timestamps) written in the SAME single update as
+   * the status, so status and its data can never diverge.
    */
   private async transition(
     tx: Tx,
     roundId: string,
     to: RoundStatus,
     viewerResidentId: string,
+    prepareData?: () => Promise<TransitionData>,
   ): Promise<RoundDto> {
     const locked = await this.lockRoundForUpdate(tx, roundId);
     if (!locked) {
@@ -256,9 +350,10 @@ export class RoundsService {
         message: `A round cannot move from ${locked.status} to ${to}.`,
       });
     }
+    const extra = prepareData ? await prepareData() : {};
     const updated = await tx.round.update({
       where: { id: roundId },
-      data: { status: to },
+      data: { ...extra, status: to },
       include: this.viewInclude(viewerResidentId),
     });
     return buildRoundDto(updated as RoundWithView);

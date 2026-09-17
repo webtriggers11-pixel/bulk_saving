@@ -9,6 +9,8 @@ export function HomePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const logout = useAuthStore((state) => state.logout);
+  // Same source as AdminRoute (the session's resident) so the link and the guard agree.
+  const isSuperAdmin = useAuthStore((state) => state.resident?.role === 'SUPER_ADMIN');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['me'],
@@ -73,6 +75,18 @@ export function HomePage() {
               </Button>
             </div>
           </Card>
+
+          {isSuperAdmin && (
+            <Card>
+              <CardHeader>
+                <CardDescription>Super-admin</CardDescription>
+                <CardTitle>Manage rounds and vendors</CardTitle>
+              </CardHeader>
+              <Button className="w-full" onClick={() => navigate('/admin')}>
+                Admin dashboard
+              </Button>
+            </Card>
+          )}
         </>
       )}
     </main>
