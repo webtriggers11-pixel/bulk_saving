@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { QueryErrorState } from '../../components/QueryState';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -204,14 +205,7 @@ export function RoundsPage() {
 
       {isLoading && <p className="text-slate-500">Loading rounds…</p>}
 
-      {isError && (
-        <div role="alert" className="flex flex-col items-start gap-3">
-          <p className="text-red-600">We couldn't load the rounds. Please try again.</p>
-          <Button variant="primary" onClick={() => void refetch()}>
-            Retry
-          </Button>
-        </div>
-      )}
+      {isError && <QueryErrorState subject="rounds" hasData={Boolean(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && (
         <Card data-testid="rounds-empty">

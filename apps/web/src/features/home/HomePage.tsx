@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
 import { Button } from '../../components/ui/button';
+import { QueryErrorState } from '../../components/QueryState';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 
 export function HomePage() {
@@ -12,7 +13,7 @@ export function HomePage() {
   // Same source as AdminRoute (the session's resident) so the link and the guard agree.
   const isSuperAdmin = useAuthStore((state) => state.resident?.role === 'SUPER_ADMIN');
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['me'],
     queryFn: fetchMe,
   });
@@ -33,11 +34,7 @@ export function HomePage() {
       </header>
 
       {isLoading && <p className="text-slate-500">Loading your profile…</p>}
-      {isError && (
-        <p role="alert" className="text-red-600">
-          We couldn't load your profile. Please try again.
-        </p>
-      )}
+      {isError && <QueryErrorState subject="profile" hasData={Boolean(data)} onRetry={() => void refetch()} />}
 
       {data && (
         <>

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { ServiceDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { QueryErrorState } from '../../components/QueryState';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog } from './useCatalog';
@@ -56,14 +57,7 @@ export function ServicesPage() {
 
       {isLoading && <p className="text-slate-500">Loading services…</p>}
 
-      {isError && (
-        <div role="alert" className="flex flex-col items-start gap-3">
-          <p className="text-red-600">We couldn't load the services. Please try again.</p>
-          <Button variant="primary" onClick={() => void refetch()}>
-            Retry
-          </Button>
-        </div>
-      )}
+      {isError && <QueryErrorState subject="services" hasData={Boolean(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && (
         <Card data-testid="catalog-empty">

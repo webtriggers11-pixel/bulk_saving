@@ -1,0 +1,46 @@
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
+import { BottomNav } from './BottomNav';
+
+function renderAt(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <BottomNav />
+    </MemoryRouter>,
+  );
+}
+
+describe('BottomNav', () => {
+  it("renders exactly BRIEF's four resident tabs, in order, with their routes", () => {
+    renderAt('/');
+    const links = screen.getAllByRole('link');
+
+    expect(links.map((l) => l.textContent)).toEqual(['Home', 'Services', 'My Requests', 'Profile']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/services', '/my-requests', '/profile']);
+  });
+
+  it('marks the tab for the current route with aria-current', () => {
+    renderAt('/my-requests');
+
+    expect(screen.getByRole('link', { name: 'My Requests' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('does not mark Home as current on a nested route (end-matching)', () => {
+    renderAt('/services');
+
+    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('is labelled for screen readers and gives every tab a 44px target', () => {
+    renderAt('/');
+
+    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.className).toContain('min-h-11');
+      expect(link.className).toContain('min-w-11');
+    }
+  });
+});

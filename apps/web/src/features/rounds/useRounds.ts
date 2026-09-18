@@ -5,11 +5,14 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import type { RoundDto } from '@bulk/shared';
-import { fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
+import type { MyRoundDto, RoundDto } from '@bulk/shared';
+import { fetchMyRounds, fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
 
 /** Query key for the resident rounds list (the caller's own society). */
 export const roundsQueryKey = ['rounds'] as const;
+
+/** Query key for "My Requests" — rounds the caller has joined, any status. */
+export const myRoundsQueryKey = ['rounds', 'mine'] as const;
 
 /**
  * How often the rounds list re-polls so the live unit count / current price stay
@@ -28,6 +31,20 @@ export function useRounds(): UseQueryResult<RoundDto[]> {
   });
 }
 
+/**
+ * TanStack Query hook for "My Requests" (`GET /rounds/mine`). Polled on the same
+ * cadence as the browse list: a joined round's unit count and price move while
+ * it is OPEN, and its status moves without the resident doing anything.
+ */
+export function useMyRounds(): UseQueryResult<MyRoundDto[]> {
+  return useQuery({
+    queryKey: myRoundsQueryKey,
+    queryFn: fetchMyRounds,
+    refetchOnWindowFocus: true,
+    refetchInterval: LIVE_REFETCH_MS,
+  });
+}
+
 /** Arguments for a pledge mutation: the round id and the chosen unit count. */
 interface PledgeVars {
   id: string;
@@ -40,6 +57,8 @@ export function useJoinRound(): UseMutationResult<RoundDto, Error, PledgeVars> {
   return useMutation({
     mutationFn: ({ id, units }: PledgeVars) => joinRound(id, units),
     onSuccess: () => {
+      // `roundsQueryKey` is a prefix of `myRoundsQueryKey`, so this one call
+      // refreshes the browse list AND My Requests — joining changes both.
       void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
     },
   });
@@ -51,6 +70,8 @@ export function useUpdatePledge(): UseMutationResult<RoundDto, Error, PledgeVars
   return useMutation({
     mutationFn: ({ id, units }: PledgeVars) => updatePledge(id, units),
     onSuccess: () => {
+      // `roundsQueryKey` is a prefix of `myRoundsQueryKey`, so this one call
+      // refreshes the browse list AND My Requests — joining changes both.
       void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
     },
   });
@@ -62,6 +83,8 @@ export function useLeaveRound(): UseMutationResult<RoundDto, Error, string> {
   return useMutation({
     mutationFn: (id: string) => leaveRound(id),
     onSuccess: () => {
+      // `roundsQueryKey` is a prefix of `myRoundsQueryKey`, so this one call
+      // refreshes the browse list AND My Requests — joining changes both.
       void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
     },
   });

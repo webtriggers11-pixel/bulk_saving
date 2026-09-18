@@ -1,0 +1,120 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProfilePage } from './ProfilePage';
+import { useAuthStore } from '../auth/auth.store';
+import { signIn } from '../../test/session';
+
+const navigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return { ...actual, useNavigate: () => navigate };
+});
+
+function renderProfile() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return {
+    client,
+    ...render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    ),
+  };
+}
+
+/** Fire the Chromium-only install event with a promptable stub. */
+function fireBeforeInstallPrompt(prompt = vi.fn().mockResolvedValue(undefined)) {
+  const event = new Event('beforeinstallprompt') as Event & { prompt: () => Promise<void> };
+  event.prompt = prompt;
+  window.dispatchEvent(event);
+  return prompt;
+}
+
+describe('ProfilePage', () => {
+  beforeEach(() => {
+    navigate.mockClear();
+    useAuthStore.getState().logout();
+    signIn();
+  });
+
+  afterEach(() => {
+    useAuthStore.getState().logout();
+  });
+
+  it('shows the session identity from the store — no request needed, so it works offline', () => {
+    renderProfile();
+
+    expect(screen.getByTestId('profile-name')).toHaveTextContent('Asha');
+    expect(screen.getByTestId('profile-phone')).toHaveTextContent('+919812345678');
+    expect(screen.getByTestId('profile-society')).toHaveTextContent('Green Meadows');
+    expect(screen.getByTestId('profile-role')).toHaveTextContent('Resident');
+  });
+
+  it('shows a human role label, never the raw enum', () => {
+    useAuthStore.getState().logout();
+    signIn({ resident: { role: 'SUPER_ADMIN' } });
+    renderProfile();
+
+    expect(screen.getByTestId('profile-role')).toHaveTextContent('Super admin');
+    expect(screen.getByTestId('profile-role')).not.toHaveTextContent('SUPER_ADMIN');
+  });
+
+  it('logs out: clears the session, clears cached server data, lands on onboarding', () => {
+    const { client } = renderProfile();
+    client.setQueryData(['rounds'], [{ id: 'round-1' }]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    // ADR-0015: the next resident on this phone must not see these rounds.
+    expect(client.getQueryData(['rounds'])).toBeUndefined();
+    expect(navigate).toHaveBeenCalledWith('/onboard', { replace: true });
+  });
+
+  it('offers no install button until the browser says the app is installable', () => {
+    renderProfile();
+
+    expect(screen.queryByRole('button', { name: 'Install app' })).not.toBeInTheDocument();
+    // iOS Safari never fires the event, so the hint is what a resident there sees.
+    expect(screen.getByTestId('install-hint')).toHaveTextContent(/Add to Home Screen/i);
+  });
+
+  it('offers Install once the event fires, prompts on click, then stops offering', async () => {
+    renderProfile();
+    const prompt = fireBeforeInstallPrompt();
+
+    const button = await screen.findByRole('button', { name: 'Install app' });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(prompt).toHaveBeenCalledTimes(1));
+    // The event is single-use: the control must not linger after a choice.
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Install app' })).not.toBeInTheDocument());
+    expect(screen.getByTestId('install-hint')).toBeInTheDocument();
+  });
+
+  it('stops offering Install once the app reports itself installed', async () => {
+    renderProfile();
+    fireBeforeInstallPrompt();
+    expect(await screen.findByRole('button', { name: 'Install app' })).toBeInTheDocument();
+
+    window.dispatchEvent(new Event('appinstalled'));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Install app' })).not.toBeInTheDocument());
+  });
+
+  it('reports the connection state', async () => {
+    renderProfile();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('Connected');
+
+    Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
+    window.dispatchEvent(new Event('offline'));
+
+    await waitFor(() => expect(screen.getByTestId('connection-state')).toHaveTextContent(/Offline/i));
+    Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
+  });
+});

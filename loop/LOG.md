@@ -348,3 +348,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0 identical; E2E 77/77.
 - Decisions: ADR-0017 (amended)
 - By: agent (autonomous)
+
+## 2026-09-18 — FEAT-008 — opened, planned, T1–T9 built and verified
+- What: PWA shell, `apps/web` only — chosen over FEAT-007 precisely because a parallel session was mid-build in `apps/backend` and FEAT-007 needed a schema change that would have collided. Spec, plan, ADR-0015 and tasks written first (no code before a plan). Built: `AppShell` (tab bar + offline strip + update strip) wrapping the resident routes only, with `/onboard` and `/admin/*` deliberately outside it; `BottomNav` with BRIEF's four tabs, `aria-current` and 44 px targets; `/profile` (session identity, log out that also clears the query cache, install affordance); `useOnlineStatus` + `OfflineBanner`; `useInstallPrompt` around the Chromium-only `beforeinstallprompt`; `UpdatePrompt` via `useRegisterSW`; and `QueryErrorState`, which distinguishes offline-vs-server-error and empty-vs-stale so a failed refetch never blanks a populated list.
+- Course correction mid-build: ADR-0015 originally mapped "My Requests" to the existing `/rounds` page. That was wrong on the facts — `GET /rounds` is OPEN-only, so a joined round would vanish from the tab the moment it closed. The parallel session shipped `GET /rounds/mine` (joined rounds, any status) and flagged it; the tab now has its own `/my-requests` route reading that endpoint, showing pledge, live price and a resident-language status line for every lifecycle state. ADR-0015 amended in place with the reason, spec gained AC1b.
+- Dependency: `workbox-window` declared in `apps/web` devDependencies — required by `virtual:pwa-register/react` at build time. It was already in `pnpm-lock.yaml` as vite-plugin-pwa's peer and already in the store (`pnpm install`: "downloaded 0, added 0"); only the declaration was missing. **Owner approved** before it was added, per CLAUDE.md.
+- Gap found, not taken: `verify.sh` runs lint + typecheck + tests but never `pnpm -r build`, so the web build was broken while the gate stayed green. Recorded in the work folder as a CHORE candidate — changing the gate is the owner's call.
+- Evidence: verify.sh exit 0 — backend 287 tests / 22 suites, web 103 tests / 26 files. Build: 9 precache entries, `navigateFallback: index.html`, no runtime API caching (ADR-0015 asserted, not assumed).
+- Decisions: ADR-0015 (amended same day)
+- By: agent (autonomous)

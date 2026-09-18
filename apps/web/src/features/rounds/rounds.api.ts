@@ -1,4 +1,4 @@
-import type { JoinRoundBody, RoundDto } from '@bulk/shared';
+import type { JoinRoundBody, MyRoundDto, RoundDto } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 
 /**
@@ -11,6 +11,16 @@ import { apiRequest } from '../../lib/api';
 /** GET /rounds — OPEN rounds in the caller's society, with pricing + the caller's pledge. */
 export function fetchRounds(): Promise<RoundDto[]> {
   return apiRequest<RoundDto[]>('/rounds');
+}
+
+/**
+ * GET /rounds/mine — rounds the caller has JOINED, in any status, newest first
+ * (FEAT-007). `GET /rounds` is OPEN-only, so it cannot back "My Requests": a
+ * round would vanish from the tab the moment it closed, which is exactly when a
+ * resident most wants to see it.
+ */
+export function fetchMyRounds(): Promise<MyRoundDto[]> {
+  return apiRequest<MyRoundDto[]>('/rounds/mine');
 }
 
 /** POST /rounds/:id/join — pledge `units` (>=1); records/updates participation atomically. */

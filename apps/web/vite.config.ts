@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -30,6 +31,11 @@ export default defineConfig({
     }),
   ],
   test: {
+    // FEAT-008: `virtual:pwa-register/react` is synthesised by vite-plugin-pwa at
+    // BUILD time, so Vitest cannot resolve it. Point it at a stub the tests drive.
+    alias: {
+      'virtual:pwa-register/react': fileURLToPath(new URL('./src/test/pwa-register.stub.ts', import.meta.url)),
+    },
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',

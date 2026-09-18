@@ -8,7 +8,10 @@ import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
 import { ServicesPage } from './features/catalog/ServicesPage';
 import { HomePage } from './features/home/HomePage';
+import { ProfilePage } from './features/profile/ProfilePage';
+import { MyRequestsPage } from './features/requests/MyRequestsPage';
 import { RoundsPage } from './features/rounds/RoundsPage';
+import { AppShell } from './features/shell/AppShell';
 
 export default function App() {
   return (
@@ -21,11 +24,15 @@ export default function App() {
           </AnonymousRoute>
         }
       />
+      {/* Resident routes carry the app shell: tab bar, offline + update strips
+          (FEAT-008). /onboard and /admin/* deliberately stay outside it. */}
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <AppShell>
+              <HomePage />
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -33,7 +40,9 @@ export default function App() {
         path="/services"
         element={
           <ProtectedRoute>
-            <ServicesPage />
+            <AppShell>
+              <ServicesPage />
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -41,7 +50,29 @@ export default function App() {
         path="/rounds"
         element={
           <ProtectedRoute>
-            <RoundsPage />
+            <AppShell>
+              <RoundsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-requests"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <MyRequestsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ProfilePage />
+            </AppShell>
           </ProtectedRoute>
         }
       />

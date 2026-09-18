@@ -34,8 +34,12 @@ FEAT-008 is `apps/web`-only, so it can proceed safely in parallel.
 ## Acceptance criteria (testable — this IS the definition of done)
 
 - [ ] AC1 — A bottom tab bar renders on resident routes with exactly four tabs:
-      Home (`/`), Services (`/services`), My Requests (`/rounds`), Profile
+      Home (`/`), Services (`/services`), My Requests (`/my-requests`), Profile
       (`/profile`). The tab matching the current route carries `aria-current="page"`.
+- [ ] AC1b — `/my-requests` lists the rounds this resident joined in ANY status
+      (`GET /rounds/mine`), each with its pledge, current price and a
+      resident-language status line; the raw status enum never reaches the UI,
+      and the empty state links to the open rounds instead of dead-ending.
 - [ ] AC2 — The tab bar is absent on `/onboard` and on every `/admin/*` route
       (the super-admin dashboard keeps its own navigation).
 - [ ] AC3 — Mobile-first: the bar sits above the iOS safe-area inset, every tab
@@ -80,6 +84,9 @@ FEAT-008 is `apps/web`-only, so it can proceed safely in parallel.
 
 ## Open questions
 
-- None blocking. Assumptions taken (autonomous mode, recorded in ADR-0015):
-  "My Requests" maps to the existing `/rounds` page rather than a new route, and
-  the offline story is read-only.
+- ~~"My Requests" maps to the existing `/rounds` page~~ → **resolved 2026-09-18,
+  mid-build:** wrong on the facts. `GET /rounds` is OPEN-only, so a closed round
+  would vanish from the tab. The parallel FEAT-007 session added
+  `GET /rounds/mine` (joined rounds, any status) and flagged it; the tab now has
+  its own route, `/my-requests`. ADR-0015 amended accordingly.
+- Offline stays read-only (ADR-0015), unchanged.

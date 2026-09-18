@@ -79,8 +79,17 @@ showing already-fetched data from the in-memory query cache when it exists.
 prompt via `useRegisterSW` when a new worker is waiting, so a resident is never
 silently mid-refresh and never stuck on a stale build.
 
-"My Requests" in BRIEF's nav maps to the existing `/rounds` page. No new route,
-no duplicate data view.
+"My Requests" in BRIEF's nav gets its own route, `/my-requests`, backed by
+`GET /rounds/mine`.
+
+**Amended 2026-09-18, mid-build.** The original decision was to point the tab at
+the existing `/rounds` page and add no new view. That was wrong on the facts:
+`GET /rounds` returns OPEN rounds only, so a round would disappear from "My
+Requests" the moment it closed — precisely when a resident wants to check what
+happened to it. FEAT-007 (parallel session) then added `GET /rounds/mine`, which
+returns the caller's joined rounds in any status. The tab now uses it.
+`/rounds` keeps its browse role, reachable from Home and from the My Requests
+empty state.
 
 ## Consequences
 
