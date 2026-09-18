@@ -1,6 +1,6 @@
 # BUG-005 — Rare 401 in the admin integration suite (V3 flake)
 
-**Status:** triaged (not reproduced on demand) · **Priority:** P2 · **Owner:** Vivek · **Opened:** 2026-09-18
+**Status:** done — mitigated by BUG-006 (root cause never proven) · **Priority:** P2 · **Owner:** Vivek · **Opened:** 2026-09-18
 
 ## Why this exists
 
@@ -58,6 +58,17 @@ Checked and ruled out:
   `delete` / assignment, which is correct regardless and removes hypothesis 2.
 - The structural fix is the long-open FEAT-004 P2: a **dedicated test DB and Redis**, so
   suites stop sharing mutable global state at all.
+
+## Resolution (2026-09-18)
+
+**Mitigated by BUG-006**, not explained. The gate kept failing back-to-back with a *different*
+test each time, and the common cause was Jest running suites in parallel against one shared
+Postgres and Redis. `jest --runInBand` removed that, and five consecutive `verify.sh` runs are
+now byte-identical (317 / 182). This 401 has not recurred.
+
+The hypotheses above stay on record deliberately: serialisation makes interference impossible,
+so if a 401 ever appears again under serial execution, neither was the cause — which narrows
+it considerably.
 
 ## Not doing now
 

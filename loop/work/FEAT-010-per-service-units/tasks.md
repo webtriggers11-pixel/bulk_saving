@@ -17,7 +17,11 @@ build → tests). After each: commit and append to LOG.md.
 - [x] T8: Seed gives the five seeded services real labels (Painting → room, with scope). — depends: T3
 - [x] T9: E2E — `node scripts/e2e-smoke.mjs` green, with a check that the label round-trips through the API. — depends: T4, T8
 - [ ] T10: V2 — independent reviewer runs the gate ITSELF and reviews the diff vs spec + ADR-0019. — depends: T6, T7, T9
-- [ ] T11: V3 — **FAILED the flake check, so FEAT-010 stays open.** Run 1 exit 1, run 2 exit 0
+- [x] T11: V3 — **passed on the second attempt, after BUG-006 was fixed.** The first attempt
+      failed the flake check, and chasing that uncovered BUG-006 (parallel suites sharing one
+      DB/Redis). With `--runInBand`, five consecutive verify.sh runs are identical: backend
+      317 / 24 suites, web 182 / 35 files. The original failure, kept for the record:
+      **FAILED the flake check, so FEAT-010 stayed open.** Run 1 exit 1, run 2 exit 0
       on a clean tree with no dev server: one admin-suite test got 401 where 409 was expected
       (`admin-dashboard.integration.spec.ts:328`). Three further full backend runs were clean
       (311/311 each), so it is roughly 1 in 9. CLAUDE.md rule 5: different results between

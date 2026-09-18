@@ -449,3 +449,13 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 (backend 317 tests / 24 suites, web 182 / 35 files); live E2E 84/84; the API image built, booted against host Postgres/Redis, served /health, refused an unsafe config, and rate-limited under load.
 - Decisions: ADR-0020
 - By: agent (autonomous, two owner approvals: the dependencies and the OTP-echo approach)
+
+## 2026-09-18 — BUG-006 — the gate could not pass twice in a row; FEAT-010 + CHORE-007 CLOSED
+- What: CHORE-007's V3 failed the same way FEAT-010's had, but in a DIFFERENT test (round-lifecycle's real delayed job, after FEAT-010's had been a 401 in admin-dashboard). Two distinct intermittent failures in two attempts, each passing alone, is not two bugs — it is one: Jest ran test FILES in parallel workers while every integration suite shares ONE Postgres and ONE Redis. Suites deleted rows others were asserting on, BullMQ workers from different suites consumed each other's jobs, boot reconcilers acted on other suites' fixtures, and the timing-sensitive delayed-job test was starved of CPU. Every mystery failure this session — the CORS 404s, the rounds-admin 404/500s, the notifications reconciler, the 401 — is the same cause.
+- This had been on record since FEAT-004 as a P2 ("dedicated test DB/Redis") and treated as tidiness. It was not tidiness: it left the ONE verification gate unable to give the same answer twice, which is the single property a gate must have. Promoted to P1 and fixed.
+- Fix: `jest --runInBand` (+ `maxWorkers: 1` and the reasoning in jest.config.js). Cost measured: backend suite 16.0s → 18.1s, about two seconds — the parallelism was producing contention, not speed. Evidence: FIVE consecutive verify.sh runs, all exit 0, all identical (backend 317 tests / 24 suites, web 182 / 35 files), where back-to-back pairs had been failing roughly half the time.
+- BUG-005 (the 401) is marked done as MITIGATED, not explained: serialisation removes the interference that almost certainly caused it, but the mechanism was never proven, so its hypotheses stay on record — if a 401 recurs under serial execution, neither was the cause.
+- Not fixed: suites still share one database, so a leaky test still affects later suites within a run. Real isolation (a database per worker or a schema per suite) remains the deeper fix and is worth doing before the suite grows much larger.
+- With a gate that now answers consistently, V3 passed for both outstanding items: **FEAT-010 CLOSED** and **CHORE-007 CLOSED**.
+- Evidence: 5× verify.sh exit 0, identical counts; E2E 84/84 earlier in the session.
+- By: agent (autonomous)
