@@ -553,3 +553,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Two further scan defects found by its own output: it blamed a parent for a nested element's classes (`action={<Link className="…"/>}`), and it took the first `className=` in a tag rather than the one at the tag's own depth. Both fixed, then proven by reintroducing a real conflict and watching it fail.
 - Evidence: gate exit 0 — backend 317/24, web 264/42, 1216 class tokens.
 - By: agent (autonomous) + code-reviewer subagent (found the class of bug)
+
+## 2026-09-19 — CHORE-008 — V2 PASS, V3 passed twice identically, item CLOSED
+- V2 round 2: **PASS**. The reviewer verified AC1 by diffing every `data-testid`, `id` and `htmlFor` across the range rather than trusting the suite — the only deltas are the seven `htmlFor` literals `Field` now generates, every id value unchanged and still label-linked. It confirmed the SessionPort is a real inversion and acyclic (lib → nothing, api → port, auth feature → port; no cycle), and that `lib/` is clean of feature imports.
+- It also answered the question I put to it — "does the padding conflict exist for other families?" — with two more families and 13 sites, which became BUG-007 and turned out to be 35 sites including every Input font size. That answer was worth more than the review of what I had written.
+- Residual risk it named and I accepted rather than papered over: the session wiring is now a module side effect, so a guarantee that used to be structural (api imported the store, so it could not be missing) is conventional (the store must be on the import graph). It fails silently if it is ever off it. Not blocking; worth a composition-root call or a warn in a later item.
+- V3: two back-to-back full gate runs on a clean tree, **exit 0 both times, byte-identical** — backend 317/24, web 264/42, 1216 class tokens. No flake.
+- **CHORE-008 CLOSED.** Both halves of the product are on one system: eight screen primitives with one owner per shape, admin rebuilt from them, the canvas covering all ten screens, and the dependency direction asserted by test in both shared folders.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

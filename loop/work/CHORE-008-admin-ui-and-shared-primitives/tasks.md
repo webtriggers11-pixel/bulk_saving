@@ -11,5 +11,5 @@ Check a box only when `bash scripts/verify.sh` passes. Commit + LOG after each.
 - [x] T7: admin new round + vendors. — depends: T5, T4
 - [x] T8: admin round detail. — depends: T5, T4
 - [x] T9: browser pass — signed in as super-admin against the real API. — depends: T6–T8
-- [ ] T10: V2 — independent reviewer runs the gate itself. — depends: T9
-- [ ] T11: V3 — two back-to-back runs, both logged. — depends: T10
+- [x] T10: V2 — independent reviewer runs the gate itself. — depends: T9
+- [x] T11: V3 — two back-to-back runs, both logged. — depends: T10
