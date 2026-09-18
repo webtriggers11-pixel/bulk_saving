@@ -10,25 +10,6 @@ interface QueryErrorStateProps {
 }
 
 /**
- * Whether a query has failed in any way the resident should hear about.
- *
- * V2 P1-2: TanStack Query v5's default `networkMode: 'online'` PAUSES an
- * offline query instead of failing it — `isError` false, `isLoading` false
- * (it is `isPending && isFetching`), `data` undefined. Gating a page on
- * `isError` alone therefore renders NOTHING at all on an offline cold load,
- * which is exactly the blank screen AC7 exists to prevent. A paused query is a
- * failure from the resident's point of view, so it is one here.
- */
-export function hasQueryFailed(query: { isError: boolean; fetchStatus: string }): boolean {
-  return query.isError || query.fetchStatus === 'paused';
-}
-
-/** True when `data` is worth showing — an empty array is not (V2 P2-2). */
-export function hasUsableData(data: unknown): boolean {
-  return Array.isArray(data) ? data.length > 0 : data !== undefined && data !== null;
-}
-
-/**
  * The one place FEAT-008 states a failed read (AC7). Two axes, because they mean
  * different things to a resident:
  *

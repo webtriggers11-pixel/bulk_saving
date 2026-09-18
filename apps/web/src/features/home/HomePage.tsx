@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
 import { Button } from '../../components/ui/button';
-import { QueryErrorState, hasQueryFailed, hasUsableData } from '../../components/QueryState';
+import { QueryErrorState } from '../../components/QueryState';
+import { queryStalled } from '../../lib/offline';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 
 export function HomePage() {
@@ -18,7 +19,7 @@ export function HomePage() {
     queryFn: fetchMe,
   });
   const { data, isLoading, refetch } = meQuery;
-  const failed = hasQueryFailed(meQuery);
+  const failed = queryStalled(meQuery);
 
   function handleLogout() {
     logout();
@@ -36,7 +37,7 @@ export function HomePage() {
       </header>
 
       {isLoading && <p className="text-slate-500">Loading your profile…</p>}
-      {failed && <QueryErrorState subject="profile" hasData={hasUsableData(data)} onRetry={() => void refetch()} />}
+      {failed && <QueryErrorState subject="profile" hasData={data !== undefined} onRetry={() => void refetch()} />}
 
       {data && (
         <>

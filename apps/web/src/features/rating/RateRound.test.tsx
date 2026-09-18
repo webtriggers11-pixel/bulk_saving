@@ -246,6 +246,53 @@ describe('RateRound (on the My Requests card)', () => {
     await waitFor(() => expect(rateRoundMock).toHaveBeenCalledTimes(1));
   });
 
+  it('shows the SAVED card after a successful submit, even if the refetch never lands', async () => {
+    // V2 P1-5: the card derived "saved" purely from the polled query, so between a
+    // successful PUT and the refetch — or forever, if that refetch pauses offline —
+    // the resident saw an empty form for a rating that WAS saved.
+    fetchMyRoundsMock.mockResolvedValue([round()]); // always reports unrated
+    rateRoundMock.mockResolvedValue({ ...savedRating, stars: 5, comment: null });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '5 stars' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
+
+    expect(await screen.findByTestId('my-rating')).toHaveTextContent('5 / 5');
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+  });
+
+  it('a withdrawn rating does NOT come back pre-filled in the form', async () => {
+    // V2 P1-4: local draft state survived the delete, so the form reopened with the
+    // stars and comment the resident had just removed — one tap from re-creating them.
+    fetchMyRoundsMock
+      .mockResolvedValueOnce([round({ status: 'RATED', myRating: savedRating })])
+      .mockResolvedValue([round({ status: 'RATED', myRating: null })]);
+    removeRatingMock.mockResolvedValue(undefined);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+
+    // Back to the unrated prompt, with nothing carried over.
+    await waitFor(() => expect(screen.getByRole('radiogroup')).toBeInTheDocument());
+    expect(screen.getByLabelText('Comment (optional)')).toHaveValue('');
+    expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Submit rating' })).toBeDisabled();
+  });
+
+  it('explains a rating-specific failure instead of a generic apology', async () => {
+    // V2 P2: these errors used to go through the AUTH error map, so every rating
+    // failure became "Something went wrong. Please try again." — advice to retry
+    // something that cannot succeed.
+    fetchMyRoundsMock.mockResolvedValue([round()]);
+    rateRoundMock.mockRejectedValue(new ApiError('NOT_A_PARTICIPANT', 'nope', 403));
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '3 stars' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/joined this round/i);
+  });
+
   it('caps the comment at the same length as the API', async () => {
     fetchMyRoundsMock.mockResolvedValue([round()]);
     renderPage();

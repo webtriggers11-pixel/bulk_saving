@@ -3,11 +3,23 @@ import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
-import { messageFromError } from '../auth/error-messages';
+import { ratingErrorMessage } from './rating-messages';
 import { STAR_VALUES, StarRating, type StarValue } from './StarRating';
 import { useRateRound, useRemoveRating } from './useRating';
 
-/** Mirrors the API's cap (MAX_RATING_COMMENT) so the two cannot drift apart. */
+/**
+ * The API's comment cap.
+ *
+ * Deliberately a literal, NOT an import of `@bulk/shared`'s `MAX_RATING_COMMENT`:
+ * `@bulk/shared` builds to CommonJS, every other web import from it is type-only
+ * (erased at build time), and importing a runtime VALUE broke the production Vite
+ * build — Rollup cannot statically see named exports of that CJS bundle. Vitest
+ * (esbuild) resolved it happily, so only the CHORE-004 build gate caught it.
+ *
+ * Drift is prevented by a test instead: `rating-cap.test.ts` asserts this equals the
+ * shared constant, which Vitest CAN import. So the two cannot diverge silently, and
+ * the production bundle keeps no runtime dependency on the shared package.
+ */
 export const MAX_COMMENT = 500;
 
 /** Statuses a resident may rate — the job has actually been done (ADR-0017). */
@@ -28,13 +40,22 @@ function asStarValue(stars: number): StarValue | null {
  * is the fastest way to stop them writing anything again.
  */
 export function RateRound({ round }: { round: MyRoundDto }) {
-  const saved = round.myRating;
+  const rate = useRateRound();
+  const remove = useRemoveRating();
+  /**
+   * What to show as saved. The query is the source of truth, but between a
+   * successful PUT and the invalidated refetch landing there is a window where
+   * `round.myRating` is still null — and if that refetch then fails or pauses
+   * (offline the instant after the write committed, which is exactly this
+   * feature's scenario) the resident would be left staring at an empty form for a
+   * rating that WAS saved (V2 P1-5). `rate.data` covers that window; a withdrawal
+   * clears it again.
+   */
+  const saved = round.myRating ?? (remove.isSuccess ? null : (rate.data ?? null));
   const [editing, setEditing] = useState(false);
   const [stars, setStars] = useState<StarValue | null>(saved ? asStarValue(saved.stars) : null);
   const [comment, setComment] = useState(saved?.comment ?? '');
 
-  const rate = useRateRound();
-  const remove = useRemoveRating();
   const busy = rate.isPending || remove.isPending;
   const error = rate.isError ? rate.error : remove.isError ? remove.error : null;
   /**
@@ -91,7 +112,23 @@ export function RateRound({ round }: { round: MyRoundDto }) {
             >
               Change
             </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => remove.mutate(round.id)}>
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() =>
+                // Clear the local draft too (V2 P1-4): without this the form
+                // reopens with the stars and comment the resident just deleted
+                // still filled in, one tap away from re-creating them.
+                remove.mutate(round.id, {
+                  onSuccess: () => {
+                    setStars(null);
+                    setComment('');
+                    setEditing(false);
+                    rate.reset();
+                  },
+                })
+              }
+            >
               {remove.isPending ? 'Removing…' : 'Remove'}
             </Button>
           </div>
@@ -104,7 +141,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         )}
         {error && (
           <p role="alert" className="mt-2 text-sm text-red-600">
-            {messageFromError(error)}
+            {ratingErrorMessage(error)}
           </p>
         )}
       </div>
@@ -145,7 +182,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
       )}
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-600">
-          {messageFromError(error)}
+          {ratingErrorMessage(error)}
         </p>
       )}
 

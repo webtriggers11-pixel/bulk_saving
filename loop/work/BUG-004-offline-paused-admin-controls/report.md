@@ -36,8 +36,8 @@ they will either give up or press it again and again, believing nothing happened
 
 ## Fix
 
-One shared helper (`lib/offline.ts`) so the decision is made in a single place and the copy
-cannot drift between fifteen controls:
+A shared helper (`lib/offline.ts`) so the decision and the copy are defined once for the
+admin surfaces and the rating control:
 
 - `queryStalled({ isError, fetchStatus })` — an error OR paused, used to gate every error
   state;
@@ -48,15 +48,39 @@ cannot drift between fifteen controls:
 Applied to the four admin pages and to the FEAT-009 rating control (which had the same hole
 and is where the pattern was worked out).
 
+**Correction (V2 P1-8):** the first version of this report claimed "one shared helper … so
+the decision cannot drift". That was not true as committed. The FEAT-008 session had already
+added an equivalent `hasQueryFailed()` to `components/QueryState.tsx` one commit earlier, so
+`fb4e403` shipped THREE implementations of the same predicate (that one, `queryStalled`, and
+an inline copy in `MyRequestsPage`), plus two row-emptiness helpers with different semantics.
+Introducing a second helper is exactly the drift this report says it prevents. The other
+session opened CHORE-005 to consolidate them; this work item's remaining job is to end up on
+whichever helper survives, not to add a fourth.
+
 ## Testing note
 
 A rejected promise does NOT reproduce this — that is the server-error path, and it was
 exactly why the existing tests passed while the bug was live. Offline must be driven with
 `onlineManager.setOnline(false)`.
 
+## V2 findings, fixed in the follow-up commit
+
+- **P0-1 — the bug was still live on `/admin/rounds/:id`.** Its four mutation buttons were
+  fixed while its TWO READS were missed, so an offline admin got the layout, the back link
+  and nothing else. Worse, the assign form's vendor read fell through to
+  **"No active vendors. Add a vendor to assign this round."** — a false statement caused by a
+  network failure, whose obvious remedy is to create a duplicate vendor. Both reads now go
+  through `queryStalled`, with offline-specific copy and a Retry.
+- **P1-2/P1-3 — the read-side fix had no call-site coverage**, which is how P0-1 survived:
+  reverting every `queryStalled` call left all 153 web tests green. Added
+  `features/admin/offline-admin.test.tsx` (five surfaces, driven through `onlineManager`) and
+  paused-read coverage for My Requests. Both were confirmed to FAIL against the unfixed code.
+- **P2 — `OnboardingPage` was the last uncovered mutation surface**, and it is the app's
+  front door: "Sending…" / "Verifying…" / "Resending…" hung forever offline. Now covered, so
+  all 15 `useMutation` call sites have a paused state.
+
 ## Follow-up (not done here)
 
-The resident pages other than My Requests (Home, Services, Rounds) were fixed by the
-FEAT-008 session. After this, every mutation-driven control in the app should have a paused
-state; a lint rule or a shared `useMutationState` wrapper would stop the next one being
-written without it. Recorded as a CHORE candidate rather than taken.
+A lint rule or a shared `useMutationState` wrapper would stop the next control being written
+without a paused state. Recorded as a CHORE candidate rather than taken. `hasRows` vs
+`hasUsableData` consolidation belongs to CHORE-005 (the other session's).

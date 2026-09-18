@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { onlineManager } from '@tanstack/react-query';
 import type { AuthResult, ResidentDto } from '@bulk/shared';
 import { OnboardingPage } from './OnboardingPage';
 import { useAuthStore } from './auth.store';
@@ -86,6 +87,7 @@ describe('OnboardingPage', () => {
   });
 
   afterEach(() => {
+    onlineManager.setOnline(true);
     vi.unstubAllGlobals();
   });
 
@@ -157,5 +159,31 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('tells the resident the OTP request is QUEUED when offline, not stuck on "Sending…" (BUG-004)', async () => {
+    // The app's front door: offline pauses the mutation, so isPending stayed true
+    // forever with no explanation and no way to tell whether the SMS was requested.
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919876543210' } });
+
+    act(() => {
+      onlineManager.setOnline(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+
+    expect(await screen.findByTestId('onboarding-offline')).toHaveTextContent('reconnect');
+    expect(mock).not.toHaveBeenCalled();
+
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() =>
+      expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/request'))).toBe(true),
+    );
   });
 });

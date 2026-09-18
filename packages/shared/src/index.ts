@@ -251,6 +251,12 @@ export interface RatingDto {
   updatedAt: string;
 }
 
+/**
+ * Cap on a rating comment, shared so the client input limit and the server's
+ * validation cannot drift apart (they were two separate literals — V2 P2).
+ */
+export const MAX_RATING_COMMENT = 500;
+
 /** `PUT /rounds/:id/rating` body. Creates or replaces the caller's own rating. */
 export interface RateRoundBody {
   stars: number;

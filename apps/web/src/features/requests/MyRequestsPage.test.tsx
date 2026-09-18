@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MyRoundDto } from '@bulk/shared';
 import { MyRequestsPage } from './MyRequestsPage';
@@ -31,8 +31,11 @@ function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
   };
 }
 
+let queryClientRef: QueryClient | undefined;
+
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClientRef = client;
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/my-requests']}>
@@ -48,6 +51,7 @@ describe('MyRequestsPage', () => {
   });
 
   afterEach(() => {
+    onlineManager.setOnline(true);
     vi.clearAllMocks();
   });
 
@@ -118,5 +122,39 @@ describe('MyRequestsPage', () => {
     const alert = await screen.findByTestId('query-error');
     expect(alert).toHaveTextContent(/requests/i);
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('shows the offline state on a paused read, not a bare header (FEAT-008 V2 / BUG-004)', async () => {
+    // The existing failure test uses mockRejectedValue, which is the SERVER-ERROR
+    // path. Offline pauses the query instead: isError false, isLoading false, no
+    // data — so gating on those alone rendered the heading and nothing else.
+    fetchMyRoundsMock.mockResolvedValue([]);
+    onlineManager.setOnline(false);
+    renderPage();
+
+    expect(await screen.findByTestId('query-error')).toBeInTheDocument();
+    expect(fetchMyRoundsMock).not.toHaveBeenCalled();
+
+    onlineManager.setOnline(true);
+    await waitFor(() => expect(fetchMyRoundsMock).toHaveBeenCalled());
+  });
+
+  it('does not claim stale data when the list it failed to refresh was empty', async () => {
+    // Boolean([]) is true, so the old flag rendered "showing what we loaded earlier"
+    // AND the empty-state card together.
+    fetchMyRoundsMock.mockResolvedValueOnce([]).mockRejectedValue(new Error('network down'));
+    renderPage();
+
+    await screen.findByTestId('my-requests-empty');
+    fetchMyRoundsMock.mockRejectedValue(new Error('network down'));
+    await act(async () => {
+      await queryClientRef?.refetchQueries();
+    });
+
+    const banner = screen.queryByTestId('query-error');
+    if (banner) {
+      expect(banner).toHaveAttribute('data-mode', 'error');
+      expect(banner).not.toHaveAttribute('data-mode', 'stale');
+    }
   });
 });

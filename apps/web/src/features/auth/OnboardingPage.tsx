@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { messageFromError } from './error-messages';
+import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -70,6 +71,9 @@ export function OnboardingPage() {
   }
 
   const requestError = requestMutation.isError ? messageFromError(requestMutation.error) : null;
+  // BUG-004 (V2 P2): offline PAUSES a mutation — isPending stays true and nothing
+  // rejects — so "Sending…" / "Verifying…" hung forever on the app's front door.
+  const queuedOffline = anyPaused(requestMutation, verifyMutation);
   const verifyError = verifyMutation.isError ? messageFromError(verifyMutation.error) : null;
   const stepIndex = STEP_ORDER.indexOf(step);
 
@@ -132,6 +136,11 @@ export function OnboardingPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            {queuedOffline && (
+              <p role="status" data-testid="onboarding-offline" className="mt-3 text-sm text-amber-700">
+                {OFFLINE_QUEUED_TEXT}
+              </p>
+            )}
             {requestError && (
               <p role="alert" className="mt-3 text-sm text-red-600">
                 {requestError}
@@ -151,7 +160,11 @@ export function OnboardingPage() {
                 type="submit"
                 disabled={requestMutation.isPending || phone.trim().length === 0}
               >
-                {requestMutation.isPending ? 'Sending…' : 'Send code'}
+                {queuedOffline
+                  ? OFFLINE_WAITING_LABEL
+                  : requestMutation.isPending
+                    ? 'Sending…'
+                    : 'Send code'}
               </Button>
             </div>
           </form>
@@ -203,7 +216,11 @@ export function OnboardingPage() {
               type="submit"
               disabled={verifyMutation.isPending || code.trim().length === 0}
             >
-              {verifyMutation.isPending ? 'Verifying…' : 'Verify & continue'}
+              {queuedOffline
+                ? OFFLINE_WAITING_LABEL
+                : verifyMutation.isPending
+                  ? 'Verifying…'
+                  : 'Verify & continue'}
             </Button>
 
             <div className="mt-4 text-center text-sm text-slate-500">
@@ -213,7 +230,11 @@ export function OnboardingPage() {
                 onClick={() => requestMutation.mutate()}
                 disabled={requestMutation.isPending}
               >
-                {requestMutation.isPending ? 'Resending…' : 'Resend code'}
+                {queuedOffline
+                  ? OFFLINE_WAITING_LABEL
+                  : requestMutation.isPending
+                    ? 'Resending…'
+                    : 'Resend code'}
               </Button>
             </div>
           </form>

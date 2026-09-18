@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
-import { QueryErrorState, hasQueryFailed, hasUsableData } from '../../components/QueryState';
+import { QueryErrorState } from '../../components/QueryState';
+import { OFFLINE_QUEUED_TEXT, anyPaused, hasRows, queryStalled } from '../../lib/offline';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -44,14 +45,10 @@ function JoinControl({ round }: { round: RoundDto }) {
 
   const busy = join.isPending || update.isPending || leave.isPending;
   const failed = join.isError || update.isError || leave.isError;
-  /**
-   * v5 PAUSES a mutation while the browser is offline instead of rejecting it:
-   * `isPending` stays true and nothing ever errors, so the button would read
-   * "Joining…" forever with no explanation — on exactly the flaky connection
-   * this app is built for. A paused mutation is not a failure, though: it really
-   * does fire on reconnect, so it gets its own honest copy rather than an error.
-   */
-  const paused = join.isPaused || update.isPaused || leave.isPaused;
+  // A paused (offline) write is not a failure — it resumes on reconnect. Rule and
+  // copy both come from lib/offline.ts so they cannot drift from the admin
+  // controls that learned the same lesson in BUG-004 (CHORE-005).
+  const paused = anyPaused(join, update, leave);
 
   if (round.myUnits === 0) {
     return (
@@ -81,7 +78,7 @@ function JoinControl({ round }: { round: RoundDto }) {
         </div>
         {paused && (
           <p role="status" data-testid="pledge-paused" className="text-sm text-amber-700">
-            You're offline. We'll send this as soon as you reconnect.
+            {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {failed && !paused && (
@@ -137,7 +134,7 @@ function JoinControl({ round }: { round: RoundDto }) {
       </div>
       {paused && (
         <p role="status" data-testid="pledge-paused" className="text-sm text-amber-700">
-          You're offline. We'll send this as soon as you reconnect.
+          {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {failed && !paused && (
@@ -209,7 +206,7 @@ export function RoundsPage() {
   const navigate = useNavigate();
   const query = useRounds();
   const { data, isLoading, refetch } = query;
-  const failed = hasQueryFailed(query);
+  const failed = queryStalled(query);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-slate-50 p-6">
@@ -225,7 +222,7 @@ export function RoundsPage() {
 
       {isLoading && <p className="text-slate-500">Loading rounds…</p>}
 
-      {failed && <QueryErrorState subject="rounds" hasData={hasUsableData(data)} onRetry={() => void refetch()} />}
+      {failed && <QueryErrorState subject="rounds" hasData={hasRows(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && !failed && (
         <Card data-testid="rounds-empty">

@@ -23,7 +23,7 @@ import type {
   RoundTierDto,
   SetPaymentBody,
 } from '@bulk/shared';
-import { RoundStatus } from '@bulk/shared';
+import { MAX_RATING_COMMENT, RoundStatus } from '@bulk/shared';
 
 /**
  * One tier in a `POST /admin/rounds` payload. Per-field validation only
@@ -85,8 +85,12 @@ export class AdminRoundsQueryDto implements AdminRoundsQuery {
   societyId?: string;
 }
 
-/** Max length of a rating comment (FEAT-007) — one SMS-ish paragraph, not an essay. */
-export const MAX_RATING_COMMENT = 500;
+/**
+ * Max length of a rating comment (FEAT-007) — one SMS-ish paragraph, not an essay.
+ * Re-exported from `@bulk/shared` so the web client's input cap and this validator
+ * are the same number by construction (V2 P2).
+ */
+export { MAX_RATING_COMMENT } from '@bulk/shared';
 
 /**
  * `PUT /rounds/:id/rating` (FEAT-007, ADR-0017): 1–5 stars and an optional note.

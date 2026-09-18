@@ -10,7 +10,7 @@ import { Select } from '../../components/ui/select';
 import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
-import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL } from '../../lib/offline';
+import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
 import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -123,11 +123,21 @@ function AssignForm({ roundId, busy }: { roundId: string; busy: boolean }) {
   if (vendors.isLoading) {
     return <p className="text-slate-500">Loading vendors…</p>;
   }
-  if (vendors.isError) {
+  // BUG-004 (V2 P0-1): offline PAUSES this read, so `isError` alone let it fall
+  // through to the "No active vendors" branch below — telling the admin something
+  // false, whose obvious remedy is to go and create a duplicate vendor.
+  if (queryStalled(vendors)) {
     return (
-      <p role="alert" className="text-sm text-red-600">
-        We couldn't load vendors. Please try again.
-      </p>
+      <div role="alert" className="flex flex-col items-start gap-3">
+        <p className="text-sm text-red-600" data-testid="vendors-unavailable">
+          {vendors.isError
+            ? "We couldn't load vendors. Please try again."
+            : "You're offline, so we couldn't load the vendor list. Reconnect to assign this round."}
+        </p>
+        <Button variant="ghost" className="border border-slate-300" onClick={() => void vendors.refetch()}>
+          Retry
+        </Button>
+      </div>
     );
   }
   if (activeVendors.length === 0) {
@@ -392,7 +402,11 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
  */
 export function AdminRoundDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
-  const { data, isLoading, isError, error, refetch } = useAdminRound(id);
+  const roundQuery = useAdminRound(id);
+  const { data, isLoading, error, refetch } = roundQuery;
+  // BUG-004 (V2 P0-1): paused counts as failed, or an offline cold load renders the
+  // layout and the back link and NOTHING else — no error, no Retry.
+  const isError = queryStalled(roundQuery);
 
   return (
     <AdminLayout title="Round">
@@ -407,7 +421,9 @@ export function AdminRoundDetailPage() {
           <p className="text-red-600">
             {error instanceof ApiError && error.status === 404
               ? 'This round does not exist.'
-              : "We couldn't load this round. Please try again."}
+              : roundQuery.isError
+                ? "We couldn't load this round. Please try again."
+                : "You're offline, so we couldn't load this round. Reconnect and try again."}
           </p>
           <Button onClick={() => void refetch()}>Retry</Button>
         </div>

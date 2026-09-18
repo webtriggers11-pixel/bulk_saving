@@ -379,3 +379,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: V3 RUN1=0, RUN2=0, identical.
 - Decisions: ADR-0015 (amended), ADR-0016
 - By: agent (autonomous)
+
+## 2026-09-18 — CHORE-005 — one offline rule, one place
+- What: Two sessions independently discovered TanStack Query's offline pausing and each wrote helpers for it — `hasQueryFailed`/`hasUsableData` on `components/QueryState.tsx` (FEAT-008, this session) and `queryStalled`/`hasRows`/`anyPaused` + copy constants in `lib/offline.ts` (BUG-004, parallel session). Same rule, two names, two files, which is exactly the drift `lib/offline.ts` exists to prevent. Consolidated onto `lib/offline.ts`: it is a lib rather than an export hanging off a presentational component, it covers mutations as well as queries, and it owns the copy. `QueryState.tsx` is presentational again.
+- One real difference, handled rather than papered over: `hasRows()` is array-only while `hasUsableData()` also took a single object. `HomePage`'s query returns one `{ resident, society }`, so it now checks `data !== undefined` directly — which is what it meant. The list pages use `hasRows`.
+- `RoundsPage`'s pledge controls now use `anyPaused()` and `OFFLINE_QUEUED_TEXT` instead of their own expression and inline string, so resident and admin wording cannot diverge.
+- Behaviour unchanged by design — no new acceptance criteria, no copy edits, same assertions. Zero references to the old helpers remain.
+- Evidence: web 153 tests / 31 files green. Full gate deferred a few minutes: the parallel session is mid-V2 on the shared Postgres/Redis, and two concurrent runs is what produced this session's phantom failures earlier. Subscribed to its idle signal rather than polling.
+- Decisions: none (no new technical choice — adopting an existing one)
+- By: agent (autonomous)
