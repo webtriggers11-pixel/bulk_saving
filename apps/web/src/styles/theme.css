@@ -1,0 +1,452 @@
+/**
+ * The resident design system (FEAT-011, ADR-0021).
+ *
+ * Every colour, radius, shadow, blur and duration in the app resolves here. Colour
+ * channels are stored space-separated RGB so Tailwind can write
+ * `rgb(var(--brand) / <alpha-value>)` and give one variable all of its opacity
+ * variants. A palette is one attribute on <html data-theme>; nothing in the
+ * component tree knows which one is active.
+ */
+
+:root,
+[data-theme='teal'] {
+  /* brand ramp */
+  --brand: 15 118 110;
+  --brand-deep: 10 84 76;
+  --brand-light: 46 214 187;
+  --brand-ink: 9 80 73;
+  /* ink ramp */
+  --ink: 12 27 25;
+  --ink-muted: 78 97 92;
+  --ink-soft: 104 122 116;
+  /* ground */
+  --ground: 238 242 241;
+  --ground-top: 245 248 247;
+  /* the tint every shadow and hairline is mixed from */
+  --shadow-rgb: 9 52 47;
+  /* the three ambient mesh washes behind the glass */
+  --mesh-1: 46 214 187;
+  --mesh-2: 15 118 110;
+  --mesh-3: 63 118 140;
+}
+
+[data-theme='indigo'] {
+  --brand: 79 70 229;
+  --brand-deep: 49 46 129;
+  --brand-light: 139 140 255;
+  --brand-ink: 55 48 163;
+  --ink: 20 20 43;
+  --ink-muted: 84 84 115;
+  --ink-soft: 108 108 142;
+  --ground: 239 240 248;
+  --ground-top: 246 247 252;
+  --shadow-rgb: 30 27 75;
+  --mesh-1: 139 140 255;
+  --mesh-2: 79 70 229;
+  --mesh-3: 236 72 153;
+}
+
+[data-theme='ember'] {
+  --brand: 194 65 12;
+  --brand-deep: 124 45 18;
+  --brand-light: 251 146 60;
+  --brand-ink: 154 52 18;
+  --ink: 34 19 16;
+  --ink-muted: 106 82 72;
+  --ink-soft: 122 92 80;
+  --ground: 246 241 236;
+  --ground-top: 251 247 243;
+  --shadow-rgb: 90 40 15;
+  --mesh-1: 251 146 60;
+  --mesh-2: 194 65 12;
+  --mesh-3: 180 120 90;
+}
+
+/* State hues are meanings, not decoration: they do NOT change with the palette. */
+:root {
+  --state-amber: 138 85 18;
+  --state-red: 163 35 24;
+  --state-green: 15 107 69;
+  --state-blue: 27 79 196;
+  --star: 232 169 22;
+
+  /* motion */
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --ease-entrance: cubic-bezier(0.22, 0.9, 0.26, 1);
+  --ease-press: cubic-bezier(0.3, 0.9, 0.4, 1);
+  --dur-press: 120ms;
+  --dur-hover: 340ms;
+  --dur-focus: 280ms;
+  --dur-entrance: 780ms;
+}
+
+html {
+  /* The app ground: a neutral base plus three soft washes. */
+  background-color: rgb(var(--ground));
+  background-image:
+    radial-gradient(900px 520px at 4% -12%, rgb(var(--mesh-1) / 0.26), transparent 64%),
+    radial-gradient(680px 460px at 112% 2%, rgb(var(--mesh-2) / 0.18), transparent 62%),
+    radial-gradient(760px 560px at 46% 116%, rgb(var(--mesh-3) / 0.16), transparent 66%),
+    linear-gradient(180deg, rgb(var(--ground-top)) 0%, rgb(var(--ground)) 100%);
+  background-attachment: fixed;
+}
+
+body {
+  margin: 0;
+  color: rgb(var(--ink));
+  font-family:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tabular figures everywhere a rupee amount or a unit count is rendered. */
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* ---- entrance ---------------------------------------------------------- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes blur-in {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+.animate-rise {
+  animation: rise var(--dur-entrance) var(--ease-entrance) both;
+}
+.animate-blur-in {
+  animation: blur-in 900ms var(--ease-entrance) both;
+}
+/* Children arrive 80ms apart — never all at once. */
+.stagger > * {
+  animation: rise var(--dur-entrance) var(--ease-entrance) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 40ms; }
+.stagger > *:nth-child(2) { animation-delay: 120ms; }
+.stagger > *:nth-child(3) { animation-delay: 200ms; }
+.stagger > *:nth-child(4) { animation-delay: 280ms; }
+.stagger > *:nth-child(5) { animation-delay: 360ms; }
+.stagger > *:nth-child(6) { animation-delay: 440ms; }
+.stagger > *:nth-child(7) { animation-delay: 520ms; }
+.stagger > *:nth-child(8) { animation-delay: 600ms; }
+
+/* ---- ambient ----------------------------------------------------------- */
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(38px, 26px, 0) scale(1.14); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); }
+  50% { transform: translate3d(-34px, 34px, 0) scale(0.9); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(26px, -32px, 0) scale(1.1); }
+}
+.animate-drift-a { animation: drift-a 22s ease-in-out infinite; }
+.animate-drift-b { animation: drift-b 27s ease-in-out infinite; }
+.animate-drift-c { animation: drift-c 19s ease-in-out infinite; }
+
+/* ---- surfaces ---------------------------------------------------------- */
+/* Liquid glass: a white gradient over blur, a white hairline, a tinted lift. */
+.surface-glass {
+  background-image: linear-gradient(
+    152deg,
+    rgb(255 255 255 / 0.9) 0%,
+    rgb(255 255 255 / 0.62) 46%,
+    rgb(255 255 255 / 0.74) 100%
+  );
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.85);
+  box-shadow:
+    0 1px 1px rgb(255 255 255 / 0.9) inset,
+    0 2px 4px rgb(var(--shadow-rgb) / 0.05),
+    0 24px 52px -26px rgb(var(--shadow-rgb) / 0.45);
+}
+.surface-solid {
+  background-image: linear-gradient(170deg, rgb(255 255 255 / 0.96), rgb(255 255 255 / 0.8));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.72);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.8) inset,
+    0 18px 42px -26px rgb(var(--shadow-rgb) / 0.4);
+}
+.surface-tint {
+  background-image: linear-gradient(
+    152deg,
+    rgb(var(--brand-light) / 0.22) 0%,
+    rgb(var(--brand) / 0.08) 52%,
+    rgb(255 255 255 / 0.34) 100%
+  );
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  border: 1px solid rgb(255 255 255 / 0.64);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.7) inset,
+    0 18px 44px -28px rgb(var(--shadow-rgb) / 0.48);
+}
+/* One accent surface per screen carries the primary action. */
+.surface-accent {
+  background-image:
+    radial-gradient(120% 120% at 8% 0%, rgb(var(--brand-light) / 0.62) 0%, transparent 52%),
+    linear-gradient(142deg, rgb(var(--brand-deep)) 0%, rgb(var(--brand)) 46%, rgb(var(--brand-light)) 118%);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  color: #fff;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.3) inset,
+    0 26px 50px -22px rgb(var(--shadow-rgb) / 0.75);
+}
+.surface-inset {
+  background-image: linear-gradient(168deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.44));
+  border: 1px solid rgb(255 255 255 / 0.62);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.75) inset,
+    0 -1px 2px rgb(var(--shadow-rgb) / 0.03) inset;
+}
+
+/* ---- interaction ------------------------------------------------------- */
+.t {
+  transition:
+    transform var(--dur-hover) var(--ease-out-soft),
+    box-shadow var(--dur-hover) var(--ease-out-soft),
+    background-color 260ms ease,
+    background-image 260ms ease,
+    border-color 260ms ease,
+    color 220ms ease,
+    opacity 260ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 1px 1px rgb(255 255 255 / 0.9) inset,
+    0 4px 8px rgb(var(--shadow-rgb) / 0.06),
+    0 36px 66px -30px rgb(var(--shadow-rgb) / 0.6);
+}
+/* A gradient hairline that lights along the top-left edge on hover. */
+.card-glow {
+  position: relative;
+}
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    140deg,
+    rgb(255 255 255 / 0.95),
+    rgb(var(--brand-light) / 0.55),
+    rgb(255 255 255 / 0) 62%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.card-glow:hover::after {
+  opacity: 1;
+}
+/* A specular sweep crossing a button once on hover. */
+@keyframes sweep {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(320%) skewX(-18deg); }
+}
+.sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+}
+.sweep:hover::after {
+  animation: sweep 850ms var(--ease-out-soft);
+}
+@keyframes ripple {
+  from { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+  to { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+.ripple::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120%;
+  padding-bottom: 120%;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.55);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.ripple:active::before {
+  animation: ripple 550ms ease-out;
+}
+.press:active {
+  transform: scale(0.975);
+  transition-duration: var(--dur-press);
+}
+
+/* ---- signals ----------------------------------------------------------- */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(var(--brand) / 0.45); }
+  70% { box-shadow: 0 0 0 8px rgb(var(--brand) / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--brand) / 0); }
+}
+@keyframes pulse-ring-green {
+  0% { box-shadow: 0 0 0 0 rgb(var(--state-green) / 0.45); }
+  70% { box-shadow: 0 0 0 7px rgb(var(--state-green) / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--state-green) / 0); }
+}
+.animate-pulse-ring { animation: pulse-ring 2.6s ease-out infinite; }
+.animate-pulse-ring-green { animation: pulse-ring-green 2.4s ease-out infinite; }
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+.animate-breathe { animation: breathe 3.4s ease-in-out infinite; }
+@keyframes halo-spin {
+  to { transform: rotate(360deg); }
+}
+.animate-halo { animation: halo-spin 11s linear infinite; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin 850ms linear infinite; }
+@keyframes pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.14); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 420ms cubic-bezier(0.3, 1.3, 0.5, 1) both; }
+@keyframes burst {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+}
+.animate-burst { animation: burst 1.4s var(--ease-out-soft) infinite; }
+
+/* ---- progress + skeleton ----------------------------------------------- */
+@keyframes grow-in {
+  from { width: 0; }
+}
+@keyframes travel {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(260%); }
+}
+.bar-fill {
+  position: relative;
+  overflow: hidden;
+  animation: grow-in 1.5s var(--ease-entrance) both;
+}
+.bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+  animation: travel 2.6s ease-in-out infinite;
+}
+@keyframes skeleton-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(230%); }
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    120deg,
+    rgb(var(--shadow-rgb) / 0.09),
+    rgb(var(--shadow-rgb) / 0.05)
+  );
+  animation: skeleton-pulse 2.2s ease-in-out infinite;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.9), transparent);
+  animation: skeleton-sweep 1.7s ease-in-out infinite;
+}
+.skeleton-d1::after { animation-delay: 120ms; }
+.skeleton-d2::after { animation-delay: 240ms; }
+.skeleton-d3::after { animation-delay: 360ms; }
+
+/* ---- the accent surface's slow sheen ----------------------------------- */
+@keyframes sheen {
+  0% { transform: translateX(-130%) rotate(14deg); }
+  55%, 100% { transform: translateX(240%) rotate(14deg); }
+}
+.sheen::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  animation: sheen 6.5s cubic-bezier(0.4, 0.1, 0.3, 1) infinite;
+  pointer-events: none;
+}
+@keyframes glide {
+  0%, 100% { transform: translate3d(-30%, -10%, 0) scale(1); }
+  50% { transform: translate3d(30%, 14%, 0) scale(1.22); }
+}
+.animate-glide { animation: glide 14s ease-in-out infinite; }
+
+/* Screen-reader-only text that still announces (used by the skeletons). */
+.sr-only-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/**
+ * AC5: one switch turns the whole motion layer off. Everything above is
+ * decoration; nothing here carries meaning that is lost when it stops.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

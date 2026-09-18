@@ -1,3 +1,7 @@
+/* The design system (FEAT-011, ADR-0021): tokens, palettes, surfaces, motion.
+   Imported FIRST so Tailwind's preflight and utilities layer on top of it. */
+@import './styles/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -3,7 +3,7 @@
 Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes (lint → typecheck →
 build → tests). After each: commit and append to LOG.md.
 
-- [ ] T1: Token layer — `styles/theme.css` (colour, surface, radius, elevation, blur, spacing,
+- [x] T1: Token layer — `styles/theme.css` (colour, surface, radius, elevation, blur, spacing,
       motion; 3 palettes on `[data-theme]`), tailwind `theme.extend` mapping, webfont link,
       reduced-motion guard. Test: palette swap changes variables, not classes.
 - [ ] T2: UI primitives on tokens — Button (primary/secondary/outline/ghost/link + icon size),
