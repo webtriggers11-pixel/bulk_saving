@@ -68,7 +68,6 @@ function ServiceHero({ service }: { service: ServiceDto }) {
             From {price} / {unitLabelFor(service)}
           </span>
         )}
-        <Icon name="forward" size={20} strokeWidth={2.2} className="nudge ml-auto text-brand-ink" />
       </div>
       {/* What one unit includes — the same sentence the round card shows, so a
           resident reads the scope before the price means anything. */}
@@ -88,7 +87,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
 function ServiceTile({ service }: { service: ServiceDto }) {
   return (
     <Card surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
-      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-white/80 bg-gradient-to-br from-brand-light/22 to-brand/6 text-brand-ink">
+      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
         <ServiceGlyph service={service} size={22} />
       </span>
       <CardEyebrow className="mt-3.5">{service.category}</CardEyebrow>
@@ -112,7 +111,7 @@ function ServiceRow({ service }: { service: ServiceDto }) {
       className="col-span-2 flex items-center gap-3.5 p-[17px]"
       data-testid="service-card"
     >
-      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/22 to-brand/6 text-brand-ink">
+      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
         <ServiceGlyph service={service} size={25} />
       </span>
       <div className="min-w-0 flex-1">

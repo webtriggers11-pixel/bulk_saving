@@ -121,7 +121,7 @@ export function HomePage() {
           </Card>
 
           <Card className="flex min-h-[168px] flex-col p-[19px]">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/26 to-brand/7 text-brand-ink">
+            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
               <Icon name="users" size={22} strokeWidth={1.8} />
             </span>
             <button
@@ -141,8 +141,10 @@ export function HomePage() {
           </Card>
 
           {isSuperAdmin && (
-            <Card className="col-span-2 flex items-center gap-4 p-[19px]">
-              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/26 to-brand/7 text-brand-ink">
+            // Solid, not glass: a super-admin would otherwise carry a fourth
+            // blurred surface on this screen (V2 round 2, P2-3).
+            <Card surface="solid" className="col-span-2 flex items-center gap-4 p-[19px]">
+              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
                 <Icon name="check" size={22} strokeWidth={1.9} />
               </span>
               <div className="min-w-0 flex-1">

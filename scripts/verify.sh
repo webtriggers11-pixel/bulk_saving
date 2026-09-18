@@ -29,6 +29,13 @@ echo "==> [verify] build (all workspaces)"
 # gate, not a substitute for a test.
 pnpm -r build
 
+# FEAT-011: the build is the only place that knows whether a class name resolves to
+# a rule. Two classes shipped in this repo that emitted no CSS at all while every
+# unit test passed (a Tailwind namespace collision, then off-scale alpha steps);
+# jsdom applies no CSS, so only the built stylesheet can answer.
+echo "==> [verify] css classes (every class in apps/web must resolve to a rule)"
+node scripts/check-css-classes.mjs
+
 echo "==> [verify] test (all workspaces, one at a time)"
 # BUG-002: sequential so backend Jest (real DB/Redis) and web Vitest don't
 # starve each other for CPU and trip timeouts.

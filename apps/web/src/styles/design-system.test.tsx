@@ -59,8 +59,11 @@ describe('AC2 — tokens, not literals', () => {
     // Not just surface-*/paint-*: `nudge` was declared only as `.btn .nudge`, under
     // an ancestor class no component carries, so the arrow never moved and nothing
     // failed. Any class the design system owns must exist as a rule of its own.
+    // Longest alternative first: JS alternation is leftmost-first, so `field` would
+    // otherwise swallow `field-label` and the test would pass with `.field-label`
+    // deleted (V2 round 2, P2-1).
     const OWNED =
-      /\b(surface-[a-z]+|paint-[a-z]+|animate-[a-z-]+|skeleton(?:-d[0-9])?|bar-fill|card-hover|card-glow|sheen|sweep|ripple|press|stagger|nudge|field|field-label|halo-sweep|num|sr-only-text)\b/g;
+      /\b(surface-[a-z]+|paint-[a-z]+|animate-[a-z-]+|skeleton(?:-d[0-9])?|bar-fill|card-hover|card-glow|sheen|sweep|ripple|press|stagger|nudge|field-label|field|halo-sweep|num|sr-only-text)(?![a-z0-9-])/g;
     const used = new Set<string>();
     for (const file of residentSources()) {
       for (const [, name] of readFileSync(file, 'utf8').matchAll(OWNED)) {
@@ -158,19 +161,26 @@ describe('AC6 — every control clears the 44px touch floor', () => {
     expect(tailwind).toMatch(/tab: '58px'/);
   });
 
-  it('no component shrinks a control below the floor with an arbitrary height', () => {
+  it('no component shrinks a control below the 44px floor, on either axis', () => {
     // `cn` is a plain join, not tailwind-merge: an `h-[42px]` passed to a sized
     // Button does NOT replace `h-icon`, it fights it, and stylesheet order decides.
-    // So a sub-44px height on an interactive element is banned outright.
+    // So a sub-floor size on an interactive element is banned outright — named
+    // (`h-10`) as well as arbitrary (`h-[40px]`), height as well as width.
+    const REM_STEP = 4; // Tailwind's numeric scale is n * 0.25rem = n * 4px
     const offenders: string[] = [];
     for (const file of residentSources()) {
       const source = readFileSync(file, 'utf8');
-      for (const [match, px] of source.matchAll(/(?:min-)?h-\[(\d+)px\]/g)) {
-        // Only flag the ones on something a finger has to hit.
-        const line = source.slice(0, source.indexOf(match)).split('\n').length;
-        const context = source.split('\n').slice(Math.max(0, line - 6), line + 1).join(' ');
-        if (Number(px) < 44 && /<(button|a|input|Button)\b|onClick/.test(context)) {
-          offenders.push(`${file.replace(WEB, '')}:${line} ${match}`);
+      const lineOf = (index: number) => source.slice(0, index).split('\n').length;
+      for (const match of source.matchAll(/(?:min-)?([hw])-(?:\[(\d+)px\]|(\d+(?:\.\d+)?))\b/g)) {
+        const px = match[2] ? Number(match[2]) : Number(match[3]) * REM_STEP;
+        if (px >= 44) continue;
+        // Only what a finger has to hit: the element this class sits on must be
+        // interactive, so look at the tag/handler nearest above it.
+        const before = source.slice(0, match.index ?? 0);
+        const openedTag = before.lastIndexOf('<');
+        const context = source.slice(openedTag, (match.index ?? 0) + match[0].length);
+        if (/^<(button|a|input|textarea|select|Button|NavLink|Link)\b/.test(context) || /onClick=/.test(context)) {
+          offenders.push(`${file.replace(WEB, '')}:${lineOf(match.index ?? 0)} ${match[0]}`);
         }
       }
     }

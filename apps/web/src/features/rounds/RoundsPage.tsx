@@ -45,7 +45,7 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
         <p
           role="status"
           data-testid="pledge-paused"
-          className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink"
+          className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
         >
           <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
@@ -54,7 +54,7 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
       {failed && !paused && (
         <p
           role="alert"
-          className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink"
+          className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
         >
           <Icon name="alert" size={16} strokeWidth={2} />
           Couldn&apos;t update your pledge. Please try again.
@@ -228,7 +228,8 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
   const closing = formatCountdown(round.deadline);
   // "Closes in 6h" is a different kind of fact from "Closes in 4 days". Asked of the
   // deadline itself rather than by re-parsing the sentence just formatted from it.
-  const urgent = new Date(round.deadline).getTime() - Date.now() < 24 * 60 * 60 * 1000;
+  const remainingMs = new Date(round.deadline).getTime() - Date.now();
+  const urgent = remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000;
 
   return (
     <Card

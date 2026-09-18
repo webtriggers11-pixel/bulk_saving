@@ -84,7 +84,7 @@ export function StarRating({ value, onChange, disabled, label, idPrefix, testId 
               className={cn(
                 // min-h 44px: this is a phone-first product and every Button is at
                 // least h-11; a 26px star was below the touch target everything else meets.
-                'flex h-11 w-10 cursor-pointer items-center justify-center rounded-chip',
+                'flex h-11 w-11 cursor-pointer items-center justify-center rounded-chip',
                 'transition-transform duration-press ease-press',
                 'peer-focus-visible:shadow-focus',
                 (value ?? 0) >= star ? 'text-star' : 'text-ink-soft/40',

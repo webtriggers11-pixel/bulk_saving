@@ -41,8 +41,8 @@ export function QueryErrorState({ subject, hasData, onRetry }: QueryErrorStatePr
       className={[
         'animate-rise flex flex-col items-start gap-3 rounded-inset border px-4 py-4 shadow-hairline',
         hasData
-          ? 'border-white/60 bg-amber-ink/12 text-amber-ink'
-          : 'border-white/55 bg-danger-ink/8 text-danger-ink',
+          ? 'border-white/60 bg-amber-ink/15 text-amber-ink'
+          : 'border-white/55 bg-danger-ink/10 text-danger-ink',
       ].join(' ')}
     >
       <p className="flex gap-2.5 text-meta font-bold leading-relaxed">

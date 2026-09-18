@@ -69,7 +69,9 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="t press -mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-chip border border-white/15 bg-white/10 opacity-80 hover:opacity-100"
+          // 44×44: the dismiss target was 32px, which the floor forbids — the glyph
+          // stays small, the target does not (found by the strengthened AC6 test).
+          className="t press -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-chip border border-white/15 bg-white/10 opacity-80 hover:opacity-100"
         >
           <Icon name="close" size={15} strokeWidth={2.2} />
         </button>

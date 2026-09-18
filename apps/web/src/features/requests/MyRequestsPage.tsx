@@ -76,7 +76,7 @@ function JourneyTrack({ step }: { step: number }) {
       {[1, 2, 3, 4].map((stop) => (
         <span
           key={stop}
-          className="h-[5px] flex-1 overflow-hidden rounded-full bg-shade/12 shadow-hairline"
+          className="h-[5px] flex-1 overflow-hidden rounded-full bg-shade/15 shadow-hairline"
         >
           {stop <= step && (
             <span
@@ -102,7 +102,7 @@ function Fact({ term, value, testId }: { term: string; value: string; testId: st
   );
 }
 
-function MyRequestCard({ round, last }: { round: MyRoundDto; last: boolean }) {
+function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean; lead: boolean }) {
   const style = STATUS_STYLE[round.status];
   return (
     <li className="flex items-stretch gap-3.5">
@@ -124,7 +124,10 @@ function MyRequestCard({ round, last }: { round: MyRoundDto; last: boolean }) {
       </div>
 
       <Card
-        surface={round.status === 'OPEN' ? 'glass' : 'solid'}
+        // Glass is blur, and blur is per-surface cost: only the LEAD open round gets
+        // it, or a resident in eight open rounds scrolls eight blurred layers
+        // (V2 round 2, P2-3).
+        surface={lead ? 'glass' : 'solid'}
         className="min-w-0 flex-1 p-[19px]"
         data-testid={`my-round-${round.id}`}
       >
@@ -209,7 +212,12 @@ export function MyRequestsPage() {
       {data && data.length > 0 && (
         <ol className="stagger flex flex-col gap-3">
           {data.map((round, index) => (
-            <MyRequestCard key={round.id} round={round} last={index === data.length - 1} />
+            <MyRequestCard
+              key={round.id}
+              round={round}
+              last={index === data.length - 1}
+              lead={index === data.findIndex((r) => r.status === 'OPEN')}
+            />
           ))}
         </ol>
       )}

@@ -142,13 +142,13 @@ export function RateRound({ round }: { round: MyRoundDto }) {
           </p>
         )}
         {queuedOffline && (
-          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
+          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
             <Icon name="offline" size={16} strokeWidth={2} />
             {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {error && (
-          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
             <Icon name="alert" size={16} strokeWidth={2} />
             {ratingErrorMessage(error)}
           </p>
@@ -185,13 +185,13 @@ export function RateRound({ round }: { round: MyRoundDto }) {
       />
 
       {queuedOffline && (
-        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
+        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
           <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           <Icon name="alert" size={16} strokeWidth={2} />
           {ratingErrorMessage(error)}
         </p>

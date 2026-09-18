@@ -150,12 +150,12 @@ export function OnboardingPage() {
               className="num h-[60px] text-[19px] font-extrabold"
             />
             {queuedOffline && (
-              <p role="status" data-testid="onboarding-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
+              <p role="status" data-testid="onboarding-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
                 {OFFLINE_QUEUED_TEXT}
               </p>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
                 {requestError}
               </p>
             )}
@@ -215,12 +215,12 @@ export function OnboardingPage() {
             />
 
             {verifyError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
                 {verifyError}
               </p>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
                 {requestError}
               </p>
             )}

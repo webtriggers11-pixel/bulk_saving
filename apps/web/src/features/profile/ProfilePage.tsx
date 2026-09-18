@@ -30,7 +30,7 @@ function Tile({
 }) {
   return (
     <Card surface="solid" className="flex min-h-[134px] flex-col p-[18px]">
-      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/24 to-brand/6 text-brand-ink">
+      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
         <Icon name={icon} size={20} strokeWidth={1.8} />
       </span>
       <p className="mt-auto pt-3.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">
@@ -135,7 +135,7 @@ export function ProfilePage() {
               <p
                 className={[
                   'mt-3.5 inline-flex items-center gap-2 rounded-full border border-white/70 px-3 py-1.5 text-micro font-extrabold',
-                  online ? 'bg-success-ink/12 text-success-ink' : 'bg-amber-ink/12 text-amber-ink',
+                  online ? 'bg-success-ink/15 text-success-ink' : 'bg-amber-ink/15 text-amber-ink',
                 ].join(' ')}
                 data-testid="connection-state"
               >
