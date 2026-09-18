@@ -482,3 +482,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: `bash scripts/verify.sh` exit 0 at every task boundary; at HEAD backend 317 tests / 24 suites, web 225 / 40 files.
 - Decisions: ADR-0021
 - By: agent (autonomous)
+
+## 2026-09-19 — FEAT-011 — V2 round 1: CHANGES REQUIRED, 12 findings, all fixed
+- What: An independent reviewer ran the gate ITSELF (exit 0, backend 317/24, web 223/40) and reviewed the diff against spec + ADR-0021. Verdict CHANGES REQUIRED. Its most useful sentence was not about any single bug: *"the redesign's own ACs are each asserted by a test that checks the config or the stylesheet rather than the rendered result, which is why a class that resolves to nothing slid through all of them."* That gap, not the bug, was the finding.
+- It independently found the invisible-button defect (P1-1) that the browser check had already caught, and then found three MORE classes in the same family: `.nudge`, `.field` and `.field-label` were carried by components and declared nowhere at all — so the hover arrow never slid and the form label never lifted, in every build, with every test green.
+- Other real findings, all fixed in `4929d22`: `service-unit-scope` had widened to mean "scope, or else the marketing description" (AC1 violation, unreachable in tests because no test renders four services); the tier gauge lost `role="progressbar"` when it became a ring; reduced motion collapsed durations but not DELAYS, leaving staggered content invisible for up to 600ms; `backdrop-filter` was on every card variant and the secondary button (~17 blurred scrolling layers against the three ADR-0021 promises); `--ink-soft` was asserted at the large-text 3:1 while carrying 9.5–13px text; a stepper declared `h-[42px]` over `h-icon` and lost silently because `cn` is a plain join, not tailwind-merge; `overflow-hidden` on the AppShell root made it the sticky strips' scroll container.
+- The sticky regression was verified in a browser rather than argued: scrolled 700px with the offline strip forced on, the strip holds at 32px from the top.
+- Process note the reviewer was right to raise: its first pass straddled an uncommitted fix, so it reviewed a moving target. Round 2 runs against a clean tree at `4929d22`. T13 stays unchecked until that passes.
+- Evidence: gate exit 0 at `4929d22` (backend 317/24, web 225/40).
+- By: agent (autonomous) + code-reviewer subagent (V2)
