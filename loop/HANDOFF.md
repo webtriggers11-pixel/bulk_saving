@@ -6,132 +6,129 @@
 ## Last session
 
 - **Date:** 2026-09-18
-- **Goal:** FEAT-006 (notifications), then the owner asked to exercise the whole
-  application end to end, fix what broke, and keep looping. Then FEAT-007.
-- **Result:** complete. **FEAT-006, CHORE-002, CHORE-003 and FEAT-007 are all closed**
-  (each V2-reviewed and V3 double-run). BUG-003 (CORS) was carried into git by this
-  session and closed by the session that authored it. The v1 feature set from BRIEF.md is
-  now complete except **FEAT-008 (PWA shell)**, in flight in a parallel session.
+- **Goal:** FEAT-006 (notifications), then the owner asked to complete the application,
+  test it end to end with seed data, fix what broke, and keep looping without per-step
+  approval.
+- **Result:** **every item in `loop/REGISTRY.md` is `done` — 18 of 18, nothing open.**
+  The v1 feature set from BRIEF.md is complete. Closed this session: FEAT-006, FEAT-007,
+  FEAT-009, BUG-004, CHORE-002, CHORE-003, CHORE-004 (and, by the parallel session,
+  BUG-003, FEAT-008, CHORE-005). Each went through V1 → V2 (independent reviewer that ran
+  the gate itself) → V3 (double run).
 
-> **Another session was working in this repo at the same time.** It closed BUG-003
-> and is mid-build on **FEAT-008 (PWA shell, ADR-0015)** — uncommitted files under
-> `apps/web/src/features/shell/`, `apps/web/src/vite-env.d.ts`,
-> `apps/web/src/test/pwa-register.stub.ts`, `apps/web/vite.config.ts`. Nothing in this
-> handoff describes FEAT-008's state; ask that session or read its work folder.
+## The single most important caveat
 
-## End-to-end state (the owner's "test everything" ask)
+**Nothing in this session has been seen in a real browser.** The Claude-in-Chrome extension
+could not load any localhost page — including the other session's dev server — so it is an
+extension site-permission problem, not an application one. The rating flow, every offline
+state, both admin surfaces and the whole PWA shell are proven by Vitest component tests and
+by HTTP-level E2E, never by a human or a browser looking at them.
 
-`node scripts/e2e-smoke.mjs` (CHORE-003) drives the REAL HTTP API of a running server —
-onboarding/OTP, catalog, the full round lifecycle, illegal-transition refusals, tenant
-isolation, rating, dashboard aggregates. **77/77 checks, 11 scenarios, no application
-bugs found.** `verify.sh` cannot cover this: it drives Nest in-process, so bootstrap, the
-global wiring, CORS, the HTTP stack and the queues are never exercised assembled.
+**This needs the owner:** grant the extension access to `localhost` / `127.0.0.1`, then run
+a browser pass over the resident and admin flows.
 
-To run it: backend with `PORT=3100 OTP_DEV_LOG=true pnpm --filter backend dev`, then
-`node scripts/e2e-smoke.mjs`. It logs in through the CHORE-002 dev OTP echo, so that flag
-is required.
+## Verification contract (changed this session)
 
-**Browser-level E2E is still NOT done.** The Claude-in-Chrome extension could not load any
-localhost page — including the other session's dev server — so it is an extension
-site-permission problem, not an application one. **This needs the owner**: grant the
-extension access to `localhost` / `127.0.0.1`. Until then the resident UI is covered only
-by Vitest component tests, never a real browser.
+`bash scripts/verify.sh` now runs: shared types → prisma client → lint → typecheck →
+**build** → tests. The build stage is CHORE-004, **added with the owner's explicit
+approval** because it changes the single verification entrypoint.
 
-## What FEAT-007 shipped
+It justified itself within an hour: moving a constant into `@bulk/shared` and importing it
+in the web app broke the **production** Vite build (shared builds to CommonJS, Rollup cannot
+see its named exports, and every other web import from it is type-only). Vitest resolved it
+happily, so lint, typecheck and 153 tests were green — only the build stage failed.
+**Keep anything moved into `@bulk/shared` type-only, or check the build.**
 
-Backend only (`apps/web` belongs to FEAT-008 while it runs). Ratings hang off the ROUND,
-one per participant (ADR-0017); the FIRST rating flips DELIVERED → RATED through the
-guarded transition. `PUT`/`DELETE /rounds/:id/rating`, plus **`GET /rounds/mine`** — the
-"My Requests" read, without which a resident cannot even see a delivered round. Admin gets
-per-participant ratings, per-round summary, per-vendor average + count, and the dashboard
-metric the BRIEF names as the success signal.
-
-**The V2 reviewer reproduced a real bug on a live server**: two participants rating the
-same round at once both saved, but the loser of the status race got a 409 for a write that
-had succeeded — and that is the designed traffic pattern, since the delivered SMS asks
-everyone to rate at the same moment. Fixed with `markRatedIfDelivered()` (re-decides under
-the row lock); the regression test was confirmed to fail against the old code before being
-kept.
-
-## What FEAT-006 shipped
-
-Backend only — **no `apps/web` change, no new dependency**. Transactional outbox
-(ADR-0013): a `Notification` row is staged **inside the same transaction as the round
-change**, dispatched to BullMQ only after commit, one job per recipient, with a
-DB-unique `dedupeKey`. Seven lifecycle messages (joined, closing-soon, closed-met,
-closed-expired, assigned, delivered, cancelled), a send processor (PENDING-only guard,
-retries, FAILED + `lastError`), a boot reconciler, and a `deadline − 24h` reminder that
-fans out at fire time to whoever has joined by then. OTP delivery is untouched:
-synchronous, direct, never persisted.
+Second entrypoint: `node scripts/e2e-smoke.mjs` (CHORE-003) drives the real HTTP API of a
+running server — 77 checks over 11 scenarios, no application bugs found. It needs a backend
+started with `PORT=3100 OTP_DEV_LOG=true pnpm --filter backend dev`, because it logs in
+through the CHORE-002 dev OTP echo.
 
 ## Verification evidence
 
-- **V3 (FEAT-007, at HEAD 15ca284):** `verify.sh` exit 0 twice back-to-back, identical —
-  **backend 287 tests / 22 suites, web 92 / 25 files**. Live E2E 77/77.
-- **V2:** every closed item this session was reviewed by an independent subagent that ran
-  `verify.sh` itself. All returned CHANGES REQUESTED with **no P0**; every P1 was fixed
-  before close (details in each work item's `tasks.md`).
+- **V3 at HEAD:** `verify.sh` ×2 back-to-back on a tree verified quiescent before and after,
+  both exit 0 and identical — **backend 287 tests / 22 suites, web 166 / 33 files**.
+- Every closed item was reviewed by an independent subagent that ran the gate itself. All
+  returned CHANGES REQUESTED; every P0 and P1 was fixed before close.
+
+## What the reviews caught that the suites did not
+
+Worth reading before trusting a green run:
+
+1. **A live P0 in shipped code** (FEAT-009/BUG-004): offline, `/admin/rounds/:id` rendered a
+   bare page, and its assign form claimed *"No active vendors. Add a vendor to assign this
+   round."* — a false statement caused by a network failure, whose obvious remedy is to
+   create a duplicate vendor. **An empty-state string is an assertion about the world and
+   needs the same care as an error state.**
+2. **Reverting a fix left the whole suite green** — the read-side offline fix had only a unit
+   test of its helper. A helper's unit test is not a test of the fix.
+3. **A reproduced concurrency bug** (FEAT-007): two residents rating the same round at once
+   both saved, but the loser of an unlocked status race got a 409 for a write that had
+   succeeded — on exactly the traffic pattern the delivered SMS creates.
+4. **`mockRejectedValue` is the server-error path, not the offline path.** TanStack Query v5
+   *pauses* offline work (`isPaused`, `fetchStatus === 'paused'`), so offline behaviour must
+   be driven with `onlineManager.setOnline(false)`. Every offline claim in this repo now is.
+5. **The habit that found the most:** delete or revert the code under test and confirm the
+   test goes red. It caught two dead tests and two vacuous ones today.
 
 ## Unverified assumptions
 
-- **Delivery is at-least-once, not exactly-once.** Staging is exactly-once; a send that
-  succeeds before its `markSent` write can be retried and go out twice. Accepted for v1,
-  recorded in ADR-0013's amendment.
-- The stub SMS adapter still sends nothing. No message has been seen by a real phone.
-- The 24h reminder lead is a judgment call with no ops data behind it.
-- PENDING rows are reconciled **only at boot**, and rows older than 24h are deliberately
-  skipped as stale — a long Redis outage without a restart delays or drops lifecycle SMS.
+- Nobody has used this product in a browser (see above).
+- The stub SMS adapter still sends nothing — no message has reached a real phone.
+- Lifecycle SMS delivery is **at-least-once**, not exactly-once (ADR-0013 amendment).
+- PENDING notifications are reconciled only at boot, and rows older than 24h are skipped as
+  stale.
+- `RATED` means "at least one resident rated", not "all did" (ADR-0017) — always read the
+  count next to the average.
+- A queued-offline mutation resumes only while the page stays open; there is no mutation
+  persistence, so a reload drops it silently.
 - `commit 4000cc2` does not build standalone (its test helper imports `src/bootstrap.ts`,
-  which landed in the next commit). HEAD is fine; history was left intact because another
-  session shares the repo. Verify at HEAD, not per-commit.
-- **Ratings are API-only.** No admin screen shows an average and no resident screen can
-  leave one, because `apps/web` is FEAT-008's. FEAT-007's user stories 4–6 are true at the
-  contract level and not on anyone's screen yet.
-- Nobody has used this product in a browser this session. Every claim above rests on the
-  test suites and the HTTP-level E2E.
+  which landed in the next commit). HEAD is fine. Verify at HEAD, not per-commit.
 
 ## Needs the owner
 
-- **Real SMS provider** (MSG91 / Twilio / Gupshup): costs money, so it is your call and
-  needs its own ADR. Note Indian transactional SMS requires **DLT-registered templates
-  with fixed variable slots** — the current free-form bodies must be restructured before
-  a real sender ID can carry them.
-- **`Notification` has no `societyId`**, against CLAUDE.md's "every tenant-scoped row
-  carries `societyId`". It is scoped transitively via `residentId` (same shape as
-  `RoundParticipant`). Denormalising later means a migration plus a backfill — decide
-  before volume. Recorded in ADR-0013's amendment and ARCHITECTURE.md § Multi-tenancy.
-- **Dev DB migration history** (unchanged from last session): `_prisma_migrations` holds
-  a rolled-back FEAT-004 attempt with a stale checksum, so `prisma migrate dev` still
-  demands a full dev-DB reset. Committed migrations are consistent. Until you choose
-  (delete that one row, or reset and reseed), apply new migrations with
-  `migrate diff` + `migrate deploy` — which is how FEAT-006's migration was applied,
-  with your approval.
+- **Chrome extension localhost access** — blocks all browser verification.
+- **Real SMS provider** (MSG91 / Twilio / Gupshup): costs money, so it is your call and needs
+  its own ADR. Indian transactional SMS requires **DLT-registered templates with fixed
+  variable slots**, so the current free-form bodies must be restructured first.
+- **Remove the dev OTP echo before any real deployment** (ADR-0016's mandatory revisit
+  trigger). It is double-gated (`OTP_DEV_LOG=true` AND `NODE_ENV !== 'production'`) and
+  currently **enabled in your local `.env`**, but it is an auth bypass living in a production
+  code path.
+- **`Notification` has no `societyId`**, against CLAUDE.md's tenancy rule; it is scoped
+  transitively via `residentId`. Denormalising later means a migration plus a backfill.
+- **Dev DB migration history:** `_prisma_migrations` still holds a rolled-back FEAT-004 row
+  with a stale checksum, so `prisma migrate dev` demands a full reset. Use
+  `migrate diff` + `migrate deploy`. `.claude/settings.json` now allows those two commands
+  plus `prisma generate` and `seed`, at your request.
 
 ## Open P2 follow-ups (triage as CHOREs)
 
-- FEAT-006: `dispatch()` is a sequential per-recipient loop (`queue.addBulk` makes a
-  200-participant fan-out one round-trip); `clamp()` truncates from the END so a
-  pathological name could cut the rupee amount off a money message; no message offers a
-  reply/help route; DELIVERED does not restate the amount owed; "units" is internal
-  jargon in a resident-facing SMS; the deadline-driven closer does not cancel a pending
-  reminder (harmless — it has already fired).
-- Earlier items unchanged: FEAT-005's six, FEAT-004's three (periodic reconciliation
-  sweep, dedicated test DB/Redis, deadline-edit must cancel() then schedule()),
-  FEAT-003's five, FEAT-001's three.
+- **The rating UI has never been used by a human** — highest-value follow-up after the
+  browser pass.
+- A lint rule or shared `useMutationState` wrapper so the next control cannot be written
+  without a paused state (BUG-004's own recommendation).
+- `VendorsService.list` loads every Rating row to compute averages (ADR-0017 revisit trigger).
+- `dispatch()` is a sequential per-recipient loop; `queue.addBulk` would make a
+  200-participant fan-out one round-trip.
+- `clamp()` truncates SMS bodies from the END, so a pathological name could cut the rupee
+  amount off a money message.
+- Admin failure copy is not offline-aware and has no stale-vs-empty axis, although
+  `QueryErrorState` exists for exactly that.
+- No in-app nudge to rate: a resident who never opens My Requests never rates, and the
+  delivered SMS is the only prompt (ADR-0018 revisit trigger).
+- Earlier items unchanged: FEAT-005's six, FEAT-004's three, FEAT-003's five, FEAT-001's three.
 
 ## Blockers
 
-- None for FEAT-006. Docker infra (Postgres 5442 / Redis 6399) is up. Seed:
+- None in code. Docker infra (Postgres 5442 / Redis 6399) is up. Seed:
   `pnpm --filter backend seed`.
 
 ## Next safe action
 
-**The rating UI** — resident (rate a delivered job from "My Requests") and admin (show
-`averageRating` / `ratingCount` on the vendor list and the round detail). The API is done
-and tested; only the screens are missing. **Do not start until FEAT-008 lands**, because
-it owns `App.tsx`, the nav and the resident pages — coordinate with that session first
-(it is `bulk-saving-82`; it has been told `GET /rounds/mine` exists for its My Requests
-tab).
+**A browser pass**, once the extension can reach localhost: onboard a resident (the OTP
+arrives in a toast), join a round, then as super-admin close → assign → deliver it, and rate
+it back on My Requests. That exercises every feature built this session and is the one form
+of verification none of it has had.
 
-If FEAT-008 is still running, the next safe thing that touches nothing contested is the
-browser E2E, which needs the owner to grant the Chrome extension localhost access.
+After that, the first real society is a product decision, not an engineering one: the
+remaining blockers are the SMS provider and removing the dev OTP echo.
