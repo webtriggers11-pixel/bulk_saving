@@ -40,9 +40,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 function AmbientGround() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="animate-drift-a absolute -left-24 -top-28 h-72 w-72 rounded-full bg-brand-light/50 blur-[46px]" />
-      <div className="animate-drift-b absolute -right-28 top-44 h-80 w-80 rounded-full bg-brand/30 blur-[46px]" />
-      <div className="animate-drift-c absolute -bottom-16 -left-10 h-64 w-64 rounded-full bg-brand-deep/20 blur-[46px]" />
+      <div className="animate-drift-a absolute -left-24 -top-28 h-72 w-72 rounded-full bg-mesh-1/55 blur-[46px]" />
+      <div className="animate-drift-b absolute -right-28 top-44 h-80 w-80 rounded-full bg-mesh-2/45 blur-[46px]" />
+      <div className="animate-drift-c absolute -bottom-16 -left-10 h-64 w-64 rounded-full bg-mesh-3/40 blur-[46px]" />
       {/* Film grain: it is what stops large flat washes from banding on OLED phones. */}
       <svg className="absolute inset-0 h-full w-full opacity-[0.055] mix-blend-overlay">
         <filter id="app-grain">

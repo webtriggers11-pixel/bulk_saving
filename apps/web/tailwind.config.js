@@ -40,6 +40,13 @@ export default {
         star: rgb('--star'),
         // The tint every shadow and hairline is mixed from.
         shade: rgb('--shadow-rgb'),
+        // The three ambient washes behind the glass — per palette, so the ground
+        // shifts with the theme instead of staying teal under an indigo app.
+        mesh: {
+          1: rgb('--mesh-1'),
+          2: rgb('--mesh-2'),
+          3: rgb('--mesh-3'),
+        },
       },
       fontFamily: {
         sans: [

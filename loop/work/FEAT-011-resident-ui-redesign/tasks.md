@@ -24,7 +24,7 @@ build → tests). After each: commit and append to LOG.md.
       — depends: T3, T4
 - [x] T11: Feedback states — QueryErrorState, empty cards, inline pledge notices, Profile.
       — depends: T2
-- [ ] T12: AC tests — theme swap (AC3), reduced motion (AC5), touch targets (AC6), and a
+- [x] T12: AC tests — theme swap (AC3), reduced motion (AC5), touch targets (AC6), and a
       contrast check of the token pairs (AC7). — depends: T7–T11
 - [ ] T13: V2 — independent code-reviewer subagent runs the gate ITSELF and reviews the diff
       vs spec + ADR-0021. — depends: T12

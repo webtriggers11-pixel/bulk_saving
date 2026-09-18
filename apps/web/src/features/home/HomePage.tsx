@@ -53,7 +53,7 @@ export function HomePage() {
           <Card className="col-span-2 flex items-center gap-4 overflow-hidden p-[22px]">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-brand-light/30 blur-2xl"
+              className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
             />
             <span className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-inset fill-mono text-[21px] font-extrabold text-white shadow-accent">
               <span className="animate-halo absolute -inset-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgb(255_255_255/0.45)_60deg,transparent_140deg)]" />

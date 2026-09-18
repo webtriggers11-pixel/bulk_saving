@@ -72,8 +72,8 @@ export function OnboardingPage() {
       {/* Decoration only: the same drifting ground the app shell gives every other
           screen, inlined here because /onboard renders outside the shell (AC2). */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-drift-a absolute -left-20 -top-24 h-64 w-64 rounded-full bg-brand-light/50 blur-[46px]" />
-        <div className="animate-drift-b absolute -right-24 top-40 h-72 w-72 rounded-full bg-brand/30 blur-[46px]" />
+        <div className="animate-drift-a absolute -left-20 -top-24 h-64 w-64 rounded-full bg-mesh-1/55 blur-[46px]" />
+        <div className="animate-drift-b absolute -right-24 top-40 h-72 w-72 rounded-full bg-mesh-2/45 blur-[46px]" />
       </div>
 
       <header className="animate-rise relative flex flex-1 flex-col justify-center gap-[18px] px-7 pb-6 pt-10">
