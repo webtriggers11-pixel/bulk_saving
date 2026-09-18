@@ -10,19 +10,19 @@ export function RoundsSkeleton() {
             <Skeleton className="h-2.5 w-2/5" />
             <Skeleton className="mt-2.5 h-5 w-1/2" delay={1} />
           </div>
-          <Skeleton className="h-6 w-24 rounded-full" delay={2} />
+          <Skeleton radius="full" className="h-6 w-24" delay={2} />
         </div>
         <div className="mt-[18px] flex items-center gap-4">
           <div className="flex-1">
             <Skeleton className="h-8 w-3/5" delay={1} />
             <Skeleton className="mt-3 h-3 w-4/5" delay={2} />
           </div>
-          <Skeleton className="h-[108px] w-[108px] rounded-full" delay={3} />
+          <Skeleton radius="full" className="h-[108px] w-[108px]" delay={3} />
         </div>
-        <Skeleton className="mt-4 h-11 w-full rounded-inset" delay={1} />
+        <Skeleton radius="inset" className="mt-4 h-11 w-full" delay={1} />
         <div className="mt-[18px] flex items-center gap-2.5">
-          <Skeleton className="h-[58px] w-36 rounded-inset" delay={2} />
-          <Skeleton className="ml-auto h-11 w-20 rounded-control" delay={3} />
+          <Skeleton radius="inset" className="h-[58px] w-36" delay={2} />
+          <Skeleton radius="control" className="ml-auto h-11 w-20" delay={3} />
         </div>
       </div>
       <div className="surface-solid rounded-card p-5">
@@ -32,9 +32,9 @@ export function RoundsSkeleton() {
             <Skeleton className="mt-2.5 h-4 w-3/5" delay={1} />
             <Skeleton className="mt-3 h-6 w-2/5" delay={2} />
           </div>
-          <Skeleton className="h-[86px] w-[86px] rounded-full" delay={3} />
+          <Skeleton radius="full" className="h-[86px] w-[86px]" delay={3} />
         </div>
-        <Skeleton className="mt-4 h-11 w-full rounded-control" delay={1} />
+        <Skeleton radius="control" className="mt-4 h-11 w-full" delay={1} />
       </div>
     </SkeletonScreen>
   );

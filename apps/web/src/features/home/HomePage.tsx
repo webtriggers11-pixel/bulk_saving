@@ -59,7 +59,7 @@ export function HomePage() {
             <Monogram name={data.resident.name} />
             <div className="relative min-w-0 flex-1">
               <CardEyebrow>Signed in as</CardEyebrow>
-              <CardTitle className="animate-blur-in mt-2 text-[24px] tracking-[-0.042em]">
+              <CardTitle size="xl" className="animate-blur-in mt-2 tracking-[-0.042em]">
                 {data.resident.name ?? 'Resident'}
               </CardTitle>
               <p
@@ -110,7 +110,7 @@ export function HomePage() {
               <Icon name="building" size={22} strokeWidth={1.8} />
             </span>
             <CardEyebrow className="mt-auto pt-4">Your society</CardEyebrow>
-            <CardTitle className="mt-2 text-title leading-[1.12]" data-testid="society-name">
+            <CardTitle size="md" className="mt-2 leading-[1.12]" data-testid="society-name">
               {data.society.name}
             </CardTitle>
             <p className="mt-1 text-meta text-ink-muted" data-testid="society-city">
@@ -147,7 +147,7 @@ export function HomePage() {
               </span>
               <div className="min-w-0 flex-1">
                 <CardEyebrow>Super-admin</CardEyebrow>
-                <CardTitle className="mt-1.5 text-title">Manage rounds and vendors</CardTitle>
+                <CardTitle size="md" className="mt-1.5">Manage rounds and vendors</CardTitle>
               </div>
               <Button size="sm" onClick={() => navigate('/admin')}>
                 Admin dashboard

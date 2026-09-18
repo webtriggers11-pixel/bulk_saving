@@ -136,7 +136,7 @@ export function AdminNewRoundPage() {
             {[0, 1, 2].map((row) => (
               <div key={row}>
                 <Skeleton className="h-2.5 w-24" delay={(row % 4) as 0 | 1 | 2 | 3} />
-                <Skeleton className="mt-2 h-control w-full rounded-control" delay={1} />
+                <Skeleton radius="control" className="mt-2 h-control w-full" delay={1} />
               </div>
             ))}
           </SkeletonScreen>

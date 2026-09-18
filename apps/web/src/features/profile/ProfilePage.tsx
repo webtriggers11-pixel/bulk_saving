@@ -87,9 +87,9 @@ export function ProfilePage() {
             aria-hidden="true"
             className="pointer-events-none absolute -top-24 left-1/2 h-52 w-64 -translate-x-1/2 rounded-full bg-mesh-1/40 blur-2xl"
           />
-          <Monogram name={name} size="lg" className="relative inline-flex" data-testid="profile-initials" />
+          <Monogram name={name} size="lg" className="relative" data-testid="profile-initials" />
           <CardEyebrow className="mt-4">Signed in as</CardEyebrow>
-          <CardTitle className="animate-blur-in mt-2 text-[25px]" data-testid="profile-name">
+          <CardTitle size="2xl" className="animate-blur-in mt-2" data-testid="profile-name">
             {name}
           </CardTitle>
           <p className="mt-3">
@@ -111,7 +111,7 @@ export function ProfilePage() {
             </span>
             <div className="min-w-0 flex-1">
               <CardEyebrow>This app</CardEyebrow>
-              <CardTitle className="mt-2 text-title">
+              <CardTitle size="md" className="mt-2">
                 {installed ? 'Installed' : 'Add to your home screen'}
               </CardTitle>
               {installed ? (

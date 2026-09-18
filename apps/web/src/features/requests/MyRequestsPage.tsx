@@ -123,7 +123,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         data-testid={`my-round-${round.id}`}
       >
         <div className="flex items-start justify-between gap-3">
-          <CardTitle className="text-[18px]">{round.service.name}</CardTitle>
+          <CardTitle size="sm" >{round.service.name}</CardTitle>
           <Badge
             tone={style.tone}
             icon={<Icon name={style.icon} size={13} strokeWidth={2.2} />}
@@ -132,7 +132,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
             {STATUS_LABEL[round.status]}
           </Badge>
         </div>
-        <CardDescription className="mt-2 text-meta">{statusDetail(round)}</CardDescription>
+        <CardDescription size="meta" className="mt-2">{statusDetail(round)}</CardDescription>
         <JourneyTrack step={style.step} />
 
         <dl className="mt-4 flex gap-2.5">

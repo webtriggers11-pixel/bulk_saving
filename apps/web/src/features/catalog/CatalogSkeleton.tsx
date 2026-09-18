@@ -12,18 +12,18 @@ export function CatalogSkeleton() {
         <Skeleton className="h-2.5 w-1/4" />
         <Skeleton className="mt-2.5 h-6 w-3/5" delay={1} />
         <Skeleton className="mt-3 h-3 w-4/5" delay={2} />
-        <Skeleton className="mt-4 h-11 w-40 rounded-control" delay={3} />
+        <Skeleton radius="control" className="mt-4 h-11 w-40" delay={3} />
       </div>
       {[0, 1].map((tile) => (
         <div key={tile} className="surface-solid flex min-h-[190px] flex-col rounded-card p-[17px]">
-          <Skeleton className="h-[46px] w-[46px] rounded-control" delay={tile === 0 ? 0 : 1} />
+          <Skeleton radius="control" className="h-[46px] w-[46px]" delay={tile === 0 ? 0 : 1} />
           <Skeleton className="mt-3.5 h-2.5 w-2/5" delay={1} />
           <Skeleton className="mt-2.5 h-4 w-3/4" delay={2} />
           <Skeleton className="mt-auto h-3.5 w-1/2" delay={3} />
         </div>
       ))}
       <div className="surface-solid col-span-2 flex items-center gap-3.5 rounded-card p-[17px]">
-        <Skeleton className="h-[52px] w-[52px] rounded-inset" />
+        <Skeleton radius="inset" className="h-[52px] w-[52px]" />
         <div className="flex-1">
           <Skeleton className="h-2.5 w-1/3" delay={1} />
           <Skeleton className="mt-2.5 h-4 w-3/5" delay={2} />

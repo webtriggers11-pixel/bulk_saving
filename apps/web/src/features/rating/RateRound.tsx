@@ -170,7 +170,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         idPrefix={round.id}
       />
 
-      <Label htmlFor={`comment-${round.id}`} className="mt-2 block">
+      <Label htmlFor={`comment-${round.id}`} className="mt-2">
         Comment (optional)
       </Label>
       <textarea

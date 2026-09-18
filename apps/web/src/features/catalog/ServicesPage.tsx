@@ -58,7 +58,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
         <ServiceGlyph service={service} size={165} />
       </span>
       <CardEyebrow className="relative">{service.category}</CardEyebrow>
-      <CardTitle className="relative mt-2 text-[25px] tracking-[-0.045em]">{service.name}</CardTitle>
+      <CardTitle size="2xl" className="relative mt-2 tracking-[-0.045em]">{service.name}</CardTitle>
       <CardDescription className="relative mt-2 max-w-[235px]">{service.description}</CardDescription>
       <div className="relative mt-[18px] flex items-center gap-2.5">
         {price && (

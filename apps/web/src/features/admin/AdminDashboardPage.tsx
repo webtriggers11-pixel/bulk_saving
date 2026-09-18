@@ -66,7 +66,7 @@ function DashboardSummary() {
           <div className="surface-glass rounded-card p-6 md:col-span-2">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="mt-3 h-3 w-2/3" delay={1} />
-            <Skeleton className="mt-5 h-24 w-full rounded-inset" delay={2} />
+            <Skeleton radius="inset" className="mt-5 h-24 w-full" delay={2} />
           </div>
           <div className="surface-glass rounded-card p-6">
             <Skeleton className="h-4 w-24" />
@@ -214,7 +214,7 @@ function RoundsPanel() {
           {[0, 1, 2].map((row) => (
             <div key={row} className="surface-solid flex items-center gap-5 rounded-tile p-4">
               <Skeleton className="h-4 w-1/4" delay={(row % 4) as 0 | 1 | 2 | 3} />
-              <Skeleton className="ml-auto h-6 w-24 rounded-full" delay={1} />
+              <Skeleton radius="full" className="ml-auto h-6 w-24" delay={1} />
               <Skeleton className="h-4 w-20" delay={2} />
               <Skeleton className="h-4 w-24" delay={3} />
             </div>

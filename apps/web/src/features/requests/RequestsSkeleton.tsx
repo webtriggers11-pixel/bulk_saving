@@ -13,7 +13,7 @@ export function RequestsSkeleton() {
           <div className={`${row === 0 ? 'surface-glass' : 'surface-solid'} min-w-0 flex-1 rounded-card p-[19px]`}>
             <div className="flex items-start justify-between gap-3">
               <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-6 w-20 rounded-full" delay={1} />
+              <Skeleton radius="full" className="h-6 w-20" delay={1} />
             </div>
             <Skeleton className="mt-2.5 h-3 w-4/5" delay={2} />
             <div className="mt-3.5 flex gap-1.5">
@@ -22,8 +22,8 @@ export function RequestsSkeleton() {
               ))}
             </div>
             <div className="mt-4 flex gap-2.5">
-              <Skeleton className="h-14 flex-1 rounded-inset" delay={2} />
-              <Skeleton className="h-14 flex-1 rounded-inset" delay={3} />
+              <Skeleton radius="inset" className="h-14 flex-1" delay={2} />
+              <Skeleton radius="inset" className="h-14 flex-1" delay={3} />
             </div>
           </div>
         </div>

@@ -130,7 +130,7 @@ function AssignForm({
     return (
       <SkeletonScreen label="Loading vendors…" testId="assign-skeleton" className="flex flex-col gap-3">
         <Skeleton className="h-2.5 w-24" />
-        <Skeleton className="h-control w-full rounded-control" delay={1} />
+        <Skeleton radius="control" className="h-control w-full" delay={1} />
       </SkeletonScreen>
     );
   }
@@ -442,11 +442,11 @@ export function AdminRoundDetailPage() {
           <div className="surface-glass rounded-card p-6">
             <Skeleton className="h-2.5 w-28" />
             <Skeleton className="mt-3 h-5 w-1/3" delay={1} />
-            <Skeleton className="mt-5 h-20 w-full rounded-inset" delay={2} />
+            <Skeleton radius="inset" className="mt-5 h-20 w-full" delay={2} />
           </div>
           <div className="surface-solid rounded-card p-6">
             <Skeleton className="h-4 w-40" />
-            <Skeleton className="mt-4 h-24 w-full rounded-inset" delay={1} />
+            <Skeleton radius="inset" className="mt-4 h-24 w-full" delay={1} />
           </div>
         </SkeletonScreen>
       )}

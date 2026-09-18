@@ -542,3 +542,14 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Recorded rather than fixed: the participants list stays a real `<table>` (ADR-0022).
 - Evidence: gate exit 0 after the fixes — backend 317/24, web 262/41, 1212 class tokens.
 - By: agent (autonomous) + code-reviewer subagent (V2)
+
+## 2026-09-19 — BUG-007 — 35 dead className overrides, and the rule that ends the class of bug
+- What: V2 round 2 passed CHORE-008 and then answered the question I had asked it — "does this conflict exist for other families?" — with yes: `CardTitle`'s font size and `Skeleton`'s radius, 13 sites. Triaged as a BUG under CLAUDE.md rule 1 rather than folded into the chore, and reproduced with a failing test before any fix.
+- The failing test found MORE than the review did: **35 call sites**, including every font-size override on `Input` — the invite, phone and OTP fields on the app's front door have been rendering at 15px instead of 21/19/27px since FEAT-011. Measured against the built stylesheet, not inferred: `.text-lead` is emitted at byte 31848, after every `text-[Npx]` (31055–31265), so the base won every time.
+- Cause, for the third time in two work items: `cn` is a plain join, so a primitive's base class and a caller's `className` both land and TAILWIND'S OUTPUT ORDER picks the winner. `fill-*` (FEAT-011) and `Card` padding (CHORE-008) were the first two, and each fix was narrower than the defect.
+- The fix is the rule, not the instances: a test renders every `components/ui` primitive with no className, reads the classes it ACTUALLY produces, and fails if any caller passes a class in the same CSS-property family. It reads what a component renders rather than a list someone maintains, so a primitive written tomorrow is covered the day it exists. Variant-prefixed classes (`md:gap-5`) are exempt — they are conditional and land later — and a primitive may offer an explicit escape hatch (`Card padding="none"`), which the scan understands.
+- `CardTitle size`, `Input textSize` and `Skeleton radius` are now closed props; 35 call sites moved onto them.
+- **I made the same mistake inside the new test that I had made in `check-css-classes.mjs`**: destructured capture group 1 (the quote character) instead of group 2, so the scan inspected nothing and reported green. Caught by instrumenting it rather than believing it, and the test now carries the same inspected-token floor the CSS gate carries. Twice is a pattern; the floor is the countermeasure.
+- Two further scan defects found by its own output: it blamed a parent for a nested element's classes (`action={<Link className="…"/>}`), and it took the first `className=` in a tag rather than the one at the tag's own depth. Both fixed, then proven by reintroducing a real conflict and watching it fail.
+- Evidence: gate exit 0 — backend 317/24, web 264/42, 1216 class tokens.
+- By: agent (autonomous) + code-reviewer subagent (found the class of bug)

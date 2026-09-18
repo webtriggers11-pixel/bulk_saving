@@ -57,13 +57,40 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return <div className={cn('mb-4 space-y-2', className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn('text-title font-extrabold text-ink', className)} {...props} />;
+/**
+ * Sizes a title can take. A PROP, not a className: `cn` is a plain join, so a
+ * `text-[25px]` passed alongside the base `text-title` does not replace it — both
+ * land and Tailwind's output order picks the winner, which for every size in this
+ * app was the base (BUG-007). Five screens were asking for a size they never got.
+ */
+const TITLE_SIZE = {
+  sm: 'text-[18px]',
+  md: 'text-title',
+  lg: 'text-headline',
+  xl: 'text-[24px]',
+  '2xl': 'text-[25px]',
+} as const;
+
+interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
+  size?: keyof typeof TITLE_SIZE;
 }
 
-/** The eyebrow above a title — uppercase, tracked, brand-inked. */
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-caption text-ink-muted', className)} {...props} />;
+export function CardTitle({ size = 'md', className, ...props }: CardTitleProps) {
+  return <h2 className={cn(TITLE_SIZE[size], 'font-extrabold text-ink', className)} {...props} />;
+}
+
+/** The line under a title. `size` for the same reason CardTitle has one (BUG-007). */
+export function CardDescription({
+  size = 'caption',
+  className,
+  ...props
+}: HTMLAttributes<HTMLParagraphElement> & { size?: 'caption' | 'meta' }) {
+  return (
+    <p
+      className={cn(size === 'meta' ? 'text-meta' : 'text-caption', 'text-ink-muted', className)}
+      {...props}
+    />
+  );
 }
 
 export function CardEyebrow({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

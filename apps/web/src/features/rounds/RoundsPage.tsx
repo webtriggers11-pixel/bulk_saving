@@ -94,7 +94,7 @@ function JoinControl({ round }: { round: RoundDto }) {
               {/* FEAT-010: the service's own word, capitalised for a form label. */}
               {capitalise(unitLabelPluralFor(round.service))}
             </Label>
-            <Input
+            <Input textSize="numeric"
               id={`units-${round.id}`}
               type="number"
               inputMode="numeric"
@@ -103,7 +103,7 @@ function JoinControl({ round }: { round: RoundDto }) {
               value={units}
               onChange={(e) => setUnits(clampUnits(Number(e.target.value)))}
               data-testid={`units-input-${round.id}`}
-              className="num text-center text-[17px]"
+              className="num text-center"
             />
           </div>
           <Button
@@ -137,7 +137,6 @@ function JoinControl({ round }: { round: RoundDto }) {
           <Button
             variant="secondary"
             size="icon"
-            className="rounded-chip"
             aria-label={`Decrease ${unitLabelPluralFor(round.service)}`}
             disabled={busy || round.myUnits <= MIN_UNITS}
             onClick={decrement}
@@ -151,7 +150,6 @@ function JoinControl({ round }: { round: RoundDto }) {
           <Button
             variant="secondary"
             size="icon"
-            className="rounded-chip"
             aria-label={`Increase ${unitLabelPluralFor(round.service)}`}
             disabled={busy || round.myUnits >= MAX_UNITS}
             onClick={increment}
@@ -249,7 +247,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <CardEyebrow>{round.service.category}</CardEyebrow>
-          <CardTitle className="mt-1.5 text-headline">{round.service.name}</CardTitle>
+          <CardTitle size="lg" className="mt-1.5">{round.service.name}</CardTitle>
         </div>
         <Badge
           tone={urgent ? 'amber' : 'slate'}
