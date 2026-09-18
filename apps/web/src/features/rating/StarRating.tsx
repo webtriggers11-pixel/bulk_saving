@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils';
+import { StarGlyph } from '../../components/ui/icon';
 
 /** The only allowed scores (FEAT-007: integer 1–5, validated server-side too). */
 export const STAR_VALUES = [1, 2, 3, 4, 5] as const;
@@ -41,10 +42,17 @@ export function StarRating({ value, onChange, disabled, label, idPrefix, testId 
         aria-label={`${value ?? 0} out of 5`}
         {...(testId ? { 'data-testid': testId } : {})}
       >
-        <span aria-hidden="true" className="text-amber-500">
-          {STAR_VALUES.map((star) => (star <= (value ?? 0) ? '★' : '☆')).join('')}
+        <span aria-hidden="true" className="flex items-center gap-0.5">
+          {STAR_VALUES.map((star) => (
+            <StarGlyph
+              key={star}
+              filled={star <= (value ?? 0)}
+              size={19}
+              className={star <= (value ?? 0) ? 'text-star' : 'text-ink-soft/40'}
+            />
+          ))}
         </span>
-        <span className="text-sm text-slate-600">{value ?? 0} / 5</span>
+        <span className="num ml-1.5 text-meta font-extrabold text-ink-muted">{value ?? 0} / 5</span>
       </span>
     );
   }
@@ -74,15 +82,16 @@ export function StarRating({ value, onChange, disabled, label, idPrefix, testId 
               htmlFor={id}
               aria-label={star === 1 ? '1 star' : `${star} stars`}
               className={cn(
-                // min-h/w 44px: this is a phone-first product and every Button is
-                // h-11; a 26px star was below the touch target everything else meets.
-                'flex h-11 w-9 cursor-pointer items-center justify-center rounded text-2xl leading-none transition-colors',
-                'peer-focus-visible:ring-2 peer-focus-visible:ring-teal-600 peer-focus-visible:ring-offset-1',
-                (value ?? 0) >= star ? 'text-amber-500' : 'text-slate-300',
-                disabled ? 'cursor-not-allowed opacity-60' : 'hover:text-amber-400',
+                // min-h 44px: this is a phone-first product and every Button is at
+                // least h-11; a 26px star was below the touch target everything else meets.
+                'flex h-11 w-10 cursor-pointer items-center justify-center rounded-chip',
+                'transition-transform duration-press ease-press',
+                'peer-focus-visible:shadow-focus',
+                (value ?? 0) >= star ? 'text-star' : 'text-ink-soft/40',
+                disabled ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.2] hover:-rotate-6 active:scale-95',
               )}
             >
-              <span aria-hidden="true">{(value ?? 0) >= star ? '★' : '☆'}</span>
+              <StarGlyph filled={(value ?? 0) >= star} size={25} />
             </label>
           </span>
         );

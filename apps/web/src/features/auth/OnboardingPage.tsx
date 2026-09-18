@@ -6,9 +6,9 @@ import { useAuthStore } from './auth.store';
 import { messageFromError } from './error-messages';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { Button } from '../../components/ui/button';
+import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 
 type Step = 'invite' | 'phone' | 'otp';
 
@@ -68,30 +68,52 @@ export function OnboardingPage() {
   const stepIndex = STEP_ORDER.indexOf(step);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 bg-slate-50 p-6">
-      <header className="text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Bulk Saving</h1>
-        <p className="text-sm text-slate-500">Join your society to start saving together.</p>
+    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+      {/* Decoration only: the same drifting ground the app shell gives every other
+          screen, inlined here because /onboard renders outside the shell (AC2). */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="animate-drift-a absolute -left-20 -top-24 h-64 w-64 rounded-full bg-brand-light/50 blur-[46px]" />
+        <div className="animate-drift-b absolute -right-24 top-40 h-72 w-72 rounded-full bg-brand/30 blur-[46px]" />
+      </div>
+
+      <header className="animate-rise relative flex flex-1 flex-col justify-center gap-[18px] px-7 pb-6 pt-10">
+        <span className="animate-breathe inline-flex w-fit items-center gap-2 rounded-full border border-white/80 bg-gradient-to-br from-white/90 to-white/50 px-3.5 py-1.5 text-eyebrow uppercase text-brand-ink shadow-lift">
+          <Icon name="users" size={13} strokeWidth={2.2} />
+          Society group buys
+        </span>
+        <h1 className="animate-blur-in bg-gradient-to-br from-ink via-brand to-brand-light bg-clip-text text-hero font-extrabold text-transparent">
+          Bulk
+          <br />
+          Saving
+        </h1>
+        <p className="max-w-[280px] text-lead font-medium text-ink-muted">
+          Join your society to start saving together.
+        </p>
+        <ol className="flex items-center gap-2" aria-label="Onboarding progress">
+          {STEP_ORDER.map((label, index) => (
+            <li
+              key={label}
+              className={[
+                'h-1.5 overflow-hidden rounded-full bg-shade/15 t',
+                index === stepIndex ? 'w-[52px]' : 'w-[34px]',
+              ].join(' ')}
+            >
+              {index <= stepIndex && (
+                <span className="bar-fill block h-full w-full rounded-full bg-gradient-to-r from-brand-deep to-brand-light shadow-glow" />
+              )}
+            </li>
+          ))}
+        </ol>
       </header>
 
-      <ol className="flex items-center justify-center gap-2" aria-label="Onboarding progress">
-        {STEP_ORDER.map((label, index) => (
-          <li
-            key={label}
-            className={
-              index <= stepIndex ? 'h-1.5 w-10 rounded-full bg-teal-600' : 'h-1.5 w-10 rounded-full bg-slate-200'
-            }
-          />
-        ))}
-      </ol>
-
-      <Card>
+      {/* The form lives in a bottom sheet: thumb-reachable on a phone, and it keeps
+          the brand in view while a resident types an OTP. */}
+      <section className="animate-rise relative rounded-t-sheet border-t border-white/95 bg-gradient-to-b from-white/95 to-white/75 px-6 pb-8 pt-7 shadow-sheet backdrop-blur-chrome backdrop-saturate-[1.9] [animation-delay:140ms]">
+        <span aria-hidden="true" className="mx-auto mb-6 block h-[5px] w-11 rounded-full bg-shade/20" />
         {step === 'invite' && (
-          <form onSubmit={submitInvite} noValidate>
-            <CardHeader>
-              <CardTitle>Enter your invite code</CardTitle>
-              <CardDescription>The 8-character code shared by your society.</CardDescription>
-            </CardHeader>
+          <form onSubmit={submitInvite} noValidate className="field">
+            <h2 className="text-title font-extrabold text-ink">Enter your invite code</h2>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">The 8-character code shared by your society.</p>
             <Label htmlFor="inviteCode">Invite code</Label>
             <Input
               id="inviteCode"
@@ -102,19 +124,19 @@ export function OnboardingPage() {
               maxLength={8}
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
+              className="num h-[60px] text-center text-[21px] font-extrabold tracking-[0.26em]"
             />
-            <Button className="mt-6 w-full" type="submit" disabled={inviteCode.trim().length === 0}>
+            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.trim().length === 0}>
               Continue
+              <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
             </Button>
           </form>
         )}
 
         {step === 'phone' && (
-          <form onSubmit={submitPhone} noValidate>
-            <CardHeader>
-              <CardTitle>What's your phone number?</CardTitle>
-              <CardDescription>We'll text you a 6-digit code to verify it.</CardDescription>
-            </CardHeader>
+          <form onSubmit={submitPhone} noValidate className="field">
+            <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 6-digit code to verify it.</p>
             <Label htmlFor="phone">Phone number</Label>
             <Input
               id="phone"
@@ -125,21 +147,22 @@ export function OnboardingPage() {
               placeholder="+91 98765 43210"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              className="num h-[60px] text-[19px] font-extrabold"
             />
             {queuedOffline && (
-              <p role="status" data-testid="onboarding-offline" className="mt-3 text-sm text-amber-700">
+              <p role="status" data-testid="onboarding-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
                 {OFFLINE_QUEUED_TEXT}
               </p>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 text-sm text-red-600">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
                 {requestError}
               </p>
             )}
-            <div className="mt-6 flex gap-3">
+            <div className="mt-[22px] flex gap-3">
               <Button
-                variant="ghost"
-                className="flex-1"
+                variant="secondary"
+                className="w-[108px]"
                 onClick={() => setStep('invite')}
                 disabled={requestMutation.isPending}
               >
@@ -161,11 +184,11 @@ export function OnboardingPage() {
         )}
 
         {step === 'otp' && (
-          <form onSubmit={submitOtp} noValidate>
-            <CardHeader>
-              <CardTitle>Enter the code</CardTitle>
-              <CardDescription>Sent by SMS to {phone}.</CardDescription>
-            </CardHeader>
+          <form onSubmit={submitOtp} noValidate className="field">
+            <h2 className="text-title font-extrabold text-ink">Enter the code</h2>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">
+              Sent by SMS to <span className="num font-bold text-ink">{phone}</span>.
+            </p>
             <Label htmlFor="code">6-digit code</Label>
             <Input
               id="code"
@@ -176,10 +199,11 @@ export function OnboardingPage() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              className="num h-16 border-brand/60 text-center text-[27px] font-extrabold tracking-[0.38em] shadow-ring"
             />
 
-            <Label htmlFor="name" className="mt-4">
-              Your name <span className="font-normal text-slate-400">(optional)</span>
+            <Label htmlFor="name" className="mt-[18px]">
+              Your name <span className="font-semibold normal-case tracking-normal text-ink-soft">(optional)</span>
             </Label>
             <Input
               id="name"
@@ -191,18 +215,18 @@ export function OnboardingPage() {
             />
 
             {verifyError && (
-              <p role="alert" className="mt-3 text-sm text-red-600">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
                 {verifyError}
               </p>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 text-sm text-red-600">
+              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
                 {requestError}
               </p>
             )}
 
             <Button
-              className="mt-6 w-full"
+              className="mt-[22px] w-full"
               type="submit"
               disabled={verifyMutation.isPending || code.trim().length === 0}
             >
@@ -213,7 +237,7 @@ export function OnboardingPage() {
                   : 'Verify & continue'}
             </Button>
 
-            <div className="mt-4 text-center text-sm text-slate-500">
+            <p className="mt-4 text-center text-caption font-medium text-ink-muted">
               Didn't get it?{' '}
               <Button
                 variant="link"
@@ -226,11 +250,10 @@ export function OnboardingPage() {
                     ? 'Resending…'
                     : 'Resend code'}
               </Button>
-            </div>
+            </p>
           </form>
         )}
-      </Card>
-
+      </section>
     </main>
   );
 }

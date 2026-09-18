@@ -4,7 +4,9 @@ import { useAuthStore } from '../auth/auth.store';
 import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
 import { useOnlineStatus } from '../shell/useOnlineStatus';
 import { Button } from '../../components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Icon, type IconName } from '../../components/ui/icon';
+import { Badge } from '../../components/ui/badge';
+import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
 
 /** Human label for a role enum — the resident should not read SUPER_ADMIN. */
 const ROLE_LABEL: Record<string, string> = {
@@ -12,10 +14,43 @@ const ROLE_LABEL: Record<string, string> = {
   SUPER_ADMIN: 'Super admin',
 };
 
+/** One identity fact as a tile; two sit side by side under the hero. */
+function Tile({
+  icon,
+  term,
+  value,
+  sub,
+  testId,
+}: {
+  icon: IconName;
+  term: string;
+  value: string;
+  sub?: string;
+  testId: string;
+}) {
+  return (
+    <Card surface="solid" className="flex min-h-[134px] flex-col p-[18px]">
+      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/24 to-brand/6 text-brand-ink">
+        <Icon name={icon} size={20} strokeWidth={1.8} />
+      </span>
+      <p className="mt-auto pt-3.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">
+        {term}
+      </p>
+      <p className="num mt-1.5 text-[15.5px] font-extrabold text-ink" data-testid={testId}>
+        {value}
+      </p>
+      {sub && <p className="mt-1 text-meta text-ink-muted">{sub}</p>}
+    </Card>
+  );
+}
+
 /**
  * Profile tab (FEAT-008 AC4/AC5): who am I, log out, and the device-level
  * concerns of an installable app. Reads the session store, not the network, so
  * it works offline — it is the one page that must never need a request.
+ *
+ * FEAT-011 lays it out as a bento: a centred identity hero with the role as a
+ * badge, then the facts as tiles. Same fields, same source, same offline promise.
  */
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -38,58 +73,102 @@ export function ProfilePage() {
     navigate('/onboard', { replace: true });
   }
 
+  const name = resident?.name ?? 'Resident';
+
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-6">
-      <h1 className="text-2xl font-bold text-slate-900">Profile</h1>
+    <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
+      <h1 className="animate-rise text-display font-extrabold text-ink">Profile</h1>
 
-      <Card>
-        <CardHeader>
-          <CardDescription>Signed in as</CardDescription>
-          <CardTitle data-testid="profile-name">{resident?.name ?? 'Resident'}</CardTitle>
-        </CardHeader>
-        <dl className="grid gap-2 text-sm text-slate-600">
-          <div className="flex justify-between">
-            <dt>Phone</dt>
-            <dd data-testid="profile-phone">{resident?.phone ?? '—'}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt>Society</dt>
-            <dd data-testid="profile-society">{society?.name ?? '—'}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt>Role</dt>
-            <dd data-testid="profile-role">{resident ? (ROLE_LABEL[resident.role] ?? resident.role) : '—'}</dd>
-          </div>
-        </dl>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardDescription>This app</CardDescription>
-          <CardTitle>{installed ? 'Installed' : 'Add to your home screen'}</CardTitle>
-        </CardHeader>
-        {installed ? (
-          <p className="text-sm text-slate-600" data-testid="installed-note">
-            You're running the installed app.
+      <div className="stagger grid grid-cols-2 gap-3.5">
+        <Card className="col-span-2 overflow-hidden p-6 text-center">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 left-1/2 h-52 w-64 -translate-x-1/2 rounded-full bg-brand-light/30 blur-2xl"
+          />
+          <span className="relative inline-flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-card fill-mono text-[24px] font-extrabold text-white shadow-accent">
+            <span className="animate-halo absolute -inset-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgb(255_255_255/0.45)_60deg,transparent_140deg)]" />
+            <span className="relative" data-testid="profile-initials">
+              {initialsOf(name)}
+            </span>
+          </span>
+          <CardEyebrow className="mt-4">Signed in as</CardEyebrow>
+          <CardTitle className="animate-blur-in mt-2 text-[25px]" data-testid="profile-name">
+            {name}
+          </CardTitle>
+          <p className="mt-3">
+            <Badge tone="teal" icon={<Icon name="profile" size={13} strokeWidth={2.2} />}>
+              <span data-testid="profile-role">
+                {resident ? (ROLE_LABEL[resident.role] ?? resident.role) : '—'}
+              </span>
+            </Badge>
           </p>
-        ) : canInstall ? (
-          <Button variant="primary" onClick={() => void promptInstall()}>
-            Install app
-          </Button>
-        ) : (
-          <p className="text-sm text-slate-600" data-testid="install-hint">
-            On iPhone: tap Share, then "Add to Home Screen". On Android, use your browser's
-            "Install app" menu item.
-          </p>
-        )}
-        <p className="mt-3 text-xs text-slate-500" data-testid="connection-state">
-          {online ? 'Connected' : "Offline — you can still open the app, but rounds won't be current."}
-        </p>
-      </Card>
+        </Card>
 
-      <Button variant="ghost" onClick={handleLogout}>
-        Log out
-      </Button>
+        <Tile icon="phone" term="Phone" value={resident?.phone ?? '—'} testId="profile-phone" />
+        <Tile icon="building" term="Society" value={society?.name ?? '—'} testId="profile-society" />
+
+        <Card surface="tint" className="col-span-2 p-[22px]">
+          <div className="flex items-start gap-4">
+            <span className="animate-breathe flex h-12 w-12 shrink-0 items-center justify-center rounded-inset border border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift">
+              <Icon name="install" size={23} strokeWidth={1.8} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <CardEyebrow>This app</CardEyebrow>
+              <CardTitle className="mt-2 text-title">
+                {installed ? 'Installed' : 'Add to your home screen'}
+              </CardTitle>
+              {installed ? (
+                <p className="mt-2 text-meta text-ink-muted" data-testid="installed-note">
+                  You&apos;re running the installed app.
+                </p>
+              ) : canInstall ? (
+                <Button variant="primary" size="sm" className="mt-3" onClick={() => void promptInstall()}>
+                  <Icon name="install" size={16} strokeWidth={2.1} />
+                  Install app
+                </Button>
+              ) : (
+                <p className="mt-2 text-meta text-ink-muted" data-testid="install-hint">
+                  On iPhone: tap Share, then &quot;Add to Home Screen&quot;. On Android, use your
+                  browser&apos;s &quot;Install app&quot; menu item.
+                </p>
+              )}
+              <p
+                className={[
+                  'mt-3.5 inline-flex items-center gap-2 rounded-full border border-white/70 px-3 py-1.5 text-micro font-extrabold',
+                  online ? 'bg-success-ink/12 text-success-ink' : 'bg-amber-ink/12 text-amber-ink',
+                ].join(' ')}
+                data-testid="connection-state"
+              >
+                <span
+                  aria-hidden="true"
+                  className={[
+                    'h-[7px] w-[7px] rounded-full',
+                    online ? 'animate-pulse-ring-green bg-success-ink' : 'bg-amber-ink',
+                  ].join(' ')}
+                />
+                {online ? 'Connected' : "Offline — you can still open the app, but rounds won't be current."}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Button variant="secondary" className="col-span-2 w-full" onClick={handleLogout}>
+          <Icon name="logout" size={18} strokeWidth={2} />
+          Log out
+        </Button>
+      </div>
     </main>
   );
+}
+
+/** "Priya Sharma" -> "PS". Falls back to a glyph rather than an empty circle. */
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '·';
+  }
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 }

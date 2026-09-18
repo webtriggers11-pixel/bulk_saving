@@ -8,7 +8,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       <select
         ref={ref}
         className={cn(
-          'flex h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 disabled:cursor-not-allowed disabled:opacity-50',
+          // FEAT-011: on the token layer like every other primitive, so the admin
+        // surfaces it serves inherit the palette rather than a frozen teal.
+        'flex h-control w-full rounded-control border border-white/70 fill-glass px-[15px] text-lead font-semibold text-ink shadow-field t',
+        'focus:border-brand/60 focus:shadow-ring focus:outline-none focus-visible:outline-none',
+        'disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}

@@ -1,4 +1,5 @@
 import { Button } from './ui/button';
+import { Icon } from './ui/icon';
 import { useOnlineStatus } from '../features/shell/useOnlineStatus';
 
 interface QueryErrorStateProps {
@@ -38,12 +39,18 @@ export function QueryErrorState({ subject, hasData, onRetry }: QueryErrorStatePr
       data-testid="query-error"
       data-mode={online ? (hasData ? 'stale' : 'error') : hasData ? 'offline-stale' : 'offline-empty'}
       className={[
-        'flex flex-col items-start gap-3 rounded-md px-3 py-2',
-        hasData ? 'bg-amber-50 text-amber-900' : 'text-red-600',
+        'animate-rise flex flex-col items-start gap-3 rounded-inset border px-4 py-4 shadow-hairline',
+        hasData
+          ? 'border-white/60 bg-amber-ink/12 text-amber-ink'
+          : 'border-white/55 bg-danger-ink/8 text-danger-ink',
       ].join(' ')}
     >
-      <p>{message}</p>
-      <Button variant="primary" onClick={onRetry}>
+      <p className="flex gap-2.5 text-meta font-bold leading-relaxed">
+        <Icon name={online ? 'alert' : 'offline'} size={18} strokeWidth={2} />
+        <span>{message}</span>
+      </p>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        <Icon name="refresh" size={16} strokeWidth={2.1} />
         Retry
       </Button>
     </div>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { Icon } from '../../components/ui/icon';
 import { Label } from '../../components/ui/label';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { ratingErrorMessage } from './rating-messages';
@@ -88,10 +89,10 @@ export function RateRound({ round }: { round: MyRoundDto }) {
 
   if (!open) {
     return (
-      <div className="mt-3 border-t border-slate-100 pt-3" data-testid="rating-saved">
+      <div className="mt-4 border-t border-shade/10 pt-4" data-testid="rating-saved">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-slate-700">Your rating</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">Your rating</p>
             {/* `my-rating` is FEAT-008's existing test contract for a saved
                 rating — kept so its MyRequestsPage test stays meaningful. */}
             <StarRating
@@ -103,7 +104,8 @@ export function RateRound({ round }: { round: MyRoundDto }) {
           </div>
           <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 setStars(asStarValue(saved.stars));
                 setComment(saved.comment ?? '');
@@ -114,6 +116,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
             </Button>
             <Button
               variant="ghost"
+              size="sm"
               disabled={busy}
               onClick={() =>
                 // Clear the local draft too (V2 P1-4): without this the form
@@ -133,14 +136,20 @@ export function RateRound({ round }: { round: MyRoundDto }) {
             </Button>
           </div>
         </div>
-        {saved.comment && <p className="mt-1 text-sm text-slate-600">“{saved.comment}”</p>}
+        {saved.comment && (
+          <p className="surface-inset mt-3 rounded-inset px-3.5 py-3 text-caption italic text-ink-muted">
+            “{saved.comment}”
+          </p>
+        )}
         {queuedOffline && (
-          <p role="status" data-testid="rating-offline" className="mt-2 text-sm text-amber-700">
+          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
+            <Icon name="offline" size={16} strokeWidth={2} />
             {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {error && (
-          <p role="alert" className="mt-2 text-sm text-red-600">
+          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+            <Icon name="alert" size={16} strokeWidth={2} />
             {ratingErrorMessage(error)}
           </p>
         )}
@@ -149,8 +158,8 @@ export function RateRound({ round }: { round: MyRoundDto }) {
   }
 
   return (
-    <form onSubmit={submit} className="mt-3 border-t border-slate-100 pt-3" noValidate>
-      <p className="text-sm font-medium text-slate-700">
+    <form onSubmit={submit} className="field mt-4 border-t border-shade/10 pt-4" noValidate>
+      <p className="text-[14px] font-extrabold text-ink">
         {saved ? 'Change your rating' : 'How did it go?'}
       </p>
       <StarRating
@@ -172,21 +181,23 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         disabled={busy}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Anything the next resident should know?"
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:bg-slate-50"
+        className="mt-1 w-full rounded-control border border-white/70 fill-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
       />
 
       {queuedOffline && (
-        <p role="status" data-testid="rating-offline" className="mt-2 text-sm text-amber-700">
+        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/12 px-3 py-2 text-meta font-bold text-amber-ink">
+          <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/8 px-3 py-2 text-meta font-bold text-danger-ink">
+          <Icon name="alert" size={16} strokeWidth={2} />
           {ratingErrorMessage(error)}
         </p>
       )}
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-4 flex gap-2.5">
         <Button type="submit" disabled={busy || stars === null}>
           {queuedOffline
             ? OFFLINE_WAITING_LABEL

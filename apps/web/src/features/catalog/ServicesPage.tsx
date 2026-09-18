@@ -2,43 +2,127 @@ import { useNavigate } from 'react-router-dom';
 import { unitLabelFor } from '../../lib/units';
 import type { ServiceDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { Icon, type IconName } from '../../components/ui/icon';
 import { QueryErrorState } from '../../components/QueryState';
 import { hasRows, queryStalled } from '../../lib/offline';
-import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardDescription, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { cn } from '../../lib/utils';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog } from './useCatalog';
+import { CatalogSkeleton } from './CatalogSkeleton';
 
-/** A single service card (name, category, indicative price, image/icon). */
-function ServiceCard({ service }: { service: ServiceDto }) {
+/**
+ * A service's glyph. The catalog carries an optional image; when it does not, this
+ * picks from the one icon family by category keyword rather than falling back to an
+ * emoji, so a society with no artwork still gets a designed card (FEAT-011).
+ */
+function glyphFor(service: ServiceDto): IconName {
+  const haystack = `${service.category} ${service.name}`.toLowerCase();
+  if (/(ac|air|appliance|fridge|geyser)/.test(haystack)) return 'ac';
+  if (/(pest|termite|cockroach)/.test(haystack)) return 'pest';
+  if (/(clean|wash|bathroom|sanit)/.test(haystack)) return 'clean';
+  if (/(paint|renovat|polish)/.test(haystack)) return 'paint';
+  return 'service';
+}
+
+function ServiceGlyph({ service, size }: { service: ServiceDto; size: number }) {
+  if (service.imageUrl) {
+    return <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />;
+  }
+  return <Icon name={glyphFor(service)} size={size} strokeWidth={1.7} />;
+}
+
+function PriceLine({ service, className }: { service: ServiceDto; className?: string }) {
+  const price = formatIndicativePrice(service.indicativePrice);
+  if (!price) {
+    return null;
+  }
+  // One element, one text run. Testing Library reads an element's OWN text nodes,
+  // so splitting "From ₹3,500 / room" across styled spans would make the price
+  // unfindable by the sentence a resident actually sees.
+  return (
+    <p className={cn('num font-extrabold text-ink', className)} data-testid="service-price">
+      From {price} / {unitLabelFor(service)}
+    </p>
+  );
+}
+
+/** The lead service: a hero card with a watermark glyph and the price as a pill. */
+function ServiceHero({ service }: { service: ServiceDto }) {
   const price = formatIndicativePrice(service.indicativePrice);
   return (
-    <Card className="flex gap-4 p-4" data-testid="service-card">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-teal-50 text-2xl">
-        {service.imageUrl ? (
-          <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <span aria-hidden="true">🛠️</span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-teal-700">
-          {service.category}
-        </span>
-        <h3 className="truncate text-base font-bold text-slate-900">{service.name}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-slate-600">{service.description}</p>
+    <Card className="col-span-2 overflow-hidden p-[22px]" data-testid="service-card">
+      <span aria-hidden="true" className="pointer-events-none absolute -right-7 -top-8 text-brand/10">
+        <ServiceGlyph service={service} size={165} />
+      </span>
+      <CardEyebrow className="relative">{service.category}</CardEyebrow>
+      <CardTitle className="relative mt-2 text-[25px] tracking-[-0.045em]">{service.name}</CardTitle>
+      <CardDescription className="relative mt-2 max-w-[235px]">{service.description}</CardDescription>
+      <div className="relative mt-[18px] flex items-center gap-2.5">
         {price && (
-          <p className="mt-2 text-sm font-semibold text-slate-900" data-testid="service-price">
+          <span
+            className="num inline-flex items-baseline gap-1.5 rounded-control border border-white/75 bg-gradient-to-br from-brand-light/30 to-brand/10 px-4 py-2.5 text-[19px] font-extrabold text-brand-ink shadow-hairline"
+            data-testid="service-price"
+          >
+            {/* One text run, for the same reason as PriceLine above. */}
             From {price} / {unitLabelFor(service)}
-          </p>
+          </span>
         )}
-        {/* What one unit includes — the same sentence the round card shows, so a
-            resident reads the scope before the price means anything. */}
-        {service.unitDescription?.trim() && (
-          <p className="mt-1 text-xs text-slate-500" data-testid="service-unit-scope">
-            {service.unitDescription}
-          </p>
-        )}
+        <Icon name="forward" size={20} strokeWidth={2.2} className="nudge ml-auto text-brand-ink" />
       </div>
+      {/* What one unit includes — the same sentence the round card shows, so a
+          resident reads the scope before the price means anything. */}
+      {service.unitDescription?.trim() && (
+        <p
+          className="relative mt-3.5 border-t border-shade/10 pt-3.5 text-micro text-ink-soft"
+          data-testid="service-unit-scope"
+        >
+          {service.unitDescription}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/** A square tile — two of these sit beside each other under the hero. */
+function ServiceTile({ service }: { service: ServiceDto }) {
+  return (
+    <Card surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
+      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-white/80 bg-gradient-to-br from-brand-light/22 to-brand/6 text-brand-ink">
+        <ServiceGlyph service={service} size={22} />
+      </span>
+      <CardEyebrow className="mt-3.5">{service.category}</CardEyebrow>
+      <h3 className="mt-1.5 text-[16px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
+      <p className="mt-1.5 line-clamp-2 text-micro text-ink-muted">{service.description}</p>
+      <PriceLine service={service} className="mt-auto pt-3 text-[15px]" />
+      {service.unitDescription?.trim() && (
+        <p className="mt-1.5 text-[10.5px] leading-snug text-ink-soft" data-testid="service-unit-scope">
+          {service.unitDescription}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/** Everything past the third service: a wide row, so the rhythm stays a bento. */
+function ServiceRow({ service }: { service: ServiceDto }) {
+  return (
+    <Card
+      surface="solid"
+      className="col-span-2 flex items-center gap-3.5 p-[17px]"
+      data-testid="service-card"
+    >
+      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/22 to-brand/6 text-brand-ink">
+        <ServiceGlyph service={service} size={25} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <CardEyebrow>{service.category}</CardEyebrow>
+        <h3 className="mt-1 text-[16.5px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
+        <p className="mt-1 text-micro text-ink-muted" data-testid="service-unit-scope">
+          {service.unitDescription?.trim() || service.description}
+        </p>
+      </div>
+      <PriceLine service={service} className="shrink-0 text-right text-[16px]" />
     </Card>
   );
 }
@@ -47,6 +131,9 @@ function ServiceCard({ service }: { service: ServiceDto }) {
  * Resident catalog screen (FEAT-002). Lists the caller's society's available
  * services as mobile-first cards, with explicit loading, error and empty states.
  * Data comes from `GET /catalog` via TanStack Query; ProtectedRoute guards it.
+ *
+ * FEAT-011 gives the list a bento rhythm — lead card, two tiles, then rows — rather
+ * than one repeated card shape. The order and the data are untouched.
  */
 export function ServicesPage() {
   const navigate = useNavigate();
@@ -55,37 +142,48 @@ export function ServicesPage() {
   const failed = queryStalled(query);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-slate-50 p-6">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
+      <header className="animate-rise flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Services</h1>
-          <p className="text-sm text-slate-500">Available in your society</p>
+          <h1 className="text-display font-extrabold text-ink">Services</h1>
+          <p className="mt-1 text-caption text-ink-muted">Available in your society</p>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/')}>
-          Back
+        <Button variant="secondary" size="icon" aria-label="Back" onClick={() => navigate('/')}>
+          <Icon name="back" size={20} strokeWidth={2.1} />
         </Button>
       </header>
 
-      {isLoading && <p className="text-slate-500">Loading services…</p>}
+      {isLoading && <CatalogSkeleton />}
 
       {failed && <QueryErrorState subject="services" hasData={hasRows(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && !failed && (
-        <Card data-testid="catalog-empty">
-          <CardHeader>
-            <CardTitle>No services yet</CardTitle>
-            <CardDescription>
-              Your society doesn't have any services available yet. Check back soon.
-            </CardDescription>
-          </CardHeader>
+        <Card className="p-7 text-center" data-testid="catalog-empty">
+          <span className="animate-breathe mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink shadow-lift">
+            <Icon name="clean" size={26} strokeWidth={1.7} />
+          </span>
+          <CardTitle className="mt-4">No services yet</CardTitle>
+          <CardDescription className="mt-2">
+            Your society doesn&apos;t have any services available yet. Check back soon.
+          </CardDescription>
         </Card>
       )}
 
       {data && data.length > 0 && (
-        <section className="flex flex-col gap-4" aria-label="Available services">
-          {data.map((service) => (
-            <ServiceCard key={service.id} service={service} />
-          ))}
+        <section aria-label="Available services">
+          <ul className="stagger grid grid-cols-2 gap-3.5">
+            {data.map((service, index) => (
+              <li key={service.id} className={index === 1 || index === 2 ? '' : 'col-span-2'}>
+                {index === 0 ? (
+                  <ServiceHero service={service} />
+                ) : index <= 2 ? (
+                  <ServiceTile service={service} />
+                ) : (
+                  <ServiceRow service={service} />
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </main>
