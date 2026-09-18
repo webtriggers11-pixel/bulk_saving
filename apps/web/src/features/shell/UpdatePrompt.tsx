@@ -1,5 +1,6 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '../../components/ui/button';
+import { Icon } from '../../components/ui/icon';
 
 /**
  * Offers the waiting service worker (FEAT-008 AC9). `registerType: 'autoUpdate'`
@@ -21,10 +22,18 @@ export function UpdatePrompt() {
       role="status"
       aria-live="polite"
       data-testid="update-prompt"
-      className="flex items-center justify-between gap-3 bg-teal-700 px-4 py-2 text-sm text-white"
+      className="sheen animate-rise relative flex items-center justify-between gap-3 overflow-hidden rounded-inset surface-accent px-4 py-2.5 text-meta font-bold"
     >
-      <span>A new version is ready.</span>
-      <Button variant="ghost" className="text-white underline" onClick={() => void updateServiceWorker(true)}>
+      <span className="relative flex items-center gap-2.5">
+        <Icon name="spark" size={17} strokeWidth={2} className="animate-breathe" />
+        A new version is ready.
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="relative border-white/35 bg-white/15 text-white hover:bg-white/25"
+        onClick={() => void updateServiceWorker(true)}
+      >
         Reload
       </Button>
     </div>

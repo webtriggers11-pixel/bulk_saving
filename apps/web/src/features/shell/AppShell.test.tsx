@@ -83,8 +83,10 @@ describe('AppShell route coverage', () => {
     renderAppAt('/profile');
 
     const nav = screen.getByTestId('bottom-nav');
+    // FEAT-011: the tab bar grew (58px items + underline), so the reserved
+    // space grew with it, pb-20 -> pb-28. The guarantee is unchanged.
     // The shell pads its content area; the bar clears the iOS home indicator.
-    expect(nav.previousElementSibling?.className).toContain('pb-20');
+    expect(nav.previousElementSibling?.className).toContain('pb-28');
     expect(nav.className).toContain('pb-[env(safe-area-inset-bottom)]');
   });
 });

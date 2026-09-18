@@ -1,52 +1,65 @@
 import { NavLink } from 'react-router-dom';
+import { Icon, type IconName } from '../../components/ui/icon';
 
 /** BRIEF.md resident navigation, in its stated order. */
-const TABS = [
-  { to: '/', label: 'Home', icon: 'M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
-  { to: '/services', label: 'Services', icon: 'M4 6h16M4 12h16M4 18h10' },
-  { to: '/my-requests', label: 'My Requests', icon: 'M5 13l4 4L19 7' },
-  { to: '/profile', label: 'Profile', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 4.5V21h14v-2.5c0-2.5-3-4.5-7-4.5z' },
+const TABS: ReadonlyArray<{ to: string; label: string; icon: IconName }> = [
+  { to: '/', label: 'Home', icon: 'home' },
+  { to: '/services', label: 'Services', icon: 'services' },
+  { to: '/my-requests', label: 'My Requests', icon: 'requests' },
+  { to: '/profile', label: 'Profile', icon: 'profile' },
 ] as const;
 
 /**
- * Thumb-reachable tab bar (FEAT-008 AC1/AC3). `min-h-11` is 44 px — the minimum
- * comfortable touch target — and the bar clears the iOS home indicator via the
+ * Thumb-reachable tab bar (FEAT-008 AC1/AC3). `min-h-tab` is 58 px — comfortably
+ * over the 44 px floor — and the bar clears the iOS home indicator via the
  * safe-area inset, so the last tab is never half under the system gesture area.
+ *
+ * FEAT-011 makes it the app's one permanently glass surface: blur 28 over a white
+ * gradient, a hairline top edge, and an active pill that bounces on tap above a
+ * gradient underline.
  */
 export function BottomNav() {
   return (
     <nav
       aria-label="Main"
       data-testid="bottom-nav"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-white/80 bg-gradient-to-b from-white/60 to-white/95 px-2.5 pb-[env(safe-area-inset-bottom)] pt-2 shadow-nav backdrop-blur-chrome backdrop-saturate-200"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around">
+      <ul className="mx-auto flex max-w-md items-stretch gap-1">
         {TABS.map((tab) => (
-          <li key={tab.to} className="flex-1">
+          <li key={tab.to} className="flex flex-1">
             <NavLink
               to={tab.to}
               className={({ isActive }) =>
                 [
-                  'flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-2 py-2 text-xs font-medium',
-                  isActive ? 'text-teal-700' : 'text-slate-500',
+                  'group flex min-h-tab min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-inset px-1 py-1.5 text-[10.5px] font-semibold no-underline t',
+                  isActive ? 'text-brand-ink' : 'text-ink-muted',
                 ].join(' ')
               }
             >
               {({ isActive }) => (
                 <>
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-5 w-5"
+                  <span
+                    className={[
+                      'flex h-[30px] w-11 items-center justify-center rounded-chip border t',
+                      'group-hover:-translate-y-0.5 group-active:scale-90',
+                      isActive
+                        ? 'border-white/70 bg-gradient-to-br from-brand-light/35 to-brand/15 shadow-lift'
+                        : 'border-transparent',
+                    ].join(' ')}
                   >
-                    <path d={tab.icon} />
-                  </svg>
-                  <span>{tab.label}</span>
+                    <Icon name={tab.icon} size={21} strokeWidth={isActive ? 2 : 1.7} />
+                  </span>
+                  <span className={isActive ? 'font-extrabold' : undefined}>{tab.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className={[
+                      'block h-[2.5px] w-4 rounded-full',
+                      isActive
+                        ? 'animate-rise bg-gradient-to-r from-brand-deep to-brand-light'
+                        : 'bg-transparent',
+                    ].join(' ')}
+                  />
                 </>
               )}
             </NavLink>

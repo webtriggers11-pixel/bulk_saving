@@ -1,31 +1,40 @@
-import { type HTMLAttributes } from 'react';
+import { type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 
 export type BadgeTone = 'slate' | 'teal' | 'amber' | 'blue' | 'green' | 'red';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
+  /** Optional leading glyph — an <Icon /> at 13px, never an emoji. */
+  icon?: ReactNode;
 }
 
+/**
+ * Status pills. Tone names are kept from FEAT-009 so every caller keeps working;
+ * `teal` now means "the brand tone", whatever the palette is.
+ */
 const TONES: Record<BadgeTone, string> = {
-  slate: 'bg-slate-100 text-slate-700',
-  teal: 'bg-teal-50 text-teal-800',
-  amber: 'bg-amber-100 text-amber-800',
-  blue: 'bg-blue-50 text-blue-800',
-  green: 'bg-green-100 text-green-800',
-  red: 'bg-red-50 text-red-700',
+  slate: 'bg-white/70 border-white/70 text-ink-muted',
+  teal: 'bg-brand-light/25 border-white/70 text-brand-ink',
+  amber: 'bg-amber-ink/15 border-white/60 text-amber-ink',
+  blue: 'bg-info-ink/10 border-white/60 text-info-ink',
+  green: 'bg-success-ink/12 border-white/60 text-success-ink',
+  red: 'bg-danger-ink/10 border-white/60 text-danger-ink',
 };
 
-/** shadcn/ui-style pill badge for short status labels. */
-export function Badge({ tone = 'slate', className, ...props }: BadgeProps) {
+export function Badge({ tone = 'slate', icon, className, children, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-[11px] py-1.5',
+        'text-micro font-extrabold shadow-hairline t',
         TONES[tone],
         className,
       )}
       {...props}
-    />
+    >
+      {icon}
+      {children}
+    </span>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
+import { Icon } from './icon';
 
 export type ToastTone = 'slate' | 'amber';
 
@@ -16,8 +17,8 @@ interface ToastProps {
 }
 
 const TONES: Record<ToastTone, string> = {
-  slate: 'bg-slate-900 text-white',
-  amber: 'bg-amber-950 text-amber-50 ring-1 ring-amber-400/40',
+  slate: 'bg-ink text-white',
+  amber: 'bg-ink text-white ring-1 ring-amber-ink/40',
 };
 
 /**
@@ -26,7 +27,9 @@ const TONES: Record<ToastTone, string> = {
  * Deliberately minimal — one toast at a time, rendered by the page that owns it,
  * with no global provider or queue (CHORE-002 needed exactly one caller). It is
  * `role="status"` with `aria-live="polite"`, so a screen reader announces it
- * without stealing focus from the form underneath.
+ * without stealing focus from the form underneath. FEAT-011 restyles it: it rises
+ * from the bottom rather than appearing, and sits on the ink token so it reads as
+ * the same product in every palette.
  */
 export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, label }: ToastProps) {
   const visible = children !== null && children !== undefined && children !== false;
@@ -49,25 +52,26 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
         role="status"
         aria-live="polite"
         className={cn(
-          'pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl px-4 py-3 shadow-lg',
+          'pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-tile px-4 py-3.5',
+          'shadow-deep animate-rise',
           TONES[tone],
         )}
       >
-        <div className="min-w-0 flex-1 text-sm">
+        <div className="min-w-0 flex-1 text-caption">
           {label && (
-            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest opacity-80">
+            <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] opacity-60">
               {label}
             </p>
           )}
-          <div className="break-words">{children}</div>
+          <div className="break-words font-semibold">{children}</div>
         </div>
         <button
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="-mr-1 shrink-0 rounded-md px-1.5 text-lg leading-none opacity-70 hover:opacity-100"
+          className="t press -mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-chip border border-white/15 bg-white/10 opacity-80 hover:opacity-100"
         >
-          ×
+          <Icon name="close" size={15} strokeWidth={2.2} />
         </button>
       </div>
     </div>

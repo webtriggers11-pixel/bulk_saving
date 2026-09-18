@@ -37,12 +37,14 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('is labelled for screen readers and gives every tab a 44px target', () => {
+  // FEAT-011 renamed the height token (min-h-11 -> min-h-tab, 44px -> 58px). The
+  // guarantee under test is unchanged: every tab clears the 44px touch floor.
+  it('is labelled for screen readers and gives every tab a 44px-plus target', () => {
     renderAt('/');
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
     for (const link of screen.getAllByRole('link')) {
-      expect(link.className).toContain('min-h-11');
+      expect(link.className).toContain('min-h-tab');
       expect(link.className).toContain('min-w-11');
     }
   });

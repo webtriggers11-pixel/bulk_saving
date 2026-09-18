@@ -1,22 +1,41 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 
-type ButtonVariant = 'primary' | 'ghost' | 'link';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger';
+type ButtonSize = 'md' | 'sm' | 'icon';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
+/**
+ * The one button (FEAT-011, ADR-0021). Every variant shares one geometry — 16px
+ * radius, 700 weight, the same focus ring — so two buttons doing similar jobs can
+ * never look unrelated. Colour comes from tokens; nothing here knows the palette.
+ *
+ * Motion: `sweep` runs a specular highlight across on hover, `press` settles it to
+ * .975, `ripple` blooms from the centre on tap. All three are off under
+ * prefers-reduced-motion (theme.css).
+ */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    'bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-50 disabled:pointer-events-none',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 disabled:opacity-50',
-  link: 'bg-transparent text-teal-700 underline-offset-4 hover:underline disabled:opacity-50 h-auto px-0',
+  primary: 'fill-brand text-white border border-white/20 shadow-accent sweep ripple',
+  secondary:
+    'fill-glass text-ink border border-white/70 shadow-control backdrop-blur-soft sweep ripple',
+  outline: 'fill-tint text-brand-ink border border-brand/30 ripple',
+  ghost: 'border border-transparent text-ink-muted hover:bg-white/60',
+  danger: 'fill-danger text-danger-ink border border-danger-ink/20 ripple',
+  link: 'h-auto border-none px-0 text-brand-ink underline decoration-[1.5px] underline-offset-4 hover:text-brand',
 };
 
-/** shadcn/ui-style button, styled with Tailwind. */
+const SIZES: Record<ButtonSize, string> = {
+  md: 'h-control px-[22px] text-lead',
+  sm: 'h-11 px-4 text-meta',
+  icon: 'h-icon w-icon px-0',
+};
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', className, type = 'button', ...props },
+  { variant = 'primary', size = 'md', className, type = 'button', ...props },
   ref,
 ) {
   return (
@@ -24,8 +43,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={type}
       className={cn(
-        'inline-flex h-11 items-center justify-center rounded-md px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2',
+        // `relative overflow-hidden` is what contains the sweep and the ripple.
+        'relative inline-flex items-center justify-center gap-[9px] overflow-hidden rounded-control',
+        'font-bold tracking-[-0.015em] t press',
+        'focus-visible:outline-none focus-visible:shadow-focus',
+        'disabled:pointer-events-none disabled:opacity-40',
+        SIZES[size],
         VARIANTS[variant],
+        variant !== 'link' && 'hover:-translate-y-0.5',
         className,
       )}
       {...props}
