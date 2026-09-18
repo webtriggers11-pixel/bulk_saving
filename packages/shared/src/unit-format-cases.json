@@ -1,0 +1,11 @@
+[
+  { "count": 1, "unitLabel": "room", "unitLabelPlural": "rooms", "expected": "1 room" },
+  { "count": 2, "unitLabel": "room", "unitLabelPlural": "rooms", "expected": "2 rooms" },
+  { "count": 0, "unitLabel": "room", "unitLabelPlural": "rooms", "expected": "0 rooms" },
+  { "count": 1, "unitLabel": "AC unit", "unitLabelPlural": "AC units", "expected": "1 AC unit" },
+  { "count": 3, "unitLabel": "AC unit", "unitLabelPlural": "AC units", "expected": "3 AC units" },
+  { "count": 1, "unitLabel": "sq ft", "unitLabelPlural": "sq ft", "expected": "1 sq ft" },
+  { "count": 250, "unitLabel": "sq ft", "unitLabelPlural": "sq ft", "expected": "250 sq ft" },
+  { "count": 1, "unitLabel": "", "unitLabelPlural": "   ", "expected": "1 unit" },
+  { "count": 4, "unitLabel": "", "unitLabelPlural": "   ", "expected": "4 units" }
+]

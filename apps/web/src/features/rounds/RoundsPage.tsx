@@ -163,7 +163,7 @@ function RoundCard({ round }: { round: RoundDto }) {
         <p className="mt-1 text-sm text-slate-500">{formatCountdown(round.deadline)}</p>
         {/* What one unit INCLUDES — the part that actually settles scope disputes
             (ADR-0019), shown where the resident decides whether to join. */}
-        {round.service.unitDescription && (
+        {round.service.unitDescription?.trim() && (
           <p className="mt-1 text-sm text-slate-600" data-testid={`unit-scope-${round.id}`}>
             {round.service.unitDescription}
           </p>

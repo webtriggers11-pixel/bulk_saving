@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { unitLabelFor } from '../../lib/units';
 import type { ServiceDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { QueryErrorState } from '../../components/QueryState';
@@ -27,7 +28,14 @@ function ServiceCard({ service }: { service: ServiceDto }) {
         <p className="mt-1 line-clamp-2 text-sm text-slate-600">{service.description}</p>
         {price && (
           <p className="mt-2 text-sm font-semibold text-slate-900" data-testid="service-price">
-            From {price}
+            From {price} / {unitLabelFor(service)}
+          </p>
+        )}
+        {/* What one unit includes — the same sentence the round card shows, so a
+            resident reads the scope before the price means anything. */}
+        {service.unitDescription?.trim() && (
+          <p className="mt-1 text-xs text-slate-500" data-testid="service-unit-scope">
+            {service.unitDescription}
           </p>
         )}
       </div>

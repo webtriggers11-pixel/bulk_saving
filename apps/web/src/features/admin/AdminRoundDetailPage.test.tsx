@@ -97,9 +97,9 @@ describe('AdminRoundDetailPage', () => {
     expect(submit).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Vendor'), { target: { value: 'ven_1' } });
-    fireEvent.change(screen.getByLabelText('Final price per unit (₹)'), { target: { value: '0' } });
+    fireEvent.change(screen.getByLabelText('Final price per AC unit (₹)'), { target: { value: '0' } });
     expect(submit).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Final price per unit (₹)'), { target: { value: '750' } });
+    fireEvent.change(screen.getByLabelText('Final price per AC unit (₹)'), { target: { value: '750' } });
     expect(submit).toBeEnabled();
 
     fireEvent.click(submit);
@@ -218,5 +218,37 @@ describe('AdminRoundDetailPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('round-rating')).toHaveTextContent('No ratings yet');
+  });
+
+  it('names the service’s unit everywhere on the page, including the PRICE field (FEAT-010)', async () => {
+    // The reviewer's mutation run showed this file stayed green with the label helpers
+    // stubbed — which is exactly where two generic renders survived, one of them the
+    // per-unit price that amountDue bills against.
+    const painting = {
+      id: 'svc_paint',
+      name: 'Painting',
+      slug: 'painting',
+      category: 'Renovation',
+      unitLabel: 'room',
+      unitLabelPlural: 'rooms',
+      unitDescription: 'One room, walls only.',
+    };
+    fetchAdminRoundMock.mockResolvedValue({
+      ...roundDetail({ status: 'CLOSED_MET' }),
+      service: painting,
+      tiers: [{ threshold: 5, price: 3500 }],
+    });
+    fetchVendorsMock.mockResolvedValue([activeVendor]);
+    renderPage();
+
+    await screen.findByText('Painting');
+    // Facts, tiers and the participants column.
+    expect(screen.getByText('Rooms / residents')).toBeInTheDocument();
+    expect(screen.getByText(/5 rooms\+/)).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Rooms' })).toBeInTheDocument();
+    // The money field: a negotiated price is per WHAT.
+    expect(await screen.findByLabelText('Final price per room (₹)')).toBeInTheDocument();
+    // And nothing on the page still says the generic word.
+    expect(screen.queryByText(/per unit/i)).not.toBeInTheDocument();
   });
 });

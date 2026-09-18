@@ -14,6 +14,9 @@ const services: ServiceDto[] = [
     description: 'Split & window AC cleaning.',
     category: 'Appliances',
     indicativePrice: 499,
+    unitLabel: 'AC unit',
+    unitLabelPlural: 'AC units',
+    unitDescription: null,
   },
   {
     id: 'svc_2',
@@ -21,7 +24,10 @@ const services: ServiceDto[] = [
     slug: 'painting',
     description: 'Interior wall painting.',
     category: 'Renovation',
-    indicativePrice: 15000,
+    indicativePrice: 3500,
+    unitLabel: 'room',
+    unitLabelPlural: 'rooms',
+    unitDescription: 'One room up to 12x12 ft: walls only.',
   },
 ];
 
@@ -51,7 +57,10 @@ describe('ServicesPage', () => {
 
     // Indicative price formatted in ₹ (Indian locale, no decimals).
     expect(screen.getByText(/From ₹499/)).toBeInTheDocument();
-    expect(screen.getByText(/From ₹15,000/)).toBeInTheDocument();
+    // FEAT-010 / V2 P1-C: the price is per unit, so it must name the unit — and
+    // Painting is priced per ROOM (it was 15000 per flat before the unit was defined).
+    expect(screen.getByText('From ₹3,500 / room')).toBeInTheDocument();
+    expect(screen.getByTestId('service-unit-scope')).toHaveTextContent('walls only');
 
     expect(screen.getAllByTestId('service-card')).toHaveLength(2);
     expect(screen.queryByTestId('catalog-empty')).not.toBeInTheDocument();

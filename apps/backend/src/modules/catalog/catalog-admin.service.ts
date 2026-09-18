@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   AdminServiceDto,
   CreateServiceBody,
@@ -21,6 +21,7 @@ export class CatalogAdminService {
 
   /** Create a master service. A duplicate `slug` is rejected with SERVICE_SLUG_TAKEN. */
   async createService(body: CreateServiceBody): Promise<AdminServiceDto> {
+    this.assertUnitLabelsPaired(body);
     await this.assertSlugFree(body.slug);
     const service = await this.prisma.service.create({
       data: {
@@ -39,6 +40,29 @@ export class CatalogAdminService {
     return toAdminServiceDto(service);
   }
 
+  /**
+   * Singular and plural must be set TOGETHER (V2 P1-D). Supplying only one left the
+   * other at its default, so a service called in rooms rendered "1 room" and
+   * "2 units" — and its SMS "3 units of Painting at ₹3500/room". That split is the
+   * exact failure ADR-0019 stores the plural to prevent, so it is refused rather
+   * than guessed at: deriving the missing side by appending "s" is what the ADR
+   * rejected.
+   */
+  private assertUnitLabelsPaired(body: {
+    unitLabel?: string | null;
+    unitLabelPlural?: string | null;
+  }): void {
+    const singular = body.unitLabel !== undefined;
+    const plural = body.unitLabelPlural !== undefined;
+    if (singular !== plural) {
+      throw new BadRequestException({
+        code: ErrorCode.VALIDATION_ERROR,
+        message:
+          'unitLabel and unitLabelPlural must be provided together — a plural is never derived from the singular.',
+      });
+    }
+  }
+
   /** All master services (super-admin view), newest first. */
   async listServices(): Promise<AdminServiceDto[]> {
     const services = await this.prisma.service.findMany({ orderBy: { createdAt: 'desc' } });
@@ -50,6 +74,7 @@ export class CatalogAdminService {
    * that collides with a different service is SERVICE_SLUG_TAKEN.
    */
   async updateService(id: string, body: UpdateServiceBody): Promise<AdminServiceDto> {
+    this.assertUnitLabelsPaired(body);
     const existing = await this.prisma.service.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Service not found.' });

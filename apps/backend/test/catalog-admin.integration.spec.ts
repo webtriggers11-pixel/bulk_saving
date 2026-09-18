@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { MAX_UNIT_LABEL } from '@bulk/shared';
 import type { Resident, Society } from '@prisma/client';
 import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -209,5 +210,90 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: '', slug: 'Bad Slug!', description: 'x', category: 'Home' })
       .expect(400);
+  });
+
+  describe('unit labels (FEAT-010, V2 P1-D)', () => {
+    it('stores a trimmed label pair and the scope sentence', async () => {
+      const slug = uniqueSlug();
+      const res = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Wall Painting',
+          slug,
+          description: 'Interior painting',
+          category: 'Renovation',
+          unitLabel: '  room  ',
+          unitLabelPlural: ' rooms ',
+          unitDescription: '  One room, walls only.  ',
+        })
+        .expect(201);
+
+      expect(res.body.data).toMatchObject({
+        unitLabel: 'room',
+        unitLabelPlural: 'rooms',
+        unitDescription: 'One room, walls only.',
+      });
+    });
+
+    it('defaults to unit/units when the labels are omitted', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Unlabelled', slug: uniqueSlug(), description: 'x', category: 'Home' })
+        .expect(201);
+
+      expect(res.body.data).toMatchObject({ unitLabel: 'unit', unitLabelPlural: 'units' });
+    });
+
+    it('REFUSES a singular without its plural — the "1 room / 2 units" split', async () => {
+      // Supplying one alone left the other at its default, so a service counted in
+      // rooms rendered "1 room" and "2 units", and its SMS "3 units at ₹3500/room".
+      // Deriving the missing side by appending "s" is what ADR-0019 rejected, so this
+      // is refused rather than guessed.
+      const res = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Half', slug: uniqueSlug(), description: 'x', category: 'Home', unitLabel: 'room' })
+        .expect(400);
+
+      expect(res.body.error.message).toContain('together');
+    });
+
+    it('REFUSES a plural without its singular, and the same on PATCH', async () => {
+      const slug = uniqueSlug();
+      await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Half2', slug, description: 'x', category: 'Home', unitLabelPlural: 'rooms' })
+        .expect(400);
+
+      const created = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Paired', slug: uniqueSlug(), description: 'x', category: 'Home' })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/admin/services/${created.body.data.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ unitLabel: 'room' })
+        .expect(400);
+    });
+
+    it('rejects a label longer than the cap', async () => {
+      await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'TooLong',
+          slug: uniqueSlug(),
+          description: 'x',
+          category: 'Home',
+          unitLabel: 'x'.repeat(MAX_UNIT_LABEL + 1),
+          unitLabelPlural: 'xs',
+        })
+        .expect(400);
+    });
   });
 });

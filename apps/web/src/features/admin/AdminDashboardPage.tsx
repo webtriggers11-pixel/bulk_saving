@@ -11,6 +11,7 @@ import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adm
 import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
 import { queryStalled } from '../../lib/offline';
+import { formatUnits } from '../../lib/units';
 
 /** Statuses where the admin has work to do; their tiles are highlighted. */
 const ACTION_STATUSES: RoundStatus[] = ['CLOSED_MET', 'ASSIGNED'];
@@ -221,7 +222,9 @@ function RoundsTable() {
                     <StatusBadge status={round.status} />
                   </td>
                   <td className="py-2 pr-3 text-right">
-                    {round.unitsCount} / {round.participantsCount}
+                    {/* Per-round, so the service IS known — unlike the mixed-service
+                        demand total above (V2 P2). */}
+                    {formatUnits(round.unitsCount, round.service)} / {round.participantsCount}
                   </td>
                   <td className="py-2 pr-3 text-right">
                     {formatRupees(round.finalPrice ?? round.currentPrice)}

@@ -1,7 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useIsMutating } from '@tanstack/react-query';
-import type { AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
+import type {
+  RoundServiceSummary, AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -11,7 +12,7 @@ import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
-import { capitalise, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
+import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -76,7 +77,8 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
           <ul>
             {round.tiers.map((tier) => (
               <li key={tier.threshold}>
-                {tier.threshold}+ units: {formatRupees(tier.price)}
+                {/* V2 P1-A: this said "units" two lines below "Rooms / residents". */}
+                {formatUnits(tier.threshold, round.service)}+: {formatRupees(tier.price)}
               </li>
             ))}
           </ul>
@@ -100,7 +102,16 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
 }
 
 /** Vendor + final price form for a CLOSED_MET round. Submit stays disabled until valid. */
-function AssignForm({ roundId, busy }: { roundId: string; busy: boolean }) {
+function AssignForm({
+  roundId,
+  busy,
+  service,
+}: {
+  roundId: string;
+  busy: boolean;
+  /** V2 P1-B: the negotiated price is per WHAT — this is the field `amountDue` bills. */
+  service: RoundServiceSummary;
+}) {
   const vendors = useVendors();
   const assign = useAssignRound(roundId);
   const [vendorId, setVendorId] = useState('');
@@ -170,7 +181,7 @@ function AssignForm({ roundId, busy }: { roundId: string; busy: boolean }) {
         </Select>
       </div>
       <div>
-        <Label htmlFor="assign-price">Final price per unit (₹)</Label>
+        <Label htmlFor="assign-price">Final price per {unitLabelFor(service)} (₹)</Label>
         <Input
           id="assign-price"
           type="number"
@@ -230,7 +241,9 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
           </Button>
         )}
 
-        {round.status === 'CLOSED_MET' && <AssignForm roundId={round.id} busy={busy} />}
+        {round.status === 'CLOSED_MET' && (
+          <AssignForm roundId={round.id} busy={busy} service={round.service} />
+        )}
 
         {round.status === 'ASSIGNED' && (
           <Button disabled={busy} onClick={() => deliver.mutate()}>

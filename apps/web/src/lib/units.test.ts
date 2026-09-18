@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import cases from '../../../../packages/shared/src/unit-format-cases.json';
 import { formatUnits, unitLabelFor, unitLabelPluralFor } from './units';
 
 const room = { unitLabel: 'room', unitLabelPlural: 'rooms' };
@@ -9,6 +10,12 @@ const room = { unitLabel: 'room', unitLabelPlural: 'rooms' };
  * the production Vite build (CommonJS named exports; CHORE-004 caught it) — so the
  * identical assertions are what keep them from drifting.
  */
+describe('the shared case table (pins both apps to one behaviour)', () => {
+  it.each(cases)('$count of $unitLabel → $expected', ({ count, expected, ...labels }) => {
+    expect(formatUnits(count, labels)).toBe(expected);
+  });
+});
+
 describe('unit labels (FEAT-010, web copy)', () => {
   it('uses the service’s own word, singular for exactly one', () => {
     expect(formatUnits(1, room)).toBe('1 room');

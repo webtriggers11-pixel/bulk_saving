@@ -72,7 +72,13 @@ room, area or scope.
       says "Units (mixed)" and the card says the counts are not comparable. This is the same
       incoherence ADR-0019 cites as the reason per-society labels were rejected; it applies
       to cross-SERVICE sums too, and the original AC asked for something false.
-- [ ] The service form has label / plural / scope fields.
+- [ ] **CORRECTED AC — there is no admin service form to add fields to.** The web app has
+      no services page at all (`apps/web/src/features/admin/` has vendors, rounds and the
+      dashboard; `admin.api.ts` exposes only `GET /admin/services`), so a master service can
+      only be created or edited through the API. The unit fields are therefore validated and
+      accepted on `POST`/`PATCH /admin/services`, and that is the whole deliverable here.
+      The missing services UI predates FEAT-010, is registered as CHORE-006, and is not this
+      work item's to build — the original AC asked for something that does not exist.
 
 **Notifications**
 - [ ] ROUND_JOINED, ROUND_CLOSING_SOON, ROUND_CLOSED_MET and ROUND_ASSIGNED use the label.

@@ -112,8 +112,10 @@ export interface MeResponse {
  * Returned by `GET /catalog` — one entry per enabled offering ⋈ active service.
  * `indicativePrice` is display-only (integer rupees), present only when set for
  * the society's offering; it is NOT the group-buy round price (that's FEAT-003).
+ * It is a price PER UNIT, so it must always be shown with the unit label (V2 P1-C):
+ * "From ₹3,500" for a service priced per room is a number with no meaning.
  */
-export interface ServiceDto {
+export interface ServiceDto extends ServiceUnitLabels {
   id: string;
   name: string;
   slug: string;
@@ -281,8 +283,13 @@ export interface RatingDto {
  */
 export const MAX_RATING_COMMENT = 500;
 
-/** Caps on the FEAT-010 unit fields. */
-export const MAX_UNIT_LABEL = 24;
+/**
+ * Caps on the FEAT-010 unit fields. The label cap is 16, not 24, because the label
+ * appears up to FIVE times in one closing-soon SMS: at 24 the worst realistic body
+ * measured 314 of 320 characters, so a slightly longer service name truncated the
+ * "won't go ahead" consequence off the end (V2 P2).
+ */
+export const MAX_UNIT_LABEL = 16;
 export const MAX_UNIT_DESCRIPTION = 140;
 
 /** `PUT /rounds/:id/rating` body. Creates or replaces the caller's own rating. */

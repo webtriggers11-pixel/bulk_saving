@@ -1,5 +1,5 @@
 import { NotificationType } from '@prisma/client';
-import { type UnitLabelled, formatUnits, unitLabelFor, unitLabelPluralFor } from '../rounds/units';
+import { type UnitLabelled, formatUnits, unitLabelFor } from '../rounds/units';
 
 /**
  * SMS bodies for the round lifecycle (FEAT-006, ADR-0013). Pure functions: no
@@ -145,10 +145,14 @@ function closingSoon(input: Extract<TemplateInput, { type: 'ROUND_CLOSING_SOON' 
   if (input.target === null) {
     progress = `${units(input.unitsCount, input.round)} pledged so far.`;
   } else if (gap > 0) {
-    const plural = unitLabelPluralFor(input.round);
+    // Both counts go through formatUnits (V2 P1-E): interpolating the plural raw
+    // rendered "1 rooms" whenever the first tier threshold was 1, which is allowed —
+    // and "1 flats" is the exact failure ADR-0019 exists to prevent, in the one
+    // channel it was written for.
+    const target = units(input.target, input.round);
     progress =
-      `${input.unitsCount} of ${input.target} ${plural} pledged — ${units(gap, input.round)} to go. ` +
-      `If the round doesn't reach ${input.target} ${plural} by then, it won't go ahead.`;
+      `${input.unitsCount} of ${target} pledged — ${units(gap, input.round)} to go. ` +
+      `If the round doesn't reach ${target} by then, it won't go ahead.`;
   } else {
     const price =
       input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/${per(input.round)}`;

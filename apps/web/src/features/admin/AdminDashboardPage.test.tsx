@@ -63,7 +63,7 @@ describe('AdminDashboardPage', () => {
     const row = screen.getByTestId('admin-round-row');
     expect(within(row).getByText('Open')).toBeInTheDocument();
     expect(within(row).getByText('₹900')).toBeInTheDocument();
-    expect(within(row).getByText('6 / 2')).toBeInTheDocument();
+    expect(within(row).getByText('6 AC units / 2')).toBeInTheDocument();
   });
 
   it('refetches rounds with the chosen status and society filters', async () => {

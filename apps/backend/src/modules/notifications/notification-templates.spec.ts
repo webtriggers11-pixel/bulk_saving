@@ -1,4 +1,5 @@
 import { NotificationType } from '@prisma/client';
+import { MAX_UNIT_LABEL } from '@bulk/shared';
 import {
   MAX_SMS_LENGTH,
   type TemplateInput,
@@ -218,6 +219,21 @@ describe('per-service unit labels (FEAT-010)', () => {
     expect(body).toContain('Your 3 rooms at ₹3200/room = ₹9600');
   });
 
+  it('never says "1 rooms" — a threshold of 1 is allowed and must singularise (V2 P1-E)', () => {
+    const body = renderNotification({
+      type: NotificationType.ROUND_CLOSING_SOON,
+      round: painting,
+      units: 0,
+      unitsCount: 0,
+      target: 1,
+      currentPrice: null,
+      nextTier: null,
+    });
+    expect(body).toContain('0 of 1 room pledged');
+    expect(body).toContain("doesn't reach 1 room by then");
+    expect(body).not.toContain('1 rooms');
+  });
+
   it('falls back to unit/units for a service with no label, never an empty word', () => {
     const unlabelled = { serviceName: 'Mystery', deadline: DEADLINE, unitLabel: '', unitLabelPlural: '' };
     const body = renderNotification({
@@ -227,6 +243,35 @@ describe('per-service unit labels (FEAT-010)', () => {
       currentPrice: 100,
     });
     expect(body).toContain('2 units of Mystery at ₹100/unit');
+  });
+});
+
+describe('SMS length with the LONGEST allowed unit label (V2 P2)', () => {
+  it('stays inside the cap even with a max-length label and a long service name', () => {
+    // The label appears up to five times in a closing-soon body. At the old 24-char
+    // cap the worst case measured 314/320 and a longer service name truncated the
+    // "won't go ahead" consequence off the end.
+    const maxLabel = 'x'.repeat(MAX_UNIT_LABEL);
+    const round = {
+      serviceName: 'Comprehensive Deep Cleaning and Sanitisation',
+      deadline: DEADLINE,
+      unitLabel: maxLabel,
+      unitLabelPlural: maxLabel,
+    };
+    const body = renderNotification({
+      type: NotificationType.ROUND_CLOSING_SOON,
+      round,
+      units: 3,
+      unitsCount: 7,
+      target: 10,
+      currentPrice: 12345,
+      nextTier: { threshold: 20, price: 9999 },
+    });
+
+    expect(body.length).toBeLessThanOrEqual(MAX_SMS_LENGTH);
+    // Nothing important fell off the end.
+    expect(body).not.toContain('…');
+    expect(body).toContain("won't go ahead");
   });
 });
 

@@ -25,6 +25,7 @@
 | FEAT-009 | Rating UI — resident rates from My Requests; admin sees averages | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/FEAT-009-rating-ui/ | ADR-0018 |
 | BUG-004 | Offline: admin controls hang on "Saving…" forever (v5 pauses, never fails) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/BUG-004-offline-paused-admin-controls/ | — |
 | FEAT-010 | Per-service unit labels ("2 rooms", not "2 units") | in-progress | P1 | 2026-09-18 | — | loop/work/FEAT-010-per-service-units/ | ADR-0019 |
+| CHORE-006 | Admin has no services page — the catalog is API-only | triaged | P2 | 2026-09-18 | — | loop/work/CHORE-006-admin-services-page/ | ADR-0009 |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |

@@ -36,6 +36,11 @@ export class CatalogService {
         slug: service.slug,
         description: service.description,
         category: service.category,
+        // FEAT-010 / V2 P1-C: indicativePrice is per unit, so the catalog needs the
+        // word for it — otherwise "From ₹3,500" says nothing.
+        unitLabel: service.unitLabel,
+        unitLabelPlural: service.unitLabelPlural,
+        unitDescription: service.unitDescription,
         ...(service.imageUrl !== null ? { imageUrl: service.imageUrl } : {}),
         ...(offering.indicativePrice !== null
           ? { indicativePrice: offering.indicativePrice }

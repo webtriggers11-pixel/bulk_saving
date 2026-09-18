@@ -1,7 +1,20 @@
+import cases from '../../../../../packages/shared/src/unit-format-cases.json';
 import { formatUnits, unitLabelFor, unitLabelPluralFor } from './units';
 
 const room = { unitLabel: 'room', unitLabelPlural: 'rooms' };
 const acUnit = { unitLabel: 'AC unit', unitLabelPlural: 'AC units' };
+
+/**
+ * The shared case table is the ONLY thing keeping this formatter and the web copy
+ * (`apps/web/src/lib/units.ts`) in step (V2 P2): they are duplicated on purpose,
+ * because a runtime import from `@bulk/shared` breaks the web production build, and
+ * per-app tests would otherwise let an implementation and its own test drift together.
+ */
+describe('the shared case table (pins both apps to one behaviour)', () => {
+  it.each(cases)('$count of $unitLabel → $expected', ({ count, expected, ...labels }) => {
+    expect(formatUnits(count, labels)).toBe(expected);
+  });
+});
 
 describe('unit labels (FEAT-010)', () => {
   it('uses the service’s own word, singular for exactly one', () => {
