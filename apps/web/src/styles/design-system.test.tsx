@@ -171,15 +171,22 @@ describe('AC6 — every control clears the 44px touch floor', () => {
     for (const file of residentSources()) {
       const source = readFileSync(file, 'utf8');
       const lineOf = (index: number) => source.slice(0, index).split('\n').length;
-      for (const match of source.matchAll(/(?:min-)?([hw])-(?:\[(\d+)px\]|(\d+(?:\.\d+)?))\b/g)) {
+      // `(?![/\d])` so `w-1/2` is not read as `w-1` (4px) and falsely flagged.
+      for (const match of source.matchAll(/(?:min-)?([hw])-(?:\[(\d+)px\]|(\d+(?:\.\d+)?))(?![/\d])\b/g)) {
         const px = match[2] ? Number(match[2]) : Number(match[3]) * REM_STEP;
         if (px >= 44) continue;
-        // Only what a finger has to hit: the element this class sits on must be
-        // interactive, so look at the tag/handler nearest above it.
+        // In a primitive that RENDERS a control, every size literal is a control's
+        // size — including the ones in a variant map, where the "nearest <" heuristic
+        // lands on a TSX generic (`ButtonHTMLAttributes<HTMLButtonElement>`) and sees
+        // nothing. That map is the highest-leverage place a violation could hide: one
+        // wrong value there shrinks every button in the app.
+        const isControlPrimitive = /components\/ui\/(button|input|select)\.tsx$/.test(file);
         const before = source.slice(0, match.index ?? 0);
         const openedTag = before.lastIndexOf('<');
         const context = source.slice(openedTag, (match.index ?? 0) + match[0].length);
-        if (/^<(button|a|input|textarea|select|Button|NavLink|Link)\b/.test(context) || /onClick=/.test(context)) {
+        const onAControl =
+          /^<(button|a|input|textarea|select|Button|NavLink|Link)\b/.test(context) || /onClick=/.test(context);
+        if (isControlPrimitive || onAControl) {
           offenders.push(`${file.replace(WEB, '')}:${lineOf(match.index ?? 0)} ${match[0]}`);
         }
       }

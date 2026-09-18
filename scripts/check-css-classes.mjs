@@ -44,11 +44,27 @@ function sources(dir, out = []) {
 const CLASSY = /^-?[a-z][a-z0-9]*(?:[-:/.][a-z0-9[\]()%#.,_-]+)*$/i;
 
 /**
- * A string literal counts as a class list when every token looks like a class AND
- * at least one is compound. That skips prose ("Loading rounds…"), bare words
- * ("teal", "polite") and format strings, without needing to know where in the file
- * the literal sits — which matters, because the `fill-*` bug lived in a variant map,
- * not in a className attribute.
+ * Prefixes that mean "this single word is a class, not a string". Needed because a
+ * one-token literal like 'surface-glass' (the Card SURFACES map) is indistinguishable
+ * from 'one-time-code' (an autocomplete value) without one of these.
+ */
+/**
+ * A ONE-token literal is only treated as a class when it is one the design system
+ * owns. Tailwind's own families are hopeless to recognise in isolation — `my-rating`
+ * looks exactly like a margin utility and `text` like a colour one — and every such
+ * guess is a false failure that teaches people to disable the check. The bespoke
+ * namespace is unambiguous, and it is where the bug this script exists for lived
+ * (a variant map, and its sibling the Card surface map).
+ */
+const SYSTEM_CLASS =
+  /^(?:surface-|paint-|skeleton|card-|halo|sheen|sweep|ripple|press|nudge|field|bar-fill|stagger|animate-|num$|t$|sr-only-text$)/;
+
+/**
+ * A string literal counts as a class list when every token looks like a class. Prose
+ * ("Loading rounds…"), bare words and format strings are excluded by the token shape;
+ * a SINGLE token additionally has to start with a class-ish prefix, or 'one-time-code'
+ * would be treated as a class. Deliberately not scoped to className attributes: the
+ * `fill-*` bug lived in a variant map, and the Card surface map is one-token values.
  */
 function classLists(source) {
   const lists = [];
@@ -58,9 +74,13 @@ function classLists(source) {
   for (const [, , quoted] of source.matchAll(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/gs)) {
     if (quoted.includes('${') || quoted.includes('\n')) continue;
     const tokens = quoted.trim().split(/\s+/).filter(Boolean);
-    if (tokens.length < 2) continue;
+    if (tokens.length === 0) continue;
     if (!tokens.every((t) => CLASSY.test(t))) continue;
-    if (!tokens.some((t) => /[-:/[]/.test(t))) continue;
+    if (tokens.length === 1) {
+      if (!SYSTEM_CLASS.test(tokens[0])) continue;
+    } else if (!tokens.some((t) => /[-:/[]/.test(t))) {
+      continue;
+    }
     lists.push(tokens);
   }
   return lists;
@@ -68,6 +88,27 @@ function classLists(source) {
 
 /** Tailwind escapes these when it writes a selector. */
 const escapeClass = (token) => token.replace(/[.:/[\]()%#,!'"+*~^$=@&|?<>{}]/g, (c) => `\\${c}`);
+
+/**
+ * Does the sheet contain a rule for exactly this class?
+ *
+ * A substring test is NOT enough, and the difference is the whole bug class: an
+ * off-scale alpha step is usually a prefix of an on-scale one, so `.bg-shade\/2`
+ * "matches" inside `.bg-shade\/20{…}` and a class that paints nothing reports fine.
+ * So the character before the dot must not be part of a class name, and the one
+ * after must end it.
+ */
+function hasRule(css, token) {
+  const needle = `.${escapeClass(token)}`;
+  for (let i = css.indexOf(needle); i !== -1; i = css.indexOf(needle, i + 1)) {
+    const before = i === 0 ? '' : css[i - 1];
+    const after = css[i + needle.length] ?? '';
+    const startsCleanly = before === '' || !/[A-Za-z0-9_\\-]/.test(before);
+    const endsCleanly = after === '' || /[{,:.\s>+~[)]/.test(after);
+    if (startsCleanly && endsCleanly) return true;
+  }
+  return false;
+}
 
 const css = builtCss();
 const missing = new Map();
@@ -80,10 +121,7 @@ for (const file of sources(join(WEB, 'src'))) {
   for (const tokens of classLists(source)) {
     inspected += tokens.length;
     for (const token of tokens) {
-      const selector = `.${escapeClass(token)}`;
-      // A rule exists when the escaped selector is followed by a selector boundary
-      // (`{`, `:`, `,`, whitespace, `>`, `+`, `~`) somewhere in the sheet.
-      if (css.includes(selector)) continue;
+      if (hasRule(css, token)) continue;
       const where = missing.get(token) ?? new Set();
       where.add(file.replace(`${WEB}/`, ''));
       missing.set(token, where);

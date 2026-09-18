@@ -178,6 +178,9 @@ export function MyRequestsPage() {
   // were inline here, which is the drift the lib exists to prevent.
   const failed = queryStalled(query);
   const hasData = hasRows(data);
+  // Computed once, not per row: only the first OPEN round gets the glass surface,
+  // so blur does not scale with how many rounds a resident has joined.
+  const leadOpenIndex = data?.findIndex((round) => round.status === 'OPEN') ?? -1;
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
@@ -216,7 +219,7 @@ export function MyRequestsPage() {
               key={round.id}
               round={round}
               last={index === data.length - 1}
-              lead={index === data.findIndex((r) => r.status === 'OPEN')}
+              lead={index === leadOpenIndex}
             />
           ))}
         </ol>

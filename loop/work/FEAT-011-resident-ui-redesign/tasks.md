@@ -26,7 +26,7 @@ build → tests). After each: commit and append to LOG.md.
       — depends: T2
 - [x] T12: AC tests — theme swap (AC3), reduced motion (AC5), touch targets (AC6), and a
       contrast check of the token pairs (AC7). — depends: T7–T11
-- [ ] T13: V2 — independent code-reviewer subagent runs the gate ITSELF and reviews the diff
+- [x] T13: V2 — independent code-reviewer subagent runs the gate ITSELF and reviews the diff
       vs spec + ADR-0021. — depends: T12
 - [ ] T14: V3 — fresh full gate, then the suite a SECOND time back-to-back; both logged.
       — depends: T13
