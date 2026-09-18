@@ -515,3 +515,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: `/tmp/v3-run1.log`, `/tmp/v3-run2.log`, identical; injection proofs in the round-3 commit message.
 - Decisions: ADR-0021
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)
+
+## 2026-09-19 — CHORE-008 — OPENED — the other half of the product, and the repetition FEAT-011 left
+- What: FEAT-011 redesigned six resident screens and left `/admin/*` on default Tailwind, so the owner's daily surface looks like a different product from the one it links to. It also shipped the design by writing it out per screen — four empty-state cards, five page headers, three fact-tile pairs, three monogram blocks — which is the cost that compounds when admin adds a fourth copy of each.
+- Triaged as a CHORE, not a feature: no behaviour changes. It applies the existing system (ADR-0021) and factors the shapes FEAT-011 proved (ADR-0022).
+- The rule that makes it stick: variation is a closed prop, never a className reaching inside; `features/*` depends on `components/ui/*` and never the reverse; both asserted by test, because a factoring rule nobody can fail is a preference, not a rule.
+- Extraction lands as a no-op first — each primitive carries the markup it already produces, with the screen tests untouched — so the refactor is provably behaviour-preserving before admin is built on it.
+- Decisions: ADR-0022
+- By: agent (autonomous)
