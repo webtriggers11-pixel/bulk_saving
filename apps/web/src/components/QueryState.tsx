@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { Icon } from './ui/icon';
-import { useOnlineStatus } from '../features/shell/useOnlineStatus';
+import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 interface QueryErrorStateProps {
   /** What failed to load, lower case, e.g. "rounds" — used in the copy. */

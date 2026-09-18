@@ -1,5 +1,5 @@
 import { Icon } from '../../components/ui/icon';
-import { useOnlineStatus } from './useOnlineStatus';
+import { useOnlineStatus } from '../../lib/useOnlineStatus';
 
 /**
  * Persistent "you are offline" strip (FEAT-008 AC6). Read-only offline is a

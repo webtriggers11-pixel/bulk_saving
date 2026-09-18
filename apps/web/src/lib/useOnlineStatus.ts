@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 
 /**
+ * Lives in `lib/`, not in a feature: `components/QueryState` needs it, and a shared
+ * component that imports from `features/*` inverts the one dependency rule this
+ * codebase enforces (ADR-0022). Browser state is not a feature.
+ *
  * Whether the browser currently believes it has a network connection
  * (FEAT-008 / ADR-0015). `navigator.onLine` is the browser's own guess — it can
  * report true on a captive portal — so it drives PRESENTATION only (a banner),

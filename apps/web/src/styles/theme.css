@@ -349,6 +349,13 @@ button:hover .nudge {
   transition-duration: var(--dur-press);
 }
 
+/* A dense row lights up under the cursor — the admin lists and the fact rows.
+   Declared here rather than typed per screen, and caught the moment it was not
+   (the built-CSS gate step, CHORE-008 T1). */
+.row-hover:hover {
+  background-color: rgb(255 255 255 / 0.55);
+}
+
 /* ---- forms ------------------------------------------------------------- */
 /* `.field` wraps a label + control; the label lifts and inks to brand as focus
    lands inside it. Both classes are carried by components, so both must exist

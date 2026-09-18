@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../auth/auth.store';
 import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
-import { useOnlineStatus } from '../shell/useOnlineStatus';
+import { useOnlineStatus } from '../../lib/useOnlineStatus';
 import { Button } from '../../components/ui/button';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { Badge } from '../../components/ui/badge';
