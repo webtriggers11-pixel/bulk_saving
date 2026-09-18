@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
 import { useMyRounds } from '../rounds/useRounds';
+import { hasRows, queryStalled } from '../../lib/offline';
 import { RateRound, isRateable } from '../rating/RateRound';
 
 /**
@@ -85,15 +86,13 @@ function MyRequestCard({ round }: { round: MyRoundDto }) {
  * `GET /rounds` (OPEN-only) cannot show.
  */
 export function MyRequestsPage() {
-  const { data, isLoading, isError, fetchStatus, refetch } = useMyRounds();
-  // TanStack Query v5's default networkMode:'online' PAUSES a query when the
-  // browser is offline instead of failing it: isError stays false, isLoading stays
-  // false and data is undefined, so gating on those alone renders a header and
-  // nothing else — no error, no Retry (FEAT-008 V2). `paused` is the offline case.
-  const failed = isError || fetchStatus === 'paused';
-  // Boolean([]) is true, so an empty list whose refetch fails would otherwise claim
-  // "showing what we loaded earlier" AND render the empty-state card at once.
-  const hasData = Boolean(data && data.length > 0);
+  const query = useMyRounds();
+  const { data, isLoading, refetch } = query;
+  // Both rules — "paused counts as failed" and "an empty array is not data" —
+  // come from lib/offline.ts, the single place that owns them (CHORE-005). They
+  // were inline here, which is the drift the lib exists to prevent.
+  const failed = queryStalled(query);
+  const hasData = hasRows(data);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 p-6">

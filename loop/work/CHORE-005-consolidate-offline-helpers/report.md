@@ -1,6 +1,6 @@
 # CHORE-005 — One offline rule, one place: resident views adopt `lib/offline.ts`
 
-**Status:** in-progress · **Priority:** P2 · **Opened:** 2026-09-18 · **Reporter:** agent (parallel session, after BUG-004)
+**Status:** done · **Priority:** P2 · **Opened:** 2026-09-18 · **Reporter:** agent (parallel session, after BUG-004)
 
 ## Why
 
@@ -34,6 +34,23 @@ version is better except that it was written first.
   `{ resident, society }` object, so it cannot use `hasRows` — it checks `data`
   directly, which is what it means anyway.
 - Behaviour must not change. Same tests, same assertions, no new ACs.
+
+## Also taken (handed over by the parallel session)
+
+`MyRequestsPage.tsx` had the rule inline — its own `isError || fetchStatus === 'paused'`
+and `Boolean(data && data.length > 0)` with the reasoning copied into comments. It
+now imports both from `lib/offline.ts`. That file was committed by the other session,
+which asked for it to come here rather than be handed back, and it was the clearest
+example of the problem: three copies of one rule, all correct, none of them shared.
+
+## On which helper survived
+
+The parallel session offered `hasUsableData()` as the more general survivor, since
+`hasRows()` is array-only. Kept `hasRows()` anyway: the survivor that matters is the
+LOCATION (`lib/offline.ts` — a lib, covering mutations as well as queries, owning the
+copy), not the signature. A caller holding a single object should say `data !== undefined`
+at the call site, as `HomePage` now does; a general predicate that quietly accepts both
+shapes hides which one a page actually has.
 
 ## Out of scope
 
