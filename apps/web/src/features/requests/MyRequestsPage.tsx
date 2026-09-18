@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
 import { useMyRounds } from '../rounds/useRounds';
+import { RateRound, isRateable } from '../rating/RateRound';
 
 /**
  * What each lifecycle state means to the resident who joined (ADR-0011 owns the
@@ -39,8 +40,12 @@ function statusDetail(round: MyRoundDto): string {
       return 'This job is done.';
     case 'CANCELLED':
       return 'This round was cancelled. You were not charged.';
-    default:
-      return '';
+    default: {
+      // A new RoundStatus must fail the build here rather than ship a resident a
+      // blank explanation line (FEAT-008 V2).
+      const _exhaustive: never = round.status;
+      return _exhaustive;
+    }
   }
 }
 
@@ -65,13 +70,11 @@ function MyRequestCard({ round }: { round: MyRoundDto }) {
           <dt>Price per unit</dt>
           <dd data-testid="my-price">{formatRupees(round.currentPrice)}</dd>
         </div>
-        {round.myRating && (
-          <div className="flex justify-between">
-            <dt>Your rating</dt>
-            <dd data-testid="my-rating">{round.myRating.stars} / 5</dd>
-          </div>
-        )}
       </dl>
+
+      {/* FEAT-009: rating lives here rather than on its own route — this card is
+          already where a resident looks at a finished job (ADR-0018). */}
+      {isRateable(round.status) && <RateRound round={round} />}
     </Card>
   );
 }
@@ -82,7 +85,15 @@ function MyRequestCard({ round }: { round: MyRoundDto }) {
  * `GET /rounds` (OPEN-only) cannot show.
  */
 export function MyRequestsPage() {
-  const { data, isLoading, isError, refetch } = useMyRounds();
+  const { data, isLoading, isError, fetchStatus, refetch } = useMyRounds();
+  // TanStack Query v5's default networkMode:'online' PAUSES a query when the
+  // browser is offline instead of failing it: isError stays false, isLoading stays
+  // false and data is undefined, so gating on those alone renders a header and
+  // nothing else — no error, no Retry (FEAT-008 V2). `paused` is the offline case.
+  const failed = isError || fetchStatus === 'paused';
+  // Boolean([]) is true, so an empty list whose refetch fails would otherwise claim
+  // "showing what we loaded earlier" AND render the empty-state card at once.
+  const hasData = Boolean(data && data.length > 0);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 p-6">
@@ -93,9 +104,9 @@ export function MyRequestsPage() {
 
       {isLoading && <p className="text-slate-500">Loading your requests…</p>}
 
-      {isError && <QueryErrorState subject="requests" hasData={Boolean(data)} onRetry={() => void refetch()} />}
+      {failed && <QueryErrorState subject="requests" hasData={hasData} onRetry={() => void refetch()} />}
 
-      {data && data.length === 0 && (
+      {!failed && data && data.length === 0 && (
         <Card data-testid="my-requests-empty">
           <CardHeader>
             <CardTitle>You haven't joined a round yet</CardTitle>

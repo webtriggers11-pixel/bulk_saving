@@ -10,6 +10,7 @@ import { Select } from '../../components/ui/select';
 import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
+import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
 import {
   adminKeys,
@@ -64,6 +65,9 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
           {round.unitsCount} / {round.participantsCount}
         </Fact>
         <Fact label="Current price">{formatRupees(round.currentPrice)}</Fact>
+        <Fact label="Rating">
+          <span data-testid="round-rating">{formatRatingSummary(round.ratings)}</span>
+        </Fact>
         <Fact label="Tiers">
           <ul>
             {round.tiers.map((tier) => (
@@ -295,6 +299,7 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                 <th className="py-2 pr-3">Phone</th>
                 <th className="py-2 pr-3 text-right">Units</th>
                 <th className="py-2 pr-3 text-right">Amount due</th>
+                <th className="py-2 pr-3">Rating</th>
                 {payable && <th className="py-2">Payment</th>}
               </tr>
             </thead>
@@ -308,6 +313,22 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                     <td className="py-2 pr-3 text-right">{participant.units}</td>
                     <td className="py-2 pr-3 text-right">
                       {participant.amountDue === null ? '—' : formatRupees(participant.amountDue)}
+                    </td>
+                    <td className="py-2 pr-3" data-testid="participant-rating">
+                      {participant.rating ? (
+                        <span>
+                          <span className="whitespace-nowrap font-medium text-slate-900">
+                            {participant.rating.stars} / 5
+                          </span>
+                          {participant.rating.comment && (
+                            <span className="block text-xs text-slate-500">
+                              “{participant.rating.comment}”
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     {payable && (
                       <td className="py-2">

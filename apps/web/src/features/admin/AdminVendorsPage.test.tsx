@@ -53,6 +53,21 @@ describe('AdminVendorsPage', () => {
     expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
 
+  it('shows each vendor’s average rating with its count (FEAT-009)', async () => {
+    fetchVendorsMock.mockResolvedValue([
+      { ...activeVendor, averageRating: 4.5, ratingCount: 8 },
+      { ...inactiveVendor, averageRating: null, ratingCount: 0 },
+    ]);
+    renderPage();
+
+    await screen.findByText('CoolFix');
+    const shown = screen.getAllByTestId('vendor-rating').map((el) => el.textContent);
+    expect(shown[0]).toContain('4.5 (8)');
+    // A vendor nobody has rated must not read as 0 — that looks like "terrible".
+    expect(shown[1]).toContain('No ratings yet');
+    expect(shown[1]).not.toContain('0.0');
+  });
+
   it('creates a vendor with trimmed values and refetches the list', async () => {
     fetchVendorsMock.mockResolvedValue([]);
     createVendorMock.mockResolvedValue(activeVendor);

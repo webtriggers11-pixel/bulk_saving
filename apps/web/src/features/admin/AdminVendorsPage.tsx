@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { VendorDto } from '@bulk/shared';
 import { Badge } from '../../components/ui/badge';
+import { formatVendorRating } from '../rating/formatRating';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -147,6 +148,14 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
             <p className="text-sm text-slate-600">
               {vendor.phone}
               {vendor.category ? ` · ${vendor.category}` : ''}
+            </p>
+            {/* FEAT-009: the accountability number, with its count (ADR-0017) —
+                this is what stops a bad vendor being assigned again. */}
+            <p className="text-sm text-slate-600" data-testid="vendor-rating">
+              <span className="text-amber-500" aria-hidden="true">
+                ★
+              </span>{' '}
+              {formatVendorRating(vendor)}
             </p>
             {vendor.notes && <p className="text-sm text-slate-500">{vendor.notes}</p>}
           </div>

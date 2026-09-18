@@ -186,4 +186,37 @@ describe('AdminRoundDetailPage', () => {
     // A failed action refetches the round (it likely changed underneath the page).
     await waitFor(() => expect(fetchAdminRoundMock).toHaveBeenCalledTimes(2));
   });
+
+  it('shows the round rating summary and what each resident said (FEAT-009)', async () => {
+    const base = assignedRoundDetail();
+    fetchAdminRoundMock.mockResolvedValue({
+      ...base,
+      ratings: { average: 3.5, count: 2 },
+      participants: [
+        {
+          ...base.participants[0],
+          rating: { stars: 5, comment: 'Excellent.', ratedAt: '2026-09-18T10:00:00.000Z' },
+        },
+        { ...base.participants[1], rating: null },
+      ],
+    });
+    renderPage();
+
+    expect(await screen.findByTestId('round-rating')).toHaveTextContent('3.5 (2)');
+    const cells = screen.getAllByTestId('participant-rating').map((el) => el.textContent);
+    expect(cells[0]).toContain('5 / 5');
+    expect(cells[0]).toContain('Excellent.');
+    // A participant who has not rated shows a dash, never a zero.
+    expect(cells[1]).toBe('—');
+  });
+
+  it('says so explicitly when a round has no ratings', async () => {
+    fetchAdminRoundMock.mockResolvedValue({
+      ...assignedRoundDetail(),
+      ratings: { average: null, count: 0 },
+    });
+    renderPage();
+
+    expect(await screen.findByTestId('round-rating')).toHaveTextContent('No ratings yet');
+  });
 });
