@@ -224,6 +224,34 @@ body {
     0 -1px 2px rgb(var(--shadow-rgb) / 0.03) inset;
 }
 
+/* ---- the fills the primitives paint with --------------------------------
+   Named `paint-*`, NOT `fill-*`: Tailwind generates a `fill-<colour>` utility for
+   SVG's fill property from the same palette, and a class that collides with it is
+   a rule you think you wrote and never see. (It cost one invisible primary button.) */
+.paint-brand {
+  background-image:
+    radial-gradient(130% 120% at 14% 0%, rgb(var(--brand-light) / 0.55), transparent 58%),
+    linear-gradient(140deg, rgb(var(--brand)), rgb(var(--brand-deep)));
+}
+.paint-glass {
+  background-image: linear-gradient(165deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.66));
+}
+.paint-glass:hover {
+  background-image: linear-gradient(165deg, rgb(255 255 255 / 1), rgb(255 255 255 / 0.84));
+}
+.paint-tint {
+  background-image: linear-gradient(165deg, rgb(var(--brand-light) / 0.16), rgb(var(--brand) / 0.05));
+}
+.paint-danger {
+  background-image: linear-gradient(165deg, rgb(var(--state-red) / 0.14), rgb(var(--state-red) / 0.05));
+}
+/* The avatar/brand mark: a lit gradient that reads as an object, not a swatch. */
+.paint-mono {
+  background-image:
+    radial-gradient(120% 120% at 22% 8%, rgb(var(--brand-light) / 0.95), transparent 62%),
+    linear-gradient(140deg, rgb(var(--brand-deep)), rgb(var(--brand)));
+}
+
 /* ---- interaction ------------------------------------------------------- */
 .t {
   transition:

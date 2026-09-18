@@ -33,7 +33,7 @@ export function HomePage() {
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
       <header className="animate-rise flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="animate-breathe flex h-[38px] w-[38px] items-center justify-center rounded-chip fill-mono text-white shadow-accent">
+          <span className="animate-breathe flex h-[38px] w-[38px] items-center justify-center rounded-chip paint-mono text-white shadow-accent">
             <Icon name="bolt" size={20} strokeWidth={1.9} />
           </span>
           <h1 className="text-headline font-extrabold text-ink">Bulk&nbsp;Saving</h1>
@@ -55,7 +55,7 @@ export function HomePage() {
               aria-hidden="true"
               className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
             />
-            <span className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-inset fill-mono text-[21px] font-extrabold text-white shadow-accent">
+            <span className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-inset paint-mono text-[21px] font-extrabold text-white shadow-accent">
               <span className="animate-halo absolute -inset-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgb(255_255_255/0.45)_60deg,transparent_140deg)]" />
               <span className="relative">{initialsOf(data.resident.name)}</span>
             </span>

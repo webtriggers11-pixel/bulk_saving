@@ -10,7 +10,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
         className={cn(
           // FEAT-011: on the token layer like every other primitive, so the admin
         // surfaces it serves inherit the palette rather than a frozen teal.
-        'flex h-control w-full rounded-control border border-white/70 fill-glass px-[15px] text-lead font-semibold text-ink shadow-field t',
+        'flex h-control w-full rounded-control border border-white/70 paint-glass px-[15px] text-lead font-semibold text-ink shadow-field t',
         'focus:border-brand/60 focus:shadow-ring focus:outline-none focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
           className,

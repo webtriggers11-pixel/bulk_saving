@@ -12,7 +12,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
       <input
         ref={ref}
         className={cn(
-          'flex h-control w-full rounded-control border border-white/70 bg-transparent fill-glass',
+          'flex h-control w-full rounded-control border border-white/70 bg-transparent paint-glass',
           'px-[15px] text-lead font-semibold tracking-[-0.01em] text-ink shadow-field t',
           'placeholder:font-medium placeholder:text-ink-soft',
           'focus-visible:outline-none focus:outline-none focus:border-brand/60 focus:shadow-ring',

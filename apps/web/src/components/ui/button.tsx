@@ -19,12 +19,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * prefers-reduced-motion (theme.css).
  */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'fill-brand text-white border border-white/20 shadow-accent sweep ripple',
+  primary: 'paint-brand text-white border border-white/20 shadow-accent sweep ripple',
   secondary:
-    'fill-glass text-ink border border-white/70 shadow-control backdrop-blur-soft sweep ripple',
-  outline: 'fill-tint text-brand-ink border border-brand/30 ripple',
+    'paint-glass text-ink border border-white/70 shadow-control backdrop-blur-soft sweep ripple',
+  outline: 'paint-tint text-brand-ink border border-brand/30 ripple',
   ghost: 'border border-transparent text-ink-muted hover:bg-white/60',
-  danger: 'fill-danger text-danger-ink border border-danger-ink/20 ripple',
+  danger: 'paint-danger text-danger-ink border border-danger-ink/20 ripple',
   link: 'h-auto border-none px-0 text-brand-ink underline decoration-[1.5px] underline-offset-4 hover:text-brand',
 };
 

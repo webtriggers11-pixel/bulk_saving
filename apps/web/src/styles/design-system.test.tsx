@@ -46,6 +46,33 @@ describe('AC2 — tokens, not literals', () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * Regression (found in the browser, not by a test): the primary button's gradient
+   * class was named `fill-brand`, which Tailwind ALSO generates as an SVG `fill`
+   * utility — so the rule that was never written silently lost to one that was, and
+   * the app's main button rendered with no background at all. Every system class a
+   * component names must exist in the stylesheet.
+   */
+  it('every surface-* / paint-* class a component uses is declared in theme.css', () => {
+    const used = new Set<string>();
+    for (const file of residentSources()) {
+      for (const [, name] of readFileSync(file, 'utf8').matchAll(/\b((?:surface|paint)-[a-z]+)\b/g)) {
+        used.add(name);
+      }
+    }
+    expect(used.size).toBeGreaterThan(5);
+    const missing = [...used].filter((name) => !css.includes(`.${name} {`));
+    expect(missing).toEqual([]);
+  });
+
+  it('names no system class that collides with a generated Tailwind utility family', () => {
+    // `fill-*`, `stroke-*`, `bg-*`, `text-*` are Tailwind's; a hand-written class in
+    // those namespaces is a rule you think you wrote and never see.
+    const declared = [...css.matchAll(/^\.([a-z][a-z0-9-]*) \{/gm)].map((m) => m[1]);
+    const colliding = declared.filter((name) => /^(fill|stroke|bg|text|border|shadow|rounded)-/.test(name));
+    expect(colliding).toEqual([]);
+  });
+
   it('exposes the token families Tailwind utilities are built from', () => {
     for (const token of ['--brand', '--ink', '--ground', '--shadow-rgb', '--mesh-1']) {
       expect(tailwind.includes(token), `tailwind.config.js never maps ${token}`).toBe(true);

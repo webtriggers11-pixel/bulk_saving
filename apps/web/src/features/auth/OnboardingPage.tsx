@@ -81,7 +81,7 @@ export function OnboardingPage() {
           <Icon name="users" size={13} strokeWidth={2.2} />
           Society group buys
         </span>
-        <h1 className="animate-blur-in bg-gradient-to-br from-ink via-brand to-brand-light bg-clip-text text-hero font-extrabold text-transparent">
+        <h1 className="animate-blur-in bg-gradient-to-br from-ink via-brand to-brand-light bg-clip-text pb-1.5 text-hero font-extrabold text-transparent">
           Bulk
           <br />
           Saving

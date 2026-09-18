@@ -181,7 +181,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         disabled={busy}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Anything the next resident should know?"
-        className="mt-1 w-full rounded-control border border-white/70 fill-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
+        className="mt-1 w-full rounded-control border border-white/70 paint-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
       />
 
       {queuedOffline && (

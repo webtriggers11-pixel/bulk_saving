@@ -85,7 +85,7 @@ export function ProfilePage() {
             aria-hidden="true"
             className="pointer-events-none absolute -top-24 left-1/2 h-52 w-64 -translate-x-1/2 rounded-full bg-mesh-1/40 blur-2xl"
           />
-          <span className="relative inline-flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-card fill-mono text-[24px] font-extrabold text-white shadow-accent">
+          <span className="relative inline-flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-card paint-mono text-[24px] font-extrabold text-white shadow-accent">
             <span className="animate-halo absolute -inset-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgb(255_255_255/0.45)_60deg,transparent_140deg)]" />
             <span className="relative" data-testid="profile-initials">
               {initialsOf(name)}

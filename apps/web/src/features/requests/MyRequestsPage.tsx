@@ -198,7 +198,7 @@ export function MyRequestsPage() {
           </CardDescription>
           <Link
             to="/rounds"
-            className="mt-4 inline-flex items-center gap-2 rounded-control border border-brand/30 fill-tint px-4 py-2.5 text-meta font-extrabold text-brand-ink no-underline t press"
+            className="mt-4 inline-flex items-center gap-2 rounded-control border border-brand/30 paint-tint px-4 py-2.5 text-meta font-extrabold text-brand-ink no-underline t press"
           >
             See open rounds
             <Icon name="forward" size={16} strokeWidth={2.2} />
