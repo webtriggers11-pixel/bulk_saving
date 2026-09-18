@@ -502,3 +502,16 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Lesson recorded for the next visual change: **a test that reads the source cannot verify a style.** Either read the built artefact or open the app.
 - Evidence: gate exit 0 at `907e50d`; injection proof of the new step in both directions.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 2–3)
+
+## 2026-09-19 — FEAT-011 — V2 round 3 PASS, V3 passed, item CLOSED
+- V2 round 3 (clean tree at `907e50d`): **PASS, no P1s.** The reviewer verified the eleven alpha fixes against the freshly built stylesheet rather than the source, confirmed `.field-label` is genuinely falsifiable by deleting the rule, recounted the blur budget per screen (Home 3, everything else ≤2; 4 only on Home while the offline banner shows — recorded in ADR-0021 rather than chased), and confirmed AC1 held: `urgent` is now exactly the pre-redesign semantics, and `lead={index === leadOpenIndex}` is correct including the no-open-rounds case.
+- It then did what it was asked to do and broke the new gate step three ways, each proved end-to-end rather than asserted. All three are fixed, and each fix is proved by injection in both directions:
+  1. `css.includes(selector)` was a SUBSTRING test, so any token that is a prefix of an emitted class passed — `bg-shade/2` riding on `.bg-shade\/20`. **Three of the eleven alpha bugs the script was written for would have slipped through it**, and my own proof-of-catch had used `/12`, a prefix of nothing, so the probe passed for the wrong reason. Now boundary-checked on both sides.
+  2. One-token class literals were skipped, hiding the Card SURFACES map — the direct sibling of the map where `fill-*` lived. Now covered for the namespace the design system owns; deliberately NOT for Tailwind's own families, because `my-rating` looks exactly like a margin utility and a false failure is how a check gets disabled.
+  3. The touch-floor scan was blind to the Button primitive's own SIZES map (the "nearest `<`" heuristic lands on a TSX generic) — the highest-leverage place a violation could hide, since one wrong value shrinks every button in the app — and it read `w-1/2` as `w-1`, which would have failed a legitimate change.
+- V3: two back-to-back full gate runs on a clean tree, **exit 0 both times, byte-identical results** — backend 317 tests / 24 suites, web 227 / 40 files, 1072 class tokens resolved. No flake.
+- **FEAT-011 CLOSED.** Every AC met: no behavioural change (no route, API call, query key, copy string or testid moved; nothing in `apps/backend` or `packages/shared` touched), tokens not literals, three palettes swappable by one attribute, skeletons that mirror their screens, motion with one off switch, 44px floor, AA contrast in all three palettes, and the design stored in-repo as the source of truth.
+- The lesson this item is actually worth: **540 green tests told me a redesign worked while its primary button had no background.** Three separate guards now exist because of that, and two of the three had to be broken by an adversarial reviewer before they were real.
+- Evidence: `/tmp/v3-run1.log`, `/tmp/v3-run2.log`, identical; injection proofs in the round-3 commit message.
+- Decisions: ADR-0021
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)

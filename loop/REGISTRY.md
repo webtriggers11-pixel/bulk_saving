@@ -29,7 +29,7 @@
 | BUG-005 | Rare 401 in the admin integration suite — mitigated by BUG-006 | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/BUG-005-flaky-401-admin-suite/ | — |
 | CHORE-007 | Production hardening — headers, rate limits, no auth bypass, Docker, CI, runbook | done | P0 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-007-production-hardening/ | ADR-0020 |
 | BUG-006 | The backend gate could not pass twice in a row (parallel suites shared one DB/Redis) | done | P1 | 2026-09-18 | 2026-09-18 | loop/work/BUG-006-parallel-suite-interference/ | — |
-| FEAT-011 | Resident UI redesign — themeable design system, motion layer, skeletons | in-progress | P2 | 2026-09-19 | — | loop/work/FEAT-011-resident-ui-redesign/ | ADR-0021 |
+| FEAT-011 | Resident UI redesign — themeable design system, motion layer, skeletons | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-011-resident-ui-redesign/ | ADR-0021 |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |

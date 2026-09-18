@@ -28,5 +28,5 @@ build → tests). After each: commit and append to LOG.md.
       contrast check of the token pairs (AC7). — depends: T7–T11
 - [x] T13: V2 — independent code-reviewer subagent runs the gate ITSELF and reviews the diff
       vs spec + ADR-0021. — depends: T12
-- [ ] T14: V3 — fresh full gate, then the suite a SECOND time back-to-back; both logged.
+- [x] T14: V3 — fresh full gate, then the suite a SECOND time back-to-back; both logged.
       — depends: T13

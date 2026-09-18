@@ -61,6 +61,18 @@ classes would reproduce the problem it exists to fix.
   shift; only the letterforms do.
 - Negative: `backdrop-filter` is expensive on low-end Android. Capped at three blurred
   surfaces per screen, each over a ≥60% white base so it degrades to a flat card.
+  Counted per screen at close: Home 3, everything else ≤2. The one exception is Home
+  **while the offline banner is showing**, which makes 4 — transient, one screen, one
+  small strip, and not worth a structural change. Blur deliberately does not scale
+  with data: only the LEAD open round gets a glass card, or a resident in eight rounds
+  would scroll eight blurred layers.
+- Consequence discovered the hard way, and now a gate step: **a test that reads the
+  source cannot verify a style.** Two classes shipped in this item that emitted no CSS
+  at all while every unit test passed — a Tailwind namespace collision (`fill-brand`),
+  then eleven off-scale alpha steps (`bg-amber-ink/12`). jsdom applies no CSS, so
+  `scripts/check-css-classes.mjs` reads the BUILT stylesheet and asserts every class
+  token in `apps/web` resolves to a rule. It runs in verify.sh between `build` and
+  `test`.
 
 ## Revisit triggers
 
