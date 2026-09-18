@@ -459,3 +459,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - With a gate that now answers consistently, V3 passed for both outstanding items: **FEAT-010 CLOSED** and **CHORE-007 CLOSED**.
 - Evidence: 5× verify.sh exit 0, identical counts; E2E 84/84 earlier in the session.
 - By: agent (autonomous)
+
+## 2026-09-19 — FEAT-011 — OPENED — resident UI redesign (owner: "use this exact same design")
+- What: The owner approved a 14-artboard design for the resident PWA and asked for it stored in the repo and implemented exactly. Triaged as a FEATURE, not a chore: it adds a token layer, three palettes and real skeleton screens, none of which exist today. Spec, plan and tasks written; ADR-0021 records the token/theming decision.
+- Stored: the canvas index and all 14 artboards under `loop/work/FEAT-011-resident-ui-redesign/design/`, so the implementation can be diffed against the source of truth rather than against a link.
+- Scope guard: resident screens only. `/admin/*` keeps its current look, and no theme switcher ships in this item — the palettes are selectable at the root element, wiring a user preference is its own feature.
+- Hard constraint, stated in the spec as AC1: no route, API call, query key, copy string or `data-testid` changes. The only tests this item may edit are ones asserting a colour class.
+- Baseline before any change: `bash scripts/verify.sh` exit 0.
+- Decisions: ADR-0021
+- By: agent (autonomous)
