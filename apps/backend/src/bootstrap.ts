@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { ResponseInterceptor } from './common/response.interceptor';
@@ -97,6 +98,11 @@ export function buildCorsOptions(env: NodeJS.ProcessEnv = process.env): CorsOpti
  * (BUG-003: they had, and the drift hid the missing CORS config from the suite).
  */
 export function configureApp(app: INestApplication): INestApplication {
+  // Security headers (CHORE-007, ADR-0020). The API serves a browser app, so it gets
+  // HSTS, nosniff, frame-deny and a strict referrer policy. `contentSecurityPolicy` is
+  // off: this process serves JSON only, never HTML, so a CSP here protects nothing and
+  // would only be a second place to keep in step with the PWA's own headers.
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());

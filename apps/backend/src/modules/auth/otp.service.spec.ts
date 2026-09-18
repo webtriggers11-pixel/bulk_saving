@@ -86,42 +86,31 @@ describe('OtpService (integration, needs Redis)', () => {
     expect((await service.request(societyId, phone)).result).toBe('RATE_LIMITED');
   });
 
-  describe('dev OTP echo (CHORE-002, ADR-0016)', () => {
+  describe('the OTP never leaves this service (ADR-0020)', () => {
     const OLD_FLAG = process.env.OTP_DEV_LOG;
 
     afterEach(() => {
       process.env.OTP_DEV_LOG = OLD_FLAG;
     });
 
-    // NOTE: these tests deliberately do NOT mutate NODE_ENV. Backend suites share one
-    // DB and Redis, and several boot-time guards key off `NODE_ENV === 'test'` (the
-    // round-closing and notification reconcilers). Flipping it process-wide lets those
-    // reconcilers act on other suites' fixtures. The production branch is asserted
-    // through the pure predicate below instead, which needs no global state.
-
-    it('does NOT return the code by default — the ADR-0007 rule still holds', async () => {
-      delete process.env.OTP_DEV_LOG;
-      const outcome = await service.request(societyId, uniquePhone());
-      expect(outcome).toEqual({ result: 'SENT' });
-      expect(outcome).not.toHaveProperty('devCode');
-    });
-
-    it('returns the real code when the dev flag is on', async () => {
+    it('returns only the result — no code, under any flag', async () => {
+      // CHORE-002 briefly returned the code here for the local toast. CHORE-007 moved
+      // that affordance into the stub SMS channel, so the production auth path has no
+      // bypass at all: the shape is the same whatever OTP_DEV_LOG says.
       process.env.OTP_DEV_LOG = 'true';
-      const outcome = await service.request(societyId, uniquePhone());
-      expect(outcome.devCode).toMatch(/^\d{6}$/);
-      // It is the code that was actually dispatched, not a second one.
-      expect(outcome.devCode).toBe(channel.lastCode);
+      expect(await service.request(societyId, uniquePhone())).toEqual({ result: 'SENT' });
+
+      delete process.env.OTP_DEV_LOG;
+      expect(await service.request(societyId, uniquePhone())).toEqual({ result: 'SENT' });
     });
 
-    it('devOtpEchoEnabled is the single decision point: BOTH conditions must hold', () => {
+    it('devOtpEchoEnabled still requires BOTH conditions (it now gates the stub adapter)', () => {
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'development' })).toBe(true);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'test' })).toBe(true);
       // The flag alone is NOT enough — production always refuses.
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'production' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'false', NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ NODE_ENV: 'development' })).toBe(false);
-      // Only the exact opt-in string counts, not anything boolean-ish.
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: '1', NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'TRUE', NODE_ENV: 'development' })).toBe(false);
     });

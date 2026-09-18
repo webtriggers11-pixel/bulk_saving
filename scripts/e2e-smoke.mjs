@@ -8,14 +8,21 @@
  * in-process via supertest; this talks to a running server over the network, so it
  * also covers bootstrap, global wiring, CORS, guards and the queues).
  *
- * Requires: a running backend, Postgres + Redis up, the seed applied, and the
- * server started with OTP_DEV_LOG=true (so login can read the code from the
- * response — CHORE-002 / ADR-0016). It creates its own residents and rounds with
- * a per-run suffix and cleans nothing up; the dev DB is expected to accumulate.
+ * Requires: a running backend, Postgres + Redis up, the seed applied, and the server
+ * started with OTP_DEV_LOG=true. Since CHORE-007 the API does NOT return the OTP —
+ * `POST /auth/otp/request` is `{ requested: true }` in every environment — so this
+ * harness reads the code from the dev-only Redis key the STUB SMS channel writes
+ * (`dev:last-otp:<phone>`, 120s TTL). That key exists only while the stub adapter is
+ * bound, i.e. never in production.
+ *
+ * It creates its own residents and rounds with a per-run suffix and cleans nothing up;
+ * the dev DB is expected to accumulate.
  *
  * Usage:  node scripts/e2e-smoke.mjs [baseUrl]      (default http://localhost:3100)
  * Exit 0 = every scenario passed. Exit 1 = at least one failed (details printed).
  */
+
+import { execFileSync } from 'node:child_process';
 
 const BASE = process.argv[2] ?? process.env.E2E_BASE_URL ?? 'http://localhost:3100';
 
@@ -75,19 +82,34 @@ async function scenario(name, fn) {
   }
 }
 
-/** Log in as a phone number in a society, using the DEV-ONLY OTP echo. */
+/**
+ * Read the OTP the stub SMS channel stashed for a phone (CHORE-007). Uses redis-cli
+ * inside the compose container, so the harness needs no Redis client dependency.
+ */
+function readDevOtp(phone) {
+  const port = process.env.REDIS_PORT ?? '6399';
+  const out = execFileSync(
+    'docker',
+    ['compose', 'exec', '-T', 'redis', 'redis-cli', 'GET', `dev:last-otp:${phone}`],
+    { encoding: 'utf8' },
+  ).trim();
+  if (!out || out === '' || out === '(nil)') {
+    throw new Error(
+      `no dev OTP in Redis for ${phone} (key dev:last-otp:${phone}, port ${port}). ` +
+        'Start the backend with OTP_DEV_LOG=true and make sure the stub SMS channel is bound.',
+    );
+  }
+  return out;
+}
+
+/** Log in as a phone number in a society, via the dev-only OTP stash. */
 async function login(inviteCode, phone, name) {
-  const requested = await api('/auth/otp/request', {
+  await api('/auth/otp/request', {
     method: 'POST',
     body: { inviteCode, phone },
     expect: 200,
   });
-  const code = requested.data?.devCode;
-  if (!code) {
-    throw new Error(
-      'the API did not return devCode — start the backend with OTP_DEV_LOG=true (CHORE-002)',
-    );
-  }
+  const code = readDevOtp(phone);
   const verified = await api('/auth/otp/verify', {
     method: 'POST',
     body: { inviteCode, phone, code, ...(name ? { name } : {}) },
@@ -149,7 +171,9 @@ async function main() {
       body: { inviteCode: SOCIETY_A, phone },
       expect: 200,
     });
-    const real = requested.data.devCode;
+    // CHORE-007: the response carries the acknowledgement and NOTHING else.
+    check('the request response never carries the code', JSON.stringify(requested.data) === '{"requested":true}', JSON.stringify(requested.data));
+    const real = readDevOtp(phone);
     const wrong = real === '000000' ? '111111' : '000000';
     const verify = await api('/auth/otp/verify', {
       method: 'POST',
@@ -482,7 +506,7 @@ async function main() {
 
   // A thrown scenario is one failure, which would otherwise silently shrink the
   // denominator and make a partial run look like a smaller, greener one.
-  const EXPECTED_CHECKS = 82;
+  const EXPECTED_CHECKS = 83;
   if (results.length < EXPECTED_CHECKS) {
     results.push({
       scenario: 'harness',

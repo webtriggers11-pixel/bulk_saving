@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import type { RedisService } from '../../redis/redis.service';
 import { redactPhone } from './notification-channel';
 import { StubSmsChannel } from './stub-sms.channel';
 
@@ -14,10 +15,20 @@ describe('redactPhone', () => {
 });
 
 describe('StubSmsChannel', () => {
+  /** Records the dev-only OTP stash without needing a real Redis (CHORE-007). */
+  const redisStub = {
+    calls: [] as Array<[string, string, string, number]>,
+    set(key: string, value: string, mode: string, ttl: number) {
+      this.calls.push([key, value, mode, ttl]);
+      return Promise.resolve('OK');
+    },
+  };
+
   const OLD_ENV = process.env.OTP_DEV_LOG;
 
   afterEach(() => {
     process.env.OTP_DEV_LOG = OLD_ENV;
+    redisStub.calls = [];
     jest.restoreAllMocks();
   });
 
@@ -26,7 +37,7 @@ describe('StubSmsChannel', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     const debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
 
-    const channel = new StubSmsChannel();
+    const channel = new StubSmsChannel(redisStub as unknown as RedisService);
     await channel.sendOtp('+919812345678', '123456');
 
     expect(logSpy).toHaveBeenCalledTimes(1);
@@ -42,7 +53,7 @@ describe('StubSmsChannel', () => {
     jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     const debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
 
-    const channel = new StubSmsChannel();
+    const channel = new StubSmsChannel(redisStub as unknown as RedisService);
     await channel.sendOtp('+919812345678', '654321');
 
     expect(debugSpy).toHaveBeenCalledTimes(1);
@@ -51,7 +62,7 @@ describe('StubSmsChannel', () => {
 
   it('generic send redacts the recipient', async () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
-    const channel = new StubSmsChannel();
+    const channel = new StubSmsChannel(redisStub as unknown as RedisService);
     await channel.send('+919812345678', 'hello');
     expect(logSpy.mock.calls[0][0] as string).toContain('+XXXXXXXX5678');
   });

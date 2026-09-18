@@ -1,0 +1,81 @@
+# The ONE gate, run in CI (CHORE-007). Deliberately calls `scripts/verify.sh` rather
+# than reimplementing the steps: if the gate changes, CI changes with it automatically.
+# That script runs shared types -> prisma generate -> lint -> typecheck -> build -> tests,
+# and the tests need real Postgres and Redis (ADR-0006), provided as services below.
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  # One run per ref: the suites share a database, so parallel runs of the same ref
+  # would interfere exactly as two local runs do.
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bulk_saving
+        ports: ['5442:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bulk_saving"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7
+        ports: ['6399:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+
+    env:
+      # Host ports match docker-compose.yml so verify.sh needs no CI-specific tweak.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5442/bulk_saving?schema=public
+      REDIS_HOST: localhost
+      REDIS_PORT: 6399
+      # Throwaway CI secrets. Long enough for the schema, and deliberately NOT the
+      # repo's example values, so the production guard's rules stay meaningful.
+      JWT_ACCESS_SECRET: ci-access-secret-do-not-reuse-0001
+      JWT_REFRESH_SECRET: ci-refresh-secret-do-not-reuse-001
+      OTP_HASH_SECRET: ci-otp-hash-secret-do-not-reuse-01
+      # load-env.ts pins NODE_ENV=test and OTP_DEV_LOG=false for the suites anyway.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Migrations, not `db push`: CI must exercise the same migration files a deploy
+      # applies, so a broken or missing migration fails here rather than in production.
+      - name: Apply migrations
+        run: pnpm --filter backend exec prisma migrate deploy
+
+      - name: Verify (lint, typecheck, build, tests)
+        run: bash scripts/verify.sh
+
+      # Proves the deploy artifacts actually build. They are not pushed anywhere —
+      # publishing needs a registry and a platform the owner has not chosen.
+      - name: Build the API image
+        run: docker build -f apps/backend/Dockerfile -t bulk-saving-api:ci .
+
+      - name: Build the PWA image
+        run: docker build -f apps/web/Dockerfile --build-arg VITE_API_URL=https://api.example.com -t bulk-saving-web:ci .

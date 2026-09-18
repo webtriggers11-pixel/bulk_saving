@@ -6,7 +6,7 @@
 ## Stack
 
 - **Frontend:** React 19 + Vite 6, PWA via `vite-plugin-pwa` · Tailwind CSS + hand-rolled shadcn-style UI primitives (ADR-0008; shadcn CLI may be adopted later) · TanStack Query (server state) + Zustand (UI state) · TypeScript strict
-- **Backend:** NestJS 11 on Node 20 LTS · TypeScript strict · Prisma 6 ORM
+- **Backend:** NestJS 11 on **Node 24** (was documented as Node 20, but the repo pins `pnpm@11.10.0`, which does not run on Node 20 at all — corrected in CHORE-007 when the production image failed to build) · TypeScript strict · Prisma 6 ORM
 - **Database:** PostgreSQL 16 (source of truth) · Redis 7 (cache, OTP TTL, BullMQ queues)
 - **Package manager:** pnpm (workspaces monorepo)
 - **Test frameworks:** Backend — Jest + supertest (unit + integration against a test DB). Frontend — Vitest + React Testing Library. E2E deferred (v1).

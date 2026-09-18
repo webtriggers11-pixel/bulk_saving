@@ -104,43 +104,44 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       .expect(400);
   });
 
-  describe('dev OTP echo over HTTP (CHORE-002, ADR-0016)', () => {
+  describe('the OTP never crosses the API boundary (CHORE-007, ADR-0020)', () => {
     const OLD_FLAG = process.env.OTP_DEV_LOG;
 
     afterEach(() => {
       process.env.OTP_DEV_LOG = OLD_FLAG;
     });
 
-    // NODE_ENV is deliberately not touched here — see the note in otp.service.spec.ts.
-    // The production refusal is asserted on the pure guard, not by flipping a global
-    // that other suites' boot-time reconcilers read.
+    it('returns only the acknowledgement, whatever the dev flag says', async () => {
+      // CHORE-002 briefly returned the code here so the web app could show it in a
+      // toast. CHORE-007 removed that: the affordance moved into the stub SMS channel
+      // (a short-TTL Redis key), which a real provider replaces wholesale — so the
+      // production auth path has no bypass to reason about at all.
+      for (const flag of ['true', 'false']) {
+        process.env.OTP_DEV_LOG = flag;
+        const res = await request(app.getHttpServer())
+          .post('/auth/otp/request')
+          .send({ inviteCode: society.inviteCode, phone: randomPhone() })
+          .expect(200);
 
-    it('omits devCode entirely by default', async () => {
-      delete process.env.OTP_DEV_LOG;
-      const res = await request(app.getHttpServer())
-        .post('/auth/otp/request')
-        .send({ inviteCode: society.inviteCode, phone: randomPhone() })
-        .expect(200);
-
-      expect(res.body.data).toEqual({ requested: true });
-      expect(res.body.data).not.toHaveProperty('devCode');
+        expect(res.body.data).toEqual({ requested: true });
+        expect(JSON.stringify(res.body)).not.toMatch(/devCode/);
+      }
     });
 
-    it('returns the dispatched code when the dev guard is open, and it verifies', async () => {
-      process.env.OTP_DEV_LOG = 'true';
+    it('still delivers a usable code through the channel', async () => {
+      // The route stops leaking, but login must still work: the code reaches the
+      // channel, which is the only path out of OtpService.
       const phone = randomPhone();
-
-      const res = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/auth/otp/request')
         .send({ inviteCode: society.inviteCode, phone })
         .expect(200);
 
-      expect(res.body.data.devCode).toBe(channel.lastCode);
+      expect(channel.lastCode).toMatch(/^\d{6}$/);
       await request(app.getHttpServer())
         .post('/auth/otp/verify')
-        .send({ inviteCode: society.inviteCode, phone, code: res.body.data.devCode })
+        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
         .expect(200);
     });
   });
-
 });

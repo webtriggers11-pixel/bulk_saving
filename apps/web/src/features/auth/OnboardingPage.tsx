@@ -9,7 +9,6 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Toast } from '../../components/ui/toast';
 
 type Step = 'invite' | 'phone' | 'otp';
 
@@ -24,19 +23,10 @@ export function OnboardingPage() {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  /**
-   * DEV ONLY (CHORE-002, ADR-0016). The API returns `devCode` only when the server
-   * runs with `OTP_DEV_LOG=true` outside production; in every real environment it is
-   * absent and this stays null, so no toast is ever shown to a real resident.
-   */
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const requestMutation = useMutation({
     mutationFn: () => requestOtp({ inviteCode, phone }),
-    onSuccess: (result) => {
-      setDevCode(result.devCode ?? null);
-      setStep('otp');
-    },
+    onSuccess: () => setStep('otp'),
   });
 
   const verifyMutation = useMutation({
@@ -241,16 +231,6 @@ export function OnboardingPage() {
         )}
       </Card>
 
-      {/* DEV ONLY — never rendered in a real environment (the API omits devCode).
-          It stays up until dismissed so the code can be read and typed. */}
-      {devCode && (
-        <Toast tone="amber" label="Dev only" duration={null} onDismiss={() => setDevCode(null)}>
-          <span>
-            Your code is{' '}
-            <strong className="font-mono text-base tracking-widest">{devCode}</strong>
-          </span>
-        </Toast>
-      )}
     </main>
   );
 }

@@ -27,6 +27,7 @@
 | FEAT-010 | Per-service unit labels ("2 rooms", not "2 units") | in-progress | P1 | 2026-09-18 | — | loop/work/FEAT-010-per-service-units/ | ADR-0019 |
 | CHORE-006 | Admin has no services page — the catalog is API-only | triaged | P2 | 2026-09-18 | — | loop/work/CHORE-006-admin-services-page/ | ADR-0009 |
 | BUG-005 | Rare 401 in the admin integration suite (V3 flake, ~1 in 9 runs) | triaged | P2 | 2026-09-18 | — | loop/work/BUG-005-flaky-401-admin-suite/ | — |
+| CHORE-007 | Production hardening — headers, rate limits, no auth bypass, Docker, CI, runbook | in-progress | P0 | 2026-09-18 | — | loop/work/CHORE-007-production-hardening/ | ADR-0020 |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |

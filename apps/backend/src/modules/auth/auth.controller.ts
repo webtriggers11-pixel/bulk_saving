@@ -54,11 +54,10 @@ export class AuthController {
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
-    // `devCode` is present only under the ADR-0016 dev guard; outside local
-    // development the field is absent entirely, never null or empty.
-    return outcome.devCode === undefined
-      ? { requested: true }
-      : { requested: true, devCode: outcome.devCode };
+    // Nothing but the acknowledgement: the OTP never leaves the server through this
+    // response, in any environment (ADR-0020). The dev affordance lives in the stub
+    // SMS channel, which production replaces.
+    return { requested: true };
   }
 
   @Post('auth/otp/verify')

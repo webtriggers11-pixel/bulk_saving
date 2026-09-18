@@ -1,6 +1,8 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -16,8 +18,17 @@ import { QueueModule } from './queue/queue.module';
 import { RedisModule } from './redis/redis.module';
 
 @Module({
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    /**
+     * Global request ceiling (CHORE-007, ADR-0020). Defence in depth ONLY — the auth
+     * routes keep their own, much tighter Redis limits (1 OTP / 30s, 5 / hour), which
+     * this does not replace. The number is a guess without production traffic and is
+     * flagged for revisit in ADR-0020; it is set high enough that a resident polling
+     * the rounds list every 20s cannot trip it.
+     */
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST ?? 'localhost',

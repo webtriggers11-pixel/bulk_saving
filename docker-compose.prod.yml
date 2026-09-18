@@ -1,0 +1,98 @@
+# Production-shaped stack (CHORE-007, ADR-0020). Runnable locally, which is the point:
+# a deploy path you cannot exercise is a guess.
+#
+#   cp .env.prod.example .env.prod   # then fill in real secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up --build
+#
+# Migrations are NOT run on container boot — two instances starting together must not
+# race through `migrate deploy`. Run the one-shot `migrate` service first (DEPLOY.md).
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    # Not published: only the API needs it.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redisdata-prod:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # One-shot: apply migrations, then exit. Run this BEFORE scaling the api service.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    command: ['sh', '-c', 'cd apps/backend && npx prisma migrate deploy']
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL_SECONDS: ${JWT_ACCESS_TTL_SECONDS:-900}
+      OTP_HASH_SECRET: ${OTP_HASH_SECRET}
+      # CORS_ORIGINS is REQUIRED in production — the API refuses to boot without it.
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      # OTP_DEV_LOG is deliberately absent: setting it true makes the API refuse to boot.
+    ports:
+      - '${API_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Baked in at build time (Vite inlines it) — rebuild to change it.
+        VITE_API_URL: ${VITE_API_URL}
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      - api
+
+volumes:
+  pgdata-prod:
+  redisdata-prod:

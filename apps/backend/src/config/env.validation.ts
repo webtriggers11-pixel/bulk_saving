@@ -96,5 +96,60 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
       .join('; ');
     throw new Error(`Invalid environment configuration: ${details}`);
   }
+  assertProductionSafe(validated);
   return validated;
+}
+
+/** Secrets shipped in `.env.example`. Never acceptable in production. */
+const EXAMPLE_SECRETS = [
+  'change-me',
+  'change-me-access-secret',
+  'change-me-refresh-secret',
+  'change-me-otp-hash-secret',
+  'test-access-secret-0123456789',
+  'test-refresh-secret-0123456789',
+  'test-otp-hash-secret-0123456789',
+];
+
+/**
+ * Extra rules that apply ONLY in production (CHORE-007, ADR-0020).
+ *
+ * Every failure mode here is silent by nature, which is why the app refuses to boot
+ * rather than warning:
+ *  - missing `CORS_ORIGINS` looks like a frontend bug, not a config error (ADR-0014
+ *    already fails closed, so the API would simply reject every browser call);
+ *  - `OTP_DEV_LOG=true` looks like nothing at all while leaking one-time passcodes
+ *    into the logs;
+ *  - an example secret looks completely normal until someone forges a token with a
+ *    value that is published in this repository.
+ */
+export function assertProductionSafe(env: EnvironmentVariables): void {
+  if (env.NODE_ENV !== 'production') {
+    return;
+  }
+  const problems: string[] = [];
+
+  if (!env.CORS_ORIGINS || env.CORS_ORIGINS.trim().length === 0) {
+    problems.push(
+      'CORS_ORIGINS must list the exact browser origins allowed to call this API (unset means no browser can use it)',
+    );
+  }
+  if (env.OTP_DEV_LOG === 'true') {
+    problems.push('OTP_DEV_LOG must not be enabled in production — it exposes one-time passcodes');
+  }
+  for (const [name, value] of [
+    ['JWT_ACCESS_SECRET', env.JWT_ACCESS_SECRET],
+    ['JWT_REFRESH_SECRET', env.JWT_REFRESH_SECRET],
+    ['OTP_HASH_SECRET', env.OTP_HASH_SECRET],
+  ] as const) {
+    if (EXAMPLE_SECRETS.some((example) => value === example || value.startsWith('change-me'))) {
+      problems.push(`${name} is still an example value from the repository — generate a real secret`);
+    }
+  }
+
+  if (problems.length > 0) {
+    throw new Error(
+      `Refusing to start in production with an unsafe configuration:\n  - ${problems.join('\n  - ')}`,
+    );
+  }
 }

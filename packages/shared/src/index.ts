@@ -63,18 +63,15 @@ export interface OtpRequestBody {
 }
 
 /**
- * `POST /auth/otp/request` success payload.
+ * `POST /auth/otp/request` success payload — `{ requested: true }` and nothing else.
  *
- * In every real environment this is `{ requested: true }` and NOTHING else — the OTP
- * is not returned (ADR-0007). `devCode` is a DEV-ONLY affordance (CHORE-002, ADR-0016)
- * that the API populates only when `OTP_DEV_LOG=true` AND `NODE_ENV !== 'production'`,
- * so a resident can sign in locally without reading Redis. It is OMITTED, not null,
- * whenever that guard is false — treat it as absent and never build on it.
+ * The OTP is never returned, in any environment (ADR-0007, restored by ADR-0020). The
+ * short-lived `devCode` field that CHORE-002 added has been removed: the local
+ * affordance now lives in the stub SMS channel, which a real provider replaces, so the
+ * production auth path contains no bypass to reason about.
  */
 export interface OtpRequestResponse {
   requested: true;
-  /** DEV ONLY. Absent outside local development. */
-  devCode?: string;
 }
 
 /** `POST /auth/otp/verify` body. */

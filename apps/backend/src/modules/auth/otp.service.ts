@@ -10,26 +10,26 @@ import {
 export type OtpRequestResult = 'SENT' | 'RATE_LIMITED';
 
 /**
- * The outcome of an OTP request. `devCode` is present ONLY under
- * {@link devOtpEchoEnabled} — see ADR-0016. In every real environment the caller
- * gets `{ result: 'SENT' }` and the code stays inside this service.
+ * The outcome of an OTP request. The code itself is NEVER part of it (ADR-0020):
+ * it leaves this service only through the notification channel.
  */
 export interface OtpRequestOutcome {
   result: OtpRequestResult;
-  devCode?: string;
 }
 
 /**
- * DEV ONLY (CHORE-002, ADR-0016): may the raw OTP leave the server?
+ * DEV ONLY (CHORE-002 → CHORE-007, ADR-0016 → ADR-0020): may the raw OTP be exposed
+ * for local clicking?
  *
- * TWO independent conditions, because `POST /auth/otp/request` is unauthenticated and
- * echoing the code there is a full auth bypass — anyone with an invite code and a
- * phone number could mint a token for that resident:
- *  1. `OTP_DEV_LOG === 'true'` — the explicit "this is a local box" opt-in; and
- *  2. `NODE_ENV !== 'production'` — so a flag mis-set in production still fails closed.
+ * The code no longer leaves this service through the API — `POST /auth/otp/request`
+ * returns `{ requested: true }` and nothing else, so the production auth path holds
+ * no bypass at all. This flag now only tells the STUB SMS channel whether to log the
+ * code and stash it in a short-lived Redis key for the E2E harness. That adapter is
+ * what a real provider replaces wholesale, so in production the affordance does not
+ * exist rather than being switched off.
  *
- * This is the ONLY place that decision is made. It must be deleted before the first
- * real deployment (ADR-0016 revisit trigger).
+ * Both conditions still apply, because the stub could in principle be bound in a
+ * deployed environment by mistake.
  */
 export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.OTP_DEV_LOG === 'true' && env.NODE_ENV !== 'production';
@@ -161,9 +161,9 @@ export class OtpService {
       .exec();
 
     // Dispatch through the channel boundary. The raw code leaves this service ONLY
-    // here — and, in local development only, through the ADR-0016 dev echo below.
+    // here: it is never returned to the caller and never logged (ADR-0020).
     await this.channel.sendOtp(phone, code);
-    return devOtpEchoEnabled() ? { result: 'SENT', devCode: code } : { result: 'SENT' };
+    return { result: 'SENT' };
   }
 
   /**
