@@ -468,3 +468,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Baseline before any change: `bash scripts/verify.sh` exit 0.
 - Decisions: ADR-0021
 - By: agent (autonomous)
+
+## 2026-09-19 — FEAT-011 — T1–T12 built: token layer, primitives, six screens, skeletons
+- What: The approved design is now the app. A token layer (`apps/web/src/styles/theme.css`) holds every colour, surface, radius, shadow, blur and duration as CSS custom properties; `tailwind.config.js` maps them to semantic utilities so components write `bg-brand` / `rounded-card` / `shadow-float` and never a value. Three palettes (teal, indigo, ember) hang off `data-theme` on `<html>`.
+- Screens: onboarding became a hero over a frosted bottom sheet; Home, Services and Profile became bento grids; Group buys moved the live unit count INSIDE its tier ring; My Requests became a status timeline with a four-stop journey track drawn from the `status` it already showed. Every "Loading …" sentence became a skeleton of that screen's own geometry, with the sentence kept for assistive tech behind `aria-busy`.
+- Three defects the work surfaced, each worth more than the feature:
+  1. **The primary button had no background, and every test passed.** The gradient classes were named `fill-*`, which is a Tailwind utility namespace (SVG fill) — and the rules had also failed to land in the stylesheet at all after an earlier edit re-indented the file. jsdom applies no CSS, so 223 green tests said nothing about it. Found by opening the app in a browser. Renamed to `paint-*`; added tests asserting every `surface-*`/`paint-*` class a component names exists, and that no system class lives in a Tailwind namespace.
+  2. **Splitting a price across styled spans made it unfindable.** Testing Library reads an element's OWN text nodes, so "From ₹3,500 / room" had to stay one text run. A styling choice broke a resident-facing assertion; the test was right.
+  3. **A count-up animation would have made every rounds test non-deterministic.** `useCountUp` now animates only when it can ASK about motion preference: no `matchMedia` (jsdom, old WebViews) means no animation and the true number on the first paint.
+- Verification beyond the gate: the app was opened at 390px and checked against the artboards — onboarding, profile and the failed-read state render as drawn. This is the check that caught defect 1, and the reason "the tests pass" was not treated as "the UI works".
+- Test changes, both style-only and both noted in the diff: `min-h-11` → `min-h-tab` and `pb-20` → `pb-28`, each because a token grew, not because a guarantee changed. No behavioural assertion was touched.
+- AC tests added: a hard-coded colour, a palette missing a token, a component branching on the theme, an inline `animation`, a control under 44px, or a contrast regression in any palette now fails the build.
+- Evidence: `bash scripts/verify.sh` exit 0 at every task boundary; at HEAD backend 317 tests / 24 suites, web 225 / 40 files.
+- Decisions: ADR-0021
+- By: agent (autonomous)
