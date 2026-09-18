@@ -429,3 +429,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Evidence: verify.sh exit 0 after the fixes — backend 311 tests / 23 suites, web 185 / 35 files.
 - Decisions: ADR-0019 (unchanged)
 - By: agent (independent reviewer subagent + implementer)
+
+## 2026-09-18 — FEAT-010 — V3 FAILED the flake check; BUG-005 opened; item stays OPEN
+- What: V3 double run on a clean tree (`git status --porcelain` empty, no dev server running): RUN1 exit 1, RUN2 exit 0. One test differed — `admin-dashboard.integration.spec.ts:328` got **401 Unauthorized** where it expects 409 INVALID_ROUND_TRANSITION. Per CLAUDE.md rule 5 that is a flaky test, which is a BUG to triage, and FEAT-010 CANNOT close. It is not closed.
+- Investigation (bounded, then stopped): the 401 can only come from `AuthService.verifyAccessToken`, which does nothing but verify the JWT — no DB or Redis read — so it is not a deleted fixture, not a cascade from another suite's cleanup, and not a role failure (403). Ruled out: TTL expiry (900s vs a ~30s run), secret mutation (nothing assigns JWT_ACCESS_SECRET), fake timers (none in the backend), broad deletes (every deleteMany is id-scoped), and a competing dev server (none was running — that was the separate :3100 watch-mode interference logged above). Three further full backend runs were clean at 311/311, so the rate is about 1 in 9.
+- Two unproven hypotheses recorded in the bug: a host clock jump >900s between token issue and use (fits the rarity and the exact signature), and `cors.integration.spec.ts` REPLACING `process.env` wholesale in afterEach rather than mutating it — the only remaining global-state mutation in the suite. Next step is cheap: log iat/exp/now when a 401 is thrown under NODE_ENV=test, so the next occurrence settles it. The structural fix remains the long-open FEAT-004 P2 (dedicated test DB and Redis).
+- Status: FEAT-010's code is complete and V2-reviewed with every P1 fixed; only the V3 gate is unmet. REGISTRY stays `in-progress`.
+- Evidence: V3 RUN1=1, RUN2=0; three subsequent full backend runs 311/311; verify.sh exit 0 at HEAD.
+- By: agent (autonomous)

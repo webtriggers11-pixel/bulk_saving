@@ -17,7 +17,12 @@ build → tests). After each: commit and append to LOG.md.
 - [x] T8: Seed gives the five seeded services real labels (Painting → room, with scope). — depends: T3
 - [x] T9: E2E — `node scripts/e2e-smoke.mjs` green, with a check that the label round-trips through the API. — depends: T4, T8
 - [ ] T10: V2 — independent reviewer runs the gate ITSELF and reviews the diff vs spec + ADR-0019. — depends: T6, T7, T9
-- [ ] T11: V3 — double run on a quiescent tree; REGISTRY → done; LOG close entry. — depends: T10
+- [ ] T11: V3 — **FAILED the flake check, so FEAT-010 stays open.** Run 1 exit 1, run 2 exit 0
+      on a clean tree with no dev server: one admin-suite test got 401 where 409 was expected
+      (`admin-dashboard.integration.spec.ts:328`). Three further full backend runs were clean
+      (311/311 each), so it is roughly 1 in 9. CLAUDE.md rule 5: different results between
+      back-to-back runs is a flaky test, is a BUG, and blocks the close. Registered as
+      **BUG-005** with the signature and the ruled-out causes. Re-run V3 when that is settled.
 
 ## V2 outcome (2026-09-18)
 
