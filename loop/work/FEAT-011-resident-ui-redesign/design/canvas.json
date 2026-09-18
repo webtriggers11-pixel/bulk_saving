@@ -101,6 +101,34 @@
    "w": 1280,
    "h": 1090,
    "title": "Theme palettes"
+  },
+  "Admin-Dashboard.dc.html": {
+   "x": 0,
+   "y": 8252,
+   "w": 1280,
+   "h": 1180,
+   "title": "Admin · Dashboard"
+  },
+  "Admin-RoundDetail.dc.html": {
+   "x": 1360,
+   "y": 8252,
+   "w": 1280,
+   "h": 1000,
+   "title": "Admin · Round detail"
+  },
+  "Admin-Vendors.dc.html": {
+   "x": 2720,
+   "y": 8252,
+   "w": 1280,
+   "h": 900,
+   "title": "Admin · Vendors"
+  },
+  "Admin-NewRound.dc.html": {
+   "x": 4080,
+   "y": 8252,
+   "w": 1280,
+   "h": 900,
+   "title": "Admin · New round"
   }
  },
  "createdOnFiles": {
@@ -166,6 +194,21 @@
    "w": 240,
    "x": 0,
    "y": 6232
+  },
+  "n8": {
+   "kind": "title1",
+   "maxW": 5360,
+   "text": "Super-admin — the operator's half",
+   "w": 240,
+   "x": 0,
+   "y": 8022
+  },
+  "n9": {
+   "color": "teal",
+   "x": 5440,
+   "y": 8252,
+   "w": 420,
+   "text": "Same tokens, same surfaces, same focus ring and icon family as the resident app — density and width are the only difference. Built from the shared primitives (PageHeader, StatCard, DataRows, Field, EmptyState), so a change to one shape reaches both halves."
   }
  },
  "order": [
@@ -182,8 +225,12 @@
   "Skeletons.dc.html",
   "Themes.dc.html",
   "Tokens.dc.html",
-  "Components.dc.html"
+  "Components.dc.html",
+  "Admin-Dashboard.dc.html",
+  "Admin-RoundDetail.dc.html",
+  "Admin-Vendors.dc.html",
+  "Admin-NewRound.dc.html"
  ],
  "pages": [],
- "title": "Bulk Saving — Resident UI Theme"
+ "title": "Bulk Saving — UI System"
 }

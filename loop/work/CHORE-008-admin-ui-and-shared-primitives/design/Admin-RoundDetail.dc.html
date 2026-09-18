@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin RoundDetail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="teal"]{--brand:#0F766E;--brand-deep:#0A544C;--brand-lt:#2ED6BB;--brand-ink:#095049;--brand-rgb:15,118,110;--brand-lt-rgb:46,214,187;--ground-a:#EEF2F1;--ground-b:#F5F8F7;--ink:#0C1B19;--ink-2:#4E615C;--ink-3:#687A74;--sh:9,52,47;--mesh-1:rgba(46,214,187,.26);--mesh-2:rgba(15,118,110,.18);--mesh-3:rgba(63,118,140,.16)}
+[data-theme="indigo"]{--brand:#4F46E5;--brand-deep:#312E81;--brand-lt:#8B8CFF;--brand-ink:#3730A3;--brand-rgb:79,70,229;--brand-lt-rgb:139,140,255;--ground-a:#EFF0F8;--ground-b:#F6F7FC;--ink:#14142B;--ink-2:#545473;--ink-3:#6C6C8E;--sh:30,27,75;--mesh-1:rgba(139,140,255,.30);--mesh-2:rgba(79,70,229,.20);--mesh-3:rgba(236,72,153,.14)}
+[data-theme="ember"]{--brand:#C2410C;--brand-deep:#7C2D12;--brand-lt:#FB923C;--brand-ink:#9A3412;--brand-rgb:194,65,12;--brand-lt-rgb:251,146,60;--ground-a:#F6F1EC;--ground-b:#FBF7F3;--ink:#221310;--ink-2:#6A5248;--ink-3:#7A5C50;--sh:90,40,15;--mesh-1:rgba(251,146,60,.30);--mesh-2:rgba(194,65,12,.16);--mesh-3:rgba(180,120,90,.18)}
+body{margin:0;font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:var(--ground-a);color:var(--ink)}
+a{color:var(--brand);text-decoration:none}a:hover{color:var(--brand-ink)}
+*{-webkit-tap-highlight-color:transparent}
+input,textarea,button{font-family:inherit}
+dl,dd,dt{margin:0}ul,ol{margin:0;padding:0;list-style:none}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+
+/* motion vocabulary */
+.t{transition:transform .34s cubic-bezier(.22,.8,.28,1),box-shadow .34s cubic-bezier(.22,.8,.28,1),background-color .26s ease,background-image .26s ease,border-color .26s ease,color .22s ease,opacity .26s ease,filter .26s ease}
+.t-fast{transition:transform .16s cubic-bezier(.3,.9,.4,1),opacity .16s ease,color .16s ease,background-color .16s ease}
+
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes riseSm{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blurIn{from{opacity:0;filter:blur(10px);transform:translateY(8px) scale(.96)}to{opacity:1;filter:blur(0);transform:none}}
+.rise{animation:rise .78s cubic-bezier(.22,.9,.26,1) both}
+.blur-in{animation:blurIn .9s cubic-bezier(.22,.9,.26,1) both}
+.stagger>*{animation:rise .78s cubic-bezier(.22,.9,.26,1) both}
+.stagger>*:nth-child(1){animation-delay:.04s}.stagger>*:nth-child(2){animation-delay:.12s}
+.stagger>*:nth-child(3){animation-delay:.20s}.stagger>*:nth-child(4){animation-delay:.28s}
+.stagger>*:nth-child(5){animation-delay:.36s}.stagger>*:nth-child(6){animation-delay:.44s}
+.stagger>*:nth-child(7){animation-delay:.52s}.stagger>*:nth-child(8){animation-delay:.60s}
+.fade-in{animation:riseSm .6s ease both;animation-delay:.34s}
+
+/* ambient */
+@keyframes driftA{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(38px,26px,0) scale(1.14)}100%{transform:translate3d(0,0,0) scale(1)}}
+@keyframes driftB{0%{transform:translate3d(0,0,0) scale(1.06)}50%{transform:translate3d(-34px,34px,0) scale(.9)}100%{transform:translate3d(0,0,0) scale(1.06)}}
+@keyframes driftC{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(26px,-32px,0) scale(1.1)}100%{transform:translate3d(0,0,0)}}
+.blob{position:absolute;border-radius:50%;filter:blur(46px);pointer-events:none;will-change:transform}
+.blob-a{animation:driftA 22s ease-in-out infinite}.blob-b{animation:driftB 27s ease-in-out infinite}.blob-c{animation:driftC 19s ease-in-out infinite}
+
+/* cards */
+.card{will-change:transform}
+.card:hover{transform:translateY(-3px);box-shadow:0 1px 1px rgba(255,255,255,.9) inset,0 4px 8px rgba(var(--sh),.06),0 36px 66px -30px rgba(var(--sh),.6)}
+.card-glow{position:relative}
+.card-glow::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(140deg,rgba(255,255,255,.95),rgba(var(--brand-lt-rgb),.55),rgba(255,255,255,0) 62%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.5;pointer-events:none;transition:opacity .4s ease}
+.card-glow:hover::after{opacity:1}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
+.halo::before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent 0deg,rgba(var(--brand-lt-rgb),.30) 60deg,transparent 140deg,transparent 360deg);animation:spinSlow 11s linear infinite;pointer-events:none}
+
+/* buttons */
+@keyframes sweep{0%{transform:translateX(-120%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
+.btn::after{content:"";position:absolute;top:0;bottom:0;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-120%) skewX(-18deg);pointer-events:none}
+.btn:hover::after{animation:sweep .85s cubic-bezier(.3,.8,.3,1)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.34) inset,0 18px 30px -14px rgba(var(--sh),.75)}
+.btn:active{transform:translateY(0) scale(.975);transition-duration:.12s}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(var(--brand-rgb),.28),0 12px 26px -12px rgba(var(--sh),.7)}
+.btn .nudge{transition:transform .28s cubic-bezier(.22,.9,.26,1)}
+.btn:hover .nudge{transform:translateX(4px)}
+.soft:hover{background-image:linear-gradient(165deg,#FFFFFF,rgba(255,255,255,.84))}
+.tap:active{transform:scale(.93);transition-duration:.12s}
+.tap:hover{transform:translateY(-2px)}
+@keyframes ripple{from{transform:translate(-50%,-50%) scale(0);opacity:.5}to{transform:translate(-50%,-50%) scale(2.6);opacity:0}}
+.ripple::before{content:"";position:absolute;left:50%;top:50%;width:120%;padding-bottom:120%;border-radius:50%;background:rgba(255,255,255,.55);transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none}
+.ripple:active::before{animation:ripple .55s ease-out}
+
+/* inputs */
+@keyframes ringIn{from{box-shadow:0 0 0 0 rgba(var(--brand-rgb),.34)}to{box-shadow:0 0 0 5px rgba(var(--brand-rgb),.17)}}
+input:focus,textarea:focus{outline:none;border-color:rgba(var(--brand-rgb),.6);animation:ringIn .28s ease-out forwards}
+input::placeholder,textarea::placeholder{color:var(--ink-3);font-weight:500}
+.field:focus-within .field-label{color:var(--brand-ink);transform:translateY(-1px)}
+.field-label{transition:color .22s ease,transform .22s ease}
+
+/* live signals */
+@keyframes pulseTeal{0%{box-shadow:0 0 0 0 rgba(var(--brand-rgb),.45)}70%{box-shadow:0 0 0 8px rgba(var(--brand-rgb),0)}100%{box-shadow:0 0 0 0 rgba(var(--brand-rgb),0)}}
+.dot-teal{animation:pulseTeal 2.6s ease-out infinite}
+@keyframes pulseGreen{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+.dot-live{animation:pulseGreen 2.4s ease-out infinite}
+@keyframes breathe{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
+.breathe{animation:breathe 3.4s ease-in-out infinite}
+
+/* progress + skeleton */
+@keyframes grow{from{width:0}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+.bar-fill{animation:grow 1.5s cubic-bezier(.22,.9,.26,1) both;position:relative;overflow:hidden}
+.bar-fill::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:shimmer 2.6s ease-in-out infinite}
+@keyframes skeleton{0%{transform:translateX(-100%)}100%{transform:translateX(230%)}}
+@keyframes skelPulse{0%,100%{opacity:.75}50%{opacity:1}}
+.skel{position:relative;overflow:hidden;background-image:linear-gradient(120deg,rgba(var(--sh),.09),rgba(var(--sh),.05));animation:skelPulse 2.2s ease-in-out infinite}
+.skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:skeleton 1.7s ease-in-out infinite}
+.skel-d1::after{animation-delay:.12s}.skel-d2::after{animation-delay:.24s}.skel-d3::after{animation-delay:.36s}
+
+/* accent surface effects */
+@keyframes glide{0%{transform:translate3d(-30%,-10%,0) scale(1)}50%{transform:translate3d(30%,14%,0) scale(1.22)}100%{transform:translate3d(-30%,-10%,0) scale(1)}}
+.orb{position:absolute;border-radius:50%;filter:blur(30px);pointer-events:none;animation:glide 14s ease-in-out infinite}
+@keyframes sheen{0%{transform:translateX(-130%) rotate(14deg)}55%,100%{transform:translateX(240%) rotate(14deg)}}
+.sheen::before{content:"";position:absolute;top:-40%;bottom:-40%;width:34%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:sheen 6.5s cubic-bezier(.4,.1,.3,1) infinite;pointer-events:none}
+
+/* celebration */
+@keyframes burst{0%{transform:translate(0,0) scale(0);opacity:0}25%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}}
+.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--brand-lt);animation:burst 1.4s cubic-bezier(.2,.8,.3,1) infinite;pointer-events:none}
+
+/* spinners, stars, checks, toast, tabs */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .85s linear infinite}
+@keyframes pop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.14)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .42s cubic-bezier(.3,1.3,.5,1) both}
+.star-hit:hover{transform:scale(1.2) rotate(-7deg)}
+.star-hit:active{transform:scale(.94)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.draw{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .7s cubic-bezier(.22,.9,.26,1) .25s forwards}
+@keyframes slideUp{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.slide-up{animation:slideUp .5s cubic-bezier(.22,.9,.26,1) both}
+@keyframes strip{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+.strip-in{animation:strip .5s cubic-bezier(.22,.9,.26,1) both}
+.tab .tab-pill{transition:transform .34s cubic-bezier(.3,1.2,.4,1),background-color .26s ease,box-shadow .3s ease,opacity .26s ease}
+.tab:hover .tab-pill{transform:translateY(-3px)}
+.tab:active .tab-pill{transform:scale(.9)}
+.tab-on .tab-pill{box-shadow:0 8px 18px -10px rgba(var(--sh),.9)}
+@keyframes tabIn{from{opacity:0;transform:scaleX(.2)}to{opacity:1;transform:none}}
+.tab-line{animation:tabIn .5s cubic-bezier(.3,1.1,.4,1) both}
+
+.grain{position:absolute;inset:0;opacity:.055;mix-blend-mode:overlay;pointer-events:none}
+.chip:hover{transform:translateY(-1px)}
+.row-hover:hover{background-color:rgba(255,255,255,.55)}
+.ic-spin:hover{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width:1280px;height:1000px;box-sizing:border-box;position:relative;overflow:hidden;background-color:var(--ground-a);background-image:radial-gradient(900px 520px at 4% -12%,var(--mesh-1),transparent 64%),radial-gradient(680px 460px at 112% 2%,var(--mesh-2),transparent 62%),radial-gradient(760px 560px at 46% 116%,var(--mesh-3),transparent 66%),linear-gradient(180deg,var(--ground-b) 0%,var(--ground-a) 100%);">
+<div class="blob blob-a" style="top:-140px;left:-120px;width:520px;height:520px;background:radial-gradient(circle,var(--mesh-1),transparent 68%)"></div><div class="blob blob-b" style="bottom:-180px;right:-140px;width:560px;height:560px;background:radial-gradient(circle,var(--mesh-2),transparent 70%)"></div>
+<svg class="grain" aria-hidden="true" width="100%" height="100%"><filter id="grain-admin-rounddetail"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#grain-admin-rounddetail)" opacity="0.55"/></svg>
+<div style="width:1280px;height:1000px;box-sizing:border-box;position:relative">
+<header style="position:sticky;top:0;z-index:20;border-bottom:1px solid rgba(255,255,255,.8);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.70),rgba(255,255,255,.95));
+  backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 -16px 38px -24px rgba(var(--sh),.55)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px">
+    <span style="display:inline-flex;align-items:center;gap:10px">
+      <span class="breathe" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;
+        background-image:radial-gradient(120% 120% at 20% 0%,rgba(var(--brand-lt-rgb),.95),transparent 60%),linear-gradient(140deg,var(--brand-deep),var(--brand));
+        color:#FFFFFF;box-shadow:0 10px 20px -10px rgba(var(--sh),.95)"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="M13.6 2.6 4.8 13.4h6L10.4 21.4l8.8-10.8h-6l.4-8Z"/></svg></span>
+      <span style="font-size:14px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Bulk Saving <span style="color:var(--brand-ink)">Admin</span></span>
+    </span>
+    <nav style="display:flex;align-items:center;gap:4px"><a href="#" class="t tap" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:16px;font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.7);background-image:linear-gradient(160deg,rgba(var(--brand-lt-rgb),.35),rgba(var(--brand-rgb),.15));color:var(--brand-ink);box-shadow:0 10px 22px -16px rgba(var(--sh),.6)"><svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><rect x="3.2" y="3.2" width="7.4" height="7.4" rx="2.4"/><rect x="13.4" y="3.2" width="7.4" height="7.4" rx="2.4"/><rect x="3.2" y="13.4" width="7.4" height="7.4" rx="2.4"/><rect x="13.4" y="13.4" width="7.4" height="7.4" rx="2.4"/></svg>Dashboard</a><a href="#" class="t tap" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:16px;font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid transparent;color:var(--ink-2)"><svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg>New round</a><a href="#" class="t tap" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:16px;font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid transparent;color:var(--ink-2)"><svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><circle cx="9.2" cy="8.4" r="3.4"/><path d="M2.8 20.2c.9-3.2 3.3-5 6.4-5s5.5 1.8 6.4 5"/><path d="M16 5.4a3.4 3.4 0 0 1 0 6.2"/><path d="M17.6 15.6c2 .8 3.2 2.3 3.7 4.6"/></svg>Vendors</a><a href="#" class="t tap" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:16px;font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid transparent;color:var(--ink-2)"><svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="m14.2 5.2-6.8 6.8 6.8 6.8"/></svg>Back to app</a></nav>
+  </div>
+</header>
+<div style="padding:26px 22px 30px">
+  <header class="rise" style="margin-bottom:22px">
+    <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.035em;line-height:1.08;color:var(--ink);font-size:30px">Round</h1>
+    <p style="margin:0;font-size:13px;font-weight:500;line-height:1.5;color:var(--ink-2);margin-top:5px">One round, and every lever on it</p>
+  </header>
+  <a href="#" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;font-size:12.5px;font-weight:800;color:var(--brand-ink);text-decoration:none"><svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="m14.2 5.2-6.8 6.8 6.8 6.8"/></svg>All rounds</a>
+  <section class="t card card-glow rise" style="background-image:linear-gradient(152deg,rgba(255,255,255,.90) 0%,rgba(255,255,255,.62) 46%,rgba(255,255,255,.74) 100%);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid rgba(255,255,255,.85);border-radius:26px;box-shadow:0 1px 1px rgba(255,255,255,.9) inset,0 -1px 2px rgba(var(--sh),.05) inset,0 2px 4px rgba(var(--sh),.05),0 24px 52px -26px rgba(var(--sh),.45);padding:24px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <p style="margin:0;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-ink);">Home</p>
+        <h2 style="margin:6px 0 0;font-size:21px;font-weight:800;letter-spacing:-.035em;color:var(--ink)">Pest Control</h2>
+        <p style="margin:0;font-size:13px;font-weight:500;line-height:1.5;color:var(--ink-2);margin-top:4px">Green Meadows, Pune</p>
+      </div>
+      <span class="chip t " style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 11px;border-radius:999px;background-image:linear-gradient(160deg,rgba(232,169,22,.30),rgba(180,110,9,.12));border:1px solid rgba(255,255,255,.62);color:#8A5512;font-size:11.5px;font-weight:800;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 6px 14px -10px rgba(var(--sh),.6)"><svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="m5.4 12.6 4.4 4.4 8.8-9.4"/></svg> Needs vendor</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:22px">
+      <div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Deadline</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">18 Sept 2026, 12:51 am</div></div><div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Units / residents</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">9 flats / 9</div></div><div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Current price</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">₹900 / flat</div></div><div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Rating</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">4.6 (12)</div></div><div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Tiers</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">5 flats+: ₹900 · 10 flats+: ₹700</div></div><div><div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Amount due</div><div class="num" style="margin-top:5px;font-size:14px;font-weight:800;color:var(--ink)">₹8,100</div></div>
+    </div>
+  </section>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    <section class="t card card-glow" style="background-image:linear-gradient(170deg,rgba(255,255,255,.96),rgba(255,255,255,.80));backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.72);border-radius:24px;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 2px 4px rgba(var(--sh),.04),0 18px 42px -26px rgba(var(--sh),.40);padding:24px">
+      <h2 style="margin:0;font-size:19px;font-weight:800;letter-spacing:-.028em;line-height:1.22;color:var(--ink);margin-bottom:18px">Actions</h2>
+      <p style="display:block;margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);">Vendor</p>
+      <div style="width:100%;box-sizing:border-box;height:50px;padding:0 15px;border-radius:16px;border:1px solid rgba(255,255,255,.74);color:var(--ink);background-image:linear-gradient(170deg,rgba(255,255,255,.94),rgba(255,255,255,.72));font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;box-shadow:0 1px 2px rgba(var(--sh),.06) inset,0 1px 0 rgba(255,255,255,.7);display:flex;align-items:center;justify-content:space-between;padding:0 15px;margin-bottom:16px">CoolAir Services<svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0;"><path d="M3.4 7.6 10 14.2l3.4-3.4 7.2 7.2"/><path d="M15.4 18h5.2v-5.2"/></svg></div>
+      <p style="display:block;margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);">Final price per unit (₹)</p>
+      <div style="width:100%;box-sizing:border-box;height:50px;padding:0 15px;border-radius:16px;border:1px solid rgba(255,255,255,.74);color:var(--ink);background-image:linear-gradient(170deg,rgba(255,255,255,.94),rgba(255,255,255,.72));font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;box-shadow:0 1px 2px rgba(var(--sh),.06) inset,0 1px 0 rgba(255,255,255,.7);display:flex;align-items:center;padding:0 15px;margin-bottom:18px"><span class="num">700</span></div>
+      <button class="t btn ripple" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.015em;cursor:pointer;box-sizing:border-box;border:1px solid rgba(255,255,255,.20);color:#FFFFFF;background-image:radial-gradient(130% 120% at 14% 0%,rgba(var(--brand-lt-rgb),.55),transparent 58%),linear-gradient(140deg,var(--brand),var(--brand-deep));box-shadow:0 1px 0 rgba(255,255,255,.34) inset,0 12px 26px -12px rgba(var(--sh),.9);width:100%">Assign vendor</button>
+      <button class="t btn" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.015em;cursor:pointer;box-sizing:border-box;width:100%;margin-top:10px;border:1px solid rgba(163,35,24,.18);color:#A32318;background-image:linear-gradient(165deg,rgba(214,89,74,.14),rgba(163,35,24,.05))">Cancel round</button>
+    </section>
+
+    <section class="t card card-glow" style="background-image:linear-gradient(170deg,rgba(255,255,255,.96),rgba(255,255,255,.80));backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.72);border-radius:24px;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 2px 4px rgba(var(--sh),.04),0 18px 42px -26px rgba(var(--sh),.40);padding:24px">
+      <h2 style="margin:0;font-size:19px;font-weight:800;letter-spacing:-.028em;line-height:1.22;color:var(--ink);margin-bottom:6px">Participants</h2>
+      <p style="margin:0;font-size:13px;font-weight:500;line-height:1.5;color:var(--ink-2);margin-bottom:18px">Who joined, what they owe, and whether they have paid</p>
+      <ul style="display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none">
+        <li style="display:flex;align-items:center;gap:14px;padding:12px 14px;background-image:linear-gradient(168deg,rgba(255,255,255,.74),rgba(255,255,255,.44));border:1px solid rgba(255,255,255,.62);border-radius:18px;box-shadow:0 1px 0 rgba(255,255,255,.75) inset,0 -1px 2px rgba(var(--sh),.03) inset;">
+          <div style="flex:1 1 0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">Priya Sharma</div>
+          <div class="num" style="margin-top:2px;font-size:11.5px;color:var(--ink-3)">+91 98765 43210</div></div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">2</div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">₹1,800</div>
+          <span style="font-size:11px;font-weight:800;color:#0F6B45">Collected</span>
+          <button class="t btn soft" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.015em;cursor:pointer;box-sizing:border-box;border:1px solid rgba(255,255,255,.72);color:var(--ink);background-image:linear-gradient(165deg,rgba(255,255,255,.92),rgba(255,255,255,.66));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 22px -16px rgba(var(--sh),.55);height:38px;padding:0 12px;font-size:12px">Undo</button>
+        </li><li style="display:flex;align-items:center;gap:14px;padding:12px 14px;background-image:linear-gradient(168deg,rgba(255,255,255,.74),rgba(255,255,255,.44));border:1px solid rgba(255,255,255,.62);border-radius:18px;box-shadow:0 1px 0 rgba(255,255,255,.75) inset,0 -1px 2px rgba(var(--sh),.03) inset;">
+          <div style="flex:1 1 0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">Asha Menon</div>
+          <div class="num" style="margin-top:2px;font-size:11.5px;color:var(--ink-3)">+91 98111 22233</div></div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">1</div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">₹900</div>
+          <span style="font-size:11px;font-weight:800;color:var(--ink-3)">Pending</span>
+          <button class="t btn soft" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.015em;cursor:pointer;box-sizing:border-box;border:1px solid rgba(255,255,255,.72);color:var(--ink);background-image:linear-gradient(165deg,rgba(255,255,255,.92),rgba(255,255,255,.66));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 22px -16px rgba(var(--sh),.55);height:38px;padding:0 12px;font-size:12px">Mark paid</button>
+        </li><li style="display:flex;align-items:center;gap:14px;padding:12px 14px;background-image:linear-gradient(168deg,rgba(255,255,255,.74),rgba(255,255,255,.44));border:1px solid rgba(255,255,255,.62);border-radius:18px;box-shadow:0 1px 0 rgba(255,255,255,.75) inset,0 -1px 2px rgba(var(--sh),.03) inset;">
+          <div style="flex:1 1 0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">Ravi Kumar</div>
+          <div class="num" style="margin-top:2px;font-size:11.5px;color:var(--ink-3)">+91 98444 55566</div></div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">3</div>
+          <div class="num" style="font-size:13px;font-weight:800;color:var(--ink)">₹2,700</div>
+          <span style="font-size:11px;font-weight:800;color:var(--ink-3)">Pending</span>
+          <button class="t btn soft" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-.015em;cursor:pointer;box-sizing:border-box;border:1px solid rgba(255,255,255,.72);color:var(--ink);background-image:linear-gradient(165deg,rgba(255,255,255,.92),rgba(255,255,255,.66));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 22px -16px rgba(var(--sh),.55);height:38px;padding:0 12px;font-size:12px">Mark paid</button>
+        </li>
+      </ul>
+    </section>
+  </div>
+</div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["teal","indigo","ember"],"default":"teal","section":"Theme"},"$preview":{"width":1280,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return { theme: this.props.theme ?? 'teal' }; }
+}
+</script>
+</body>
+</html>
