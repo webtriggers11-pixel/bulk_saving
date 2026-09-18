@@ -22,8 +22,8 @@
 | CHORE-002 | Dev-only: surface the OTP in a toast (gated, never in production) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-002-dev-otp-toast/ | ADR-0016 |
 | CHORE-003 | Live end-to-end smoke harness (scripts/e2e-smoke.mjs) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-003-e2e-smoke-harness/ | — |
 | CHORE-004 | verify.sh must also run the build (a broken build stayed green) | done | P1 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-004-verify-build-gate/ | — |
-| FEAT-009 | Rating UI — resident rates from My Requests; admin sees averages | in-progress | P2 | 2026-09-18 | — | loop/work/FEAT-009-rating-ui/ | ADR-0018 |
-| BUG-004 | Offline: admin controls hang on "Saving…" forever (v5 pauses, never fails) | in-progress | P2 | 2026-09-18 | — | loop/work/BUG-004-offline-paused-admin-controls/ | — |
+| FEAT-009 | Rating UI — resident rates from My Requests; admin sees averages | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/FEAT-009-rating-ui/ | ADR-0018 |
+| BUG-004 | Offline: admin controls hang on "Saving…" forever (v5 pauses, never fails) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/BUG-004-offline-paused-admin-controls/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |
