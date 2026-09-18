@@ -6,6 +6,11 @@ import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select } from '../../components/ui/select';
+import {
+  OFFLINE_QUEUED_TEXT,
+  OFFLINE_WAITING_LABEL,
+  queryStalled,
+} from '../../lib/offline';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
 import { useAdminServices, useAdminSocieties, useCreateRound } from './useAdmin';
@@ -108,7 +113,8 @@ export function AdminNewRoundPage() {
   }
 
   const loading = societies.isLoading || services.isLoading;
-  const loadFailed = societies.isError || services.isError;
+  // BUG-004: paused counts as failed for gating, or an offline admin sees an empty form.
+  const loadFailed = queryStalled(societies) || queryStalled(services);
 
   return (
     <AdminLayout title="New round">
@@ -212,8 +218,13 @@ export function AdminNewRoundPage() {
               </p>
             )}
 
+            {create.isPaused && (
+              <p role="status" data-testid="new-round-offline" className="text-sm text-amber-700">
+                {OFFLINE_QUEUED_TEXT}
+              </p>
+            )}
             <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? 'Opening…' : 'Open round'}
+              {create.isPaused ? OFFLINE_WAITING_LABEL : create.isPending ? 'Opening…' : 'Open round'}
             </Button>
           </form>
         )}

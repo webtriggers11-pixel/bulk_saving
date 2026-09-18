@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activeVendor, inactiveVendor } from './admin.fixtures';
 import { createVendor, fetchVendors, updateVendor } from './admin.api';
 import { AdminVendorsPage } from './AdminVendorsPage';
@@ -40,6 +40,11 @@ function renderPage() {
 }
 
 describe('AdminVendorsPage', () => {
+  afterEach(() => {
+    // Leave the online manager as we found it, or a later test inherits "offline".
+    onlineManager.setOnline(true);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -130,5 +135,28 @@ describe('AdminVendorsPage', () => {
         notes: null,
       }),
     );
+  });
+
+  it('tells the admin a create is QUEUED when offline, not stuck on "Adding…" (BUG-004)', async () => {
+    // Offline pauses the mutation: nothing rejects, isPending stays true. A rejected
+    // promise would NOT reproduce this — that is the server-error path.
+    fetchVendorsMock.mockResolvedValue([]);
+    renderPage();
+    await screen.findByLabelText('Name');
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'CoolFix' } });
+    fireEvent.change(screen.getByLabelText('Phone'), { target: { value: '+919811111111' } });
+    act(() => {
+      onlineManager.setOnline(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add vendor' }));
+
+    expect(await screen.findByTestId('vendor-create-offline')).toHaveTextContent('reconnect');
+    expect(createVendorMock).not.toHaveBeenCalled();
+
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() => expect(createVendorMock).toHaveBeenCalledTimes(1));
   });
 });

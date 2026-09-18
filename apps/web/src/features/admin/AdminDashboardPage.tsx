@@ -10,6 +10,7 @@ import { AdminLayout } from './AdminLayout';
 import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
+import { queryStalled } from '../../lib/offline';
 
 /** Statuses where the admin has work to do; their tiles are highlighted. */
 const ACTION_STATUSES: RoundStatus[] = ['CLOSED_MET', 'ASSIGNED'];
@@ -21,7 +22,10 @@ function toStatus(value: string): RoundStatus | undefined {
 
 /** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
 function DashboardSummary() {
-  const { data, isLoading, isError, refetch } = useAdminDashboard();
+  const dashboard = useAdminDashboard();
+  const { data, isLoading, refetch } = dashboard;
+  // BUG-004: offline pauses rather than errors, so gate on both.
+  const isError = queryStalled(dashboard);
 
   if (isLoading) {
     return <p className="text-slate-500">Loading dashboard…</p>;
@@ -126,7 +130,9 @@ function DashboardSummary() {
 function RoundsTable() {
   const [filters, setFilters] = useState<AdminRoundsQuery>({});
   const societies = useAdminSocieties();
-  const { data, isLoading, isError, refetch } = useAdminRounds(filters);
+  const roundsQuery = useAdminRounds(filters);
+  const { data, isLoading, refetch } = roundsQuery;
+  const isError = queryStalled(roundsQuery);
 
   return (
     <Card>

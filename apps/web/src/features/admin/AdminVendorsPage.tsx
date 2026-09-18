@@ -2,6 +2,11 @@ import { useState, type FormEvent } from 'react';
 import type { VendorDto } from '@bulk/shared';
 import { Badge } from '../../components/ui/badge';
 import { formatVendorRating } from '../rating/formatRating';
+import {
+  OFFLINE_QUEUED_TEXT,
+  OFFLINE_WAITING_LABEL,
+  queryStalled,
+} from '../../lib/offline';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -80,8 +85,13 @@ function AddVendorForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" aria-label="Add vendor" noValidate>
         <VendorFields idPrefix="new-vendor" values={values} errors={errors} onChange={setValues} />
         <Button type="submit" className="self-start" disabled={create.isPending}>
-          {create.isPending ? 'Adding…' : 'Add vendor'}
+          {create.isPaused ? OFFLINE_WAITING_LABEL : create.isPending ? 'Adding…' : 'Add vendor'}
         </Button>
+        {create.isPaused && (
+          <p role="status" data-testid="vendor-create-offline" className="text-sm text-amber-700">
+            {OFFLINE_QUEUED_TEXT}
+          </p>
+        )}
         {create.isError && (
           <p role="alert" className="text-sm text-red-600">
             {errorMessage(create.error)}
@@ -131,7 +141,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
           <VendorFields idPrefix={`edit-${vendor.id}`} values={values} errors={errors} onChange={setValues} />
           <div className="flex gap-2">
             <Button type="submit" disabled={update.isPending}>
-              {update.isPending ? 'Saving…' : 'Save'}
+              {update.isPaused ? OFFLINE_WAITING_LABEL : update.isPending ? 'Saving…' : 'Save'}
             </Button>
             <Button variant="ghost" disabled={update.isPending} onClick={() => setEditing(false)}>
               Cancel
@@ -181,6 +191,11 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
           </div>
         </div>
       )}
+      {update.isPaused && (
+        <p role="status" data-testid="vendor-update-offline" className="mt-2 text-sm text-amber-700">
+          {OFFLINE_QUEUED_TEXT}
+        </p>
+      )}
       {update.isError && (
         <p role="alert" className="text-sm text-red-600">
           {errorMessage(update.error)}
@@ -195,7 +210,11 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
  * add form, inline edit and activate/deactivate (vendors are never deleted).
  */
 export function AdminVendorsPage() {
-  const { data, isLoading, isError, refetch } = useVendors();
+  const vendorsQuery = useVendors();
+  const { data, isLoading, refetch } = vendorsQuery;
+  // BUG-004: offline pauses the read instead of failing it, so `isError` alone would
+  // render an empty page with no explanation.
+  const failed = queryStalled(vendorsQuery);
 
   return (
     <AdminLayout title="Vendors">
@@ -207,7 +226,7 @@ export function AdminVendorsPage() {
           <CardDescription>Only active vendors can be assigned to rounds.</CardDescription>
         </CardHeader>
         {isLoading && <p className="text-slate-500">Loading vendors…</p>}
-        {isError && (
+        {failed && (
           <div role="alert" className="flex flex-col items-start gap-3">
             <p className="text-red-600">We couldn't load vendors. Please try again.</p>
             <Button onClick={() => void refetch()}>Retry</Button>

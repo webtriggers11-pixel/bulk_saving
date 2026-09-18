@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
+import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { messageFromError } from '../auth/error-messages';
 import { STAR_VALUES, StarRating, type StarValue } from './StarRating';
 import { useRateRound, useRemoveRating } from './useRating';
@@ -44,7 +45,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
    * honest message is "queued", not "failed". (Found via the FEAT-008 V2 review of
    * the equivalent hole on the query side.)
    */
-  const queuedOffline = rate.isPaused || remove.isPaused;
+  const queuedOffline = anyPaused(rate, remove);
 
   const open = editing || !saved;
 
@@ -98,7 +99,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         {saved.comment && <p className="mt-1 text-sm text-slate-600">“{saved.comment}”</p>}
         {queuedOffline && (
           <p role="status" data-testid="rating-offline" className="mt-2 text-sm text-amber-700">
-            You're offline. We'll send this as soon as you reconnect.
+            {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {error && (
@@ -139,7 +140,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
 
       {queuedOffline && (
         <p role="status" data-testid="rating-offline" className="mt-2 text-sm text-amber-700">
-          You're offline. We'll send this rating as soon as you reconnect.
+          {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {error && (
@@ -150,7 +151,13 @@ export function RateRound({ round }: { round: MyRoundDto }) {
 
       <div className="mt-3 flex gap-2">
         <Button type="submit" disabled={busy || stars === null}>
-          {queuedOffline ? 'Waiting for a connection…' : rate.isPending ? 'Saving…' : saved ? 'Save changes' : 'Submit rating'}
+          {queuedOffline
+            ? OFFLINE_WAITING_LABEL
+            : rate.isPending
+              ? 'Saving…'
+              : saved
+                ? 'Save changes'
+                : 'Submit rating'}
         </Button>
         {saved && (
           <Button variant="ghost" type="button" disabled={busy} onClick={() => setEditing(false)}>

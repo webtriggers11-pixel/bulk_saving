@@ -10,6 +10,7 @@ import { Select } from '../../components/ui/select';
 import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
+import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL } from '../../lib/offline';
 import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -173,7 +174,7 @@ function AssignForm({ roundId, busy }: { roundId: string; busy: boolean }) {
         )}
       </div>
       <Button type="submit" disabled={!valid || busy || assign.isPending}>
-        {assign.isPending ? 'Assigning…' : 'Assign vendor'}
+        {assign.isPaused ? OFFLINE_WAITING_LABEL : assign.isPending ? 'Assigning…' : 'Assign vendor'}
       </Button>
       {assign.isError && (
         <p role="alert" className="text-sm text-red-600">
@@ -212,7 +213,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
       <div className="flex flex-col gap-4">
         {round.status === 'OPEN' && (
           <Button disabled={busy} onClick={() => close.mutate()}>
-            {close.isPending ? 'Closing…' : 'Close round'}
+            {close.isPaused ? OFFLINE_WAITING_LABEL : close.isPending ? 'Closing…' : 'Close round'}
           </Button>
         )}
 
@@ -220,7 +221,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
 
         {round.status === 'ASSIGNED' && (
           <Button disabled={busy} onClick={() => deliver.mutate()}>
-            {deliver.isPending ? 'Saving…' : 'Mark delivered'}
+            {deliver.isPaused ? OFFLINE_WAITING_LABEL : deliver.isPending ? 'Saving…' : 'Mark delivered'}
           </Button>
         )}
 
@@ -240,7 +241,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
                   disabled={busy}
                   onClick={() => cancel.mutate(undefined, { onSettled: () => setConfirmingCancel(false) })}
                 >
-                  {cancel.isPending ? 'Cancelling…' : 'Yes, cancel round'}
+                  {cancel.isPaused ? OFFLINE_WAITING_LABEL : cancel.isPending ? 'Cancelling…' : 'Yes, cancel round'}
                 </Button>
                 <Button variant="ghost" disabled={busy} onClick={() => setConfirmingCancel(false)}>
                   Keep round
@@ -371,6 +372,11 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
         </div>
       )}
 
+      {payment.isPaused && (
+        <p role="status" data-testid="payment-offline" className="mt-2 text-sm text-amber-700">
+          {OFFLINE_QUEUED_TEXT}
+        </p>
+      )}
       {payment.isError && (
         <p role="alert" className="mt-3 text-sm text-red-600">
           {errorMessage(payment.error)}
