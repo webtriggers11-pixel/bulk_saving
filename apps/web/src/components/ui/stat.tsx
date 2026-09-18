@@ -19,6 +19,8 @@ interface StatCardProps {
    */
   emphasis?: 'lead' | 'normal' | 'quiet' | 'alert';
   action?: ReactNode;
+  /** `dense` is a row of many tiles (the admin status row); `normal` stands alone. */
+  density?: 'normal' | 'dense';
   className?: string;
   'data-testid'?: string;
 }
@@ -44,6 +46,7 @@ export function StatCard({
   icon,
   note,
   emphasis = 'normal',
+  density = 'normal',
   action,
   className,
   'data-testid': testId,
@@ -53,8 +56,10 @@ export function StatCard({
   return (
     <Card
       surface={SURFACE[emphasis]}
+      padding={density === 'dense' ? 'tight' : 'snug'}
       className={cn(
-        'flex flex-col gap-3 p-5',
+        'flex flex-col',
+        density === 'dense' ? 'gap-0' : 'gap-3',
         lead && 'sheen overflow-hidden',
         // An "act on me" tile is amber, and only when it actually holds something:
         // a highlighted zero is noise, and noise is how a dashboard stops being read.

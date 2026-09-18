@@ -523,3 +523,22 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Extraction lands as a no-op first — each primitive carries the markup it already produces, with the screen tests untouched — so the refactor is provably behaviour-preserving before admin is built on it.
 - Decisions: ADR-0022
 - By: agent (autonomous)
+
+## 2026-09-19 — CHORE-008 — T1–T9 built: primitives, admin on the system, browser pass
+- What: Eight screen primitives extracted from the markup FEAT-011 had written per screen, the five resident screens re-pointed at them as a deliberate no-op, then the four admin screens rebuilt from the same parts. The canvas gained the four admin artboards it never had.
+- Caught by tests rather than by review, in my own new code: the dependency rule failed on its first run (`components/QueryState` imported a hook out of `features/shell`); the dashboard re-set `id="filter-status"` on top of `Field`'s generated id, silently unlinking label from control; and the "one owner per shape" test failed because the status tiles had re-typed StatCard's number. The built-CSS gate step caught `.row-hover`, used by a new primitive and declared nowhere.
+- Browser pass with a real OTP login as the seeded super-admin: dashboard, vendors, new round, a CLOSED_MET round detail, plus resident Home and Group buys on the same build. The dev origin has to be in CORS_ORIGINS, and 5173–5175 are taken by another project on this machine.
+- Gate at each task boundary: exit 0.
+- By: agent (autonomous)
+
+## 2026-09-19 — CHORE-008 — V2: CHANGES REQUIRED, and the finding that mattered was mine
+- The reviewer ran the gate itself (exit 0, backend 317/24, web 249/41, 1262 class tokens) and returned three P1s.
+- **P1-1 is the one worth remembering.** `StatCard` asked for `p-5` through the caller's `className` slot while `Card`'s base is `p-6`; `cn` is a plain join, so both landed and Tailwind's output order decided. StatCard had never once rendered at the padding it asks for, and the dashboard's `gap-0 p-4` density override did nothing — while its skeleton used `p-4`, so the placeholder and the content were different sizes on the screen the owner opens daily. Three gates were blind: jsdom applies no CSS, the class checker only asks whether a class resolves (both did), and the browser pass had no baseline to compare against. Padding is now a closed prop on `Card`, and a test asserts no Card fights its own base.
+- **P1-2: AC2 was asserted for six shapes and met for five.** The admin round detail had re-typed the fact tile (already drifted two values), the vendors page had re-typed `DataRow`'s surface and `DataRows`' body, and `FactRow` — written *for* the admin detail — was exported, tested, documented and used by nobody. Fixed by extracting `RowSurface`, folding three fact variants into one `Fact`, and adding the missing signatures. A fourth copy turned up while doing it: the 10px uppercase label, now the `.term-label` token.
+- **P1-3: T3 was not a pure no-op.** Onboarding's ground went from `absolute` (clipped to the 448px column) to the shared `fixed` layer, with a third wash and grain it did not have. Kept — it is what the rest of the app uses — but stated, which the commit had not done.
+- P2-1: five controls on New round and two on the assign form had raw label+div wrappers; the assign form's price error was a bare `<p>` beside an `aria-invalid` input, so a screen reader announced "invalid" and never read why. All now go through `Field`.
+- P2-2: the dependency rule watched `components/` only, and `lib/api.ts` had been importing `features/auth/auth.store` all along. Inverted through a `SessionPort` the auth feature fills; the rule now covers `lib/` and matches double quotes and dynamic imports too.
+- P2-3: the canvas had been forked into two half-copies, neither of which opened completely. One canvas, one folder, no dangling boards.
+- Recorded rather than fixed: the participants list stays a real `<table>` (ADR-0022).
+- Evidence: gate exit 0 after the fixes — backend 317/24, web 262/41, 1212 class tokens.
+- By: agent (autonomous) + code-reviewer subagent (V2)

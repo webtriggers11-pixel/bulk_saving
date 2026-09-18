@@ -23,7 +23,7 @@ export function Monogram({ name, size = 'md', className, 'data-testid': testId }
   return (
     <span
       className={cn(
-        'relative flex shrink-0 items-center justify-center overflow-hidden paint-mono font-extrabold tracking-[-0.02em] text-white shadow-accent',
+        'relative flex shrink-0 items-center justify-center overflow-hidden paint-mono font-extrabold text-white shadow-accent',
         SIZES[size],
         className,
       )}

@@ -99,7 +99,7 @@ function DashboardSummary() {
               label={STATUS_LABELS[status]}
               value={String(count)}
               emphasis={needsAction ? 'alert' : 'quiet'}
-              className="gap-0 p-4"
+              density="dense"
               data-testid={`status-tile-${status}`}
             />
           );
@@ -161,7 +161,7 @@ function DashboardSummary() {
 }
 
 /** Rounds across societies with status + society filters; rows link to the detail page. */
-function RoundsTable() {
+function RoundsPanel() {
   const [filters, setFilters] = useState<AdminRoundsQuery>({});
   const societies = useAdminSocieties();
   const roundsQuery = useAdminRounds(filters);
@@ -287,7 +287,7 @@ export function AdminDashboardPage() {
   return (
     <AdminLayout title="Dashboard" subtitle="Demand, money and what needs a vendor">
       <DashboardSummary />
-      <RoundsTable />
+      <RoundsPanel />
     </AdminLayout>
   );
 }

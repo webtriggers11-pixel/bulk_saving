@@ -31,11 +31,11 @@ function Tile({
   testId: string;
 }) {
   return (
-    <Card surface="solid" className="flex min-h-[134px] flex-col p-[18px]">
+    <Card padding="none" surface="solid" className="flex min-h-[134px] flex-col p-[18px]">
       <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
         <Icon name={icon} size={20} strokeWidth={1.8} />
       </span>
-      <p className="mt-auto pt-3.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">
+      <p className="mt-auto pt-3.5 term-label">
         {term}
       </p>
       <p className="num mt-1.5 text-[15.5px] font-extrabold text-ink" data-testid={testId}>
@@ -82,7 +82,7 @@ export function ProfilePage() {
       <PageHeader title="Profile" />
 
       <div className="stagger grid grid-cols-2 gap-3.5">
-        <Card className="col-span-2 overflow-hidden p-6 text-center">
+        <Card padding="none" className="col-span-2 overflow-hidden p-6 text-center">
           <span
             aria-hidden="true"
             className="pointer-events-none absolute -top-24 left-1/2 h-52 w-64 -translate-x-1/2 rounded-full bg-mesh-1/40 blur-2xl"
@@ -104,7 +104,7 @@ export function ProfilePage() {
         <Tile icon="phone" term="Phone" value={resident?.phone ?? '—'} testId="profile-phone" />
         <Tile icon="building" term="Society" value={society?.name ?? '—'} testId="profile-society" />
 
-        <Card surface="tint" className="col-span-2 p-[22px]">
+        <Card padding="none" surface="tint" className="col-span-2 p-[22px]">
           <div className="flex items-start gap-4">
             <span className="animate-breathe flex h-12 w-12 shrink-0 items-center justify-center rounded-inset border border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift">
               <Icon name="install" size={23} strokeWidth={1.8} />

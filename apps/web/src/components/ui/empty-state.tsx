@@ -31,7 +31,7 @@ export function EmptyState({
   'data-testid': testId,
 }: EmptyStateProps) {
   return (
-    <Card className={cn('p-7 text-center', className)} data-testid={testId}>
+    <Card padding="roomy" className={cn('text-center', className)} data-testid={testId}>
       <span className="animate-breathe mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink shadow-lift">
         <Icon name={icon} size={26} strokeWidth={1.7} />
       </span>

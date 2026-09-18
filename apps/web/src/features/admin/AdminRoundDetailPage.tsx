@@ -1,13 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useIsMutating } from '@tanstack/react-query';
 import type {
   RoundServiceSummary, AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { Fact } from '../../components/ui/fact';
+import { Field } from '../../components/ui/field';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { Select } from '../../components/ui/select';
 import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
@@ -37,16 +38,6 @@ const CANCELLABLE: RoundStatus[] = ['OPEN', 'CLOSED_MET', 'CLOSED_EXPIRED', 'ASS
 /** Statuses where a vendor is assigned, so payments can be collected. */
 const PAYABLE: RoundStatus[] = ['ASSIGNED', 'DELIVERED', 'RATED'];
 
-/** A labelled value in the round summary grid. */
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">{label}</dt>
-      <dd className="num mt-1 text-body font-extrabold text-ink">{children}</dd>
-    </div>
-  );
-}
-
 /** Round header: service, society, status, deadline, units, tiers, prices, vendor, delivery. */
 function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
   return (
@@ -64,17 +55,17 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
         <StatusBadge status={round.status} />
       </div>
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Fact label="Deadline">{formatDateTime(round.deadline)}</Fact>
-        <Fact label={`${capitalise(unitLabelPluralFor(round.service))} / residents`}>
+        <Fact variant="plain" term="Deadline">{formatDateTime(round.deadline)}</Fact>
+        <Fact variant="plain" term={`${capitalise(unitLabelPluralFor(round.service))} / residents`}>
           {round.unitsCount} / {round.participantsCount}
         </Fact>
-        <Fact label="Current price">
+        <Fact variant="plain" term="Current price">
           {formatRupees(round.currentPrice)} / {unitLabelFor(round.service)}
         </Fact>
-        <Fact label="Rating">
+        <Fact variant="plain" term="Rating">
           <span data-testid="round-rating">{formatRatingSummary(round.ratings)}</span>
         </Fact>
-        <Fact label="Tiers">
+        <Fact variant="plain" term="Tiers">
           <ul>
             {round.tiers.map((tier) => (
               <li key={tier.threshold}>
@@ -85,18 +76,18 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
           </ul>
         </Fact>
         {round.vendor && (
-          <Fact label="Vendor">
+          <Fact variant="plain" term="Vendor">
             {round.vendor.name}
             <span className="num block text-meta text-ink-muted">{round.vendor.phone}</span>
           </Fact>
         )}
         {round.finalPrice !== null && (
-          <Fact label="Final price">
+          <Fact variant="plain" term="Final price">
             <span data-testid="final-price">{formatRupees(round.finalPrice)}</span>
           </Fact>
         )}
-        {round.assignedAt && <Fact label="Assigned">{formatDateTime(round.assignedAt)}</Fact>}
-        {round.deliveredAt && <Fact label="Delivered">{formatDateTime(round.deliveredAt)}</Fact>}
+        {round.assignedAt && <Fact variant="plain" term="Assigned">{formatDateTime(round.assignedAt)}</Fact>}
+        {round.deliveredAt && <Fact variant="plain" term="Delivered">{formatDateTime(round.deliveredAt)}</Fact>}
       </dl>
     </Card>
   );
@@ -174,35 +165,40 @@ function AssignForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3" aria-label="Assign vendor">
-      <div>
-        <Label htmlFor="assign-vendor">Vendor</Label>
-        <Select id="assign-vendor" value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
-          <option value="">Select a vendor</option>
-          {activeVendors.map((vendor) => (
-            <option key={vendor.id} value={vendor.id}>
-              {vendor.name}
-              {vendor.category ? ` (${vendor.category})` : ''}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div>
-        <Label htmlFor="assign-price">Final price per {unitLabelFor(service)} (₹)</Label>
-        <Input
-          id="assign-price"
-          type="number"
-          inputMode="numeric"
-          min={MIN_FINAL_PRICE}
-          max={MAX_FINAL_PRICE}
-          step={1}
-          value={finalPrice}
-          onChange={(e) => setFinalPrice(e.target.value)}
-          aria-invalid={finalPrice !== '' && !priceValid}
-        />
-        {finalPrice !== '' && !priceValid && (
-          <p className="mt-2 text-meta font-bold text-danger-ink">Enter a whole number from 1 to 10,00,000.</p>
+      <Field label="Vendor" id="assign-vendor">
+        {(props) => (
+          <Select {...props} value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
+            <option value="">Select a vendor</option>
+            {activeVendors.map((vendor) => (
+              <option key={vendor.id} value={vendor.id}>
+                {vendor.name}
+                {vendor.category ? ` (${vendor.category})` : ''}
+              </option>
+            ))}
+          </Select>
         )}
-      </div>
+      </Field>
+      {/* The price error goes through Field, which wires aria-describedby to it. It
+          was a bare <p> beside an aria-invalid input: a screen reader announced
+          "invalid" and never read why (V2 P2-1). */}
+      <Field
+        label={`Final price per ${unitLabelFor(service)} (₹)`}
+        id="assign-price"
+        error={finalPrice !== '' && !priceValid ? 'Enter a whole number from 1 to 10,00,000.' : null}
+      >
+        {(props) => (
+          <Input
+            {...props}
+            type="number"
+            inputMode="numeric"
+            min={MIN_FINAL_PRICE}
+            max={MAX_FINAL_PRICE}
+            step={1}
+            value={finalPrice}
+            onChange={(e) => setFinalPrice(e.target.value)}
+          />
+        )}
+      </Field>
       <Button type="submit" disabled={!valid || busy || assign.isPending}>
         {assign.isPaused ? OFFLINE_WAITING_LABEL : assign.isPending ? 'Assigning…' : 'Assign vendor'}
       </Button>
@@ -320,6 +316,10 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
         )}
       </CardHeader>
 
+      {/* The participants list stays a real <table> — the exception ADR-0022 records:
+          it IS tabular data with six columns, the unit word lives in a columnheader
+          that FEAT-010 asserts, and a screen reader reads a table better than a list
+          of rows. The cost is accepted and named: it scrolls sideways on a phone. */}
       {round.participants.length === 0 ? (
         <p className="mt-1 text-caption text-ink-muted">No residents have joined this round.</p>
       ) : (

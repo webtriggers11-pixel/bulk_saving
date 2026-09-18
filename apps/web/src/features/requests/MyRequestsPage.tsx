@@ -3,7 +3,7 @@ import type { MyRoundDto, RoundStatus } from '@bulk/shared';
 import { QueryErrorState } from '../../components/QueryState';
 import { Card, CardDescription, CardTitle } from '../../components/ui/card';
 import { EmptyState } from '../../components/ui/empty-state';
-import { FactTile } from '../../components/ui/fact';
+import { Fact } from '../../components/ui/fact';
 import { PageHeader } from '../../components/ui/page-header';
 import { Badge, type BadgeTone } from '../../components/ui/badge';
 import { Icon, type IconName } from '../../components/ui/icon';
@@ -114,7 +114,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         {!last && <span className="mt-1.5 w-0.5 flex-1 rounded-full bg-shade/10" />}
       </div>
 
-      <Card
+      <Card padding="none"
         // Glass is blur, and blur is per-surface cost: only the LEAD open round gets
         // it, or a resident in eight open rounds scrolls eight blurred layers
         // (V2 round 2, P2-3).
@@ -136,8 +136,8 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         <JourneyTrack step={style.step} />
 
         <dl className="mt-4 flex gap-2.5">
-          <FactTile term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
-          <FactTile
+          <Fact term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
+          <Fact
             term={`Price per ${unitLabelFor(round.service)}`}
             value={formatRupees(round.currentPrice)}
             testId="my-price"

@@ -14,6 +14,31 @@ export function DataRows({ children, className }: { children: ReactNode; classNa
   return <ul className={cn('stagger flex flex-col gap-2.5', className)}>{children}</ul>;
 }
 
+/**
+ * The skin of one row. Split out from `DataRow` because a screen sometimes needs its
+ * own content inside the same surface — the vendor row flips into an edit form — and
+ * the alternative is what actually happened: the surface re-typed by hand, one class
+ * at a time, until it drifts (V2 P1-2).
+ */
+export function RowSurface({
+  children,
+  className,
+  'data-testid': testId,
+}: {
+  children: ReactNode;
+  className?: string;
+  'data-testid'?: string;
+}) {
+  return (
+    <div
+      className={cn('surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4', className)}
+      data-testid={testId}
+    >
+      {children}
+    </div>
+  );
+}
+
 interface DataRowProps {
   /** The main identifier of the record. */
   title: ReactNode;
@@ -30,13 +55,7 @@ interface DataRowProps {
 export function DataRow({ title, meta, columns, trailing, className, 'data-testid': testId }: DataRowProps) {
   return (
     <li>
-      <div
-        className={cn(
-          'surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4 md:flex-row md:items-center md:gap-5',
-          className,
-        )}
-        data-testid={testId}
-      >
+      <RowSurface className={cn('md:flex-row md:items-center md:gap-5', className)} data-testid={testId}>
         <div className="min-w-0 flex-1">
           <div className="text-body font-extrabold tracking-[-0.02em] text-ink">{title}</div>
           {meta && <div className="mt-1 text-meta text-ink-muted">{meta}</div>}
@@ -45,7 +64,7 @@ export function DataRow({ title, meta, columns, trailing, className, 'data-testi
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 md:justify-end">{columns}</div>
         )}
         {trailing && <div className="flex items-center gap-2 md:ml-2">{trailing}</div>}
-      </div>
+      </RowSurface>
     </li>
   );
 }
@@ -54,7 +73,7 @@ export function DataRow({ title, meta, columns, trailing, className, 'data-testi
 export function DataCell({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">{label}</div>
+      <div className="term-label">{label}</div>
       <div className="num mt-0.5 text-body font-extrabold text-ink">{value}</div>
     </div>
   );

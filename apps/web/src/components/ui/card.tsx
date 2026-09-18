@@ -8,7 +8,22 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   surface?: Surface;
   /** Lift + light the gradient hairline on hover. Off for cards that are not a target. */
   interactive?: boolean;
+  /**
+   * How much room the card gives its content. A PROP, not a className: `cn` is a
+   * plain join, so a `p-4` passed alongside the base `p-6` does not replace it —
+   * both land and Tailwind's output order silently picks the winner (V2 P1-1).
+   * `none` hands padding back to the caller, for the screens that size their own.
+   */
+  padding?: 'none' | 'tight' | 'snug' | 'default' | 'roomy';
 }
+
+const PADDING = {
+  none: '',
+  tight: 'p-4',
+  snug: 'p-5',
+  default: 'p-6',
+  roomy: 'p-7',
+} as const;
 
 const SURFACES: Record<Surface, string> = {
   glass: 'surface-glass',
@@ -17,11 +32,18 @@ const SURFACES: Record<Surface, string> = {
   accent: 'surface-accent',
 };
 
-export function Card({ surface = 'glass', interactive = true, className, ...props }: CardProps) {
+export function Card({
+  surface = 'glass',
+  interactive = true,
+  padding = 'default',
+  className,
+  ...props
+}: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-card p-6 t',
+        'rounded-card t',
+        PADDING[padding],
         SURFACES[surface],
         interactive && 'card-hover card-glow',
         className,

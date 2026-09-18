@@ -234,7 +234,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
   const urgent = remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000;
 
   return (
-    <Card
+    <Card padding="none"
       surface={lead ? 'glass' : 'solid'}
       className="relative overflow-hidden p-[22px]"
       data-testid="round-card"

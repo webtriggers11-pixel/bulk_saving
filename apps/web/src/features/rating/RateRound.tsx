@@ -92,7 +92,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
       <div className="mt-4 border-t border-shade/10 pt-4" data-testid="rating-saved">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">Your rating</p>
+            <p className="term-label">Your rating</p>
             {/* `my-rating` is FEAT-008's existing test contract for a saved
                 rating — kept so its MyRequestsPage test stays meaningful. */}
             <StarRating

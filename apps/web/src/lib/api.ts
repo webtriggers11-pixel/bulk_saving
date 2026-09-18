@@ -1,5 +1,5 @@
 import type { ApiResponse, AuthTokens } from '@bulk/shared';
-import { useAuthStore } from '../features/auth/auth.store';
+import { session } from './session-port';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -42,8 +42,9 @@ let refreshPromise: Promise<string | null> | null = null;
  * on any failure the session is cleared (logged-out state) and null returned.
  */
 async function doRefresh(): Promise<string | null> {
-  const { refreshToken, setTokens, logout } = useAuthStore.getState();
-  if (!refreshToken) {
+  const { refreshToken, setTokens, logout } = session();
+  const token = refreshToken();
+  if (!token) {
     logout();
     return null;
   }
@@ -51,7 +52,7 @@ async function doRefresh(): Promise<string | null> {
     const response = await fetch(`${API_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ refreshToken: token }),
     });
     const parsed = (await response.json()) as ApiResponse<AuthTokens>;
     if (!response.ok || !parsed.success) {
@@ -86,7 +87,7 @@ async function execute<T>(
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
-  const accessToken = auth ? useAuthStore.getState().accessToken : null;
+  const accessToken = auth ? session().accessToken() : null;
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -113,7 +114,7 @@ async function execute<T>(
 
   // Transparent refresh on an expired access token: only for authed requests,
   // only once (isRetry guard), and only when a refresh token exists.
-  if (response.status === 401 && auth && !isRetry && useAuthStore.getState().refreshToken) {
+  if (response.status === 401 && auth && !isRetry && session().refreshToken()) {
     const newAccessToken = await refreshOnce();
     if (newAccessToken) {
       return execute<T>(path, method, body, auth, true);

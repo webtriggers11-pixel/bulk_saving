@@ -58,7 +58,7 @@ card.** One accent surface per screen, at most.
 | Class | What it is | When |
 |---|---|---|
 | `surface-glass` | blur 26, white 90→62%, white hairline, tinted float | the lead card on a screen |
-| `surface-solid` | blur 18, white 96→80% | ordinary cards, list rows |
+| `surface-solid` | white 97→86%, **no blur** | ordinary cards, list rows |
 | `surface-tint` | brand-light 22% → brand 8% | grouping a related fact |
 | `surface-accent` | radial + 142° brand gradient, white text | the one primary action |
 | `surface-inset` | white 74→44% | blocks nested inside a card |
@@ -79,6 +79,8 @@ ADR-0021). Money and counts always take `.num` (tabular figures).
 
 - **Radius:** `rounded-chip` 12 · `rounded-control` 16 · `rounded-inset` 18 ·
   `rounded-tile` 20 · `rounded-card` 24 · `rounded-sheet` 34. Nothing in between.
+- **Micro-label:** `.term-label` — the 10px uppercase label over a value. A token,
+  because four files had typed the same five classes.
 - **Elevation:** `shadow-hairline` → `shadow-lift` → `shadow-float` → `shadow-deep`,
   plus `shadow-accent` / `shadow-control` / `shadow-field` / `shadow-ring` /
   `shadow-focus`. All tinted with `--shadow-rgb`, never black.
@@ -117,18 +119,22 @@ One family, in `components/ui/icon.tsx`: 24-box, 1.8 stroke, round caps, `curren
 
 ## Screen primitives (CHORE-008, ADR-0022)
 
-A screen is assembled from these, not drawn. Re-typing one of their shapes fails the
-build (`primitives.test.tsx` asserts one owner per shape).
+A screen is assembled from these, not drawn. `primitives.test.tsx` asserts one owner
+per shape for the ones with a signature — `PageHeader`, `EmptyState`, `Fact`,
+`Monogram`, `AmbientGround`, `StatCard`, `RowSurface`/`DataRows` and `Field`'s error
+line. A signature is a tripwire, not a proof: it matches one exact class string, so a
+copy that drops or reorders a class slips past it. Three did, and were found by review
+rather than by the test (V2 P1-2).
 
 | Primitive | Its one job |
 |---|---|
 | `PageHeader` | title, optional subtitle, optional action. Knows nothing about routes. |
 | `EmptyState` | glyph, heading, line, optional way out. Never explains *why* it is empty. |
-| `FactTile` / `FactRow` | one labelled fact, as a tile or a dense row. |
+| `Fact` | one labelled fact. `variant`: `tile` · `row` · `plain`. Renders `<dt>/<dd>`, so the caller supplies the `<dl>`. |
 | `StatCard` | one number and what it counts. `emphasis`: `lead` · `normal` · `quiet` · `alert`. Formats nothing. |
 | `Field` | label + control + error, with the id/aria wiring. Control comes in as a render prop. |
 | `Monogram` | initials on the brand gradient, with the halo. Derives initials in one place. |
-| `DataRows` / `DataRow` / `DataCell` | a dense list of records; columns from `md`, stacked below. Not a table. |
+| `DataRows` / `DataRow` / `DataCell` / `RowSurface` | a dense list of records; columns from `md`, stacked below. Not a table — see the exception in ADR-0022. |
 | `AmbientGround` | the fixed, inert ground: three drifting washes plus grain. |
 
 Two rules keep them honest:

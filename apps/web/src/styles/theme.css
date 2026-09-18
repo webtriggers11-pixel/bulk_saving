@@ -356,6 +356,16 @@ button:hover .nudge {
   background-color: rgb(255 255 255 / 0.55);
 }
 
+/* The tiny uppercase label over a value — fact tiles, data cells, profile tiles.
+   A token, not a shape: four files were typing the same five classes (V2 P1-2). */
+.term-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--ink-soft));
+}
+
 /* ---- forms ------------------------------------------------------------- */
 /* `.field` wraps a label + control; the label lifts and inks to brand as focus
    lands inside it. Both classes are carried by components, so both must exist

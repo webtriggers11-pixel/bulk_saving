@@ -51,7 +51,7 @@ export function HomePage() {
         // The bento: one wide identity card, one wide accent action, two squares.
         // Emphasis comes from mixing surfaces, never from a new layout per card.
         <div className="stagger grid grid-cols-2 gap-3.5">
-          <Card className="col-span-2 flex items-center gap-4 overflow-hidden p-[22px]">
+          <Card padding="none" className="col-span-2 flex items-center gap-4 overflow-hidden p-[22px]">
             <span
               aria-hidden="true"
               className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
@@ -72,7 +72,7 @@ export function HomePage() {
             </div>
           </Card>
 
-          <Card
+          <Card padding="none"
             surface="accent"
             className="sheen col-span-2 flex items-center gap-4 overflow-hidden p-6"
           >
@@ -105,7 +105,7 @@ export function HomePage() {
             </div>
           </Card>
 
-          <Card surface="tint" className="flex min-h-[168px] flex-col p-[19px]">
+          <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[19px]">
             <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift">
               <Icon name="building" size={22} strokeWidth={1.8} />
             </span>
@@ -118,7 +118,7 @@ export function HomePage() {
             </p>
           </Card>
 
-          <Card className="flex min-h-[168px] flex-col p-[19px]">
+          <Card padding="none" className="flex min-h-[168px] flex-col p-[19px]">
             <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
               <Icon name="users" size={22} strokeWidth={1.8} />
             </span>
@@ -141,7 +141,7 @@ export function HomePage() {
           {isSuperAdmin && (
             // Solid, not glass: a super-admin would otherwise carry a fourth
             // blurred surface on this screen (V2 round 2, P2-3).
-            <Card surface="solid" className="col-span-2 flex items-center gap-4 p-[19px]">
+            <Card padding="none" surface="solid" className="col-span-2 flex items-center gap-4 p-[19px]">
               <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
                 <Icon name="check" size={22} strokeWidth={1.9} />
               </span>

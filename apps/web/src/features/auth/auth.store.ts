@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { provideSession } from '../../lib/session-port';
 import type { AuthTokens, ResidentDto, SocietyDto } from '@bulk/shared';
 
 /**
@@ -105,3 +106,15 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+/**
+ * Fill the session port `lib/api.ts` reads (ADR-0022): the API client must not import
+ * a feature, so the feature registers itself here. Runs on first import of the store,
+ * which every caller of the API already does — including the tests.
+ */
+provideSession({
+  accessToken: () => useAuthStore.getState().accessToken,
+  refreshToken: () => useAuthStore.getState().refreshToken,
+  setTokens: (tokens) => useAuthStore.getState().setTokens(tokens),
+  logout: () => useAuthStore.getState().logout(),
+});

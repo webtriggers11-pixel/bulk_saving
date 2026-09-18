@@ -53,7 +53,7 @@ function PriceLine({ service, className }: { service: ServiceDto; className?: st
 function ServiceHero({ service }: { service: ServiceDto }) {
   const price = formatIndicativePrice(service.indicativePrice);
   return (
-    <Card className="col-span-2 overflow-hidden p-[22px]" data-testid="service-card">
+    <Card padding="none" className="col-span-2 overflow-hidden p-[22px]" data-testid="service-card">
       <span aria-hidden="true" className="pointer-events-none absolute -right-7 -top-8 text-brand/10">
         <ServiceGlyph service={service} size={165} />
       </span>
@@ -88,7 +88,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
 /** A square tile — two of these sit beside each other under the hero. */
 function ServiceTile({ service }: { service: ServiceDto }) {
   return (
-    <Card surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
+    <Card padding="none" surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
       <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
         <ServiceGlyph service={service} size={22} />
       </span>
@@ -108,7 +108,7 @@ function ServiceTile({ service }: { service: ServiceDto }) {
 /** Everything past the third service: a wide row, so the rhythm stays a bento. */
 function ServiceRow({ service }: { service: ServiceDto }) {
   return (
-    <Card
+    <Card padding="none"
       surface="solid"
       className="col-span-2 flex items-center gap-3.5 p-[17px]"
       data-testid="service-card"

@@ -4,12 +4,23 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PageHeader } from './page-header';
 import { EmptyState } from './empty-state';
-import { FactTile, FactRow } from './fact';
+import { Fact } from './fact';
 import { Monogram, initialsOf } from './monogram';
 import { StatCard } from './stat';
 import { Field } from './field';
 import { DataRow, DataRows, DataCell } from './data-rows';
+import { Card } from './card';
 import { Input } from './input';
+
+/** Every app source file (no tests), for the structural assertions below. */
+function sourcesUnderSrc(dir = join(process.cwd(), 'src'), out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) sourcesUnderSrc(path, out);
+    else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(path);
+  }
+  return out;
+}
 
 describe('PageHeader', () => {
   it('renders one h1 and places the action opposite it', () => {
@@ -47,12 +58,37 @@ describe('EmptyState', () => {
   });
 });
 
-describe('FactTile / FactRow', () => {
+describe('Fact', () => {
+  it.each(['tile', 'row', 'plain'] as const)(
+    'keeps the testid on the value in the %s variant, where the screen contract expects it',
+    (variant) => {
+      render(
+        <dl>
+          <Fact term="Your pledge" value="2 rooms" variant={variant} testId="my-units" />
+        </dl>,
+      );
+      expect(screen.getByTestId('my-units')).toHaveTextContent('2 rooms');
+    },
+  );
+
+  it('takes markup as children when the value is not a string', () => {
+    render(
+      <dl>
+        <Fact term="Tiers" variant="plain" testId="tiers">
+          <ul>
+            <li>5 rooms+: ₹3,500</li>
+          </ul>
+        </Fact>
+      </dl>,
+    );
+    expect(screen.getByTestId('tiers')).toHaveTextContent('5 rooms+: ₹3,500');
+  });
+
   it('keeps the testid on the value, where the screen contract expects it', () => {
     render(
       <dl>
-        <FactTile term="Your pledge" value="2 rooms" testId="my-units" />
-        <FactRow term="Price per room" value="₹3,500" testId="my-price" />
+        <Fact term="Your pledge" value="2 rooms" testId="my-units" />
+        <Fact term="Price per room" value="₹3,500" variant="row" testId="my-price" />
       </dl>,
     );
     expect(screen.getByTestId('my-units')).toHaveTextContent('2 rooms');
@@ -157,19 +193,29 @@ describe('AC2 — a shape is owned by one file', () => {
     ['the monogram', 'components/ui/monogram.tsx', /animate-halo halo-sweep absolute -inset-1\/2/],
     ['the ambient ground', 'components/ui/ambient-ground.tsx', /animate-drift-a absolute/],
     ['the stat card', 'components/ui/stat.tsx', /num mt-1\.5 text-\[26px\]/],
+    ['the row surface', 'components/ui/data-rows.tsx', /surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4/],
+    ['the row list', 'components/ui/data-rows.tsx', /stagger flex flex-col gap-2\.5/],
+    ['the field error', 'components/ui/field.tsx', /mt-2 flex items-center gap-2 text-meta font-bold text-danger-ink/],
   ];
+
+  it('the tiny uppercase label is a token, not a string four files retype', () => {
+    const offenders = sourcesUnderSrc().filter((file) =>
+      /text-\[10px\] font-extrabold uppercase tracking-\[0\.12em\] text-ink-soft/.test(
+        readFileSync(file, 'utf8'),
+      ),
+    );
+    expect(offenders.map((f) => f.replace(process.cwd(), ''))).toEqual([]);
+  });
 
   it.each(SHAPES)('%s exists only in %s', (_shape, owner, markup) => {
     const offenders = sourcesUnder(SRC)
       .filter((file) => markup.test(readFileSync(file, 'utf8')))
       .map((file) => file.replace(`${SRC}/`, ''));
-    expect(offenders).toEqual([owner.replace('components/', 'components/')]);
+    expect(offenders).toEqual([owner]);
   });
 });
 
 describe('the dependency rule (ADR-0022)', () => {
-  const UI = join(process.cwd(), 'src/components');
-
   function sources(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
       const path = join(dir, entry);
@@ -179,10 +225,64 @@ describe('the dependency rule (ADR-0022)', () => {
     return out;
   }
 
-  it('components/ui never imports from features — this is the rule that rots first', () => {
-    const offenders = sources(UI).filter((file) =>
-      /from\s+'[^']*features\//.test(readFileSync(file, 'utf8')),
-    );
-    expect(offenders.map((f) => f.replace(process.cwd(), ''))).toEqual([]);
+  // Both shared folders, not just components/: `lib/api.ts` was importing the auth
+  // store while the first version of this test watched only `components/` (V2 P2-2).
+  // Quotes of either kind, `import()` as well as `from`, and `../features` with or
+  // without a trailing slash.
+  const REACHES_INTO_FEATURES = /(?:from|import\s*\()\s*['"][^'"]*(?:\.\.\/)+features(?:\/|['"])/;
+
+  it.each(['src/components', 'src/lib'])(
+    '%s never imports from features — this is the rule that rots first',
+    (folder) => {
+      const offenders = sources(join(process.cwd(), folder)).filter((file) =>
+        REACHES_INTO_FEATURES.test(readFileSync(file, 'utf8')),
+      );
+      expect(offenders.map((f) => f.replace(process.cwd(), ''))).toEqual([]);
+    },
+  );
+
+  it('catches the shapes the first version missed', () => {
+    for (const line of [
+      "import { x } from '../features/auth/auth.store';",
+      'import { x } from "../features/auth/auth.store";',
+      "const m = await import('../../features/rounds/useRounds');",
+      "export * from '../features';",
+    ]) {
+      expect(REACHES_INTO_FEATURES.test(line), line).toBe(true);
+    }
+    expect(REACHES_INTO_FEATURES.test("import { cn } from '../../lib/utils';")).toBe(false);
+  });
+});
+
+describe('Card padding is a prop, not a className (V2 P1-1)', () => {
+  it('applies the padding it is asked for, and nothing else', () => {
+    const { container } = render(<Card padding="tight">x</Card>);
+    const className = container.firstElementChild!.className;
+    expect(className).toContain('p-4');
+    // `cn` is a plain join: if the base padding were still emitted, both would land
+    // and Tailwind's output order — not the caller — would decide which applies.
+    expect(className).not.toContain('p-6');
+  });
+
+  it('emits no padding at all when the screen sizes its own card', () => {
+    const { container } = render(<Card padding="none" className="p-[22px]">x</Card>);
+    const className = container.firstElementChild!.className;
+    expect(className).toContain('p-[22px]');
+    expect(className).not.toMatch(/\bp-\d/);
+  });
+
+  it('never lets a caller class silently fight a primitive class', () => {
+    // Every Card in the app either takes the prop or declares padding="none".
+    const offenders: string[] = [];
+    for (const file of sourcesUnderSrc()) {
+      const source = readFileSync(file, 'utf8');
+      for (const match of source.matchAll(/<Card\b[^>]*>/gs)) {
+        const tag = match[0];
+        if (/className="[^"]*\bp-(\[|\d)/.test(tag) && !/padding="none"/.test(tag)) {
+          offenders.push(`${file.replace(process.cwd(), '')}: ${tag.slice(0, 60)}…`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

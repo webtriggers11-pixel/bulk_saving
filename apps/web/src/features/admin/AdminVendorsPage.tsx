@@ -9,6 +9,7 @@ import {
 } from '../../lib/offline';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { DataRows, RowSurface } from '../../components/ui/data-rows';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Field } from '../../components/ui/field';
 import { Icon } from '../../components/ui/icon';
@@ -150,7 +151,8 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
   }
 
   return (
-    <li className="surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4" data-testid="vendor-row">
+    <li>
+      <RowSurface data-testid="vendor-row">
       {editing ? (
         <form onSubmit={handleSave} className="flex flex-col gap-4" aria-label={`Edit ${vendor.name}`} noValidate>
           <VendorFields idPrefix={`edit-${vendor.id}`} values={values} errors={errors} onChange={setValues} />
@@ -217,15 +219,16 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
-      {update.isError && (
-        <p
-          role="alert"
-          className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
-        >
-          <Icon name="alert" size={16} strokeWidth={2} />
-          {errorMessage(update.error)}
-        </p>
-      )}
+        {update.isError && (
+          <p
+            role="alert"
+            className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+          >
+            <Icon name="alert" size={16} strokeWidth={2} />
+            {errorMessage(update.error)}
+          </p>
+        )}
+      </RowSurface>
     </li>
   );
 }
@@ -285,11 +288,11 @@ export function AdminVendorsPage() {
           />
         )}
         {data && data.length > 0 && (
-          <ul className="stagger flex flex-col gap-2.5">
+          <DataRows>
             {data.map((vendor) => (
               <VendorRow key={vendor.id} vendor={vendor} />
             ))}
-          </ul>
+          </DataRows>
         )}
       </Card>
     </AdminLayout>

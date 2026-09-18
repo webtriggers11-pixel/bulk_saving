@@ -39,6 +39,18 @@ shapes, and a fifth copy is where they stop agreeing.
    produces and lands with the screen tests untouched, so the refactor is provably behaviour-
    preserving before anything new is built on it.
 
+## Two exceptions, recorded rather than quietly taken
+
+1. **The participants list stays a real `<table>`.** It is genuinely tabular — six
+   columns, one row per resident — the unit word lives in a `columnheader` that
+   FEAT-010 asserts, and a screen reader reads a table better than a list of rows.
+   `DataRows` is for records that are *not* a table. The cost is named: that one
+   surface scrolls sideways on a phone.
+2. **`lib` may not import `features` either.** The rule was written for
+   `components/`, and `lib/api.ts` was importing the auth store the whole time. The
+   API client now depends on a `SessionPort` that `features/auth` fills — the
+   dependency points from the feature into `lib`, not the other way.
+
 ## Consequences
 
 - Positive: one place to change a shape; a new screen is assembled rather than drawn; the

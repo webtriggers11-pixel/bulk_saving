@@ -34,7 +34,7 @@ function appSources(): string[] {
 }
 
 describe('AC2 — tokens, not literals', () => {
-  it('no resident component hard-codes a colour', () => {
+  it('no component hard-codes a colour', () => {
     const offenders: string[] = [];
     for (const file of appSources()) {
       const source = readFileSync(file, 'utf8');

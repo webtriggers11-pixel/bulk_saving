@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { RoundTierDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
+import { Field } from '../../components/ui/field';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Select } from '../../components/ui/select';
 import {
@@ -148,39 +148,42 @@ export function AdminNewRoundPage() {
         )}
         {!loading && !loadFailed && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="New round" noValidate>
-            <div>
-              <Label htmlFor="round-society">Society</Label>
-              <Select id="round-society" value={societyId} onChange={(e) => setSocietyId(e.target.value)}>
-                <option value="">Select a society</option>
-                {(societies.data ?? []).map((society) => (
-                  <option key={society.id} value={society.id}>
-                    {society.name} ({society.city})
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <Field label="Society" id="round-society">
+              {(props) => (
+                <Select {...props} value={societyId} onChange={(e) => setSocietyId(e.target.value)}>
+                  <option value="">Select a society</option>
+                  {(societies.data ?? []).map((society) => (
+                    <option key={society.id} value={society.id}>
+                      {society.name} ({society.city})
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
 
-            <div>
-              <Label htmlFor="round-service">Service</Label>
-              <Select id="round-service" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-                <option value="">Select a service</option>
-                {activeServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <Field label="Service" id="round-service">
+              {(props) => (
+                <Select {...props} value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+                  <option value="">Select a service</option>
+                  {activeServices.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
 
-            <div>
-              <Label htmlFor="round-deadline">Deadline</Label>
-              <Input
-                id="round-deadline"
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-              />
-            </div>
+            <Field label="Deadline" id="round-deadline">
+              {(props) => (
+                <Input
+                  {...props}
+                  type="datetime-local"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                />
+              )}
+            </Field>
 
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-2 text-label uppercase text-ink-muted">
@@ -189,32 +192,40 @@ export function AdminNewRoundPage() {
               </legend>
               {tiers.map((row, index) => (
                 <div key={row.key} className="flex items-end gap-2" data-testid="tier-row">
-                  <div className="flex-1">
-                    <Label htmlFor={`tier-threshold-${row.key}`}>
-                      Tier {index + 1} threshold ({selectedUnitPlural})
-                    </Label>
-                    <Input
-                      id={`tier-threshold-${row.key}`}
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={row.threshold}
-                      onChange={(e) => updateTier(row.key, { threshold: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label htmlFor={`tier-price-${row.key}`}>Tier {index + 1} price (₹)</Label>
-                    <Input
-                      id={`tier-price-${row.key}`}
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={row.price}
-                      onChange={(e) => updateTier(row.key, { price: e.target.value })}
-                    />
-                  </div>
+                  <Field
+                    className="flex-1"
+                    id={`tier-threshold-${row.key}`}
+                    label={`Tier ${index + 1} threshold (${selectedUnitPlural})`}
+                  >
+                    {(props) => (
+                      <Input
+                        {...props}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        step={1}
+                        value={row.threshold}
+                        onChange={(e) => updateTier(row.key, { threshold: e.target.value })}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    className="flex-1"
+                    id={`tier-price-${row.key}`}
+                    label={`Tier ${index + 1} price (₹)`}
+                  >
+                    {(props) => (
+                      <Input
+                        {...props}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        step={1}
+                        value={row.price}
+                        onChange={(e) => updateTier(row.key, { price: e.target.value })}
+                      />
+                    )}
+                  </Field>
                   <Button
                     variant="secondary"
                     size="sm"
