@@ -6,68 +6,71 @@
 ## Last session
 
 - **Date:** 2026-09-19
-- **Goal:** The owner approved a 14-artboard visual design for the resident PWA, asked
-  for it stored in the repo as the UI system, and asked for the frontend changed to
-  match it exactly — autonomously, without per-step approval.
-- **Result:** **FEAT-011 closed.** 19 of 19 registry items are `done`. The resident app
-  now runs on a token layer with three swappable palettes, real skeleton screens, a
-  motion layer with one off switch, and six re-laid-out screens. V1 → V2 (three rounds
-  with an independent reviewer that ran the gate itself) → V3 (two identical runs).
+- **Goal:** Redesign the whole product on the approved design, autonomously: store the
+  design as the UI system, apply it to every screen, factor the repetition (SOLID),
+  verify in a browser, and keep the Loop's V1→V2→V3 gates.
+- **Result:** **FEAT-011, CHORE-008 and BUG-007 closed.** 21 of 21 registry items done.
+  Every screen in the product — six resident, four admin — is on one token layer with
+  three swappable palettes, eight shared screen primitives, real skeletons and a motion
+  layer with one off switch.
 
-## Where the design lives
+## Where the system lives
 
-- `DESIGN-SYSTEM.md` (repo root) — the written system: tokens, the four ranked
-  surfaces, type scale, radii, elevation, motion timings, how to extend it.
-- `loop/work/FEAT-011-resident-ui-redesign/design/` — the canvas index and all 14
-  artboards (`*.dc.html`), in-repo so the implementation can be diffed against the
-  drawing rather than against a link. Canvas: https://claude.ai/artifact/BbGhsSzNC47hds97Bg5gLe
-- `apps/web/src/styles/theme.css` — every colour, surface, radius, shadow, blur and
-  duration, plus the three palettes on `[data-theme]`.
+| | |
+|---|---|
+| Written system | `DESIGN-SYSTEM.md` (root) |
+| Tokens, palettes, surfaces, motion | `apps/web/src/styles/theme.css` |
+| Primitives | `apps/web/src/components/ui/` |
+| The canvas — one canvas, 18 boards, all 10 screens | `loop/work/FEAT-011-resident-ui-redesign/design/` · https://claude.ai/artifact/BbGhsSzNC47hds97Bg5gLe |
+| Decisions | ADR-0021 (tokens + themes), ADR-0022 (screen primitives) |
 
-## The single most important thing this session learned
+## The thing this session actually learned
 
-**540 passing tests told me a redesign worked while its primary button had no
-background.** Twice: a Tailwind namespace collision (`fill-brand`), then eleven
-off-scale alpha steps (`bg-amber-ink/12`). jsdom applies no CSS, so every style
-assertion that reads source files or config is blind to it.
+**A test that reads source or config cannot verify a style.** Four separate defects of
+one shape shipped past a green suite:
 
-Three guards exist because of that, and **two had to be broken by an adversarial
-reviewer before they were real**:
+| | What did nothing | Found by |
+|---|---|---|
+| FEAT-011 | `fill-*` — collided with a Tailwind namespace | opening the app |
+| FEAT-011 | 11 alpha steps (`bg-amber-ink/12`) — off Tailwind's scale | review |
+| CHORE-008 | `Card` padding via className — lost to the base | review |
+| BUG-007 | 35 overrides (`CardTitle`, `Input`, `Skeleton`) — lost to the base | the test written to find them |
 
-1. `scripts/check-css-classes.mjs` — runs in verify.sh between `build` and `test`;
-   asserts every class token in `apps/web` resolves to a rule in the BUILT stylesheet
-   (1072 today). It fails if the inspected count drops below 800, because a check that
-   inspects nothing passes forever — which it did, on its first version.
-2. `design-system.test.tsx` — hard-coded colours, palette gaps, theme-branching
-   components, inline `animation`, sub-44px controls, contrast regressions.
-3. Opening the app. The first defect was found at 390px in a browser, not by a test.
+Three guards exist because of it, and **each one shipped broken first**:
+1. `scripts/check-css-classes.mjs` (gate step, after build) — every class must resolve
+   to a rule in the BUILT stylesheet. First version inspected zero tokens and reported
+   success; it now fails below a floor.
+2. `class-conflicts.test.tsx` — renders every primitive, reads the classes it really
+   produces, fails if a caller passes one in the same CSS-property family. Same
+   capture-group bug as (1) on its first run; same floor added.
+3. `primitives.test.tsx` — one owner per shape, and `features → components/ui|lib`
+   never the reverse. Caught two live inversions the day it was written.
+
+If you add a fourth guard, give it a floor. Twice is a pattern.
 
 ## Verification contract
 
-`bash scripts/verify.sh` is still the one entrypoint. It now has an extra step:
-
-```
-shared types → prisma client → lint → typecheck → build → CSS CLASSES → tests
-```
-
-Dev infra (`docker compose up -d`) must be up for the backend integration suites.
+`bash scripts/verify.sh` — shared types → prisma → lint → typecheck → build →
+**css classes** → tests. Dev infra (`docker compose up -d`) must be up.
 
 ## What needs the owner
 
-1. **The webfont is a CDN link, not a dependency.** `index.html` loads Plus Jakarta Sans
-   from Google Fonts because CLAUDE.md requires approval for any dependency. An offline
-   first-visit falls back to the system sans stack — layout holds, letterforms change.
-   Approving `@fontsource/plus-jakarta-sans` removes the caveat entirely.
-2. **Still no SMS provider** (unchanged from the last session, and still the thing that
-   makes the product unusable in production rather than merely unhardened). DEPLOY.md §0.
-3. **A browser pass over the admin surfaces.** The resident screens were checked at
-   390px this session (onboarding, profile, the failed-read state, and the sticky
-   offline strip holding at 32px after a 700px scroll). `/admin/*` was deliberately not
-   re-laid-out — it inherits the tokens and the primitives, so it looks different from
-   before, and nobody has looked at it.
+1. **The webfont is a CDN link, not a dependency.** Approving
+   `@fontsource/plus-jakarta-sans` makes the PWA's first offline visit use the real
+   typeface. Until then it falls back to system sans (layout holds, letterforms change).
+2. **Still no SMS provider** — the one thing that makes the product unusable in
+   production rather than merely unhardened. DEPLOY.md §0.
+3. **AC5 wording:** the canvas lives in FEAT-011's folder with all 18 boards rather
+   than split per work item. Two half-canvases opened incompletely; one whole one does
+   not. Worth a nod if you disagree.
 
-## Open items
+## Known, tracked, not blocking
 
 - **CHORE-006** (admin has no services page) — still `triaged`, untouched.
-- Nothing else is open. The blur budget, the touch floor, the contrast ramp and the
-  class check are all enforced by the gate rather than by intention.
+- The session wiring (`SessionPort`) is now a module side effect of `auth.store.ts`. It
+  is a real dependency inversion and acyclic, but a guarantee that used to be
+  structural is now conventional: if the store ever leaves the entry import graph, every
+  authed request silently drops its token. Worth a composition-root call in `main.tsx`
+  or a dev-only warn.
+- Browser verification is recorded in commits and LOG, not as stored captures. Every
+  claim in them was measured (computed styles, scroll positions), not eyeballed.
