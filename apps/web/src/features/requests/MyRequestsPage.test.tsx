@@ -19,7 +19,7 @@ const fetchMyRoundsMock = vi.mocked(fetchMyRounds);
 function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
   return {
     id: 'round_1',
-    service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances' },
+    service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
     status: 'OPEN',
     unitsCount: 6,
     currentPrice: 900,
@@ -67,7 +67,8 @@ describe('MyRequestsPage', () => {
     fetchMyRoundsMock.mockResolvedValue([round({ myUnits: 1, currentPrice: 1200 })]);
     renderPage();
 
-    expect(await screen.findByTestId('my-units')).toHaveTextContent('1 unit');
+    // FEAT-010: the service's own word, singular for one.
+    expect(await screen.findByTestId('my-units')).toHaveTextContent('1 AC unit');
     expect(screen.getByTestId('my-price')).toHaveTextContent('₹1,200');
   });
 

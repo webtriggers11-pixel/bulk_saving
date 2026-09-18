@@ -8,10 +8,13 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import type {
-  CreateServiceBody,
-  UpdateServiceBody,
-  UpsertOfferingBody,
+import { Transform } from 'class-transformer';
+import {
+  MAX_UNIT_DESCRIPTION,
+  MAX_UNIT_LABEL,
+  type CreateServiceBody,
+  type UpdateServiceBody,
+  type UpsertOfferingBody,
 } from '@bulk/shared';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -38,6 +41,28 @@ export class CreateServiceDto implements CreateServiceBody {
   @IsString()
   @Length(1, 2000)
   imageUrl?: string;
+
+  // FEAT-010 (ADR-0019): what one unit of this service IS. Optional — omitting them
+  // yields the column defaults (unit/units), i.e. the pre-FEAT-010 wording. Trimmed
+  // before the length check so a trailing space cannot fail a 24-char label.
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_LABEL)
+  unitLabel?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_LABEL)
+  unitLabelPlural?: string;
+
+  /** The scope sentence — what one unit includes. This is what settles disputes. */
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_DESCRIPTION)
+  unitDescription?: string;
 }
 
 /** `PATCH /admin/services/:id` — partial update / toggle active. */
@@ -72,6 +97,27 @@ export class UpdateServiceDto implements UpdateServiceBody {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  // FEAT-010 unit fields. Same rules as create; `unitDescription` is nullable here
+  // so an admin can clear a scope sentence that no longer applies.
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_LABEL)
+  unitLabel?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_LABEL)
+  unitLabelPlural?: string;
+
+  @IsOptional()
+  @ValidateIf((_o, value) => value !== null)
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Length(1, MAX_UNIT_DESCRIPTION)
+  unitDescription?: string | null;
 }
 
 /** `PUT /admin/societies/:societyId/offerings/:serviceId` — upsert an offering. */

@@ -208,7 +208,17 @@ export class RoundNotificationsService {
     };
   }
 
-  private forMessage(round: { service: { name: string }; deadline: Date }): RoundForMessage {
-    return { serviceName: round.service.name, deadline: round.deadline };
+  private forMessage(round: {
+    service: { name: string; unitLabel: string; unitLabelPlural: string };
+    deadline: Date;
+  }): RoundForMessage {
+    return {
+      serviceName: round.service.name,
+      deadline: round.deadline,
+      // FEAT-010: the service's own word for a unit, so an SMS says "2 rooms of
+      // Painting" rather than "2 units".
+      unitLabel: round.service.unitLabel,
+      unitLabelPlural: round.service.unitLabelPlural,
+    };
   }
 }

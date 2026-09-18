@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
+import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { useJoinRound, useLeaveRound, useRounds, useUpdatePledge } from './useRounds';
 
 /** Units a single resident may pledge (mirrors the backend MAX_UNITS_PER_RESIDENT guard). */
@@ -55,7 +56,10 @@ function JoinControl({ round }: { round: RoundDto }) {
       <div className="flex flex-col gap-2">
         <div className="flex items-end gap-2">
           <div className="w-24">
-            <Label htmlFor={`units-${round.id}`}>Units</Label>
+            <Label htmlFor={`units-${round.id}`}>
+              {/* FEAT-010: the service's own word, capitalised for a form label. */}
+              {capitalise(unitLabelPluralFor(round.service))}
+            </Label>
             <Input
               id={`units-${round.id}`}
               type="number"
@@ -96,13 +100,13 @@ function JoinControl({ round }: { round: RoundDto }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium text-slate-700" data-testid={`my-units-${round.id}`}>
-        You've pledged {round.myUnits} {round.myUnits === 1 ? 'unit' : 'units'}
+        You've pledged {formatUnits(round.myUnits, round.service)}
       </p>
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           className="h-11 w-11 border border-slate-300 px-0 text-lg"
-          aria-label="Decrease units"
+          aria-label={`Decrease ${unitLabelPluralFor(round.service)}`}
           disabled={busy || round.myUnits <= MIN_UNITS}
           onClick={decrement}
           data-testid={`decrement-${round.id}`}
@@ -115,7 +119,7 @@ function JoinControl({ round }: { round: RoundDto }) {
         <Button
           variant="ghost"
           className="h-11 w-11 border border-slate-300 px-0 text-lg"
-          aria-label="Increase units"
+          aria-label={`Increase ${unitLabelPluralFor(round.service)}`}
           disabled={busy || round.myUnits >= MAX_UNITS}
           onClick={increment}
           data-testid={`increment-${round.id}`}
@@ -157,15 +161,27 @@ function RoundCard({ round }: { round: RoundDto }) {
         </span>
         <h3 className="text-lg font-bold text-slate-900">{round.service.name}</h3>
         <p className="mt-1 text-sm text-slate-500">{formatCountdown(round.deadline)}</p>
+        {/* What one unit INCLUDES — the part that actually settles scope disputes
+            (ADR-0019), shown where the resident decides whether to join. */}
+        {round.service.unitDescription && (
+          <p className="mt-1 text-sm text-slate-600" data-testid={`unit-scope-${round.id}`}>
+            {round.service.unitDescription}
+          </p>
+        )}
       </div>
 
       <div>
         <div className="flex items-baseline justify-between">
           <span className="text-2xl font-bold text-slate-900" data-testid={`price-${round.id}`}>
             {formatRupees(round.currentPrice)}
+            {/* FEAT-010: a price is per WHAT — "₹3,500 / room", not a bare number. */}
+            <span className="text-sm font-normal text-slate-500">
+              {' / '}
+              {unitLabelFor(round.service)}
+            </span>
           </span>
           <span className="text-sm text-slate-600" data-testid={`units-count-${round.id}`}>
-            {round.unitsCount} {round.unitsCount === 1 ? 'unit' : 'units'} pledged
+            {formatUnits(round.unitsCount, round.service)} pledged
           </span>
         </div>
 
@@ -181,7 +197,8 @@ function RoundCard({ round }: { round: RoundDto }) {
 
         {round.nextTier ? (
           <p className="mt-2 text-sm text-teal-700" data-testid={`next-tier-${round.id}`}>
-            Unlocks {formatRupees(round.nextTier.price)} at {round.nextTier.threshold} units
+            Unlocks {formatRupees(round.nextTier.price)} at{' '}
+            {formatUnits(round.nextTier.threshold, round.service)}
           </p>
         ) : (
           <p className="mt-2 text-sm font-medium text-teal-700" data-testid={`top-tier-${round.id}`}>

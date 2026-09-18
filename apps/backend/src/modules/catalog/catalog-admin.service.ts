@@ -29,6 +29,11 @@ export class CatalogAdminService {
         description: body.description,
         category: body.category,
         imageUrl: body.imageUrl ?? null,
+        // FEAT-010: omitted labels fall back to the column defaults (unit/units),
+        // i.e. exactly the pre-FEAT-010 wording — never an empty string.
+        ...(body.unitLabel !== undefined ? { unitLabel: body.unitLabel } : {}),
+        ...(body.unitLabelPlural !== undefined ? { unitLabelPlural: body.unitLabelPlural } : {}),
+        unitDescription: body.unitDescription ?? null,
       },
     });
     return toAdminServiceDto(service);
@@ -60,6 +65,9 @@ export class CatalogAdminService {
         ...(body.description !== undefined ? { description: body.description } : {}),
         ...(body.category !== undefined ? { category: body.category } : {}),
         ...(body.imageUrl !== undefined ? { imageUrl: body.imageUrl } : {}),
+        ...(body.unitLabel !== undefined ? { unitLabel: body.unitLabel } : {}),
+        ...(body.unitLabelPlural !== undefined ? { unitLabelPlural: body.unitLabelPlural } : {}),
+        ...(body.unitDescription !== undefined ? { unitDescription: body.unitDescription } : {}),
         ...(body.active !== undefined ? { active: body.active } : {}),
       },
     });
@@ -116,6 +124,9 @@ function toAdminServiceDto(service: Service): AdminServiceDto {
     description: service.description,
     category: service.category,
     imageUrl: service.imageUrl,
+    unitLabel: service.unitLabel,
+    unitLabelPlural: service.unitLabelPlural,
+    unitDescription: service.unitDescription,
     active: service.active,
     createdAt: service.createdAt.toISOString(),
     updatedAt: service.updatedAt.toISOString(),

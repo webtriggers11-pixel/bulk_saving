@@ -11,6 +11,7 @@ import {
   OFFLINE_WAITING_LABEL,
   queryStalled,
 } from '../../lib/offline';
+import { unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
 import { useAdminServices, useAdminSocieties, useCreateRound } from './useAdmin';
@@ -74,6 +75,12 @@ export function AdminNewRoundPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const activeServices = (services.data ?? []).filter((service) => service.active);
+  // FEAT-010: tier thresholds are counted in the SELECTED service's unit, so the form
+  // says "threshold (rooms)" rather than "threshold (units)". Falls back to unit/units
+  // before a service is chosen.
+  const selectedService = activeServices.find((service) => service.id === serviceId);
+  const selectedUnit = selectedService ? unitLabelFor(selectedService) : 'unit';
+  const selectedUnitPlural = selectedService ? unitLabelPluralFor(selectedService) : 'units';
 
   function updateTier(key: number, patch: Partial<Omit<TierRow, 'key'>>) {
     setTiers((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -163,12 +170,15 @@ export function AdminNewRoundPage() {
 
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-1.5 text-sm font-medium text-slate-700">
-                Price tiers (price per unit once the unit threshold is reached)
+                Price tiers (price per {selectedUnit} once the {selectedUnit} threshold is
+                reached)
               </legend>
               {tiers.map((row, index) => (
                 <div key={row.key} className="flex items-end gap-2" data-testid="tier-row">
                   <div className="flex-1">
-                    <Label htmlFor={`tier-threshold-${row.key}`}>Tier {index + 1} threshold (units)</Label>
+                    <Label htmlFor={`tier-threshold-${row.key}`}>
+                      Tier {index + 1} threshold ({selectedUnitPlural})
+                    </Label>
                     <Input
                       id={`tier-threshold-${row.key}`}
                       type="number"

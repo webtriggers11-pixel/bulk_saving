@@ -20,7 +20,7 @@ export const roundSummary: AdminRoundSummaryDto = {
   id: 'round_1',
   status: 'OPEN',
   society: { id: 'soc_1', name: 'Green Park', city: 'Pune' },
-  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances' },
+  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
   unitsCount: 6,
   participantsCount: 2,
   currentPrice: 900,

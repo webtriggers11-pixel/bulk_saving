@@ -23,7 +23,7 @@ const removeRatingMock = vi.mocked(removeRating);
 function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
   return {
     id: 'round_1',
-    service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances' },
+    service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
     status: 'DELIVERED',
     unitsCount: 6,
     currentPrice: 700,

@@ -90,6 +90,18 @@ model Service {
   category    String
   imageUrl    String?
   active      Boolean           @default(true)
+
+  // What ONE unit of this service is (FEAT-010, ADR-0019). `units` is the currency of
+  // the whole mechanic — thresholds count them and `finalPrice × units` bills them — so
+  // a service that does not say what a unit IS leaves a resident committing to an
+  // undefined quantity (Painting: a room? a wall? the flat?). Plural is STORED, never
+  // derived by appending "s": "1 flats" in a bill is how trust is lost. Both default to
+  // "unit"/"units", so a service without labels degrades to today's wording rather than
+  // to an empty string. `unitDescription` carries the scope sentence, which is the part
+  // that actually settles arguments ("One room, walls only, up to 12x12 ft").
+  unitLabel       String  @default("unit")
+  unitLabelPlural String  @default("units")
+  unitDescription String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   offerings   ServiceOffering[]

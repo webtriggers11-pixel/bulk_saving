@@ -29,6 +29,9 @@ const SERVICES = [
     description: 'Split & window AC cleaning, gas check and general servicing.',
     category: 'Appliances',
     indicativePrice: 499,
+    unitLabel: 'AC unit',
+    unitLabelPlural: 'AC units',
+    unitDescription: 'One split or window AC: cleaning, gas check and servicing.',
   },
   {
     name: 'Pest Control',
@@ -36,6 +39,9 @@ const SERVICES = [
     description: 'General cockroach, ant and mosquito treatment for your flat.',
     category: 'Home Care',
     indicativePrice: 899,
+    unitLabel: 'flat',
+    unitLabelPlural: 'flats',
+    unitDescription: 'One flat, all rooms, single general treatment.',
   },
   {
     name: 'Deep Cleaning',
@@ -43,6 +49,9 @@ const SERVICES = [
     description: 'Full-home deep clean — kitchen, bathrooms, floors and windows.',
     category: 'Home Care',
     indicativePrice: 2499,
+    unitLabel: 'flat',
+    unitLabelPlural: 'flats',
+    unitDescription: 'One flat: kitchen, bathrooms, floors and inside windows.',
   },
   {
     name: 'Bathroom Wash',
@@ -50,13 +59,21 @@ const SERVICES = [
     description: 'Intensive descaling and sanitisation of bathrooms.',
     category: 'Home Care',
     indicativePrice: 599,
+    unitLabel: 'bathroom',
+    unitLabelPlural: 'bathrooms',
+    unitDescription: 'One bathroom: descaling, sanitisation, fittings wiped down.',
   },
   {
     name: 'Painting',
     slug: 'painting',
+    // The service that made FEAT-010 necessary: "2 units of Painting" is meaningless,
+    // and the resident is billed finalPrice x units.
     description: 'Interior wall painting with premium emulsion.',
     category: 'Renovation',
-    indicativePrice: 15000,
+    indicativePrice: 3500,
+    unitLabel: 'room',
+    unitLabelPlural: 'rooms',
+    unitDescription: 'One room up to 12x12 ft: walls only, two coats, putty where needed.',
   },
 ];
 
@@ -92,8 +109,20 @@ async function main(): Promise<void> {
         description: svc.description,
         category: svc.category,
         active: true,
+        // FEAT-010: what one unit of this service IS.
+        unitLabel: svc.unitLabel,
+        unitLabelPlural: svc.unitLabelPlural,
+        unitDescription: svc.unitDescription,
       },
-      update: { name: svc.name, description: svc.description, category: svc.category, active: true },
+      update: {
+        name: svc.name,
+        description: svc.description,
+        category: svc.category,
+        active: true,
+        unitLabel: svc.unitLabel,
+        unitLabelPlural: svc.unitLabelPlural,
+        unitDescription: svc.unitDescription,
+      },
     });
   }
 
@@ -150,6 +179,9 @@ async function main(): Promise<void> {
   }
   console.log(`  Super-admin resident: ${SUPER_ADMIN_PHONE} in Green Meadows (GREEN001)`);
   console.log(`  Master services: ${SERVICES.length} (${SERVICES.map((s) => s.slug).join(', ')})`);
+  for (const svc of SERVICES) {
+    console.log(`    ${svc.name}: 1 ${svc.unitLabel} / 2 ${svc.unitLabelPlural}`);
+  }
   console.log(`  Service offerings created/updated: ${offeringCount} (enabled for both societies)`);
   console.log('  Demo round: AC Servicing in GREEN001 (OPEN, tiers 5->900 / 10->700, ~7d deadline)');
 }

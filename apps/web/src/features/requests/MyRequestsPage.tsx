@@ -5,6 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '../../components/u
 import { Badge } from '../../components/ui/badge';
 import { formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
+import { formatUnits, unitLabelFor } from '../../lib/units';
 import { useMyRounds } from '../rounds/useRounds';
 import { hasRows, queryStalled } from '../../lib/offline';
 import { RateRound, isRateable } from '../rating/RateRound';
@@ -63,12 +64,10 @@ function MyRequestCard({ round }: { round: MyRoundDto }) {
       <dl className="grid gap-1 text-sm text-slate-600">
         <div className="flex justify-between">
           <dt>Your pledge</dt>
-          <dd data-testid="my-units">
-            {round.myUnits} {round.myUnits === 1 ? 'unit' : 'units'}
-          </dd>
+          <dd data-testid="my-units">{formatUnits(round.myUnits, round.service)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>Price per unit</dt>
+          <dt>Price per {unitLabelFor(round.service)}</dt>
           <dd data-testid="my-price">{formatRupees(round.currentPrice)}</dd>
         </div>
       </dl>

@@ -8,7 +8,20 @@ import {
 
 /** 18 Sep 2026, 23:30 IST — fixed so the rendered text is machine-independent. */
 const DEADLINE = new Date('2026-09-18T18:00:00.000Z');
-const round = { serviceName: 'AC servicing', deadline: DEADLINE };
+const round = {
+  serviceName: 'AC servicing',
+  deadline: DEADLINE,
+  unitLabel: 'AC unit',
+  unitLabelPlural: 'AC units',
+};
+
+/** A service whose unit is NOT countable-obvious — the case FEAT-010 exists for. */
+const painting = {
+  serviceName: 'Painting',
+  deadline: DEADLINE,
+  unitLabel: 'room',
+  unitLabelPlural: 'rooms',
+};
 
 /** One valid input per type — also the fixture the cross-cutting rules run over. */
 const ALL_INPUTS: TemplateInput[] = [
@@ -45,9 +58,9 @@ describe('formatDeadline', () => {
 describe('renderNotification — per type', () => {
   it('ROUND_JOINED confirms the pledge, the price and the deadline', () => {
     const body = renderNotification(ALL_INPUTS[0]);
-    expect(body).toContain('2 units');
+    expect(body).toContain('2 AC units');
     expect(body).toContain('AC servicing');
-    expect(body).toContain('₹800/unit');
+    expect(body).toContain('₹800/AC unit');
     expect(body).toContain('18 Sep, 11:30 pm');
   });
 
@@ -58,16 +71,16 @@ describe('renderNotification — per type', () => {
       units: 1,
       currentPrice: null,
     });
-    expect(body).toContain('1 unit ');
-    expect(body).not.toContain('units');
+    expect(body).toContain('1 AC unit ');
+    expect(body).not.toContain('AC units');
     expect(body).not.toContain('₹');
   });
 
   it('ROUND_CLOSING_SOON states the deadline, the met target and the next tier', () => {
     const body = renderNotification(ALL_INPUTS[1]);
     expect(body).toContain('18 Sep, 11:30 pm');
-    expect(body).toContain('6 units pledged — the target is met at ₹800/unit');
-    expect(body).toContain('4 units more unlock ₹700/unit');
+    expect(body).toContain('6 AC units pledged — the target is met at ₹800/AC unit');
+    expect(body).toContain('4 AC units more unlock ₹700/AC unit');
   });
 
   it('ROUND_CLOSING_SOON spells out the consequence while the target is unmet', () => {
@@ -80,8 +93,8 @@ describe('renderNotification — per type', () => {
       currentPrice: null,
       nextTier: { threshold: 5, price: 900 },
     });
-    expect(body).toContain('3 of 5 units pledged — 2 units to go');
-    expect(body).toContain("doesn't reach 5 units by then, it won't go ahead");
+    expect(body).toContain('3 of 5 AC units pledged — 2 AC units to go');
+    expect(body).toContain("doesn't reach 5 AC units by then, it won't go ahead");
   });
 
   it('ROUND_CLOSING_SOON never renders a fraction larger than its target (over-subscribed)', () => {
@@ -94,7 +107,7 @@ describe('renderNotification — per type', () => {
       currentPrice: 700,
       nextTier: null,
     });
-    expect(body).toContain('12 units pledged — the target is met');
+    expect(body).toContain('12 AC units pledged — the target is met');
     expect(body).not.toContain('12 of 5');
     expect(body).not.toContain('to go');
     // Nothing left to unlock → no "invite a neighbour" ask.
@@ -111,13 +124,13 @@ describe('renderNotification — per type', () => {
       currentPrice: null,
       nextTier: null,
     });
-    expect(body).toContain('3 units pledged so far');
+    expect(body).toContain('3 AC units pledged so far');
     expect(body).not.toContain('NaN');
   });
 
   it('ROUND_CLOSED_MET quotes the tier total as INDICATIVE, not as the amount owed', () => {
     const body = renderNotification(ALL_INPUTS[2]);
-    expect(body).toContain('₹700/unit');
+    expect(body).toContain('₹700/AC unit');
     expect(body).toContain('about ₹1400');
     // The binding amount comes with the vendor (ROUND_ASSIGNED), so this message
     // must not read as final — V2 P1-2.
@@ -134,7 +147,7 @@ describe('renderNotification — per type', () => {
   it('ROUND_ASSIGNED names the vendor, the amount due and who is paid', () => {
     const body = renderNotification(ALL_INPUTS[4]);
     expect(body).toContain('CoolAir Services');
-    expect(body).toContain('₹700/unit');
+    expect(body).toContain('₹700/AC unit');
     expect(body).toContain('₹1400');
     expect(body).toContain('payable to the vendor on completion');
   });
@@ -171,6 +184,52 @@ describe('renderNotification — per type', () => {
   });
 });
 
+describe('per-service unit labels (FEAT-010)', () => {
+  it('says "rooms" for Painting, not "units" — the whole point', () => {
+    const body = renderNotification({
+      type: NotificationType.ROUND_JOINED,
+      round: painting,
+      units: 2,
+      currentPrice: 3500,
+    });
+    expect(body).toContain('2 rooms of Painting at ₹3500/room');
+    expect(body).not.toContain('unit');
+  });
+
+  it('singularises the service’s own label', () => {
+    const body = renderNotification({
+      type: NotificationType.ROUND_JOINED,
+      round: painting,
+      units: 1,
+      currentPrice: null,
+    });
+    expect(body).toContain('1 room of Painting');
+    expect(body).not.toContain('1 rooms');
+  });
+
+  it('labels the amount due per unit when a vendor is assigned', () => {
+    const body = renderNotification({
+      type: NotificationType.ROUND_ASSIGNED,
+      round: painting,
+      vendorName: 'FreshCoat',
+      finalPrice: 3200,
+      units: 3,
+    });
+    expect(body).toContain('Your 3 rooms at ₹3200/room = ₹9600');
+  });
+
+  it('falls back to unit/units for a service with no label, never an empty word', () => {
+    const unlabelled = { serviceName: 'Mystery', deadline: DEADLINE, unitLabel: '', unitLabelPlural: '' };
+    const body = renderNotification({
+      type: NotificationType.ROUND_JOINED,
+      round: unlabelled,
+      units: 2,
+      currentPrice: 100,
+    });
+    expect(body).toContain('2 units of Mystery at ₹100/unit');
+  });
+});
+
 describe('renderNotification — rules that hold for every type', () => {
   it('covers every NotificationType with a fixture', () => {
     expect(ALL_INPUTS.map((i) => i.type).sort()).toEqual(Object.values(NotificationType).sort());
@@ -186,7 +245,7 @@ describe('renderNotification — rules that hold for every type', () => {
   });
 
   it('stays within the SMS cap even with an absurdly long service name', () => {
-    const longRound = { serviceName: 'A'.repeat(500), deadline: DEADLINE };
+    const longRound = { ...round, serviceName: 'A'.repeat(500) };
     for (const input of ALL_INPUTS) {
       const body = renderNotification({ ...input, round: longRound } as TemplateInput);
       expect(body.length).toBeLessThanOrEqual(MAX_SMS_LENGTH);

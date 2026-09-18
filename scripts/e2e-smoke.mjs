@@ -189,6 +189,25 @@ async function main() {
     );
   });
 
+  await scenario('units: the service’s own unit label reaches the resident (FEAT-010)', async () => {
+    // Painting is the service that made FEAT-010 necessary: "2 units of Painting" is
+    // meaningless, and the resident is billed finalPrice x units.
+    const admin = state.admin.token;
+    const painting = await api('/admin/services', { token: admin, expect: 200 }).then((res) =>
+      res.data.find((s) => s.slug === 'painting'),
+    );
+    check('the seeded Painting service exists', Boolean(painting), 'seed may not have run');
+    check('…and its unit is a room, not a "unit"', painting?.unitLabel === 'room', JSON.stringify(painting?.unitLabel));
+    check('…with a stored plural rather than a derived one', painting?.unitLabelPlural === 'rooms', JSON.stringify(painting?.unitLabelPlural));
+    check('…and a scope sentence that settles what one room includes', typeof painting?.unitDescription === 'string' && painting.unitDescription.length > 10, JSON.stringify(painting?.unitDescription));
+
+    // And the label travels on the round DTO a resident actually reads, so no screen
+    // needs a second request for it.
+    const feed = await api('/rounds', { token: state.alice.token, expect: 200 });
+    const anyRound = feed.data[0];
+    check('a resident round carries its service unit label', typeof anyRound?.service?.unitLabel === 'string' && anyRound.service.unitLabel.length > 0, JSON.stringify(anyRound?.service));
+  });
+
   await scenario('round lifecycle: open → join → close(met) → assign → deliver → paid', async () => {
     const admin = state.admin.token;
     // A dedicated service for this run, so the one-OPEN-round-per-pair rule cannot clash.
@@ -201,11 +220,15 @@ async function main() {
         slug,
         description: 'Created by the E2E smoke run.',
         category: 'Home Care',
+        unitLabel: 'room',
+        unitLabelPlural: 'rooms',
+        unitDescription: 'One room, for the E2E run.',
       },
       expect: 201,
     });
     state.service = created.data;
     check('admin can create a master service', Boolean(state.service?.id));
+    check('…with the unit labels it was given', state.service?.unitLabel === 'room' && state.service?.unitLabelPlural === 'rooms', JSON.stringify(state.service?.unitLabel));
 
     const offering = await api(`/admin/societies/${state.societyA.id}/offerings/${state.service.id}`, {
       method: 'PUT',
@@ -459,7 +482,7 @@ async function main() {
 
   // A thrown scenario is one failure, which would otherwise silently shrink the
   // denominator and make a partial run look like a smaller, greener one.
-  const EXPECTED_CHECKS = 76;
+  const EXPECTED_CHECKS = 82;
   if (results.length < EXPECTED_CHECKS) {
     results.push({
       scenario: 'harness',

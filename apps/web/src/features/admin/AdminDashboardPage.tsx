@@ -68,7 +68,12 @@ function DashboardSummary() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Demand by society</CardTitle>
-            <CardDescription>Units pledged in open rounds</CardDescription>
+            {/* FEAT-010: this figure sums units ACROSS services, so there is no single
+                unit to name — 3 rooms of painting and 2 ACs are 5 here. Said explicitly
+                rather than labelled with one service's word, which would be wrong. */}
+            <CardDescription>
+              Units pledged in open rounds — mixed services, so counts are not comparable
+            </CardDescription>
           </CardHeader>
           {data.demandBySociety.length === 0 ? (
             <p className="text-sm text-slate-500">No societies yet.</p>
@@ -79,7 +84,7 @@ function DashboardSummary() {
                   <tr>
                     <th className="py-2 pr-3">Society</th>
                     <th className="py-2 pr-3 text-right">Open rounds</th>
-                    <th className="py-2 pr-3 text-right">Units pledged</th>
+                    <th className="py-2 pr-3 text-right">Units (mixed)</th>
                     <th className="py-2 text-right">Residents joined</th>
                   </tr>
                 </thead>

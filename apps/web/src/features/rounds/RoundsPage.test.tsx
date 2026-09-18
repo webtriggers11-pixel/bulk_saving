@@ -19,7 +19,7 @@ const joinRoundMock = vi.mocked(joinRound);
 
 const openRound: RoundDto = {
   id: 'round_1',
-  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances' },
+  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
   status: 'OPEN',
   unitsCount: 6,
   currentPrice: 900,
@@ -60,10 +60,10 @@ describe('RoundsPage', () => {
     expect(screen.getByText('Appliances')).toBeInTheDocument();
     // Current price in ₹ (Indian locale, no decimals).
     expect(screen.getByTestId('price-round_1')).toHaveTextContent('₹900');
-    // Live unit count toward the tier.
-    expect(screen.getByTestId('units-count-round_1')).toHaveTextContent('6 units pledged');
-    // "unlocks ₹X at N units" hint from nextTier.
-    expect(screen.getByTestId('next-tier-round_1')).toHaveTextContent('Unlocks ₹700 at 10 units');
+    // Live unit count toward the tier, in the SERVICE'S unit (FEAT-010).
+    expect(screen.getByTestId('units-count-round_1')).toHaveTextContent('6 AC units pledged');
+    // "unlocks ₹X at N <units>" hint from nextTier.
+    expect(screen.getByTestId('next-tier-round_1')).toHaveTextContent('Unlocks ₹700 at 10 AC units');
     expect(screen.getByTestId('round-card')).toBeInTheDocument();
   });
 

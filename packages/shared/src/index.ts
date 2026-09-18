@@ -127,7 +127,7 @@ export interface ServiceDto {
  * Full super-admin view of a master service (FEAT-002). Includes the moderation
  * fields (`active`, timestamps) that the resident-facing {@link ServiceDto} omits.
  */
-export interface AdminServiceDto {
+export interface AdminServiceDto extends ServiceUnitLabels {
   id: string;
   name: string;
   slug: string;
@@ -139,13 +139,19 @@ export interface AdminServiceDto {
   updatedAt: string;
 }
 
-/** `POST /admin/services` body — create a master service. */
+/**
+ * `POST /admin/services` body — create a master service. The unit fields are optional:
+ * omitting them yields `unit` / `units`, i.e. exactly the pre-FEAT-010 wording.
+ */
 export interface CreateServiceBody {
   name: string;
   slug: string;
   description: string;
   category: string;
   imageUrl?: string;
+  unitLabel?: string;
+  unitLabelPlural?: string;
+  unitDescription?: string;
 }
 
 /** `PATCH /admin/services/:id` body — update fields / toggle active (all optional). */
@@ -156,6 +162,9 @@ export interface UpdateServiceBody {
   category?: string;
   imageUrl?: string | null;
   active?: boolean;
+  unitLabel?: string;
+  unitLabelPlural?: string;
+  unitDescription?: string | null;
 }
 
 /** Super-admin view of a per-society offering (FEAT-002). */
@@ -200,8 +209,23 @@ export interface RoundTierDto {
   price: number;
 }
 
+/**
+ * What ONE unit of a service is (FEAT-010, ADR-0019). Carried on every service shape,
+ * because `units` is the currency of the mechanic: thresholds count them and
+ * `finalPrice × units` bills them, so every screen that shows a count needs the word
+ * for it. Plural is STORED, never derived — "1 flats" is how a bill loses trust.
+ */
+export interface ServiceUnitLabels {
+  /** Singular, e.g. `room`, `AC unit`, `flat`. Defaults to `unit`. */
+  unitLabel: string;
+  /** Plural, e.g. `rooms`. Defaults to `units`. */
+  unitLabelPlural: string;
+  /** Optional scope sentence — "One room, walls only, up to 12×12 ft". */
+  unitDescription: string | null;
+}
+
 /** Compact service summary embedded in a {@link RoundDto} (mirrors the round's service). */
-export interface RoundServiceSummary {
+export interface RoundServiceSummary extends ServiceUnitLabels {
   id: string;
   name: string;
   slug: string;
@@ -256,6 +280,10 @@ export interface RatingDto {
  * validation cannot drift apart (they were two separate literals — V2 P2).
  */
 export const MAX_RATING_COMMENT = 500;
+
+/** Caps on the FEAT-010 unit fields. */
+export const MAX_UNIT_LABEL = 24;
+export const MAX_UNIT_DESCRIPTION = 140;
 
 /** `PUT /rounds/:id/rating` body. Creates or replaces the caller's own rating. */
 export interface RateRoundBody {

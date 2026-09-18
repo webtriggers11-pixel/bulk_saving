@@ -20,6 +20,11 @@ export function toServiceSummary(service: Service): RoundServiceSummary {
     name: service.name,
     slug: service.slug,
     category: service.category,
+    // FEAT-010: every screen that shows a count needs the word for it, and every
+    // round DTO already embeds this summary — so no screen needs a second request.
+    unitLabel: service.unitLabel,
+    unitLabelPlural: service.unitLabelPlural,
+    unitDescription: service.unitDescription,
     ...(service.imageUrl !== null ? { imageUrl: service.imageUrl } : {}),
   };
 }

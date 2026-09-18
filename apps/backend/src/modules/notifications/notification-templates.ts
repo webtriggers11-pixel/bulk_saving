@@ -1,4 +1,5 @@
 import { NotificationType } from '@prisma/client';
+import { type UnitLabelled, formatUnits, unitLabelFor, unitLabelPluralFor } from '../rounds/units';
 
 /**
  * SMS bodies for the round lifecycle (FEAT-006, ADR-0013). Pure functions: no
@@ -25,7 +26,7 @@ const SENDER = 'BulkSaving';
 const TIMEZONE = 'Asia/Kolkata';
 
 /** A round, reduced to what a message may mention. Deliberately has no resident data. */
-export interface RoundForMessage {
+export interface RoundForMessage extends UnitLabelled {
   serviceName: string;
   deadline: Date;
 }
@@ -78,9 +79,18 @@ function rupees(amount: number): string {
   return `₹${amount}`;
 }
 
-/** `2 units` / `1 unit` — units are the threshold currency, not people (CLAUDE.md). */
-function units(count: number): string {
-  return `${count} unit${count === 1 ? '' : 's'}`;
+/**
+ * `2 rooms` / `1 AC unit` — the SERVICE'S word for its unit (FEAT-010, ADR-0019).
+ * Units are the threshold currency, not people (CLAUDE.md); before this, every message
+ * said "unit", which is meaningless for a service measured by room or area.
+ */
+function units(count: number, round: RoundForMessage): string {
+  return formatUnits(count, round);
+}
+
+/** The singular label, for "₹700/room". */
+function per(round: RoundForMessage): string {
+  return unitLabelFor(round);
 }
 
 /**
@@ -116,9 +126,10 @@ function clamp(body: string): string {
 }
 
 function joined(input: Extract<TemplateInput, { type: 'ROUND_JOINED' }>): string {
-  const price = input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/unit`;
+  const price =
+    input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/${per(input.round)}`;
   return (
-    `${SENDER}: You're in — ${units(input.units)} of ${input.round.serviceName}${price}. ` +
+    `${SENDER}: You're in — ${units(input.units, input.round)} of ${input.round.serviceName}${price}. ` +
     `The round closes ${formatDeadline(input.round.deadline)}. ` +
     `More neighbours joining means a lower price for everyone.`
   );
@@ -132,20 +143,22 @@ function closingSoon(input: Extract<TemplateInput, { type: 'ROUND_CLOSING_SOON' 
   // over-subscribed round would read "12 of 5"), so it is dropped.
   let progress: string;
   if (input.target === null) {
-    progress = `${units(input.unitsCount)} pledged so far.`;
+    progress = `${units(input.unitsCount, input.round)} pledged so far.`;
   } else if (gap > 0) {
+    const plural = unitLabelPluralFor(input.round);
     progress =
-      `${input.unitsCount} of ${input.target} units pledged — ${units(gap)} to go. ` +
-      `If the round doesn't reach ${input.target} units by then, it won't go ahead.`;
+      `${input.unitsCount} of ${input.target} ${plural} pledged — ${units(gap, input.round)} to go. ` +
+      `If the round doesn't reach ${input.target} ${plural} by then, it won't go ahead.`;
   } else {
-    const price = input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/unit`;
-    progress = `${units(input.unitsCount)} pledged — the target is met${price}.`;
+    const price =
+      input.currentPrice === null ? '' : ` at ${rupees(input.currentPrice)}/${per(input.round)}`;
+    progress = `${units(input.unitsCount, input.round)} pledged — the target is met${price}.`;
   }
 
   // Only ask for more neighbours when there is actually a better price to unlock.
   const invite = input.nextTier
-    ? ` ${units(Math.max(1, input.nextTier.threshold - input.unitsCount))} more unlock ` +
-      `${rupees(input.nextTier.price)}/unit — invite a neighbour.`
+    ? ` ${units(Math.max(1, input.nextTier.threshold - input.unitsCount), input.round)} more unlock ` +
+      `${rupees(input.nextTier.price)}/${per(input.round)} — invite a neighbour.`
     : '';
 
   return `${SENDER}: ${input.round.serviceName} closes ${deadline}. ${progress}${invite}`;
@@ -158,8 +171,8 @@ function closedMet(input: Extract<TemplateInput, { type: 'ROUND_CLOSED_MET' }>):
   const indicative =
     input.currentPrice === null
       ? ''
-      : ` At today's ${rupees(input.currentPrice)}/unit that's about ` +
-        `${rupees(input.currentPrice * input.units)} for your ${units(input.units)} — ` +
+      : ` At today's ${rupees(input.currentPrice)}/${per(input.round)} that's about ` +
+        `${rupees(input.currentPrice * input.units)} for your ${units(input.units, input.round)} — ` +
         `we'll confirm the final amount when a vendor is assigned.`;
   return (
     `${SENDER}: Target reached! The ${input.round.serviceName} round has closed.${indicative} ` +
@@ -177,7 +190,7 @@ function closedExpired(input: Extract<TemplateInput, { type: 'ROUND_CLOSED_EXPIR
 function assigned(input: Extract<TemplateInput, { type: 'ROUND_ASSIGNED' }>): string {
   return (
     `${SENDER}: ${input.vendorName} is scheduled for ${input.round.serviceName}. ` +
-    `Your ${units(input.units)} at ${rupees(input.finalPrice)}/unit = ` +
+    `Your ${units(input.units, input.round)} at ${rupees(input.finalPrice)}/${per(input.round)} = ` +
     `${rupees(input.finalPrice * input.units)}, payable to the vendor on completion.`
   );
 }

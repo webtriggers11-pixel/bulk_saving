@@ -11,6 +11,7 @@ import { ApiError } from '../../lib/api';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatDateTime, formatRupees } from './adminFormat';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
+import { capitalise, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -62,10 +63,12 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
       </div>
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Fact label="Deadline">{formatDateTime(round.deadline)}</Fact>
-        <Fact label="Units / residents">
+        <Fact label={`${capitalise(unitLabelPluralFor(round.service))} / residents`}>
           {round.unitsCount} / {round.participantsCount}
         </Fact>
-        <Fact label="Current price">{formatRupees(round.currentPrice)}</Fact>
+        <Fact label="Current price">
+          {formatRupees(round.currentPrice)} / {unitLabelFor(round.service)}
+        </Fact>
         <Fact label="Rating">
           <span data-testid="round-rating">{formatRatingSummary(round.ratings)}</span>
         </Fact>
@@ -308,7 +311,9 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
               <tr>
                 <th className="py-2 pr-3">Resident</th>
                 <th className="py-2 pr-3">Phone</th>
-                <th className="py-2 pr-3 text-right">Units</th>
+                <th className="py-2 pr-3 text-right">
+                  {capitalise(unitLabelPluralFor(round.service))}
+                </th>
                 <th className="py-2 pr-3 text-right">Amount due</th>
                 <th className="py-2 pr-3">Rating</th>
                 {payable && <th className="py-2">Payment</th>}

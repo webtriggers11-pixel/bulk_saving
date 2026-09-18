@@ -37,6 +37,9 @@ const service: AdminServiceDto = {
   description: 'Split and window AC service',
   category: 'Appliances',
   imageUrl: null,
+  unitLabel: 'AC unit',
+  unitLabelPlural: 'AC units',
+  unitDescription: null,
   active: true,
   createdAt: '2026-09-16T10:00:00.000Z',
   updatedAt: '2026-09-16T10:00:00.000Z',
@@ -44,7 +47,7 @@ const service: AdminServiceDto = {
 
 const createdRound: RoundDto = {
   id: 'round_new',
-  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances' },
+  service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
   status: 'OPEN',
   unitsCount: 0,
   currentPrice: 900,
@@ -81,7 +84,7 @@ async function fillForm(tiers: Array<[string, string]>) {
     fireEvent.click(screen.getByRole('button', { name: 'Add tier' }));
   }
   tiers.forEach(([threshold, price], index) => {
-    fireEvent.change(screen.getByLabelText(`Tier ${index + 1} threshold (units)`), {
+    fireEvent.change(screen.getByLabelText(`Tier ${index + 1} threshold (AC units)`), {
       target: { value: threshold },
     });
     fireEvent.change(screen.getByLabelText(`Tier ${index + 1} price (₹)`), {
