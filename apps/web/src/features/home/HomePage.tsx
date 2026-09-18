@@ -7,6 +7,7 @@ import { Icon } from '../../components/ui/icon';
 import { QueryErrorState } from '../../components/QueryState';
 import { queryStalled } from '../../lib/offline';
 import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { Monogram } from '../../components/ui/monogram';
 import { HomeSkeleton } from './HomeSkeleton';
 
 export function HomePage() {
@@ -55,10 +56,7 @@ export function HomePage() {
               aria-hidden="true"
               className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
             />
-            <span className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-inset paint-mono text-[21px] font-extrabold text-white shadow-accent">
-              <span className="animate-halo halo-sweep absolute -inset-1/2" />
-              <span className="relative">{initialsOf(data.resident.name)}</span>
-            </span>
+            <Monogram name={data.resident.name} />
             <div className="relative min-w-0 flex-1">
               <CardEyebrow>Signed in as</CardEyebrow>
               <CardTitle className="animate-blur-in mt-2 text-[24px] tracking-[-0.042em]">
@@ -162,14 +160,3 @@ export function HomePage() {
   );
 }
 
-/** "Priya Sharma" -> "PS". Falls back to a glyph rather than an empty circle. */
-function initialsOf(name: string | null | undefined): string {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '·';
-  }
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}

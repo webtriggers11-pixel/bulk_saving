@@ -6,6 +6,8 @@ import { Icon, type IconName } from '../../components/ui/icon';
 import { QueryErrorState } from '../../components/QueryState';
 import { hasRows, queryStalled } from '../../lib/offline';
 import { Card, CardDescription, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { EmptyState } from '../../components/ui/empty-state';
+import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog } from './useCatalog';
@@ -149,30 +151,27 @@ export function ServicesPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <header className="animate-rise flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-display font-extrabold text-ink">Services</h1>
-          <p className="mt-1 text-caption text-ink-muted">Available in your society</p>
-        </div>
-        <Button variant="secondary" size="icon" aria-label="Back" onClick={() => navigate('/')}>
-          <Icon name="back" size={20} strokeWidth={2.1} />
-        </Button>
-      </header>
+      <PageHeader
+        title="Services"
+        subtitle="Available in your society"
+        action={
+          <Button variant="secondary" size="icon" aria-label="Back" onClick={() => navigate('/')}>
+            <Icon name="back" size={20} strokeWidth={2.1} />
+          </Button>
+        }
+      />
 
       {isLoading && <CatalogSkeleton />}
 
       {failed && <QueryErrorState subject="services" hasData={hasRows(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && !failed && (
-        <Card className="p-7 text-center" data-testid="catalog-empty">
-          <span className="animate-breathe mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink shadow-lift">
-            <Icon name="clean" size={26} strokeWidth={1.7} />
-          </span>
-          <CardTitle className="mt-4">No services yet</CardTitle>
-          <CardDescription className="mt-2">
-            Your society doesn&apos;t have any services available yet. Check back soon.
-          </CardDescription>
-        </Card>
+        <EmptyState
+          icon="clean"
+          title="No services yet"
+          description="Your society doesn't have any services available yet. Check back soon."
+          data-testid="catalog-empty"
+        />
       )}
 
       {data && data.length > 0 && (

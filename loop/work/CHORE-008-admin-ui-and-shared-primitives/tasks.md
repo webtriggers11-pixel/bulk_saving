@@ -4,7 +4,7 @@ Check a box only when `bash scripts/verify.sh` passes. Commit + LOG after each.
 
 - [x] T1: `PageHeader`, `EmptyState`, `FactTile`, `Monogram`, `AmbientGround` + tests.
 - [x] T2: `StatCard`, `Field`, `DataRows` + tests. — depends: T1
-- [ ] T3: resident screens refactored onto the primitives (no visual change). — depends: T2
+- [x] T3: resident screens refactored onto the primitives (no visual change). — depends: T2
 - [ ] T4: admin artboards added to the stored canvas. — depends: T2
 - [ ] T5: `AdminLayout` + `StatusBadge` on the system. — depends: T2
 - [ ] T6: admin dashboard. — depends: T5, T4

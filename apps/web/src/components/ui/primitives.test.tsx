@@ -135,6 +135,38 @@ describe('DataRows', () => {
   });
 });
 
+describe('AC2 — a shape is owned by one file', () => {
+  const SRC = join(process.cwd(), 'src');
+
+  function sourcesUnder(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const path = join(dir, entry);
+      if (statSync(path).isDirectory()) sourcesUnder(path, out);
+      else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(path);
+    }
+    return out;
+  }
+
+  /** Each shape, the file that owns it, and the markup that gives it away. */
+  const SHAPES: Array<[string, string, RegExp]> = [
+    ['the page header', 'components/ui/page-header.tsx', /animate-rise flex items-start justify-between gap-3/],
+    ['the empty state', 'components/ui/empty-state.tsx', /animate-breathe mx-auto flex h-\[58px\]/],
+    ['the fact tile', 'components/ui/fact.tsx', /surface-inset min-w-0 flex-1 rounded-inset/],
+    // The signature is the halo inside a round mark, not `paint-mono` alone: the
+    // brand mark in the Home header legitimately paints with the same gradient.
+    ['the monogram', 'components/ui/monogram.tsx', /animate-halo halo-sweep absolute -inset-1\/2/],
+    ['the ambient ground', 'components/ui/ambient-ground.tsx', /animate-drift-a absolute/],
+    ['the stat card', 'components/ui/stat.tsx', /num mt-1\.5 text-\[26px\]/],
+  ];
+
+  it.each(SHAPES)('%s exists only in %s', (_shape, owner, markup) => {
+    const offenders = sourcesUnder(SRC)
+      .filter((file) => markup.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(`${SRC}/`, ''));
+    expect(offenders).toEqual([owner.replace('components/', 'components/')]);
+  });
+});
+
 describe('the dependency rule (ADR-0022)', () => {
   const UI = join(process.cwd(), 'src/components');
 

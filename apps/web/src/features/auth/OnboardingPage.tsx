@@ -5,6 +5,7 @@ import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { messageFromError } from './error-messages';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
+import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
@@ -69,12 +70,9 @@ export function OnboardingPage() {
 
   return (
     <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
-      {/* Decoration only: the same drifting ground the app shell gives every other
-          screen, inlined here because /onboard renders outside the shell (AC2). */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-drift-a absolute -left-20 -top-24 h-64 w-64 rounded-full bg-mesh-1/55 blur-[46px]" />
-        <div className="animate-drift-b absolute -right-24 top-40 h-72 w-72 rounded-full bg-mesh-2/45 blur-[46px]" />
-      </div>
+      {/* /onboard renders outside the app shell (FEAT-008 AC2), so it brings its own
+          ground — the primitive, not a second copy of it. */}
+      <AmbientGround id="onboard-grain" />
 
       <header className="animate-rise relative flex flex-1 flex-col justify-center gap-[18px] px-7 pb-6 pt-10">
         <span className="animate-breathe inline-flex w-fit items-center gap-2 rounded-full border border-white/80 bg-gradient-to-br from-white/90 to-white/50 px-3.5 py-1.5 text-eyebrow uppercase text-brand-ink shadow-lift">

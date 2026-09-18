@@ -6,7 +6,9 @@ import { Icon } from '../../components/ui/icon';
 import { Badge } from '../../components/ui/badge';
 import { QueryErrorState } from '../../components/QueryState';
 import { OFFLINE_QUEUED_TEXT, anyPaused, hasRows, queryStalled } from '../../lib/offline';
-import { Card, CardDescription, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { EmptyState } from '../../components/ui/empty-state';
+import { PageHeader } from '../../components/ui/page-header';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { formatCountdown } from './formatCountdown';
@@ -322,30 +324,27 @@ export function RoundsPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <header className="animate-rise flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-display font-extrabold text-ink">Group buys</h1>
-          <p className="mt-1 text-caption text-ink-muted">Open rounds in your society</p>
-        </div>
-        <Button variant="secondary" size="icon" aria-label="Back" onClick={() => navigate('/')}>
-          <Icon name="back" size={20} strokeWidth={2.1} />
-        </Button>
-      </header>
+      <PageHeader
+        title="Group buys"
+        subtitle="Open rounds in your society"
+        action={
+          <Button variant="secondary" size="icon" aria-label="Back" onClick={() => navigate('/')}>
+            <Icon name="back" size={20} strokeWidth={2.1} />
+          </Button>
+        }
+      />
 
       {isLoading && <RoundsSkeleton />}
 
       {failed && <QueryErrorState subject="rounds" hasData={hasRows(data)} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && !failed && (
-        <Card className="p-7 text-center" data-testid="rounds-empty">
-          <span className="animate-breathe mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink shadow-lift">
-            <Icon name="users" size={26} strokeWidth={1.7} />
-          </span>
-          <CardTitle className="mt-4">No open rounds yet</CardTitle>
-          <CardDescription className="mt-2">
-            No open rounds in your society yet. Check back soon.
-          </CardDescription>
-        </Card>
+        <EmptyState
+          icon="users"
+          title="No open rounds yet"
+          description="No open rounds in your society yet. Check back soon."
+          data-testid="rounds-empty"
+        />
       )}
 
       {data && data.length > 0 && (

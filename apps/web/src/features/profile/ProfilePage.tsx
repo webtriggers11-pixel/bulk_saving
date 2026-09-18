@@ -7,6 +7,8 @@ import { Button } from '../../components/ui/button';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
+import { Monogram } from '../../components/ui/monogram';
+import { PageHeader } from '../../components/ui/page-header';
 
 /** Human label for a role enum — the resident should not read SUPER_ADMIN. */
 const ROLE_LABEL: Record<string, string> = {
@@ -77,7 +79,7 @@ export function ProfilePage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <h1 className="animate-rise text-display font-extrabold text-ink">Profile</h1>
+      <PageHeader title="Profile" />
 
       <div className="stagger grid grid-cols-2 gap-3.5">
         <Card className="col-span-2 overflow-hidden p-6 text-center">
@@ -85,12 +87,7 @@ export function ProfilePage() {
             aria-hidden="true"
             className="pointer-events-none absolute -top-24 left-1/2 h-52 w-64 -translate-x-1/2 rounded-full bg-mesh-1/40 blur-2xl"
           />
-          <span className="relative inline-flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-card paint-mono text-[24px] font-extrabold text-white shadow-accent">
-            <span className="animate-halo halo-sweep absolute -inset-1/2" />
-            <span className="relative" data-testid="profile-initials">
-              {initialsOf(name)}
-            </span>
-          </span>
+          <Monogram name={name} size="lg" className="relative inline-flex" data-testid="profile-initials" />
           <CardEyebrow className="mt-4">Signed in as</CardEyebrow>
           <CardTitle className="animate-blur-in mt-2 text-[25px]" data-testid="profile-name">
             {name}
@@ -161,14 +158,3 @@ export function ProfilePage() {
   );
 }
 
-/** "Priya Sharma" -> "PS". Falls back to a glyph rather than an empty circle. */
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '·';
-  }
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}

@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import type { MyRoundDto, RoundStatus } from '@bulk/shared';
 import { QueryErrorState } from '../../components/QueryState';
 import { Card, CardDescription, CardTitle } from '../../components/ui/card';
+import { EmptyState } from '../../components/ui/empty-state';
+import { FactTile } from '../../components/ui/fact';
+import { PageHeader } from '../../components/ui/page-header';
 import { Badge, type BadgeTone } from '../../components/ui/badge';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { formatCountdown } from '../rounds/formatCountdown';
@@ -90,18 +93,6 @@ function JourneyTrack({ step }: { step: number }) {
   );
 }
 
-/** One fact of the pledge, as a tile — two of these sit side by side. */
-function Fact({ term, value, testId }: { term: string; value: string; testId: string }) {
-  return (
-    <div className="surface-inset min-w-0 flex-1 rounded-inset px-3.5 py-3">
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">{term}</dt>
-      <dd className="num mt-1.5 text-[15.5px] font-extrabold text-ink" data-testid={testId}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
 function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean; lead: boolean }) {
   const style = STATUS_STYLE[round.status];
   return (
@@ -145,8 +136,8 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         <JourneyTrack step={style.step} />
 
         <dl className="mt-4 flex gap-2.5">
-          <Fact term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
-          <Fact
+          <FactTile term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
+          <FactTile
             term={`Price per ${unitLabelFor(round.service)}`}
             value={formatRupees(round.currentPrice)}
             testId="my-price"
@@ -184,32 +175,28 @@ export function MyRequestsPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <header className="animate-rise">
-        <h1 className="text-display font-extrabold text-ink">My Requests</h1>
-        <p className="mt-1 text-caption text-ink-muted">Rounds you have joined</p>
-      </header>
+      <PageHeader title="My Requests" subtitle="Rounds you have joined" />
 
       {isLoading && <RequestsSkeleton />}
 
       {failed && <QueryErrorState subject="requests" hasData={hasData} onRetry={() => void refetch()} />}
 
       {!failed && data && data.length === 0 && (
-        <Card className="p-7 text-center" data-testid="my-requests-empty">
-          <span className="animate-breathe mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink shadow-lift">
-            <Icon name="requests" size={26} strokeWidth={1.7} />
-          </span>
-          <CardTitle className="mt-4">You haven&apos;t joined a round yet</CardTitle>
-          <CardDescription className="mt-2">
-            Join a group buy and it will show up here with its status.
-          </CardDescription>
-          <Link
-            to="/rounds"
-            className="mt-4 inline-flex items-center gap-2 rounded-control border border-brand/30 paint-tint px-4 py-2.5 text-meta font-extrabold text-brand-ink no-underline t press"
-          >
-            See open rounds
-            <Icon name="forward" size={16} strokeWidth={2.2} />
-          </Link>
-        </Card>
+        <EmptyState
+          icon="requests"
+          title="You haven't joined a round yet"
+          description="Join a group buy and it will show up here with its status."
+          data-testid="my-requests-empty"
+          action={
+            <Link
+              to="/rounds"
+              className="t press inline-flex items-center gap-2 rounded-control border border-brand/30 paint-tint px-4 py-2.5 text-meta font-extrabold text-brand-ink no-underline"
+            >
+              See open rounds
+              <Icon name="forward" size={16} strokeWidth={2.2} />
+            </Link>
+          }
+        />
       )}
 
       {data && data.length > 0 && (
