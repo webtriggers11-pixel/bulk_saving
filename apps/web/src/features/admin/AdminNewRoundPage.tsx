@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Select } from '../../components/ui/select';
 import {
   OFFLINE_QUEUED_TEXT,
@@ -126,9 +127,22 @@ export function AdminNewRoundPage() {
   return (
     <AdminLayout title="New round">
       <Card className="max-w-2xl">
-        {loading && <p className="text-slate-500">Loading societies and services…</p>}
+        {loading && (
+          <SkeletonScreen
+            label="Loading societies and services…"
+            testId="new-round-skeleton"
+            className="flex flex-col gap-5"
+          >
+            {[0, 1, 2].map((row) => (
+              <div key={row}>
+                <Skeleton className="h-2.5 w-24" delay={(row % 4) as 0 | 1 | 2 | 3} />
+                <Skeleton className="mt-2 h-control w-full rounded-control" delay={1} />
+              </div>
+            ))}
+          </SkeletonScreen>
+        )}
         {loadFailed && (
-          <p role="alert" className="text-red-600">
+          <p role="alert" className="flex items-center gap-2 text-meta font-bold text-danger-ink">
             We couldn't load societies or services. Please try again.
           </p>
         )}
@@ -169,7 +183,7 @@ export function AdminNewRoundPage() {
             </div>
 
             <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1.5 text-sm font-medium text-slate-700">
+              <legend className="mb-2 text-label uppercase text-ink-muted">
                 Price tiers (price per {selectedUnit} once the {selectedUnit} threshold is
                 reached)
               </legend>
@@ -202,8 +216,8 @@ export function AdminNewRoundPage() {
                     />
                   </div>
                   <Button
-                    variant="ghost"
-                    className="border border-slate-300"
+                    variant="secondary"
+                    size="sm"
                     aria-label={`Remove tier ${index + 1}`}
                     disabled={tiers.length <= 1}
                     onClick={() => removeTier(row.key)}
@@ -212,24 +226,34 @@ export function AdminNewRoundPage() {
                   </Button>
                 </div>
               ))}
-              <Button variant="ghost" className="self-start border border-slate-300" onClick={addTier}>
+              <Button variant="secondary" size="sm" className="self-start" onClick={addTier}>
                 Add tier
               </Button>
             </fieldset>
 
             {formError && (
-              <p role="alert" className="text-sm text-red-600">
+              <p
+                role="alert"
+                className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+              >
                 {formError}
               </p>
             )}
             {create.isError && (
-              <p role="alert" className="text-sm text-red-600">
+              <p
+                role="alert"
+                className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+              >
                 {errorMessage(create.error)}
               </p>
             )}
 
             {create.isPaused && (
-              <p role="status" data-testid="new-round-offline" className="text-sm text-amber-700">
+              <p
+                role="status"
+                data-testid="new-round-offline"
+                className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+              >
                 {OFFLINE_QUEUED_TEXT}
               </p>
             )}

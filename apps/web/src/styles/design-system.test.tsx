@@ -12,15 +12,18 @@ const WEB = process.cwd();
 const css = readFileSync(join(WEB, 'src/styles/theme.css'), 'utf8');
 const tailwind = readFileSync(join(WEB, 'tailwind.config.js'), 'utf8');
 
-/** Every resident source file (no tests, no admin — admin is out of scope for FEAT-011). */
-function residentSources(): string[] {
+/**
+ * Every app source file. Admin was exempt while FEAT-011 ran; CHORE-008 put it on
+ * the same system, so the exemption is gone and the rules apply to the whole app.
+ */
+function appSources(): string[] {
   const roots = ['src/components', 'src/features', 'src/lib'];
   const files: string[] = [];
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir)) {
       const path = join(dir, entry);
       if (statSync(path).isDirectory()) {
-        if (entry !== 'admin') walk(path);
+        walk(path);
       } else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) {
         files.push(path);
       }
@@ -33,7 +36,7 @@ function residentSources(): string[] {
 describe('AC2 — tokens, not literals', () => {
   it('no resident component hard-codes a colour', () => {
     const offenders: string[] = [];
-    for (const file of residentSources()) {
+    for (const file of appSources()) {
       const source = readFileSync(file, 'utf8');
       // A hex, an rgba(), or a Tailwind default-palette colour class. The design
       // system has a token for each of these; using a literal is how a palette
@@ -65,7 +68,7 @@ describe('AC2 — tokens, not literals', () => {
     const OWNED =
       /\b(surface-[a-z]+|paint-[a-z]+|animate-[a-z-]+|skeleton(?:-d[0-9])?|bar-fill|card-hover|card-glow|sheen|sweep|ripple|press|stagger|nudge|field-label|field|halo-sweep|num|sr-only-text)(?![a-z0-9-])/g;
     const used = new Set<string>();
-    for (const file of residentSources()) {
+    for (const file of appSources()) {
       for (const [, name] of readFileSync(file, 'utf8').matchAll(OWNED)) {
         used.add(name);
       }
@@ -145,7 +148,7 @@ describe('AC5 — motion has one off switch', () => {
   });
 
   it('no component sets an inline animation, so nothing escapes the media query', () => {
-    const offenders = residentSources().filter((file) => {
+    const offenders = appSources().filter((file) => {
       const source = readFileSync(file, 'utf8');
       return /style=\{\{[^}]*\banimation(?!Delay)/.test(source);
     });
@@ -168,7 +171,7 @@ describe('AC6 — every control clears the 44px touch floor', () => {
     // (`h-10`) as well as arbitrary (`h-[40px]`), height as well as width.
     const REM_STEP = 4; // Tailwind's numeric scale is n * 0.25rem = n * 4px
     const offenders: string[] = [];
-    for (const file of residentSources()) {
+    for (const file of appSources()) {
       const source = readFileSync(file, 'utf8');
       const lineOf = (index: number) => source.slice(0, index).split('\n').length;
       // `(?![/\d])` so `w-1/2` is not read as `w-1` (4px) and falsely flagged.

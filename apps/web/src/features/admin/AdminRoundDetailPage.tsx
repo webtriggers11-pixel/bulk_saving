@@ -4,6 +4,7 @@ import { useIsMutating } from '@tanstack/react-query';
 import type {
   RoundServiceSummary, AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -40,8 +41,8 @@ const PAYABLE: RoundStatus[] = ['ASSIGNED', 'DELIVERED', 'RATED'];
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-0.5 text-sm text-slate-900">{children}</dd>
+      <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">{label}</dt>
+      <dd className="num mt-1 text-body font-extrabold text-ink">{children}</dd>
     </div>
   );
 }
@@ -52,11 +53,11 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
     <Card>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-teal-700">
+          <span className="text-eyebrow uppercase text-brand-ink">
             {round.service.category}
           </span>
-          <h2 className="text-xl font-bold text-slate-900">{round.service.name}</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="mt-1.5 text-headline font-extrabold tracking-[-0.035em] text-ink">{round.service.name}</h2>
+          <p className="mt-1 text-caption text-ink-muted">
             {round.society.name}, {round.society.city}
           </p>
         </div>
@@ -86,7 +87,7 @@ function RoundSummary({ round }: { round: AdminRoundDetailDto }) {
         {round.vendor && (
           <Fact label="Vendor">
             {round.vendor.name}
-            <span className="block text-xs text-slate-500">{round.vendor.phone}</span>
+            <span className="num block text-meta text-ink-muted">{round.vendor.phone}</span>
           </Fact>
         )}
         {round.finalPrice !== null && (
@@ -135,7 +136,12 @@ function AssignForm({
   }
 
   if (vendors.isLoading) {
-    return <p className="text-slate-500">Loading vendors…</p>;
+    return (
+      <SkeletonScreen label="Loading vendors…" testId="assign-skeleton" className="flex flex-col gap-3">
+        <Skeleton className="h-2.5 w-24" />
+        <Skeleton className="h-control w-full rounded-control" delay={1} />
+      </SkeletonScreen>
+    );
   }
   // BUG-004 (V2 P0-1): offline PAUSES this read, so `isError` alone let it fall
   // through to the "No active vendors" branch below — telling the admin something
@@ -143,12 +149,12 @@ function AssignForm({
   if (queryStalled(vendors)) {
     return (
       <div role="alert" className="flex flex-col items-start gap-3">
-        <p className="text-sm text-red-600" data-testid="vendors-unavailable">
+        <p className="text-meta font-bold text-danger-ink" data-testid="vendors-unavailable">
           {vendors.isError
             ? "We couldn't load vendors. Please try again."
             : "You're offline, so we couldn't load the vendor list. Reconnect to assign this round."}
         </p>
-        <Button variant="ghost" className="border border-slate-300" onClick={() => void vendors.refetch()}>
+        <Button variant="secondary" size="sm" onClick={() => void vendors.refetch()}>
           Retry
         </Button>
       </div>
@@ -156,9 +162,9 @@ function AssignForm({
   }
   if (activeVendors.length === 0) {
     return (
-      <p className="text-sm text-slate-600" data-testid="no-active-vendors">
+      <p className="text-caption text-ink-muted" data-testid="no-active-vendors">
         No active vendors.{' '}
-        <Link to="/admin/vendors" className="font-semibold text-teal-700 hover:underline">
+        <Link to="/admin/vendors" className="font-extrabold text-brand-ink hover:underline">
           Add a vendor
         </Link>{' '}
         to assign this round.
@@ -194,14 +200,14 @@ function AssignForm({
           aria-invalid={finalPrice !== '' && !priceValid}
         />
         {finalPrice !== '' && !priceValid && (
-          <p className="mt-1 text-sm text-red-600">Enter a whole number from 1 to 10,00,000.</p>
+          <p className="mt-2 text-meta font-bold text-danger-ink">Enter a whole number from 1 to 10,00,000.</p>
         )}
       </div>
       <Button type="submit" disabled={!valid || busy || assign.isPending}>
         {assign.isPaused ? OFFLINE_WAITING_LABEL : assign.isPending ? 'Assigning…' : 'Assign vendor'}
       </Button>
       {assign.isError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           {errorMessage(assign.error)}
         </p>
       )}
@@ -254,16 +260,16 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
         {canCancel &&
           (confirmingCancel ? (
             <div
-              className="flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-3"
+              className="flex flex-col gap-3 rounded-inset border border-white/55 bg-danger-ink/10 p-4 shadow-hairline"
               data-testid="cancel-confirm"
             >
-              <p className="text-sm text-red-800">
+              <p className="text-meta font-bold text-danger-ink">
                 Cancel this round? Residents' pledges will no longer be fulfilled. This cannot be
                 undone.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  className="bg-red-600 hover:bg-red-700"
+                  variant="danger"
                   disabled={busy}
                   onClick={() => cancel.mutate(undefined, { onSettled: () => setConfirmingCancel(false) })}
                 >
@@ -276,8 +282,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
             </div>
           ) : (
             <Button
-              variant="ghost"
-              className="text-red-600 hover:bg-red-50"
+              variant="danger"
               disabled={busy}
               onClick={() => setConfirmingCancel(true)}
             >
@@ -287,7 +292,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
 
         {[close, deliver, cancel].map((mutation, index) =>
           mutation.isError ? (
-            <p key={index} role="alert" className="text-sm text-red-600">
+            <p key={index} role="alert" className="text-meta font-bold text-danger-ink">
               {errorMessage(mutation.error)}
             </p>
           ) : null,
@@ -316,11 +321,11 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
       </CardHeader>
 
       {round.participants.length === 0 ? (
-        <p className="text-sm text-slate-500">No residents have joined this round.</p>
+        <p className="mt-1 text-caption text-ink-muted">No residents have joined this round.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+          <table className="w-full min-w-[36rem] text-left text-caption">
+            <thead className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
               <tr>
                 <th className="py-2 pr-3">Resident</th>
                 <th className="py-2 pr-3">Phone</th>
@@ -332,13 +337,13 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                 {payable && <th className="py-2">Payment</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-shade/10">
               {round.participants.map((participant) => {
                 const name = participant.resident.name ?? 'Resident';
                 return (
                   <tr key={participant.id} data-testid="participant-row">
-                    <td className="py-2 pr-3 font-medium text-slate-900">{name}</td>
-                    <td className="py-2 pr-3 whitespace-nowrap">{participant.resident.phone}</td>
+                    <td className="py-3 pr-3 font-bold text-ink">{name}</td>
+                    <td className="num py-3 pr-3 whitespace-nowrap text-ink-muted">{participant.resident.phone}</td>
                     <td className="py-2 pr-3 text-right">{participant.units}</td>
                     <td className="py-2 pr-3 text-right">
                       {participant.amountDue === null ? '—' : formatRupees(participant.amountDue)}
@@ -346,11 +351,11 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                     <td className="py-2 pr-3" data-testid="participant-rating">
                       {participant.rating ? (
                         <span>
-                          <span className="whitespace-nowrap font-medium text-slate-900">
+                          <span className="whitespace-nowrap font-bold text-ink">
                             {participant.rating.stars} / 5
                           </span>
                           {participant.rating.comment && (
-                            <span className="block text-xs text-slate-500">
+                            <span className="block text-micro text-ink-soft">
                               “{participant.rating.comment}”
                             </span>
                           )}
@@ -365,15 +370,15 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                           <span
                             className={
                               participant.paymentCollected
-                                ? 'text-xs font-semibold text-green-700'
-                                : 'text-xs font-semibold text-slate-500'
+                                ? 'text-micro font-extrabold text-success-ink'
+                                : 'text-micro font-extrabold text-ink-soft'
                             }
                           >
                             {participant.paymentCollected ? 'Collected' : 'Pending'}
                           </span>
                           <Button
-                            variant="ghost"
-                            className="h-9 border border-slate-300 px-3"
+                            variant="secondary"
+                            size="sm"
                             disabled={payment.isPending}
                             aria-label={
                               participant.paymentCollected
@@ -401,12 +406,12 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
       )}
 
       {payment.isPaused && (
-        <p role="status" data-testid="payment-offline" className="mt-2 text-sm text-amber-700">
+        <p role="status" data-testid="payment-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {payment.isError && (
-        <p role="alert" className="mt-3 text-sm text-red-600">
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           {errorMessage(payment.error)}
         </p>
       )}
@@ -428,15 +433,27 @@ export function AdminRoundDetailPage() {
 
   return (
     <AdminLayout title="Round">
-      <Link to="/admin" className="text-sm font-semibold text-teal-700 hover:underline">
+      <Link to="/admin" className="inline-flex items-center gap-1.5 text-meta font-extrabold text-brand-ink hover:underline">
         ← All rounds
       </Link>
 
-      {isLoading && <p className="text-slate-500">Loading round…</p>}
+      {isLoading && (
+        <SkeletonScreen label="Loading round…" testId="round-skeleton" className="flex flex-col gap-4">
+          <div className="surface-glass rounded-card p-6">
+            <Skeleton className="h-2.5 w-28" />
+            <Skeleton className="mt-3 h-5 w-1/3" delay={1} />
+            <Skeleton className="mt-5 h-20 w-full rounded-inset" delay={2} />
+          </div>
+          <div className="surface-solid rounded-card p-6">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-4 h-24 w-full rounded-inset" delay={1} />
+          </div>
+        </SkeletonScreen>
+      )}
 
       {isError && (
         <div role="alert" className="flex flex-col items-start gap-3">
-          <p className="text-red-600">
+          <p className="flex gap-2.5 text-meta font-bold text-danger-ink">
             {error instanceof ApiError && error.status === 404
               ? 'This round does not exist.'
               : roundQuery.isError

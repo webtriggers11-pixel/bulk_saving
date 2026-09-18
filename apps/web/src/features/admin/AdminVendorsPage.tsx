@@ -9,8 +9,12 @@ import {
 } from '../../lib/offline';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { EmptyState } from '../../components/ui/empty-state';
+import { Field } from '../../components/ui/field';
+import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
+import { StarGlyph } from '../../components/ui/icon';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
 import { useCreateVendor, useUpdateVendor, useVendors } from './useAdmin';
@@ -35,22 +39,24 @@ function VendorFields({
   errors: VendorFormErrors;
   onChange: (values: VendorFormValues) => void;
 }) {
+  // `Field` owns the label/id/aria-describedby wiring and the error line, so the
+  // four inputs here are just inputs (ADR-0022). `idPrefix` survives as the test
+  // contract for the add form vs an inline edit form.
   const field = (key: keyof VendorFormValues, label: string, extra?: { type?: string; inputMode?: 'tel' }) => (
-    <div>
-      <Label htmlFor={`${idPrefix}-${key}`}>{label}</Label>
-      <Input
-        id={`${idPrefix}-${key}`}
-        type={extra?.type ?? 'text'}
-        inputMode={extra?.inputMode}
-        value={values[key]}
-        aria-invalid={errors[key] ? true : undefined}
-        onChange={(e) => onChange({ ...values, [key]: e.target.value })}
-      />
-      {errors[key] && <p className="mt-1 text-sm text-red-600">{errors[key]}</p>}
-    </div>
+    <Field label={label} id={`${idPrefix}-${key}`} error={errors[key]}>
+      {(props) => (
+        <Input
+          {...props}
+          type={extra?.type ?? 'text'}
+          inputMode={extra?.inputMode}
+          value={values[key]}
+          onChange={(e) => onChange({ ...values, [key]: e.target.value })}
+        />
+      )}
+    </Field>
   );
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2">
       {field('name', 'Name')}
       {field('phone', 'Phone', { type: 'tel', inputMode: 'tel' })}
       {field('category', 'Category (optional)')}
@@ -82,18 +88,27 @@ function AddVendorForm() {
       <CardHeader>
         <CardTitle>Add vendor</CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3" aria-label="Add vendor" noValidate>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="Add vendor" noValidate>
         <VendorFields idPrefix="new-vendor" values={values} errors={errors} onChange={setValues} />
         <Button type="submit" className="self-start" disabled={create.isPending}>
           {create.isPaused ? OFFLINE_WAITING_LABEL : create.isPending ? 'Adding…' : 'Add vendor'}
         </Button>
         {create.isPaused && (
-          <p role="status" data-testid="vendor-create-offline" className="text-sm text-amber-700">
+          <p
+            role="status"
+            data-testid="vendor-create-offline"
+            className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+          >
+            <Icon name="offline" size={16} strokeWidth={2} />
             {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {create.isError && (
-          <p role="alert" className="text-sm text-red-600">
+          <p
+            role="alert"
+            className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+          >
+            <Icon name="alert" size={16} strokeWidth={2} />
             {errorMessage(create.error)}
           </p>
         )}
@@ -135,15 +150,15 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
   }
 
   return (
-    <li className="flex flex-col gap-3 py-4" data-testid="vendor-row">
+    <li className="surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4" data-testid="vendor-row">
       {editing ? (
-        <form onSubmit={handleSave} className="flex flex-col gap-3" aria-label={`Edit ${vendor.name}`} noValidate>
+        <form onSubmit={handleSave} className="flex flex-col gap-4" aria-label={`Edit ${vendor.name}`} noValidate>
           <VendorFields idPrefix={`edit-${vendor.id}`} values={values} errors={errors} onChange={setValues} />
           <div className="flex gap-2">
             <Button type="submit" disabled={update.isPending}>
               {update.isPaused ? OFFLINE_WAITING_LABEL : update.isPending ? 'Saving…' : 'Save'}
             </Button>
-            <Button variant="ghost" disabled={update.isPending} onClick={() => setEditing(false)}>
+            <Button variant="secondary" disabled={update.isPending} onClick={() => setEditing(false)}>
               Cancel
             </Button>
           </div>
@@ -152,27 +167,28 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-slate-900">{vendor.name}</span>
+              <span className="text-body font-extrabold tracking-[-0.02em] text-ink">{vendor.name}</span>
               <Badge tone={vendor.active ? 'green' : 'slate'}>{vendor.active ? 'Active' : 'Inactive'}</Badge>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="num mt-1 text-meta text-ink-muted">
               {vendor.phone}
               {vendor.category ? ` · ${vendor.category}` : ''}
             </p>
             {/* FEAT-009: the accountability number, with its count (ADR-0017) —
                 this is what stops a bad vendor being assigned again. */}
-            <p className="text-sm text-slate-600" data-testid="vendor-rating">
-              <span className="text-amber-500" aria-hidden="true">
-                ★
-              </span>{' '}
+            <p
+              className="mt-1.5 flex items-center gap-1.5 text-meta font-bold text-ink-muted"
+              data-testid="vendor-rating"
+            >
+              <StarGlyph filled size={15} className="text-star" />
               {formatVendorRating(vendor)}
             </p>
-            {vendor.notes && <p className="text-sm text-slate-500">{vendor.notes}</p>}
+            {vendor.notes && <p className="mt-1.5 text-meta text-ink-soft">{vendor.notes}</p>}
           </div>
           <div className="flex gap-2">
             <Button
-              variant="ghost"
-              className="border border-slate-300"
+              variant="secondary"
+              size="sm"
               aria-label={`Edit ${vendor.name}`}
               disabled={update.isPending}
               onClick={startEdit}
@@ -180,8 +196,8 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
               Edit
             </Button>
             <Button
-              variant="ghost"
-              className="border border-slate-300"
+              variant="secondary"
+              size="sm"
               aria-label={`${vendor.active ? 'Deactivate' : 'Activate'} ${vendor.name}`}
               disabled={update.isPending}
               onClick={() => update.mutate({ id: vendor.id, body: { active: !vendor.active } })}
@@ -192,12 +208,21 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
         </div>
       )}
       {update.isPaused && (
-        <p role="status" data-testid="vendor-update-offline" className="mt-2 text-sm text-amber-700">
+        <p
+          role="status"
+          data-testid="vendor-update-offline"
+          className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+        >
+          <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {update.isError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p
+          role="alert"
+          className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+        >
+          <Icon name="alert" size={16} strokeWidth={2} />
           {errorMessage(update.error)}
         </p>
       )}
@@ -217,7 +242,7 @@ export function AdminVendorsPage() {
   const failed = queryStalled(vendorsQuery);
 
   return (
-    <AdminLayout title="Vendors">
+    <AdminLayout title="Vendors" subtitle="Who does the work, and who may be assigned">
       <AddVendorForm />
 
       <Card>
@@ -225,20 +250,42 @@ export function AdminVendorsPage() {
           <CardTitle>All vendors</CardTitle>
           <CardDescription>Only active vendors can be assigned to rounds.</CardDescription>
         </CardHeader>
-        {isLoading && <p className="text-slate-500">Loading vendors…</p>}
+        {isLoading && (
+          <SkeletonScreen label="Loading vendors…" testId="vendors-skeleton" className="flex flex-col gap-2.5">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="surface-solid rounded-tile p-4">
+                <Skeleton className="h-4 w-1/3" delay={(row % 4) as 0 | 1 | 2 | 3} />
+                <Skeleton className="mt-2.5 h-3 w-1/2" delay={1} />
+                <Skeleton className="mt-2.5 h-3 w-24" delay={2} />
+              </div>
+            ))}
+          </SkeletonScreen>
+        )}
         {failed && (
-          <div role="alert" className="flex flex-col items-start gap-3">
-            <p className="text-red-600">We couldn't load vendors. Please try again.</p>
-            <Button onClick={() => void refetch()}>Retry</Button>
+          <div
+            role="alert"
+            className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-white/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
+          >
+            <p className="flex gap-2.5 text-meta font-bold">
+              <Icon name="alert" size={18} strokeWidth={2} />
+              We couldn&apos;t load vendors. Please try again.
+            </p>
+            <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+              <Icon name="refresh" size={16} strokeWidth={2.1} />
+              Retry
+            </Button>
           </div>
         )}
         {data && data.length === 0 && (
-          <p className="text-sm text-slate-500" data-testid="vendors-empty">
-            No vendors yet. Add one above.
-          </p>
+          <EmptyState
+            icon="users"
+            title="No vendors yet"
+            description="Add one above, and it becomes assignable to a round that has met its target."
+            data-testid="vendors-empty"
+          />
         )}
         {data && data.length > 0 && (
-          <ul className="divide-y divide-slate-100">
+          <ul className="stagger flex flex-col gap-2.5">
             {data.map((vendor) => (
               <VendorRow key={vendor.id} vendor={vendor} />
             ))}

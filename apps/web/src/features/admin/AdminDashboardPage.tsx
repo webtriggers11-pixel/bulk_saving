@@ -3,9 +3,13 @@ import { Link } from 'react-router-dom';
 import type { AdminRoundsQuery, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Label } from '../../components/ui/label';
+import { DataCell, DataRow, DataRows } from '../../components/ui/data-rows';
+import { EmptyState } from '../../components/ui/empty-state';
+import { Field } from '../../components/ui/field';
+import { Icon } from '../../components/ui/icon';
 import { Select } from '../../components/ui/select';
-import { cn } from '../../lib/utils';
+import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
+import { StatCard } from '../../components/ui/stat';
 import { AdminLayout } from './AdminLayout';
 import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
@@ -21,6 +25,25 @@ function toStatus(value: string): RoundStatus | undefined {
   return STATUS_ORDER.find((status) => status === value);
 }
 
+/** The one failure message both panels show, with the retry that goes with it. */
+function PanelError({ subject, onRetry }: { subject: string; onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-white/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
+    >
+      <p className="flex gap-2.5 text-meta font-bold">
+        <Icon name="alert" size={18} strokeWidth={2} />
+        We couldn&apos;t load the {subject}. Please try again.
+      </p>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        <Icon name="refresh" size={16} strokeWidth={2.1} />
+        Retry
+      </Button>
+    </div>
+  );
+}
+
 /** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
 function DashboardSummary() {
   const dashboard = useAdminDashboard();
@@ -29,38 +52,56 @@ function DashboardSummary() {
   const isError = queryStalled(dashboard);
 
   if (isLoading) {
-    return <p className="text-slate-500">Loading dashboard…</p>;
+    return (
+      <SkeletonScreen label="Loading dashboard…" testId="dashboard-skeleton" className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+          {STATUS_ORDER.map((status, index) => (
+            <div key={status} className="surface-solid rounded-tile p-4">
+              <Skeleton className="h-2.5 w-3/4" delay={(index % 4) as 0 | 1 | 2 | 3} />
+              <Skeleton className="mt-3 h-6 w-1/3" delay={2} />
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="surface-glass rounded-card p-6 md:col-span-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-3 h-3 w-2/3" delay={1} />
+            <Skeleton className="mt-5 h-24 w-full rounded-inset" delay={2} />
+          </div>
+          <div className="surface-glass rounded-card p-6">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="mt-5 h-8 w-32" delay={1} />
+            <Skeleton className="mt-4 h-8 w-32" delay={2} />
+          </div>
+        </div>
+      </SkeletonScreen>
+    );
   }
   if (isError || !data) {
-    return (
-      <div role="alert" className="flex flex-col items-start gap-3">
-        <p className="text-red-600">We couldn't load the dashboard. Please try again.</p>
-        <Button onClick={() => void refetch()}>Retry</Button>
-      </div>
-    );
+    return <PanelError subject="dashboard" onRetry={() => void refetch()} />;
   }
 
   return (
     <>
-      <section aria-label="Rounds by status" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      {/* The lifecycle at a glance. A status the admin must ACT on lights up only when
+          it actually holds rounds — a highlighted zero is noise, and noise is how a
+          dashboard stops being read. */}
+      <section
+        aria-label="Rounds by status"
+        className="stagger grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
+      >
         {STATUS_ORDER.map((status) => {
-          const highlight = ACTION_STATUSES.includes(status);
+          const count = data.statusCounts[status];
+          const needsAction = ACTION_STATUSES.includes(status) && count > 0;
           return (
-            <div
+            <StatCard
               key={status}
+              label={STATUS_LABELS[status]}
+              value={String(count)}
+              emphasis={needsAction ? 'alert' : 'quiet'}
+              className="gap-0 p-4"
               data-testid={`status-tile-${status}`}
-              className={cn(
-                'rounded-xl border p-4 shadow-sm',
-                highlight && data.statusCounts[status] > 0
-                  ? 'border-amber-300 bg-amber-50'
-                  : 'border-slate-200 bg-white',
-              )}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {STATUS_LABELS[status]}
-              </p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{data.statusCounts[status]}</p>
-            </div>
+            />
           );
         })}
       </section>
@@ -77,56 +118,43 @@ function DashboardSummary() {
             </CardDescription>
           </CardHeader>
           {data.demandBySociety.length === 0 ? (
-            <p className="text-sm text-slate-500">No societies yet.</p>
+            <p className="text-caption text-ink-muted">No societies yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[28rem] text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="py-2 pr-3">Society</th>
-                    <th className="py-2 pr-3 text-right">Open rounds</th>
-                    <th className="py-2 pr-3 text-right">Units (mixed)</th>
-                    <th className="py-2 text-right">Residents joined</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.demandBySociety.map((row) => (
-                    <tr key={row.society.id}>
-                      <td className="py-2 pr-3">
-                        <span className="font-medium text-slate-900">{row.society.name}</span>
-                        <span className="block text-xs text-slate-500">{row.society.city}</span>
-                      </td>
-                      <td className="py-2 pr-3 text-right">{row.openRounds}</td>
-                      <td className="py-2 pr-3 text-right">{row.unitsPledged}</td>
-                      <td className="py-2 text-right">{row.residentsJoined}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataRows>
+              {data.demandBySociety.map((row) => (
+                <DataRow
+                  key={row.society.id}
+                  title={row.society.name}
+                  meta={row.society.city}
+                  columns={
+                    <>
+                      <DataCell label="Open rounds" value={row.openRounds} />
+                      <DataCell label="Units (mixed)" value={row.unitsPledged} />
+                      <DataCell label="Residents joined" value={row.residentsJoined} />
+                    </>
+                  }
+                />
+              ))}
+            </DataRows>
           )}
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Payments</CardTitle>
-            <CardDescription>Assigned, delivered and rated rounds</CardDescription>
-          </CardHeader>
-          <dl className="flex flex-col gap-3">
-            <div>
-              <dt className="text-sm text-slate-500">Collected</dt>
-              <dd className="text-2xl font-bold text-teal-700" data-testid="payments-collected">
-                {formatRupees(data.payments.collectedAmount)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Outstanding</dt>
-              <dd className="text-2xl font-bold text-slate-900" data-testid="payments-outstanding">
-                {formatRupees(data.payments.outstandingAmount)}
-              </dd>
-            </div>
-          </dl>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <StatCard
+            label="Collected"
+            value={formatRupees(data.payments.collectedAmount)}
+            icon="check"
+            note="Assigned, delivered and rated rounds"
+            emphasis="lead"
+            data-testid="payments-collected"
+          />
+          <StatCard
+            label="Outstanding"
+            value={formatRupees(data.payments.outstandingAmount)}
+            icon="clock"
+            data-testid="payments-outstanding"
+          />
+        </div>
       </div>
     </>
   );
@@ -146,98 +174,105 @@ function RoundsTable() {
         <CardTitle>Rounds</CardTitle>
       </CardHeader>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="filter-status">Status</Label>
-          <Select
-            id="filter-status"
-            value={filters.status ?? ''}
-            onChange={(e) => setFilters((f) => ({ ...f, status: toStatus(e.target.value) }))}
-          >
-            <option value="">All statuses</option>
-            {STATUS_ORDER.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="filter-society">Society</Label>
-          <Select
-            id="filter-society"
-            value={filters.societyId ?? ''}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, societyId: e.target.value || undefined }))
-            }
-          >
-            <option value="">All societies</option>
-            {(societies.data ?? []).map((society) => (
-              <option key={society.id} value={society.id}>
-                {society.name}
-              </option>
-            ))}
-          </Select>
-        </div>
+      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+        <Field label="Status">
+          {(props) => (
+            <Select
+              {...props}
+              value={filters.status ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, status: toStatus(e.target.value) }))}
+            >
+              <option value="">All statuses</option>
+              {STATUS_ORDER.map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_LABELS[status]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label="Society">
+          {(props) => (
+            <Select
+              {...props}
+              value={filters.societyId ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, societyId: e.target.value || undefined }))}
+            >
+              <option value="">All societies</option>
+              {(societies.data ?? []).map((society) => (
+                <option key={society.id} value={society.id}>
+                  {society.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
       </div>
 
-      {isLoading && <p className="text-slate-500">Loading rounds…</p>}
-      {isError && (
-        <div role="alert" className="flex flex-col items-start gap-3">
-          <p className="text-red-600">We couldn't load the rounds. Please try again.</p>
-          <Button onClick={() => void refetch()}>Retry</Button>
-        </div>
+      {isLoading && (
+        <SkeletonScreen label="Loading rounds…" testId="admin-rounds-skeleton" className="flex flex-col gap-2.5">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="surface-solid flex items-center gap-5 rounded-tile p-4">
+              <Skeleton className="h-4 w-1/4" delay={(row % 4) as 0 | 1 | 2 | 3} />
+              <Skeleton className="ml-auto h-6 w-24 rounded-full" delay={1} />
+              <Skeleton className="h-4 w-20" delay={2} />
+              <Skeleton className="h-4 w-24" delay={3} />
+            </div>
+          ))}
+        </SkeletonScreen>
       )}
+      {isError && <PanelError subject="rounds" onRetry={() => void refetch()} />}
       {data && data.length === 0 && (
-        <p className="text-sm text-slate-500" data-testid="admin-rounds-empty">
-          No rounds match these filters.
-        </p>
+        <EmptyState
+          icon="info"
+          title="No rounds match these filters"
+          description="Clear a filter, or open a new round for a society."
+          data-testid="admin-rounds-empty"
+        />
       )}
       {data && data.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
-              <tr>
-                <th className="py-2 pr-3">Service</th>
-                <th className="py-2 pr-3">Society</th>
-                <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3 text-right">Units / residents</th>
-                <th className="py-2 pr-3 text-right">Price</th>
-                <th className="py-2">Deadline</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.map((round) => (
-                <tr key={round.id} data-testid="admin-round-row">
-                  <td className="py-2 pr-3">
-                    <Link
-                      to={`/admin/rounds/${round.id}`}
-                      className="font-medium text-teal-700 underline-offset-4 hover:underline"
-                    >
-                      {round.service.name}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-3">{round.society.name}</td>
-                  <td className="py-2 pr-3">
-                    <StatusBadge status={round.status} />
-                  </td>
-                  <td className="py-2 pr-3 text-right">
-                    {/* Per-round, so the service IS known — unlike the mixed-service
-                        demand total above (V2 P2). */}
-                    {formatUnits(round.unitsCount, round.service)} / {round.participantsCount}
-                  </td>
-                  <td className="py-2 pr-3 text-right">
-                    {formatRupees(round.finalPrice ?? round.currentPrice)}
-                    {round.finalPrice !== null && (
-                      <span className="block text-xs text-slate-500">final</span>
-                    )}
-                  </td>
-                  <td className="py-2 whitespace-nowrap">{formatDateTime(round.deadline)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataRows>
+          {data.map((round) => (
+            <DataRow
+              key={round.id}
+              data-testid="admin-round-row"
+              title={
+                <Link
+                  to={`/admin/rounds/${round.id}`}
+                  className="t rounded-chip text-brand-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:shadow-focus"
+                >
+                  {round.service.name}
+                </Link>
+              }
+              meta={
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {round.society.name}
+                  <span aria-hidden="true" className="text-ink-soft">
+                    ·
+                  </span>
+                  <span className="num">{formatDateTime(round.deadline)}</span>
+                </span>
+              }
+              columns={
+                <>
+                  <DataCell
+                    label="Units / residents"
+                    value={
+                      /* Per-round, so the service IS known — unlike the mixed-service
+                         demand total above (V2 P2). */
+                      `${formatUnits(round.unitsCount, round.service)} / ${round.participantsCount}`
+                    }
+                  />
+                  <DataCell
+                    label={round.finalPrice !== null ? 'Final price' : 'Price'}
+                    value={formatRupees(round.finalPrice ?? round.currentPrice)}
+                  />
+                </>
+              }
+              trailing={<StatusBadge status={round.status} />}
+            />
+          ))}
+        </DataRows>
       )}
     </Card>
   );
@@ -246,11 +281,11 @@ function RoundsTable() {
 /**
  * Super-admin dashboard (FEAT-005): where to act at a glance. Status tiles (the
  * "Needs vendor" and "Awaiting delivery" tiles are highlighted), demand pledged per
- * society, payment totals, and the filterable rounds table.
+ * society, payment totals, and the filterable rounds list.
  */
 export function AdminDashboardPage() {
   return (
-    <AdminLayout title="Dashboard">
+    <AdminLayout title="Dashboard" subtitle="Demand, money and what needs a vendor">
       <DashboardSummary />
       <RoundsTable />
     </AdminLayout>

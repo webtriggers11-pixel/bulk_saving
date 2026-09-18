@@ -5,6 +5,12 @@ import { cn } from '../../lib/utils';
 
 interface FieldProps {
   label: string;
+  /**
+   * An explicit id, when the screen's own contract names it (the vendor forms use
+   * `edit-<vendorId>-name` so an inline edit form can be targeted). Omitted, the
+   * field generates one — which is the common case and the safer default.
+   */
+  id?: string;
   /** Rendered next to the label in sentence case, e.g. "(optional)". */
   hint?: string;
   /** Shown under the control, in the error tone, and wired to the control via aria. */
@@ -22,8 +28,9 @@ interface FieldProps {
  * doing by hand, and the part that quietly stops matching when a form is edited.
  * `.field` gives the label its focus-within lift (theme.css).
  */
-export function Field({ label, hint, error, children, className }: FieldProps) {
-  const id = useId();
+export function Field({ label, id: givenId, hint, error, children, className }: FieldProps) {
+  const generated = useId();
+  const id = givenId ?? generated;
   const errorId = `${id}-error`;
   return (
     <div className={cn('field', className)}>

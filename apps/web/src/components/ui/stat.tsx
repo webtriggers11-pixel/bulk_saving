@@ -8,11 +8,16 @@ interface StatCardProps {
   label: string;
   /** Already formatted — this card does not know rupees from units. */
   value: string;
-  icon: IconName;
+  /** Omitted for a dense row of tiles, where seven glyphs would be noise. */
+  icon?: IconName;
   /** A qualifier under the number, e.g. "across 3 societies". */
   note?: string;
-  /** The lead figure on a screen gets the accent surface; the rest are tint. */
-  emphasis?: 'lead' | 'normal';
+  /**
+   * How loudly this figure reads:
+   * `lead` the headline number (accent), `normal` a supporting one (tint),
+   * `quiet` one of many in a row (solid), `alert` one that needs the operator to act.
+   */
+  emphasis?: 'lead' | 'normal' | 'quiet' | 'alert';
   action?: ReactNode;
   className?: string;
   'data-testid'?: string;
@@ -26,6 +31,13 @@ interface StatCardProps {
  * Formatting is the caller's: a stat card that knows about currency is a stat card
  * that has to be told about every other unit too.
  */
+const SURFACE = {
+  lead: 'accent',
+  normal: 'tint',
+  quiet: 'solid',
+  alert: 'solid',
+} as const;
+
 export function StatCard({
   label,
   value,
@@ -37,27 +49,37 @@ export function StatCard({
   'data-testid': testId,
 }: StatCardProps) {
   const lead = emphasis === 'lead';
+  const alert = emphasis === 'alert';
   return (
     <Card
-      surface={lead ? 'accent' : 'tint'}
-      className={cn('flex flex-col gap-3 p-5', lead && 'sheen overflow-hidden', className)}
+      surface={SURFACE[emphasis]}
+      className={cn(
+        'flex flex-col gap-3 p-5',
+        lead && 'sheen overflow-hidden',
+        // An "act on me" tile is amber, and only when it actually holds something:
+        // a highlighted zero is noise, and noise is how a dashboard stops being read.
+        alert && 'border-white/60 bg-gradient-to-br from-amber-ink/20 to-amber-ink/5 shadow-lift',
+        className,
+      )}
       data-testid={testId}
     >
-      <span
-        className={cn(
-          'flex h-11 w-11 items-center justify-center rounded-control border',
-          lead
-            ? 'border-white/40 bg-white/20 text-white'
-            : 'border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift',
-        )}
-      >
-        <Icon name={icon} size={21} strokeWidth={1.8} />
-      </span>
+      {icon && (
+        <span
+          className={cn(
+            'flex h-11 w-11 items-center justify-center rounded-control border',
+            lead
+              ? 'border-white/40 bg-white/20 text-white'
+              : 'border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift',
+          )}
+        >
+          <Icon name={icon} size={21} strokeWidth={1.8} />
+        </span>
+      )}
       <div className="min-w-0">
         <p
           className={cn(
             'text-eyebrow uppercase',
-            lead ? 'text-white/75' : 'text-brand-ink',
+            lead ? 'text-white/75' : alert ? 'text-amber-ink' : 'text-brand-ink',
           )}
         >
           {label}
