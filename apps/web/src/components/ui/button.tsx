@@ -21,7 +21,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'paint-brand text-white border border-white/20 shadow-accent sweep ripple',
   secondary:
-    'paint-glass text-ink border border-white/70 shadow-control backdrop-blur-soft sweep ripple',
+    'paint-glass text-ink border border-white/70 shadow-control sweep ripple',
   outline: 'paint-tint text-brand-ink border border-brand/30 ripple',
   ghost: 'border border-transparent text-ink-muted hover:bg-white/60',
   danger: 'paint-danger text-danger-ink border border-danger-ink/20 ripple',

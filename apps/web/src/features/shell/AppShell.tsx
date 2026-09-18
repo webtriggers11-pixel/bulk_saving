@@ -17,7 +17,7 @@ import { UpdatePrompt } from './UpdatePrompt';
  */
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen">
       <AmbientGround />
       {/* One sticky container, not two sticky siblings: both strips were
           `sticky top-0` and the banner painted over the update prompt when

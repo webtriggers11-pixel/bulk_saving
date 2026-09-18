@@ -56,7 +56,7 @@ export function HomePage() {
               className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
             />
             <span className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-inset paint-mono text-[21px] font-extrabold text-white shadow-accent">
-              <span className="animate-halo absolute -inset-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgb(255_255_255/0.45)_60deg,transparent_140deg)]" />
+              <span className="animate-halo halo-sweep absolute -inset-1/2" />
               <span className="relative">{initialsOf(data.resident.name)}</span>
             </span>
             <div className="relative min-w-0 flex-1">
@@ -85,7 +85,7 @@ export function HomePage() {
             <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-white/10">
               <Icon name="services" size={170} strokeWidth={1.1} />
             </span>
-            <span className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-inset border border-white/40 bg-white/20 p-3.5 text-white">
+            <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-inset border border-white/40 bg-white/20 text-white">
               <Icon name="services" size={25} strokeWidth={1.8} />
             </span>
             <div className="relative min-w-0 flex-1">
@@ -126,8 +126,9 @@ export function HomePage() {
             </span>
             <button
               type="button"
+              aria-label="Group buys"
               onClick={() => navigate('/rounds')}
-              className="mt-auto pt-4 text-left"
+              className="mt-auto min-h-touch rounded-chip pt-4 text-left t press focus-visible:outline-none focus-visible:shadow-focus"
             >
               <span className="block text-title font-extrabold tracking-[-0.038em] text-ink">
                 Group buys

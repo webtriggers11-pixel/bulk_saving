@@ -38,7 +38,9 @@ describe('AC2 — tokens, not literals', () => {
       // A hex, an rgba(), or a Tailwind default-palette colour class. The design
       // system has a token for each of these; using a literal is how a palette
       // silently stops applying to one component.
-      const matches = source.match(/#[0-9a-fA-F]{6}\b|rgba\(|\b(?:slate|teal|gray|zinc|emerald)-[0-9]{2,3}\b/g);
+      const matches = source.match(
+        /#[0-9a-fA-F]{3,8}\b|\brgba?\(\s*\d|\b(?:slate|gray|zinc|neutral|stone|teal|emerald|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|red|orange|amber|yellow|lime|green)-[0-9]{2,3}\b/g,
+      );
       if (matches) {
         offenders.push(`${file.replace(WEB, '')}: ${[...new Set(matches)].join(', ')}`);
       }
@@ -53,15 +55,24 @@ describe('AC2 — tokens, not literals', () => {
    * the app's main button rendered with no background at all. Every system class a
    * component names must exist in the stylesheet.
    */
-  it('every surface-* / paint-* class a component uses is declared in theme.css', () => {
+  it('every bespoke system class a component uses is declared in theme.css', () => {
+    // Not just surface-*/paint-*: `nudge` was declared only as `.btn .nudge`, under
+    // an ancestor class no component carries, so the arrow never moved and nothing
+    // failed. Any class the design system owns must exist as a rule of its own.
+    const OWNED =
+      /\b(surface-[a-z]+|paint-[a-z]+|animate-[a-z-]+|skeleton(?:-d[0-9])?|bar-fill|card-hover|card-glow|sheen|sweep|ripple|press|stagger|nudge|field|field-label|halo-sweep|num|sr-only-text)\b/g;
     const used = new Set<string>();
     for (const file of residentSources()) {
-      for (const [, name] of readFileSync(file, 'utf8').matchAll(/\b((?:surface|paint)-[a-z]+)\b/g)) {
+      for (const [, name] of readFileSync(file, 'utf8').matchAll(OWNED)) {
         used.add(name);
       }
     }
-    expect(used.size).toBeGreaterThan(5);
-    const missing = [...used].filter((name) => !css.includes(`.${name} {`));
+    expect(used.size).toBeGreaterThan(12);
+    // A rule "of its own" means a selector that starts with the class, so a
+    // component carrying only that class still matches it.
+    const missing = [...used].filter(
+      (name) => !new RegExp(`^\\.${name}(?![a-z0-9-])`, 'm').test(css),
+    );
     expect(missing).toEqual([]);
   });
 
@@ -121,6 +132,15 @@ describe('AC3 — a palette swap cannot change a layout', () => {
 });
 
 describe('AC5 — motion has one off switch', () => {
+  it('resets delays as well as durations', () => {
+    // `rise` starts at opacity 0. Collapsing the duration but not the DELAY leaves a
+    // staggered child invisible for up to 600ms and then snapping in — worse than
+    // the animation it was meant to remove (V2 P2-2).
+    const query = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+    expect(query).toContain('animation-delay: 0s !important');
+    expect(query).toContain('transition-delay: 0s !important');
+  });
+
   it('no component sets an inline animation, so nothing escapes the media query', () => {
     const offenders = residentSources().filter((file) => {
       const source = readFileSync(file, 'utf8');
@@ -136,6 +156,25 @@ describe('AC6 — every control clears the 44px touch floor', () => {
     expect(tailwind).toMatch(/control: '50px'/);
     expect(tailwind).toMatch(/icon: '48px'/);
     expect(tailwind).toMatch(/tab: '58px'/);
+  });
+
+  it('no component shrinks a control below the floor with an arbitrary height', () => {
+    // `cn` is a plain join, not tailwind-merge: an `h-[42px]` passed to a sized
+    // Button does NOT replace `h-icon`, it fights it, and stylesheet order decides.
+    // So a sub-44px height on an interactive element is banned outright.
+    const offenders: string[] = [];
+    for (const file of residentSources()) {
+      const source = readFileSync(file, 'utf8');
+      for (const [match, px] of source.matchAll(/(?:min-)?h-\[(\d+)px\]/g)) {
+        // Only flag the ones on something a finger has to hit.
+        const line = source.slice(0, source.indexOf(match)).split('\n').length;
+        const context = source.split('\n').slice(Math.max(0, line - 6), line + 1).join(' ');
+        if (Number(px) < 44 && /<(button|a|input|Button)\b|onClick/.test(context)) {
+          offenders.push(`${file.replace(WEB, '')}:${line} ${match}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it.each(['md', 'sm', 'icon'] as const)('button size %s is at least 44px tall', (size) => {
@@ -200,8 +239,12 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     expect(ratio(WHITE, p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(PALETTES)('%s: the caption ramp clears 3:1 as a minimum, even at its softest', (_name, selector) => {
+  it.each(PALETTES)('%s: even the softest ink clears 4.5:1 — it carries 9.5–13px text', (_name, selector) => {
+    // --ink-soft labels the tier ring (9.5px), unit scope (10.5px) and the "/ room"
+    // suffix (13px). All of that is small text, so the large-text 3:1 allowance
+    // never applied to it (V2 P2-4).
     const p = palette(selector);
-    expect(ratio(p['--ink-soft'], WHITE)).toBeGreaterThanOrEqual(3);
+    expect(ratio(p['--ink-soft'], WHITE)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(p['--ink-soft'], p['--ground'])).toBeGreaterThanOrEqual(4.5);
   });
 });

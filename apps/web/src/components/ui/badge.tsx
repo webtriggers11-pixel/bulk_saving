@@ -14,7 +14,7 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
  * `teal` now means "the brand tone", whatever the palette is.
  */
 const TONES: Record<BadgeTone, string> = {
-  slate: 'bg-white/70 border-white/70 text-ink-muted',
+  slate: 'bg-shade/8 border-white/60 text-ink-muted',
   teal: 'bg-brand-light/25 border-white/70 text-brand-ink',
   amber: 'bg-amber-ink/15 border-white/60 text-amber-ink',
   blue: 'bg-info-ink/10 border-white/60 text-info-ink',

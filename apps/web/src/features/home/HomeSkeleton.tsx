@@ -20,7 +20,7 @@ export function HomeSkeleton() {
         </div>
       </div>
       <div className="surface-tint col-span-2 flex items-center gap-4 rounded-card p-6">
-        <Skeleton className="h-13 w-13 rounded-inset" delay={1} />
+        <Skeleton className="h-[52px] w-[52px] rounded-inset" delay={1} />
         <div className="flex-1">
           <Skeleton className="h-2.5 w-1/4" />
           <Skeleton className="mt-2.5 h-4 w-3/5" delay={1} />

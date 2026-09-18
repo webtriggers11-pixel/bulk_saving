@@ -135,7 +135,7 @@ function JoinControl({ round }: { round: RoundDto }) {
           <Button
             variant="secondary"
             size="icon"
-            className="h-[42px] w-[42px] rounded-chip"
+            className="rounded-chip"
             aria-label={`Decrease ${unitLabelPluralFor(round.service)}`}
             disabled={busy || round.myUnits <= MIN_UNITS}
             onClick={decrement}
@@ -149,7 +149,7 @@ function JoinControl({ round }: { round: RoundDto }) {
           <Button
             variant="secondary"
             size="icon"
-            className="h-[42px] w-[42px] rounded-chip"
+            className="rounded-chip"
             aria-label={`Increase ${unitLabelPluralFor(round.service)}`}
             disabled={busy || round.myUnits >= MAX_UNITS}
             onClick={increment}
@@ -226,8 +226,9 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
   const progress = tierProgress(round);
   const liveCount = useCountUp(round.unitsCount);
   const closing = formatCountdown(round.deadline);
-  // "Closes in 6h" is a different kind of fact from "Closes in 4 days".
-  const urgent = /in \d+[hm]$|Closing soon/.test(closing);
+  // "Closes in 6h" is a different kind of fact from "Closes in 4 days". Asked of the
+  // deadline itself rather than by re-parsing the sentence just formatted from it.
+  const urgent = new Date(round.deadline).getTime() - Date.now() < 24 * 60 * 60 * 1000;
 
   return (
     <Card
@@ -275,6 +276,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
         <div data-testid={`units-count-${round.id}`} className="shrink-0">
           <span className="sr-only-text">{formatUnits(round.unitsCount, round.service)} pledged</span>
           <TierRing
+            label={`${round.service.name}: progress toward the next price`}
             percent={progress}
             value={liveCount}
             unitLabel={unitLabelPluralFor(round.service)}

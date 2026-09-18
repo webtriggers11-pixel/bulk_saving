@@ -118,9 +118,16 @@ function ServiceRow({ service }: { service: ServiceDto }) {
       <div className="min-w-0 flex-1">
         <CardEyebrow>{service.category}</CardEyebrow>
         <h3 className="mt-1 text-[16.5px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
-        <p className="mt-1 text-micro text-ink-muted" data-testid="service-unit-scope">
-          {service.unitDescription?.trim() || service.description}
-        </p>
+        {/* `service-unit-scope` means "what one unit includes" (ADR-0019) and
+            nothing else — a service with no unitDescription shows its description
+            instead, under no testid, rather than widening what the id means. */}
+        {service.unitDescription?.trim() ? (
+          <p className="mt-1 text-micro text-ink-muted" data-testid="service-unit-scope">
+            {service.unitDescription}
+          </p>
+        ) : (
+          <p className="mt-1 text-micro text-ink-muted">{service.description}</p>
+        )}
       </div>
       <PriceLine service={service} className="shrink-0 text-right text-[16px]" />
     </Card>
