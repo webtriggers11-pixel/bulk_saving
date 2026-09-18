@@ -14,6 +14,7 @@
 | Tokens, palettes, surfaces, keyframes | `apps/web/src/styles/theme.css` |
 | Tokens → Tailwind utilities | `apps/web/tailwind.config.js` |
 | Primitives (Button, Card, Input, Label, Badge, Toast, Skeleton, Icon) | `apps/web/src/components/ui/` |
+| Screen primitives (PageHeader, EmptyState, FactTile, StatCard, Field, Monogram, DataRows, AmbientGround) | `apps/web/src/components/ui/` |
 | The contract, as tests | `apps/web/src/styles/theme.test.ts`, `design-system.test.tsx` |
 | The artboards | `loop/work/FEAT-011-resident-ui-redesign/design/*.dc.html` |
 
@@ -113,6 +114,29 @@ original "Loading …" sentence announced but undrawn.
 
 One family, in `components/ui/icon.tsx`: 24-box, 1.8 stroke, round caps, `currentColor`,
 `aria-hidden`. No emoji, no second set. An icon-only control carries the `aria-label`.
+
+## Screen primitives (CHORE-008, ADR-0022)
+
+A screen is assembled from these, not drawn. Re-typing one of their shapes fails the
+build (`primitives.test.tsx` asserts one owner per shape).
+
+| Primitive | Its one job |
+|---|---|
+| `PageHeader` | title, optional subtitle, optional action. Knows nothing about routes. |
+| `EmptyState` | glyph, heading, line, optional way out. Never explains *why* it is empty. |
+| `FactTile` / `FactRow` | one labelled fact, as a tile or a dense row. |
+| `StatCard` | one number and what it counts. `emphasis`: `lead` · `normal` · `quiet` · `alert`. Formats nothing. |
+| `Field` | label + control + error, with the id/aria wiring. Control comes in as a render prop. |
+| `Monogram` | initials on the brand gradient, with the halo. Derives initials in one place. |
+| `DataRows` / `DataRow` / `DataCell` | a dense list of records; columns from `md`, stacked below. Not a table. |
+| `AmbientGround` | the fixed, inert ground: three drifting washes plus grain. |
+
+Two rules keep them honest:
+
+- **Variation is a closed prop, not a className.** Pass `className` for placement
+  (margins, grid spans), never to reach inside. Missing variant → add the variant.
+- **`features/*` depends on `components/ui/*`, never the reverse.** Asserted by test;
+  it already caught `QueryState` importing a hook out of `features/shell`.
 
 ## Adding to the system
 
