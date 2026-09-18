@@ -17,7 +17,7 @@
 | FEAT-005 | Super-admin dashboard — demand, assign vendor, mark delivered/paid | done | P1 | 2026-09-16 | 2026-09-17 | loop/work/FEAT-005-super-admin-dashboard/ | ADR-0003, ADR-0011, ADR-0012 |
 | FEAT-006 | Notifications — SMS-first (OTP + round alerts) | done | P1 | 2026-09-16 | 2026-09-18 | loop/work/FEAT-006-notifications-sms/ | ADR-0013 |
 | FEAT-007 | Post-service rating | done | P2 | 2026-09-16 | 2026-09-18 | loop/work/FEAT-007-post-service-rating/ | ADR-0017 |
-| FEAT-008 | PWA shell — installable + offline-friendly | planned | P2 | 2026-09-16 | — | loop/work/FEAT-008-pwa-shell/ | ADR-0015 |
+| FEAT-008 | PWA shell — installable + offline-friendly | done | P2 | 2026-09-16 | 2026-09-18 | loop/work/FEAT-008-pwa-shell/ | ADR-0015, ADR-0016 |
 | CHORE-002 | Dev-only: surface the OTP in a toast (gated, never in production) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-002-dev-otp-toast/ | ADR-0016 |
 | CHORE-003 | Live end-to-end smoke harness (scripts/e2e-smoke.mjs) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-003-e2e-smoke-harness/ | — |
 | CHORE-004 | verify.sh must also run the build (a broken build stayed green) | in-progress | P1 | 2026-09-18 | — | loop/work/CHORE-004-verify-build-gate/ | — |

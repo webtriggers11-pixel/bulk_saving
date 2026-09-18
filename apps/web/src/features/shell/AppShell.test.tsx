@@ -65,13 +65,18 @@ describe('AppShell route coverage', () => {
     expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument();
   });
 
-  it('shows NO tab bar on the admin dashboard — it has its own navigation', async () => {
-    signIn({ resident: { role: 'SUPER_ADMIN' } });
-    renderAppAt('/admin');
+  // V2 P2-3: AC2 held for every admin route, but only /admin was proven. Pin all
+  // four, so a future admin route added inside the wrong wrapper fails here.
+  it.each(['/admin', '/admin/rounds/new', '/admin/rounds/abc123', '/admin/vendors'])(
+    'shows NO tab bar on %s — the dashboard has its own navigation',
+    async (path) => {
+      signIn({ resident: { role: 'SUPER_ADMIN' } });
+      renderAppAt(path);
 
-    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument();
-  });
+      expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+      expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument();
+    },
+  );
 
   it('reserves space for the fixed bar so page content is never trapped under it', () => {
     signIn();

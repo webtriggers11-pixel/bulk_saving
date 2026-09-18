@@ -5,7 +5,9 @@
 
 ## Confidence
 
-**Level:** High for the shell-only caching boundary · Medium for the update flow
+**Level:** High for the shell-only caching boundary · Medium for the update flow ·
+**Low for the "My Requests" routing clause** (added 2026-09-18 after that clause
+was refuted within hours — see ADR-0016)
 **Basis:** The privacy argument is structural, not empirical: a Workbox runtime
 cache is keyed by URL and shared by every user of that browser profile, while
 this API's tenant scoping lives in the `Authorization` header (ADR-0003), so a
@@ -14,11 +16,20 @@ research. Medium on the update flow because `registerType: 'autoUpdate'` plus an
 explicit reload prompt is one of several defensible combinations, and the choice
 rests on judgment about a resident's tolerance for a surprise refresh.
 
+**Low on the routing clause, recorded after the fact (V2 P1-5).** It was written
+as if it were a free consequence of the caching decision, and carried no research
+at all: the shape of `GET /rounds` was never checked, and one look at the
+controller would have shown it is OPEN-only. It deserved "Judgment call / Low"
+with a revisit trigger from the start, and this ADR's confidence section should
+have said so. Recording it here rather than quietly correcting the level, because
+an honest confidence rating is only worth anything if it survives being wrong.
+
 ## Research depth
 
 **Depth:** Quick check
 
-**Sources:**
+**Sources:** (none of which covered the routing clause — that is the point of
+the Low rating above)
 - `vite-plugin-pwa` 0.21 (installed) — confirmed `virtual:pwa-register/react`
   ships with the plugin (`useRegisterSW`), so the update prompt needs **no new
   dependency**, and that `registerType: 'autoUpdate'` is already set in
@@ -79,17 +90,15 @@ showing already-fetched data from the in-memory query cache when it exists.
 prompt via `useRegisterSW` when a new worker is waiting, so a resident is never
 silently mid-refresh and never stuck on a stale build.
 
-"My Requests" in BRIEF's nav gets its own route, `/my-requests`, backed by
-`GET /rounds/mine`.
+"My Requests" in BRIEF's nav maps to the existing `/rounds` page. No new route,
+no duplicate data view.
 
-**Amended 2026-09-18, mid-build.** The original decision was to point the tab at
-the existing `/rounds` page and add no new view. That was wrong on the facts:
-`GET /rounds` returns OPEN rounds only, so a round would disappear from "My
-Requests" the moment it closed — precisely when a resident wants to check what
-happened to it. FEAT-007 (parallel session) then added `GET /rounds/mine`, which
-returns the caller's joined rounds in any status. The tab now uses it.
-`/rounds` keeps its browse role, reachable from Home and from the My Requests
-empty state.
+> **This clause is superseded by [ADR-0016](0016-my-requests-own-route.md)
+> (2026-09-18).** It was wrong: `GET /rounds` is OPEN-only, so a joined round
+> would vanish from the tab the moment it closed. The original text is left
+> intact above because `loop/framework.md` calls ADRs immutable — an earlier
+> edit had rewritten it in place, which V2 (P2-5) correctly flagged as using the
+> wrong mechanism. The reasoning now lives in ADR-0016.
 
 ## Consequences
 

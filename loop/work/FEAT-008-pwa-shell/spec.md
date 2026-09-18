@@ -1,6 +1,6 @@
 # FEAT-008 — PWA shell: installable, mobile-first, survives a flaky connection
 
-**Status:** specced · **Priority:** P2 · **Owner:** agent (autonomous) · **Opened:** 2026-09-18
+**Status:** done · **Priority:** P2 · **Owner:** agent (autonomous) · **Opened:** 2026-09-18
 
 ## Problem / Why
 
@@ -56,7 +56,12 @@ FEAT-008 is `apps/web`-only, so it can proceed safely in parallel.
 - [ ] AC7 — A data view whose request fails while offline shows an explicit
       "You're offline" state with a Retry control — never an empty list that
       reads as "no rounds" — and shows already-cached data when the query cache
-      has it.
+      has it. **This includes the PAUSED case:** TanStack Query pauses rather
+      than fails an offline query, so a page must gate on `fetchStatus` too, and
+      an offline test must drive `onlineManager`, not `mockRejectedValue`.
+- [ ] AC7b — A pledge submitted while offline says it will be sent on reconnect,
+      rather than leaving the button spinning: offline MUTATIONS pause the same
+      way, and a paused mutation genuinely does fire on reconnect.
 - [ ] AC8 — After the first visit, the app shell (HTML, JS, CSS, icons) loads
       from the service worker with the network off, so the app opens offline.
 - [ ] AC9 — When a new service worker is waiting, a reload prompt appears;

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../auth/auth.store';
-import { useInstallPrompt } from '../shell/useInstallPrompt';
+import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
 import { useOnlineStatus } from '../shell/useOnlineStatus';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -25,6 +25,10 @@ export function ProfilePage() {
   const logout = useAuthStore((state) => state.logout);
   const { canInstall, promptInstall } = useInstallPrompt();
   const online = useOnlineStatus();
+  // Already running from the home screen: there is nothing to install, and the
+  // hint would tell an Android user to go find a menu item they already used
+  // (V2 P2-6).
+  const installed = isStandalone();
 
   function handleLogout() {
     logout();
@@ -62,9 +66,13 @@ export function ProfilePage() {
       <Card>
         <CardHeader>
           <CardDescription>This app</CardDescription>
-          <CardTitle>Add to your home screen</CardTitle>
+          <CardTitle>{installed ? 'Installed' : 'Add to your home screen'}</CardTitle>
         </CardHeader>
-        {canInstall ? (
+        {installed ? (
+          <p className="text-sm text-slate-600" data-testid="installed-note">
+            You're running the installed app.
+          </p>
+        ) : canInstall ? (
           <Button variant="primary" onClick={() => void promptInstall()}>
             Install app
           </Button>

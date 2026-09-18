@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOnlineStatus } from './useOnlineStatus';
 
 function Probe() {
@@ -37,13 +37,22 @@ describe('useOnlineStatus', () => {
     expect(screen.getByTestId('state')).toHaveTextContent('online');
   });
 
-  it('removes its listeners on unmount', () => {
+  /**
+   * V2 P1-3: the original version of this test asserted that dispatching after
+   * unmount "does not throw", on the premise that React warns on a state update
+   * after unmount. React stopped doing that in 18, so the assertion could never
+   * fail — deleting the cleanup entirely left all three tests green. Spy on the
+   * removals instead: this one DOES fail without the effect's return.
+   */
+  it('removes both listeners on unmount, so no listener outlives the component', () => {
+    const remove = vi.spyOn(window, 'removeEventListener');
     const { unmount } = render(<Probe />);
+
     unmount();
 
-    // No listener left to update a torn-down component: React would warn/throw
-    // on a state update after unmount, so a clean dispatch proves cleanup.
-    Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
-    expect(() => window.dispatchEvent(new Event('offline'))).not.toThrow();
+    const removed = remove.mock.calls.map(([type]) => type);
+    expect(removed).toContain('online');
+    expect(removed).toContain('offline');
+    remove.mockRestore();
   });
 });

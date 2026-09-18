@@ -21,7 +21,7 @@ export function UpdatePrompt() {
       role="status"
       aria-live="polite"
       data-testid="update-prompt"
-      className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-teal-700 px-4 py-2 text-sm text-white"
+      className="flex items-center justify-between gap-3 bg-teal-700 px-4 py-2 text-sm text-white"
     >
       <span>A new version is ready.</span>
       <Button variant="ghost" className="text-white underline" onClick={() => void updateServiceWorker(true)}>

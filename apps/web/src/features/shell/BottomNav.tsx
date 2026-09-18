@@ -25,7 +25,6 @@ export function BottomNav() {
           <li key={tab.to} className="flex-1">
             <NavLink
               to={tab.to}
-              end={tab.to === '/'}
               className={({ isActive }) =>
                 [
                   'flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-2 py-2 text-xs font-medium',

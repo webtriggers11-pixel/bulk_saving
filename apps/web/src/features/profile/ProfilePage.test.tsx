@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfilePage } from './ProfilePage';
+import { resetInstallPrompt } from '../shell/useInstallPrompt';
 import { useAuthStore } from '../auth/auth.store';
 import { signIn } from '../../test/session';
 
@@ -37,8 +38,13 @@ function fireBeforeInstallPrompt(prompt = vi.fn().mockResolvedValue(undefined)) 
 describe('ProfilePage', () => {
   beforeEach(() => {
     navigate.mockClear();
+    resetInstallPrompt();
     useAuthStore.getState().logout();
     signIn();
+  });
+
+  afterEach(() => {
+    resetInstallPrompt();
   });
 
   afterEach(() => {
@@ -82,6 +88,22 @@ describe('ProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Install app' })).not.toBeInTheDocument();
     // iOS Safari never fires the event, so the hint is what a resident there sees.
     expect(screen.getByTestId('install-hint')).toHaveTextContent(/Add to Home Screen/i);
+  });
+
+  /**
+   * V2 P1-1. Chromium fires `beforeinstallprompt` ONCE on load, on whatever
+   * route the resident landed on, and never again on an SPA route change — so
+   * in production it has always fired BEFORE the Profile tab is opened. The
+   * original tests dispatched it after render, the one ordering that never
+   * happens, and so passed against a hook that missed the event every time.
+   */
+  it('offers Install for an event that fired BEFORE this tab was ever opened', async () => {
+    fireBeforeInstallPrompt();
+
+    renderProfile();
+
+    expect(await screen.findByRole('button', { name: 'Install app' })).toBeInTheDocument();
+    expect(screen.queryByTestId('install-hint')).not.toBeInTheDocument();
   });
 
   it('offers Install once the event fires, prompts on click, then stops offering', async () => {

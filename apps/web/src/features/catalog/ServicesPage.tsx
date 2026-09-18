@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { ServiceDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
-import { QueryErrorState } from '../../components/QueryState';
+import { QueryErrorState, hasQueryFailed, hasUsableData } from '../../components/QueryState';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog } from './useCatalog';
@@ -41,7 +41,9 @@ function ServiceCard({ service }: { service: ServiceDto }) {
  */
 export function ServicesPage() {
   const navigate = useNavigate();
-  const { data, isLoading, isError, refetch } = useCatalog();
+  const query = useCatalog();
+  const { data, isLoading, refetch } = query;
+  const failed = hasQueryFailed(query);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-slate-50 p-6">
@@ -57,9 +59,9 @@ export function ServicesPage() {
 
       {isLoading && <p className="text-slate-500">Loading services…</p>}
 
-      {isError && <QueryErrorState subject="services" hasData={Boolean(data)} onRetry={() => void refetch()} />}
+      {failed && <QueryErrorState subject="services" hasData={hasUsableData(data)} onRetry={() => void refetch()} />}
 
-      {data && data.length === 0 && (
+      {data && data.length === 0 && !failed && (
         <Card data-testid="catalog-empty">
           <CardHeader>
             <CardTitle>No services yet</CardTitle>

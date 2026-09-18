@@ -13,5 +13,6 @@ After each checked task: commit (`feat(FEAT-008): ...`) AND append a LOG.md entr
 - [x] T8: `QueryState` offline/retry component adopted by the resident data pages (Home, Services, Rounds) so a failed refetch shows offline + Retry and keeps already-cached data. Tests for AC7. — depends: T3
 - [x] T8b: `/my-requests` page on `GET /rounds/mine` (joined rounds, any status), tab repointed from `/rounds`; tests for AC1b. — depends: T5, T8
 - [x] T9: AC3 + AC8 evidence — `pnpm --filter web build`, assert the precache manifest covers the shell entries and `navigateFallback` is present; check no horizontal scroll at 360 px by inspection of the layout classes. Record findings in the work folder. — depends: T5, T6, T7, T8
-- [ ] T10: V2 — independent code-reviewer subagent runs `verify.sh` itself and reviews the diff vs spec + ADR-0015. — depends: T9
-- [ ] T11: V3 — fresh double run of `verify.sh` back-to-back, both logged; REGISTRY → done; LOG close entry. — depends: T10
+- [x] T10: V2 — independent code-reviewer subagent runs `verify.sh` itself and reviews the diff vs spec + ADR-0015. — depends: T9
+- [x] T10b: V2 fixes — P1-1 install capture at module scope, P1-2 paused-query gating on all four pages (+ AC7b paused mutations), P1-3 real cleanup assertion, P1-4 registry/process, P1-5 + P2-5 ADR confidence and supersession via ADR-0016, P2-1..P2-8. — depends: T10
+- [x] T11: V3 — fresh double run of `verify.sh` back-to-back, both logged; REGISTRY → done; LOG close entry. — depends: T10

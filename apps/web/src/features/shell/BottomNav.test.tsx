@@ -27,7 +27,10 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 
-  it('does not mark Home as current on a nested route (end-matching)', () => {
+  // V2 P2-4: this used to claim it guarded an `end` prop. It did not — removing
+  // the prop left it green, because react-router already special-cases "/". The
+  // prop is gone; the behaviour it claimed to protect is what is asserted here.
+  it('marks only the current tab, never Home as a catch-all', () => {
     renderAt('/services');
 
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
