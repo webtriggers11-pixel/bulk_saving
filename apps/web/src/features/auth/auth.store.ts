@@ -34,6 +34,7 @@ interface AuthState {
   login: (payload: LoginPayload) => void;
   /** Replace tokens after a transparent refresh rotation. */
   setTokens: (tokens: AuthTokens) => void;
+  setSociety: (society: SocietyDto) => void;
   /** Clear the session (explicit logout, or refresh failure). */
   logout: () => void;
 }
@@ -83,6 +84,14 @@ export const useAuthStore = create<AuthState>()(
           status: 'authenticated',
         }),
       setTokens: ({ accessToken, refreshToken }) => set({ accessToken, refreshToken }),
+      /**
+       * `POST /auth/otp/verify` returns tokens + resident and NO society, so a
+       * freshly signed-in resident had `society: null` and the Profile tab — which
+       * reads the store, never the network, so it works offline (ADR-0015) — showed
+       * "—" where the design shows their society. `GET /me` has it; this is how the
+       * store learns (CHORE-009).
+       */
+      setSociety: (society) => set({ society }),
       logout: () =>
         set({
           accessToken: null,

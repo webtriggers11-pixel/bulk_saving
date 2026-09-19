@@ -3,6 +3,7 @@ import { AmbientGround } from '../../components/ui/ambient-ground';
 import { BottomNav } from './BottomNav';
 import { OfflineBanner } from './OfflineBanner';
 import { UpdatePrompt } from './UpdatePrompt';
+import { useSessionSync } from './useSessionSync';
 
 /**
  * Resident app shell (FEAT-008): offline/update strips above the page, tab bar
@@ -17,13 +18,19 @@ import { UpdatePrompt } from './UpdatePrompt';
  * light rather than dragging the light with it.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  // One place for the whole resident app to keep its session in step (CHORE-009).
+  useSessionSync();
+
   return (
     <div className="relative min-h-screen">
       <AmbientGround />
       {/* One sticky container, not two sticky siblings: both strips were
           `sticky top-0` and the banner painted over the update prompt when
           offline with a worker waiting (V2 P2-8). */}
-      <div className="sticky top-0 z-20 flex flex-col gap-2 px-4 pt-3">
+      {/* Same column as the screens below it: the strips were full-bleed, so on
+          anything wider than a phone their text started far left of the content
+          they are about (CHORE-009). */}
+      <div className="sticky top-0 z-20 mx-auto flex max-w-md flex-col gap-2 px-4 pt-3">
         <UpdatePrompt />
         <OfflineBanner />
       </div>

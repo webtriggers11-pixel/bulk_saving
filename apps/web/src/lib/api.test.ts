@@ -108,3 +108,54 @@ describe('apiRequest transparent refresh', () => {
     expect(useAuthStore.getState().accessToken).toBeNull();
   });
 });
+
+/**
+ * BUG-008 — the two ways a refresh can fail are not the same failure.
+ *
+ * Found in a browser, not by a test: with the API stopped, reloading the app cleared
+ * the session and bounced to /onboard instead of showing the error state. A resident
+ * on Indian mobile data would then need an SMS OTP to get back in, over the network
+ * that just failed.
+ */
+describe('a refresh that fails', () => {
+  beforeEach(() => {
+    useAuthStore.getState().logout();
+    useAuthStore.getState().login({ accessToken: 'old', refreshToken: 'r1', resident });
+  });
+
+  it('keeps the session when nothing answered (network error)', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('/auth/refresh')) {
+        throw new TypeError('Failed to fetch');
+      }
+      return new Response(JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'no' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    expect(useAuthStore.getState().refreshToken).toBe('r1');
+  });
+
+  it('still clears the session when the server refuses the refresh token', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('/auth/refresh')) {
+        return new Response(JSON.stringify({ success: false, error: { code: 'INVALID_TOKEN', message: 'no' } }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'no' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+  });
+});

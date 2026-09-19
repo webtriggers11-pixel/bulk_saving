@@ -567,3 +567,14 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The owner's ask is the whole spec: "properly working same design UI that we have created". So this item does the one thing no test can — each screen beside its artboard, at the size a resident holds it, with differences either closed or written down.
 - Frontend only, by instruction: no SMS, no backend, no schema. The API is a data source here, nothing more. The webfont stays on the CDN and is not raised again — the owner has said the font is provisional.
 - By: agent (autonomous)
+
+## 2026-09-19 — CHORE-009 — the parity pass found three defects no test could
+- What: every resident screen and state opened against the real API, with data made for the purpose — a resident holding an OPEN round, a DELIVERED one to rate, and a round nobody had joined — and sizes read from computed style rather than eyeballed. `findings.md` has the screen-by-screen result.
+- The design itself holds up: Home, Services, Group buys, My Requests, Profile, onboarding, and the skeleton / empty / failed-read / offline / pending states all render as drawn, at the measured values (24px card radius, 22px padding, 26px glass blur, 24px name, 10.5px eyebrow, 14px grid gap).
+- **Three defects, none of which a test could have found:**
+  1. **Profile showed "—" for Society.** `POST /auth/otp/verify` returns tokens and a resident and no society, so the store held null — and Profile reads the store on purpose, because it is the one screen that must work offline (ADR-0015). Every real signed-in resident saw a dash where the design shows their society. Fixed by teaching the store from the `me` query on the same query key Home already uses, so it costs no extra request.
+  2. **The offline and update strips ran edge to edge** while every screen is a centred column, so their text started far left of the content they describe on anything wider than a phone.
+  3. **A stopped API signed the resident out.** Reloading with the server down did not show the error state the design draws — it cleared the session and bounced to `/onboard`. On a real phone that means an SMS OTP to get back in, over the network that just failed. Triaged as BUG-008 and fixed: only a server that ANSWERS and refuses clears the session; a thrown fetch leaves it alone. The regression test was proven to fail against the old behaviour before the fix went in.
+- Three more recorded and deliberately NOT fixed, because they are not frontend: a delivered round shows `currentPrice` rather than the negotiated `finalPrice` (the DTO has no such field, and it is what a resident believes they owe — not something to guess); `nextTier` reads as "unlocks ₹900" when ₹900 is already the price; and the dev catalog is full of E2E leftovers.
+- Evidence: gate exit 0 — backend 317/24, web 268/43, 1218 class tokens.
+- By: agent (autonomous)

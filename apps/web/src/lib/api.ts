@@ -56,13 +56,18 @@ async function doRefresh(): Promise<string | null> {
     });
     const parsed = (await response.json()) as ApiResponse<AuthTokens>;
     if (!response.ok || !parsed.success) {
+      // The server answered and refused: the refresh token is spent, rotated or
+      // revoked. Clearing the session is the only honest thing to do.
       logout();
       return null;
     }
     setTokens(parsed.data);
     return parsed.data.accessToken;
   } catch {
-    logout();
+    // Nothing answered — API down, DNS, CORS, captive wifi. The session may be
+    // perfectly valid, and throwing it away costs the resident an SMS OTP to get
+    // back in, over the same network that just failed (BUG-008). Leave it alone and
+    // let the caller surface the failure; the screens already have the copy.
     return null;
   }
 }

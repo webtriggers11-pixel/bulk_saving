@@ -33,6 +33,7 @@
 | CHORE-008 | Every remaining screen on the design system + shared screen primitives | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/CHORE-008-admin-ui-and-shared-primitives/ | ADR-0022 |
 | BUG-007 | A primitive's base class and a caller's className silently fight (13 dead overrides) | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-007-primitive-class-conflicts/ | ADR-0022 |
 | CHORE-009 | Design-parity pass — every screen vs its artboard, in a browser | in-progress | P1 | 2026-09-19 | — | loop/work/CHORE-009-design-parity-pass/ | ADR-0021, ADR-0022 |
+| BUG-008 | A server hiccup signs the resident out (network error treated as a rejected refresh) | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/BUG-008-network-error-logs-you-out/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |
