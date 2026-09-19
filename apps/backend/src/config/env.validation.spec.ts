@@ -80,3 +80,31 @@ describe('assertProductionSafe', () => {
     ).toThrow(/CORS_ORIGINS/);
   });
 });
+
+/**
+ * FEAT-013 / ADR-0024. The ADR tells operators that `0` means "no expiry". A schema
+ * that rejects `0` turns following the documentation into a failed boot (V2 P1-3), so
+ * the accepted values are asserted here rather than left to the decorator.
+ */
+describe('JWT_REFRESH_TTL_SECONDS', () => {
+  const base = { ...env({ NODE_ENV: 'development', CORS_ORIGINS: undefined }) } as Record<string, unknown>;
+  delete base.NODE_ENV;
+
+  it('boots with the value unset — the documented default, meaning lifetime', () => {
+    expect(() => validateEnv({ ...base })).not.toThrow();
+  });
+
+  it('boots with 0, which ADR-0024 documents as lifetime', () => {
+    expect(() => validateEnv({ ...base, JWT_REFRESH_TTL_SECONDS: '0' })).not.toThrow();
+  });
+
+  it('boots with a positive number, which restores an expiring session', () => {
+    expect(() => validateEnv({ ...base, JWT_REFRESH_TTL_SECONDS: '3600' })).not.toThrow();
+  });
+
+  it('refuses a negative number rather than silently meaning lifetime', () => {
+    expect(() => validateEnv({ ...base, JWT_REFRESH_TTL_SECONDS: '-1' })).toThrow(
+      /JWT_REFRESH_TTL_SECONDS/,
+    );
+  });
+});

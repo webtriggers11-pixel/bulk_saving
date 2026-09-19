@@ -14,6 +14,11 @@ import { Monogram } from './monogram';
 import { Skeleton } from './skeleton';
 import { StatCard } from './stat';
 import { DataCell, RowSurface } from './data-rows';
+import { Field } from './field';
+import { Icon } from './icon';
+import { Notice } from './notice';
+import { PageHeader } from './page-header';
+import { Select } from './select';
 
 /**
  * BUG-007 — a primitive's base class and a caller's `className` silently fight.
@@ -24,8 +29,11 @@ import { DataCell, RowSurface } from './data-rows';
  * classes resolve to a real rule) — so the only way to catch it is to compare what a
  * primitive renders against what its callers ask for.
  *
- * This reads the classes each primitive ACTUALLY renders rather than a list someone
- * maintains, so a primitive written tomorrow is covered the day it exists.
+ * It reads the classes each primitive ACTUALLY renders, rather than a list of classes
+ * someone maintains — but WHICH primitives it renders is a list, and that list silently
+ * stopped covering `Notice` the day it was written (V2 P2-5). The first test below now
+ * fails when a component in this folder appears in neither `PRIMITIVES` nor
+ * `NO_CLASSNAME`, so the gap closes itself rather than waiting for a reviewer.
  */
 
 /** Which CSS property a Tailwind class sets — only the families that can collide. */
@@ -46,6 +54,14 @@ function familyOf(token: string): string | null {
   if (/^text-(xs|sm|base|lg|xl|[2-9]xl|eyebrow|label|micro|meta|caption|body|lead|title|headline|display|amount|hero)$/.test(bare)) {
     return 'font-size';
   }
+  // A side-specific border sets its own property and cannot fight an all-round one.
+  if (/^border-(t|r|b|l|x|y|tl|tr|br|bl)(-|$)/.test(bare)) return null;
+  if (/^border(-(\[|\d))?$/.test(bare)) return 'border-width';
+  // `emphasis` moved both of these into a primitive's base (CHORE-014), and nothing
+  // was watching either family: a caller could hand `Input` back the exact
+  // `border-white/70 shadow-ring` pair the change existed to remove (V2 P2-6).
+  if (/^border-/.test(bare)) return 'border-color';
+  if (/^shadow(-|$)/.test(bare)) return 'box-shadow';
   return null;
 }
 
@@ -53,7 +69,9 @@ function familyOf(token: string): string | null {
 function baseClassesOf(element: ReactElement): string[] {
   const { container } = render(element);
   const node = container.firstElementChild;
-  return (node?.className ?? '').split(/\s+/).filter(Boolean);
+  // `getAttribute`, not `.className`: on an SVG element that property is an
+  // SVGAnimatedString, and reading it as a string threw the moment `Icon` was added.
+  return (node?.getAttribute('class') ?? '').split(/\s+/).filter(Boolean);
 }
 
 /**
@@ -83,7 +101,28 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ['RowSurface', <RowSurface key="rs">x</RowSurface>],
   ['DataCell', <DataCell key="dc" label="Units" value="4" />],
   ['Fact', <Fact key="f" term="Pledge" value="2 rooms" />],
+  ['Notice', <Notice key="n" tone="error">x</Notice>],
+  ['Select', <Select key="sel" />],
+  ['PageHeader', <PageHeader key="ph" title="t" />],
+  ['Field', <Field key="fd" label="Status">{(props) => <Select {...props} />}</Field>],
+  ['Icon', <Icon key="ic" name="users" />],
 ];
+
+/**
+ * Components in this folder that take no `className` at all, with the reason. A caller
+ * cannot fight a base class it has no way to pass, so these need no entry above — but
+ * they DO need to be named here, or the coverage test cannot tell "deliberately out of
+ * scope" from "nobody remembered".
+ */
+const NO_CLASSNAME: Record<string, string> = {
+  AmbientGround: 'decorative, fixed-position; takes only an id',
+  Toast: 'rendered by the toast host, never written by a caller with classes',
+  StarGlyph: 'a raw glyph inside Rating; its className is the caller-owned fill colour only',
+  CardHeader: 'layout-only wrapper with a fixed shape',
+  SkeletonScreen: 'takes className but only as a caller-owned container; it renders none of its own',
+  DataRows: 'takes no className; the row primitives carry the shape',
+  DataRow: 'composed of RowSurface + DataCell, both covered above',
+};
 
 function appSources(dir = join(process.cwd(), 'src'), out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -179,8 +218,35 @@ function classNameTokens(tag: string): string[] {
   return tokens;
 }
 
+/** Every component exported from a non-test module in this folder. */
+function exportedComponents(): Array<[string, string]> {
+  const dir = join(process.cwd(), 'src/components/ui');
+  const found: Array<[string, string]> = [];
+  for (const entry of readdirSync(dir)) {
+    if (!/\.tsx$/.test(entry) || /\.test\.tsx$/.test(entry)) continue;
+    const source = readFileSync(join(dir, entry), 'utf8');
+    for (const [, name] of source.matchAll(/export (?:function|const) ([A-Z]\w*)/g)) {
+      found.push([name, entry]);
+    }
+  }
+  return found;
+}
+
 describe('BUG-007 — a caller must not fight a primitive for the same CSS property', () => {
   const bases = new Map(PRIMITIVES.map(([name, element]) => [name, baseClassesOf(element)]));
+
+  // V2 P2-5: the scan's own doc comment claimed a primitive written tomorrow was
+  // covered the day it existed. It was not — `PRIMITIVES` is a list, and `Notice`
+  // was missing from it. This is what makes the claim true.
+  it('covers every component in components/ui', () => {
+    const components = exportedComponents();
+    expect(components.length, 'found no components to check — this test is vacuous').toBeGreaterThan(15);
+
+    const uncovered = components
+      .filter(([name]) => !bases.has(name) && !(name in NO_CLASSNAME))
+      .map(([name, file]) => `${name} (${file}) is in neither PRIMITIVES nor NO_CLASSNAME`);
+    expect(uncovered).toEqual([]);
+  });
 
   it('every primitive renders at least one class, or this scan proves nothing', () => {
     for (const [name, classes] of bases) {

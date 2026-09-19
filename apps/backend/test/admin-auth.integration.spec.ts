@@ -88,7 +88,16 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(me.body.data.society.id).toBe(society.id);
   });
 
-  it('answers identically for a number that is not an admin, and sends nothing (AC2)', async () => {
+  /**
+   * AC2, and the property ADR-0023 spends most of its words on.
+   *
+   * The first version of this test compared response BODIES and passed while the
+   * endpoint was a perfect oracle: a non-admin returned before the rate limiter ran,
+   * so a second request inside 30s answered 429 for an administrator and 200 for
+   * everyone else (V2 P1-1). Parity is therefore asserted on the full observable
+   * answer — status AND body — across two requests, which is what an attacker has.
+   */
+  it('is indistinguishable across admin, resident and stranger — status and body (AC2)', async () => {
     const residentPhone = randomPhone();
     await prisma.resident.create({
       data: { societyId: society.id, phone: residentPhone, role: 'RESIDENT' },
@@ -96,28 +105,65 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     const strangerPhone = randomPhone();
     const adminPhone = await makeAdmin();
 
+    /** What an unauthenticated caller can actually see: two requests in a row. */
+    async function probe(phone: string) {
+      const first = await server().post('/auth/admin/otp/request').send({ phone });
+      const second = await server().post('/auth/admin/otp/request').send({ phone });
+      return {
+        statuses: [first.status, second.status],
+        bodies: [first.body, second.body],
+      };
+    }
+
     const sendsBefore = channel.sends;
+    const asAdmin = await probe(adminPhone);
+    const asResident = await probe(residentPhone);
+    const asStranger = await probe(strangerPhone);
 
-    const asResident = await server()
-      .post('/auth/admin/otp/request')
-      .send({ phone: residentPhone })
-      .expect(200);
-    const asStranger = await server()
-      .post('/auth/admin/otp/request')
-      .send({ phone: strangerPhone })
-      .expect(200);
-    // Nothing was dispatched for either.
-    expect(channel.sends).toBe(sendsBefore);
+    expect(asResident).toEqual(asAdmin);
+    expect(asStranger).toEqual(asAdmin);
+    // Both probes consumed the limiter, so the SECOND request is refused for everyone.
+    expect(asAdmin.statuses).toEqual([200, 429]);
 
-    const asAdmin = await server()
-      .post('/auth/admin/otp/request')
-      .send({ phone: adminPhone })
-      .expect(200);
+    // The one thing that does differ is the only thing the caller cannot observe:
+    // exactly one SMS was dispatched, to the administrator.
     expect(channel.sends).toBe(sendsBefore + 1);
+    expect(channel.lastPhone).toBe(adminPhone);
+  });
 
-    // The three responses are indistinguishable — that IS the acceptance criterion.
-    expect(asResident.body).toEqual(asAdmin.body);
-    expect(asStranger.body).toEqual(asAdmin.body);
+  /**
+   * V2 P1-2. `verify` used to answer OTP_INVALID for an unknown number and
+   * OTP_EXPIRED for a registered one, so a single unauthenticated request revealed
+   * whether a phone existed in the product.
+   */
+  it('gives the same refusal to a wrong code whoever sends it (AC2)', async () => {
+    const residentPhone = randomPhone();
+    await prisma.resident.create({
+      data: { societyId: society.id, phone: residentPhone, role: 'RESIDENT' },
+    });
+    const strangerPhone = randomPhone();
+    const adminPhone = await makeAdmin();
+
+    async function guessWithoutRequesting(phone: string) {
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
+      return { status: res.status, body: res.body };
+    }
+
+    const asAdmin = await guessWithoutRequesting(adminPhone);
+    expect(await guessWithoutRequesting(residentPhone)).toEqual(asAdmin);
+    expect(await guessWithoutRequesting(strangerPhone)).toEqual(asAdmin);
+
+    // And once a code HAS been requested, the answer to a wrong guess is also the
+    // same for all three — because the admin door stores one for everybody.
+    async function requestThenGuess(phone: string) {
+      await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
+      return { status: res.status, body: res.body };
+    }
+
+    const guessedAdmin = await requestThenGuess(await makeAdmin());
+    expect(await requestThenGuess(randomPhone())).toEqual(guessedAdmin);
+    expect(guessedAdmin.body.error.code).toBe(ErrorCode.OTP_INVALID);
   });
 
   it('never creates a resident, however the admin door is poked (AC4)', async () => {
@@ -153,25 +199,41 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(JSON.stringify(res.body)).not.toContain('accessToken');
   });
 
-  it('refuses a number that holds a row in two societies (ADR-0023)', async () => {
+  it('refuses a number that administers two societies, and sends it nothing', async () => {
     const phone = randomPhone();
-    await prisma.resident.create({
-      data: { societyId: society.id, phone, role: 'SUPER_ADMIN', verifiedAt: new Date() },
-    });
-    await prisma.resident.create({
-      data: { societyId: otherSociety.id, phone, role: 'SUPER_ADMIN', verifiedAt: new Date() },
-    });
+    for (const societyId of [society.id, otherSociety.id]) {
+      await prisma.resident.create({
+        data: { societyId, phone, role: 'SUPER_ADMIN', verifiedAt: new Date() },
+      });
+    }
 
     const sendsBefore = channel.sends;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    // Ambiguous scope: nothing is sent, because there is no one society to send it for.
+    // Ambiguous: there is no one society to sign them into, so nothing is sent.
     expect(channel.sends).toBe(sendsBefore);
 
-    const res = await server()
-      .post('/auth/admin/otp/verify')
-      .send({ phone, code: '123456' })
-      .expect(400);
-    expect(res.body.error.code).toBe(ErrorCode.OTP_INVALID);
+    // ...and the request still consumed the limiter, exactly like every other number.
+    await server().post('/auth/admin/otp/request').send({ phone }).expect(429);
+  });
+
+  /**
+   * V2 (plausible finding): an administrator of one society who later joins another
+   * through the resident door holds two rows with the same phone. Treating that as
+   * ambiguous locked them out of the dashboard by way of using the product normally.
+   */
+  it('signs in an admin who is also a resident of another society', async () => {
+    const phone = await makeAdmin();
+    await prisma.resident.create({
+      data: { societyId: otherSociety.id, phone, role: 'RESIDENT', verifiedAt: new Date() },
+    });
+
+    await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
+    const code = channel.lastCode as string;
+
+    const res = await server().post('/auth/admin/otp/verify').send({ phone, code }).expect(200);
+    // Signed into the society they ADMINISTER, not the one they merely live in.
+    expect(res.body.data.resident.societyId).toBe(society.id);
+    expect(res.body.data.resident.role).toBe('SUPER_ADMIN');
   });
 
   it('ignores a body that tries to name its own society or invite code (ADR-0003)', async () => {

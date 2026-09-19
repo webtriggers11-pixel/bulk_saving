@@ -50,6 +50,22 @@ in production without it**, and also refuses to boot if `OTP_DEV_LOG=true` or if
 is still an example value from this repository (`assertProductionSafe`). Verified: the
 container exits with the offending variable named.
 
+`JWT_REFRESH_TTL_SECONDS` is unset or `0` by default, and that means **sessions never
+expire** (ADR-0024): one OTP per device, forever. Set a positive number of seconds to
+restore an expiring session.
+
+Because there is no clock, **revoking a session is a manual act**:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec redis \
+  redis-cli DEL "refresh:<residentId>"
+```
+
+That ends exactly one session, and takes effect within one `JWT_ACCESS_TTL_SECONDS`
+(900s by default) — which is why that value stays small. There is no sign-out-everywhere
+screen yet; for a lost or shared **admin** device this command is the whole recovery
+procedure.
+
 `VITE_API_URL` is baked into the PWA at **build** time, so changing it means rebuilding the
 web image.
 

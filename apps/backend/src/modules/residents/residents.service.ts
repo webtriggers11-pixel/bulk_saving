@@ -27,26 +27,35 @@ export class ResidentsService {
    * minus the half that can create one. Separated rather than parameterised: "may this
    * call bring an account into existence" is the kind of thing a boolean argument hides.
    */
-  markVerified(id: string): Promise<Resident> {
-    return this.prisma.resident.update({ where: { id }, data: { verifiedAt: new Date() } });
+  async markVerified(resident: Resident): Promise<Resident> {
+    const verifiedAt = new Date();
+    // `updateMany`, not `update`: the row was read a round-trip ago, and if it has
+    // since been deleted `update` throws P2025 — a 500 out of a sign-in that should
+    // simply have refused. Zero rows updated is not an error here; the caller has
+    // already made its authorisation decision on the row it holds.
+    await this.prisma.resident.updateMany({ where: { id: resident.id }, data: { verifiedAt } });
+    return { ...resident, verifiedAt };
   }
 
   /**
-   * The one resident with this phone number, or null (FEAT-012, ADR-0023).
+   * The one SUPER_ADMIN row with this phone number, or null (FEAT-012, ADR-0023).
    *
-   * This is the admin sign-in path's replacement for the invite code: it is where
-   * `societyId` comes from, so it must be unambiguous. `phone` is unique only WITHIN a
-   * society, so the same number can hold a row in two of them — and picking whichever
-   * Postgres returned first would scope an OTP, or a session, to a tenant nobody chose.
-   * Two matches is therefore treated exactly like zero.
+   * Filtered on role, and unique among ADMIN rows rather than among all rows. An
+   * administrator of one society who later joins another through the resident door
+   * holds two rows with the same phone; treating that as ambiguous would silently
+   * lock them out of the dashboard by way of using the product normally (V2). Two
+   * SUPER_ADMIN rows is still ambiguous — there is no one society to sign them into,
+   * and guessing is how a session lands in a tenant nobody chose.
    *
-   * Role is deliberately NOT part of the query: the admin path checks the role itself,
-   * after the OTP, so that "this number is not an administrator" is something you are
-   * only told once you have proven you control the number.
+   * This is only ever consulted AFTER the OTP. It decides authorisation, never what
+   * the caller is told about an unverified number.
    */
-  async findUniqueByPhone(phone: string): Promise<Resident | null> {
-    const matches = await this.prisma.resident.findMany({ where: { phone }, take: 2 });
-    return matches.length === 1 ? matches[0] : null;
+  async findAdminByPhone(phone: string): Promise<Resident | null> {
+    const admins = await this.prisma.resident.findMany({
+      where: { phone, role: 'SUPER_ADMIN' },
+      take: 2,
+    });
+    return admins.length === 1 ? admins[0] : null;
   }
 
   /** Fetch a resident by id — for the trusted authenticated-context path only. */

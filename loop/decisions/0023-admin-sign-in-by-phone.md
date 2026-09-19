@@ -40,22 +40,36 @@ invite code is gone.
 
 1. `POST /auth/admin/otp/request` and `POST /auth/admin/otp/verify`, taking a phone (and a
    code) and nothing else.
-2. The society is read from the **single** `Resident` row matching that phone — zero
-   matches and two matches are treated alike, so a number holding a row in two societies
-   is refused rather than scoped to an arbitrary one. The lookup does not filter on role;
-   see (5).
-3. **The request step does not reveal who is an admin.** It answers `{ requested: true }`
-   whether or not a code was sent. An endpoint that answers differently is a tool for
-   sorting a leaked phone list into administrators and everyone else.
+2. The society is read from the **single SUPER_ADMIN row** matching that phone. Filtered
+   on role, and unique among admin rows rather than among all rows: an administrator of
+   one society who later joins another through the resident door holds two rows with the
+   same number, and treating that as ambiguous would lock them out of the dashboard by
+   way of using the product normally. Two ADMIN rows is still ambiguous — there is no one
+   society to sign them into.
+3. **Nothing an unauthenticated caller can observe differs between an administrator, a
+   resident and a stranger.** This is stronger than "the same response body", which is
+   all the first implementation delivered — and it was not enough:
+
+   - Returning early for a non-admin left the rate limiter untouched for them, so two
+     requests 30s apart answered `200, 429` for an administrator and `200, 200` for
+     everyone else. A perfect oracle, produced by the very branch meant to prevent one.
+   - Scoping the OTP by the caller's own society meant a registered number had a stored
+     OTP key where an unregistered one did not, so `verify` answered `OTP_EXPIRED` for
+     one and `OTP_INVALID` for the other — registration status in a single request.
+
+   So: **the admin door has ONE OTP scope** (`ADMIN_OTP_SCOPE`, a server constant, not a
+   society id), and **every caller takes every step** — limiter, generation, storage.
+   The only thing that varies is whether the SMS is dispatched, which is the one effect
+   the caller cannot see. A non-admin's code is generated and stored and sent nowhere.
 4. **The admin verify path never creates a resident.** The resident path upserts, because
    joining a society IS the act of creating the account. Signing in as an admin is not;
    an unknown phone gets 403, never a new row.
-5. **The role is checked after the code, not before it.** Filtering the lookup by role
-   would have made the 403 unreachable — every non-admin would fall out at the lookup
-   with "incorrect code", and `NOT_AN_ADMIN` would be a branch that could never run.
-   Checking afterwards means a resident who wandered onto the admin page is told the
-   real reason, and that this reason is only ever disclosed to someone who has just
-   proven control of the number. Without the OTP, the admin door says nothing.
+5. **The role is checked after the code, never before it.** Looking the caller up first
+   is what produced the second oracle in (3), and it also made the 403 unreachable.
+   Checking afterwards means the plain answer — "this number is not an administrator" —
+   is only ever given to someone holding a code that was generated for that number and
+   sent nowhere, i.e. someone who already controls it. Without the OTP the admin door
+   says nothing at all.
 
 ## Consequences
 
@@ -68,6 +82,19 @@ a code they will not receive. The page says who it is for; the API still does no
 honest `NOT_AN_ADMIN` refusal is reachable only by someone who obtained a code through
 the resident door and brought it here — which is the demoted-admin case, and it is the
 one case where the plain answer costs nothing.
+
+## What this costs
+
+Every phone poked at the admin door gets an OTP generated and stored in Redis for five
+minutes, delivered to no one. That is the price of uniformity: the alternative is state
+that differs by caller, and state that differs by caller is readable. It is bounded by
+the same 1-per-30s and 5-per-hour limits as any other request, which now apply to every
+number rather than only to administrators.
+
+Not addressed here: `findAdminByPhone` queries on `phone` alone, and the only index is
+`@@unique([societyId, phone])`, whose leading column is `societyId`. An unauthenticated
+caller can therefore drive an unindexed scan. Adding an index is a migration, which
+needs the owner — recorded as CHORE-015 rather than done quietly.
 
 ## Revisit trigger
 

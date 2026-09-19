@@ -95,8 +95,9 @@ export function HomePage() {
               </h2>
               <Button
                 variant="secondary"
+                tone="onAccent"
                 size="sm"
-                className="mt-3 border-white/50 text-brand-ink"
+                className="mt-3"
                 onClick={() => navigate('/services')}
               >
                 Browse services

@@ -118,17 +118,25 @@ describe('AuthService (integration, needs Redis)', () => {
       expect(await handle()).toBe(-1);
     });
 
-    it('accepts a refresh token minted years ago', async () => {
-      // Not a token we waited for — one signed as if it were. `noTimestamp` lets the
-      // payload's own `iat` stand, so this is genuinely a token from 2019.
-      const jti = `jti_${randomBytes(4).toString('hex')}`;
-      const ancient = await jwt.signAsync(
-        { sub: resident.id, jti, iat: Math.floor(new Date('2019-01-01').getTime() / 1000) },
-        { secret: process.env.JWT_REFRESH_SECRET as string, algorithm: 'HS256', noTimestamp: true },
-      );
-      await redis.set(`refresh:${resident.id}`, jti);
+    it('is still valid ten years from now, and still refreshes', async () => {
+      // The token comes from the REAL issue path. The previous version of this test
+      // hand-signed its own and hand-wrote the Redis handle, so it bypassed both
+      // halves of the policy it claimed to prove and stayed green with `signPair` and
+      // `issueTokens` both reverted to 30 days (V2 P2-4).
+      const { refreshToken } = await service.issueTokens(resident);
 
-      const rotated = await service.refresh(ancient);
+      const tenYears = Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60;
+      // `clockTimestamp` asks jsonwebtoken to judge this token against a future clock:
+      // with an `exp` of any kind it throws TokenExpiredError, with none it verifies.
+      await expect(
+        jwt.verifyAsync(refreshToken, {
+          secret: process.env.JWT_REFRESH_SECRET as string,
+          clockTimestamp: tenYears,
+        }),
+      ).resolves.toMatchObject({ sub: resident.id });
+
+      // ...and the whole path still works, not just the signature.
+      const rotated = await service.refresh(refreshToken);
       expect(typeof rotated.accessToken).toBe('string');
     });
 

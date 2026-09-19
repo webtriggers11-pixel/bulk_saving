@@ -31,7 +31,7 @@ import {
   OtpVerifyDto,
   RefreshDto,
 } from './auth.dto';
-import { OtpService } from './otp.service';
+import { ADMIN_OTP_SCOPE, OtpService } from './otp.service';
 
 @Controller()
 export class AuthController {
@@ -112,14 +112,15 @@ export class AuthController {
   @Post('auth/admin/otp/request')
   @HttpCode(HttpStatus.OK)
   async requestAdminOtp(@Body() dto: AdminOtpRequestDto): Promise<OtpRequestResponse> {
-    const admin = await this.residents.findUniqueByPhone(dto.phone);
-    if (!admin || admin.role !== 'SUPER_ADMIN') {
-      // Nothing generated, nothing sent — and nothing said. A resident's number must
-      // not draw an SMS out of the admin door either.
-      return { requested: true };
-    }
-    // societyId comes from the admin's own row, never from the body (ADR-0003).
-    const outcome = await this.otp.request(admin.societyId, dto.phone);
+    const admin = await this.residents.findAdminByPhone(dto.phone);
+    // EVERY caller takes the same path: same scope, same rate-limit keys, same stored
+    // OTP. Only the SMS differs. Returning early for a non-admin — which is what this
+    // did first — left the limiter untouched for them, so two requests 30s apart
+    // answered 200/429 for an administrator and 200/200 for everyone else: a perfect
+    // oracle, built by the one branch that was meant to prevent one (V2 P1-1).
+    const outcome = await this.otp.request(ADMIN_OTP_SCOPE, dto.phone, {
+      dispatch: admin !== null,
+    });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
         { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
@@ -129,26 +130,14 @@ export class AuthController {
     return { requested: true };
   }
 
-  /**
-   * Admin sign-in, step 2. Verifies the code against the admin's own society scope.
-   *
-   * Unlike the resident path this NEVER upserts: joining a society is the act that
-   * creates a resident, and signing in as an admin is not that act. An unknown phone
-   * gets refused here; it cannot bring a row into existence through this door.
-   */
   @Post('auth/admin/otp/verify')
   @HttpCode(HttpStatus.OK)
   async verifyAdminOtp(@Body() dto: AdminOtpVerifyDto): Promise<AuthResult> {
-    // Any resident row, not only an admin one: the role is checked AFTER the code, so
-    // the honest refusal below is reachable, and is earned by holding a valid OTP.
-    const resident = await this.residents.findUniqueByPhone(dto.phone);
-    if (!resident) {
-      // No row, so no OTP was ever issued against this number on this path. Same shape
-      // as a wrong code, deliberately — an unknown number learns nothing here.
-      throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
-    }
-
-    const result = await this.otp.verify(resident.societyId, dto.phone, dto.code);
+    // The code is checked FIRST, against a scope that does not depend on the caller.
+    // Looking the row up first — which is what this did before — meant an unknown
+    // number got OTP_INVALID while a registered one got OTP_EXPIRED, so a single
+    // unauthenticated request revealed whether a phone was in the product (V2 P1-2).
+    const result = await this.otp.verify(ADMIN_OTP_SCOPE, dto.phone, dto.code);
     if (result === 'INVALID') {
       throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
     }
@@ -166,17 +155,20 @@ export class AuthController {
     }
 
     // The code was right, so this number's owner is on the line. Now — and only now —
-    // is it safe to say plainly that this is not an administrator's number: a resident
-    // who wandered onto the admin page gets the real reason instead of "incorrect code",
-    // and an attacker without the OTP never reaches this line.
-    if (resident.role !== 'SUPER_ADMIN') {
+    // is it safe to say plainly that this is not an administrator's number. Reaching
+    // this line without being an admin means holding a code that was generated but
+    // never sent anywhere, so nothing is disclosed to someone who does not already
+    // control the number.
+    const admin = await this.residents.findAdminByPhone(dto.phone);
+    if (!admin) {
       throw new ForbiddenException({
         code: ErrorCode.NOT_AN_ADMIN,
         message: 'This number is not an administrator.',
       });
     }
 
-    const verified = await this.residents.markVerified(resident.id);
+    // societyId comes from the admin's own row, never from the body (ADR-0003).
+    const verified = await this.residents.markVerified(admin);
     const tokens = await this.auth.issueTokens(verified);
     return { ...tokens, resident: toResidentDto(verified) };
   }

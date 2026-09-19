@@ -3,7 +3,7 @@
 Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
 
 - [x] T1: shared contracts + `NOT_AN_ADMIN` error code
-- [x] T2: `ResidentsService.findSuperAdminByPhone` + unit tests (zero / one / ambiguous) — depends: T1
+- [x] T2: `ResidentsService.findAdminByPhone` — zero / one / ambiguous, covered through the admin integration suite (no separate unit spec; T2's original wording promised one and was inaccurate — V2 P4) — depends: T1
 - [x] T3: admin request + verify endpoints, DTOs, controller wiring — depends: T2
 - [x] T4: backend tests — AC1–AC6, AC10 — depends: T3
 - [x] T5: `AdminLoginPage` + route + `AdminRoute` redirect + api functions — depends: T1

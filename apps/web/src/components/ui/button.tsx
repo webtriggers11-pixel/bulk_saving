@@ -3,10 +3,13 @@ import { cn } from '../../lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger';
 type ButtonSize = 'md' | 'sm' | 'icon';
+type ButtonTone = 'default' | 'onAccent';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** `onAccent` for a button sitting on a brand/dark surface — see {@link TONES}. */
+  tone?: ButtonTone;
 }
 
 /**
@@ -28,6 +31,25 @@ const VARIANTS: Record<ButtonVariant, string> = {
   link: 'h-auto border-none px-0 text-brand-ink underline decoration-[1.5px] underline-offset-4 hover:text-brand',
 };
 
+/**
+ * A button on a dark brand surface needs a different edge and label than the same
+ * button on the light ground, and two call sites were hand-rolling exactly that in a
+ * className — `border-white/50 text-brand-ink` and `border-white/35 bg-white/15
+ * text-white`. Both were fighting the variant's own `border-white/70`, so which
+ * border actually rendered came down to Tailwind's emission order (V2 P2-6 surfaced
+ * these once the scan learned about border-color).
+ *
+ * `onAccent` is that treatment, owned in one place. It REPLACES the variant's border
+ * and label colour, so a caller still has nothing to fight.
+ */
+const TONES: Record<ButtonTone, Partial<Record<ButtonVariant, string>>> = {
+  default: {},
+  onAccent: {
+    secondary: 'paint-glass text-brand-ink border border-white/50 shadow-control sweep ripple',
+    ghost: 'border border-white/35 bg-white/15 text-white hover:bg-white/25',
+  },
+};
+
 const SIZES: Record<ButtonSize, string> = {
   md: 'h-control px-[22px] text-lead',
   sm: 'h-11 px-4 text-meta',
@@ -35,7 +57,7 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', className, type = 'button', ...props },
+  { variant = 'primary', size = 'md', tone = 'default', className, type = 'button', ...props },
   ref,
 ) {
   return (
@@ -49,7 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         'focus-visible:outline-none focus-visible:shadow-focus',
         'disabled:pointer-events-none disabled:opacity-40',
         SIZES[size],
-        VARIANTS[variant],
+        TONES[tone][variant] ?? VARIANTS[variant],
         variant !== 'link' && 'hover:-translate-y-0.5',
         className,
       )}

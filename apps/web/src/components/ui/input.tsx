@@ -33,7 +33,7 @@ const INPUT_TEXT = {
  * className (and which BUG-007 is the standing reminder not to do).
  */
 const INPUT_EMPHASIS = {
-  normal: 'border-shade/15',
+  normal: 'border-shade/15 shadow-field',
   primary: 'border-brand/45 shadow-ring',
 } as const;
 
@@ -49,7 +49,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         className={cn(
           'flex h-control w-full rounded-control border bg-transparent paint-glass',
-          'px-[15px] font-semibold tracking-[-0.01em] text-ink shadow-field t',
+          // The shadow belongs to `emphasis`, not the base: with `shadow-field` here as
+          // well, `primary` emitted two box-shadow classes and the inset field shadow
+          // was dropped by emission order rather than by intent (V2 P2-7).
+          'px-[15px] font-semibold tracking-[-0.01em] text-ink t',
           INPUT_TEXT[textSize],
           INPUT_EMPHASIS[emphasis],
           'placeholder:font-medium placeholder:text-ink-soft',

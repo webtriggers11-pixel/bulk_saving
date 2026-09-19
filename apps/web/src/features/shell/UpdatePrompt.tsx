@@ -30,8 +30,9 @@ export function UpdatePrompt() {
       </span>
       <Button
         variant="ghost"
+        tone="onAccent"
         size="sm"
-        className="relative border-white/35 bg-white/15 text-white hover:bg-white/25"
+        className="relative"
         onClick={() => void updateServiceWorker(true)}
       >
         Reload

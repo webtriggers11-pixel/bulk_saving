@@ -10,6 +10,18 @@ import {
 export type OtpRequestResult = 'SENT' | 'RATE_LIMITED';
 
 /**
+ * The OTP scope the admin door uses for EVERY caller (FEAT-012, ADR-0023).
+ *
+ * Not a society id. The resident path scopes its OTP by society because the invite
+ * code names one; the admin path has no such input, and — more importantly — scoping
+ * by the caller's own row would make the OTP state itself an oracle: a registered
+ * number's key would exist where an unregistered one's does not, and `verify` would
+ * answer EXPIRED for one and INVALID for the other. One scope for everyone means one
+ * set of answers for everyone.
+ */
+export const ADMIN_OTP_SCOPE = 'admin-door';
+
+/**
  * The outcome of an OTP request. The code itself is NEVER part of it (ADR-0020):
  * it leaves this service only through the notification channel.
  */
@@ -91,9 +103,9 @@ return 'INVALID'`;
  * - Only a keyed HASH of the code is stored — the raw code is never persisted,
  *   returned, or logged.
  * - Verify attempts are capped ({@link OTP_MAX_ATTEMPTS}) then the OTP is locked.
- * - Resend is rate-limited via atomic Redis counters (per society+phone).
- * - `societyId` always comes from the caller's authenticated/invite context,
- *   never from raw client input (ADR-0003).
+ * - Resend is rate-limited via atomic Redis counters (per scope+phone).
+ * - The scope always comes from the caller's authenticated/invite context, or is a
+ *   fixed server constant ({@link ADMIN_OTP_SCOPE}) — never raw client input (ADR-0003).
  */
 @Injectable()
 export class OtpService {
@@ -102,16 +114,16 @@ export class OtpService {
     @Inject(NOTIFICATION_CHANNEL) private readonly channel: NotificationChannel,
   ) {}
 
-  private otpKey(societyId: string, phone: string): string {
-    return `otp:${societyId}:${phone}`;
+  private otpKey(scopeId: string, phone: string): string {
+    return `otp:${scopeId}:${phone}`;
   }
 
-  private resendIntervalKey(societyId: string, phone: string): string {
-    return `otp:resend:interval:${societyId}:${phone}`;
+  private resendIntervalKey(scopeId: string, phone: string): string {
+    return `otp:resend:interval:${scopeId}:${phone}`;
   }
 
-  private resendHourlyKey(societyId: string, phone: string): string {
-    return `otp:resend:hourly:${societyId}:${phone}`;
+  private resendHourlyKey(scopeId: string, phone: string): string {
+    return `otp:resend:hourly:${scopeId}:${phone}`;
   }
 
   // No hardcoded fallback — the OTP hashing secret comes from validated env only.
@@ -124,13 +136,25 @@ export class OtpService {
   }
 
   /**
-   * Generate + store a 6-digit OTP and dispatch it via the notification channel.
-   * Enforces resend rate-limits atomically. Returns a result enum — never the code.
+   * Generate + store a 6-digit OTP and, unless told otherwise, dispatch it via the
+   * notification channel. Enforces resend rate-limits atomically. Returns a result
+   * enum — never the code.
+   *
+   * `scopeId` is a key namespace, normally a society id. `dispatch: false` runs every
+   * other step unchanged — limiter, generation, storage — and simply does not send.
+   * That is what lets the admin door treat an administrator and a stranger
+   * identically in everything the caller can observe (ADR-0023): same rate-limit
+   * consumption, so the second request inside 30s is 429 for both, and same stored
+   * state, so `verify` cannot tell them apart either.
    */
-  async request(societyId: string, phone: string): Promise<OtpRequestOutcome> {
+  async request(
+    scopeId: string,
+    phone: string,
+    options: { dispatch?: boolean } = {},
+  ): Promise<OtpRequestOutcome> {
     // 1/30s window: SET NX with a 30s TTL. If the key already exists -> too soon.
     const intervalSet = await this.redis.set(
-      this.resendIntervalKey(societyId, phone),
+      this.resendIntervalKey(scopeId, phone),
       '1',
       'EX',
       OTP_RESEND_MIN_INTERVAL_SECONDS,
@@ -144,7 +168,7 @@ export class OtpService {
     const hourlyCount = (await this.redis.eval(
       RESEND_HOURLY_LUA,
       1,
-      this.resendHourlyKey(societyId, phone),
+      this.resendHourlyKey(scopeId, phone),
       String(OTP_RESEND_HOUR_SECONDS),
     )) as number;
     if (hourlyCount > OTP_RESEND_HOURLY_MAX) {
@@ -152,7 +176,7 @@ export class OtpService {
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
-    const key = this.otpKey(societyId, phone);
+    const key = this.otpKey(scopeId, phone);
     await this.redis
       .multi()
       .del(key)
@@ -162,7 +186,9 @@ export class OtpService {
 
     // Dispatch through the channel boundary. The raw code leaves this service ONLY
     // here: it is never returned to the caller and never logged (ADR-0020).
-    await this.channel.sendOtp(phone, code);
+    if (options.dispatch ?? true) {
+      await this.channel.sendOtp(phone, code);
+    }
     return { result: 'SENT' };
   }
 
@@ -170,11 +196,11 @@ export class OtpService {
    * Verify a submitted code. Consumes the OTP on success; increments attempts
    * on failure and locks after {@link OTP_MAX_ATTEMPTS}.
    */
-  async verify(societyId: string, phone: string, code: string): Promise<OtpVerifyResult> {
+  async verify(scopeId: string, phone: string, code: string): Promise<OtpVerifyResult> {
     const status = (await this.redis.eval(
       VERIFY_LUA,
       1,
-      this.otpKey(societyId, phone),
+      this.otpKey(scopeId, phone),
       this.hash(code),
       String(OTP_MAX_ATTEMPTS),
     )) as string;

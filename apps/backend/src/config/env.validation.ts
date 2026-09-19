@@ -49,13 +49,17 @@ export class EnvironmentVariables {
   JWT_ACCESS_TTL_SECONDS?: number;
 
   /**
-   * Refresh-token lifetime in seconds. Unset (the default) means sessions never
-   * expire — ADR-0024. A positive value restores an expiring refresh token.
+   * Refresh-token lifetime in seconds. Unset **or `0`** means sessions never expire —
+   * ADR-0024 decision (1). A positive value restores an expiring refresh token.
+   *
+   * `@Min(0)`, not `@Min(1)`: `AuthService` reads `0` as lifetime, and the ADR tells
+   * operators to write it. With `@Min(1)` following the documentation took the API
+   * down at boot (V2 P1-3).
    */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   JWT_REFRESH_TTL_SECONDS?: number;
 
   @IsOptional()

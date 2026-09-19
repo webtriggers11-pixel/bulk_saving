@@ -20,10 +20,16 @@ No schema change. `Resident` already carries `role` and `societyId`.
 - `POST /auth/admin/otp/verify` — body `{ phone, code }` → `AuthResult`.
   - 400 `OTP_INVALID` / `OTP_EXPIRED`, 429 `OTP_LOCKED` / `OTP_RATE_LIMITED` as today.
   - 403 `NOT_AN_ADMIN` when the row is not a SUPER_ADMIN.
-- `ResidentsService.findSuperAdminByPhone(phone)` — `findMany({ phone, role: SUPER_ADMIN })`,
-  returns the row only when exactly one matches. Zero matches and ambiguous matches are
-  both "no admin", so a phone that is an admin in two societies cannot be silently signed
-  into whichever row Postgres happened to return first.
+- `ResidentsService.findAdminByPhone(phone)` — `findMany({ phone, role: SUPER_ADMIN })`,
+  returns the row only when exactly one matches. Consulted ONLY after the OTP: it decides
+  authorisation and dispatch, never what an unverified caller is told.
+- The OTP itself is scoped by `ADMIN_OTP_SCOPE`, a server constant — not by society.
+  Scoping it per-caller made the stored state an oracle (ADR-0023 decision 3). Both admin
+  endpoints use that one scope for every number.
+
+  *(This section originally specified a role-filtered lookup used BEFORE the code, which
+  made `NOT_AN_ADMIN` unreachable and leaked registration status. Corrected here rather
+  than left to disagree with the ADR — V2 P4.)*
 - `packages/shared`: `AdminOtpRequestBody`, `AdminOtpVerifyBody`.
 - `ErrorCode.NOT_AN_ADMIN`.
 
