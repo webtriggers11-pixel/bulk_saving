@@ -48,6 +48,16 @@ export class EnvironmentVariables {
   @Min(1)
   JWT_ACCESS_TTL_SECONDS?: number;
 
+  /**
+   * Refresh-token lifetime in seconds. Unset (the default) means sessions never
+   * expire — ADR-0024. A positive value restores an expiring refresh token.
+   */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  JWT_REFRESH_TTL_SECONDS?: number;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

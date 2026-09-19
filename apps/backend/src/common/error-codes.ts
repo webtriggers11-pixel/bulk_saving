@@ -16,6 +16,8 @@ export const ErrorCode = {
   OTP_LOCKED: 'OTP_LOCKED',
   OTP_RATE_LIMITED: 'OTP_RATE_LIMITED',
   TOKEN_REVOKED: 'TOKEN_REVOKED',
+  // Admin sign-in (FEAT-012)
+  NOT_AN_ADMIN: 'NOT_AN_ADMIN',
   // Catalog (FEAT-002)
   SERVICE_SLUG_TAKEN: 'SERVICE_SLUG_TAKEN',
   // Rounds (FEAT-003)

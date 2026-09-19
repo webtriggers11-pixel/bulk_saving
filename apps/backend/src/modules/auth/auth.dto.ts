@@ -1,5 +1,11 @@
 import { IsOptional, IsString, Length, Matches } from 'class-validator';
-import type { OtpRequestBody, OtpVerifyBody, RefreshBody } from '@bulk/shared';
+import type {
+  AdminOtpRequestBody,
+  AdminOtpVerifyBody,
+  OtpRequestBody,
+  OtpVerifyBody,
+  RefreshBody,
+} from '@bulk/shared';
 
 const INVITE_CODE = /^[A-Z0-9]{8}$/;
 const PHONE = /^\+?[0-9]{7,15}$/;
@@ -27,6 +33,25 @@ export class OtpVerifyDto implements OtpVerifyBody {
   @IsString()
   @Length(1, 80)
   name?: string;
+}
+
+/**
+ * Admin sign-in bodies (FEAT-012). There is deliberately no `inviteCode` field and no
+ * `societyId` field: the society is derived from the admin's own row (ADR-0023), and a
+ * DTO that accepted either would be a DTO that could be talked into another tenant.
+ */
+export class AdminOtpRequestDto implements AdminOtpRequestBody {
+  @Matches(PHONE, { message: 'phone must be a valid phone number.' })
+  phone!: string;
+}
+
+/** No `name`: the admin path authenticates an existing admin, it never creates one. */
+export class AdminOtpVerifyDto implements AdminOtpVerifyBody {
+  @Matches(PHONE, { message: 'phone must be a valid phone number.' })
+  phone!: string;
+
+  @Matches(OTP_CODE, { message: 'code must be exactly 6 digits.' })
+  code!: string;
 }
 
 export class RefreshDto implements RefreshBody {

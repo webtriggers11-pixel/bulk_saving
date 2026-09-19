@@ -20,6 +20,35 @@ export class ResidentsService {
     });
   }
 
+  /**
+   * Stamp `verifiedAt` on an EXISTING resident (FEAT-012).
+   *
+   * The admin sign-in path's counterpart to `upsertVerified` — same effect on the row,
+   * minus the half that can create one. Separated rather than parameterised: "may this
+   * call bring an account into existence" is the kind of thing a boolean argument hides.
+   */
+  markVerified(id: string): Promise<Resident> {
+    return this.prisma.resident.update({ where: { id }, data: { verifiedAt: new Date() } });
+  }
+
+  /**
+   * The one resident with this phone number, or null (FEAT-012, ADR-0023).
+   *
+   * This is the admin sign-in path's replacement for the invite code: it is where
+   * `societyId` comes from, so it must be unambiguous. `phone` is unique only WITHIN a
+   * society, so the same number can hold a row in two of them — and picking whichever
+   * Postgres returned first would scope an OTP, or a session, to a tenant nobody chose.
+   * Two matches is therefore treated exactly like zero.
+   *
+   * Role is deliberately NOT part of the query: the admin path checks the role itself,
+   * after the OTP, so that "this number is not an administrator" is something you are
+   * only told once you have proven you control the number.
+   */
+  async findUniqueByPhone(phone: string): Promise<Resident | null> {
+    const matches = await this.prisma.resident.findMany({ where: { phone }, take: 2 });
+    return matches.length === 1 ? matches[0] : null;
+  }
+
   /** Fetch a resident by id — for the trusted authenticated-context path only. */
   findById(id: string): Promise<Resident | null> {
     return this.prisma.resident.findUnique({ where: { id } });

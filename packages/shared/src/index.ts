@@ -82,6 +82,23 @@ export interface OtpVerifyBody {
   name?: string;
 }
 
+/**
+ * `POST /auth/admin/otp/request` body (FEAT-012, ADR-0023).
+ *
+ * No invite code: that is a resident's credential, and it is also how the resident path
+ * learns which society is meant. An admin already has a row, and that row names the
+ * society — so `societyId` is derived from it server-side, never sent (ADR-0003).
+ */
+export interface AdminOtpRequestBody {
+  phone: string;
+}
+
+/** `POST /auth/admin/otp/verify` body. No `name`: this path never creates a resident. */
+export interface AdminOtpVerifyBody {
+  phone: string;
+  code: string;
+}
+
 /** A pair of JWTs returned by verify / refresh. */
 export interface AuthTokens {
   accessToken: string;

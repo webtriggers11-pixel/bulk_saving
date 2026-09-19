@@ -43,6 +43,8 @@
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |
+| FEAT-012 | Admin sign-in is its own page, and asks only for a phone number | in-progress | P1 | 2026-09-19 | — | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0023 |
+| FEAT-013 | One OTP, then signed in for good — sessions no longer expire | in-progress | P1 | 2026-09-19 | — | loop/work/FEAT-013-lifetime-sessions/ | ADR-0024 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

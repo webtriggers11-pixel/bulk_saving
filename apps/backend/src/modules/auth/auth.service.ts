@@ -21,12 +21,28 @@ export interface RefreshTokenPayload {
   jti: string;
 }
 
-const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+/**
+ * Rotation is a compare-and-set on the stored id. `ARGV[3]` is the new handle's
+ * lifetime in seconds, where `0` means "no expiry" (FEAT-013) — and `SET` without
+ * `KEEPTTL` clears any TTL the key already carried, so a session cannot inherit an
+ * expiry from a token issued under an older policy.
+ */
+const ROTATE_LUA = `
+if redis.call('get', KEYS[1]) ~= ARGV[1] then
+  return 0
+end
+if tonumber(ARGV[3]) > 0 then
+  redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3])
+else
+  redis.call('set', KEYS[1], ARGV[2])
+end
+return 1`;
 
 /**
  * Issues and verifies JWTs (ADR-0007). Access tokens are short-lived and carry
- * the tenant/role claims; refresh tokens are long-lived, rotated on every use,
- * and their current id is tracked in Redis so a reused/old token is rejected.
+ * the tenant/role claims; refresh tokens do not expire by default (ADR-0024),
+ * are rotated on every use, and their current id is tracked in Redis so a
+ * reused/old token is rejected — and so a session can still be revoked.
  */
 @Injectable()
 export class AuthService {
@@ -55,6 +71,19 @@ export class AuthService {
     return secret;
   }
 
+  /**
+   * Refresh lifetime in seconds, or `null` for "never expires" — the default (ADR-0024).
+   *
+   * This is the ONLY clock that could end a session, and by default there isn't one:
+   * revocation is `DEL refresh:<residentId>`, which takes effect within one access-token
+   * lifetime. That is why {@link accessTtlSeconds} staying short is load-bearing now.
+   */
+  private get refreshTtlSeconds(): number | null {
+    const raw = process.env.JWT_REFRESH_TTL_SECONDS;
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
   /** Access-token lifetime in seconds (default 15 min). */
   private get accessTtlSeconds(): number {
     const raw = process.env.JWT_ACCESS_TTL_SECONDS;
@@ -70,7 +99,11 @@ export class AuthService {
   async issueTokens(resident: Resident): Promise<AuthTokens> {
     const jti = randomUUID();
     const tokens = await this.signPair(resident.id, resident.societyId, resident.role as Role, jti);
-    await this.redis.set(this.refreshKey(resident.id), jti, 'EX', REFRESH_TTL_SECONDS);
+    const key = this.refreshKey(resident.id);
+    const ttl = this.refreshTtlSeconds;
+    // A plain SET (no KEEPTTL) so re-issuing under the lifetime policy drops any
+    // expiry an earlier policy left on the key.
+    await (ttl === null ? this.redis.set(key, jti) : this.redis.set(key, jti, 'EX', ttl));
     return tokens;
   }
 
@@ -84,9 +117,16 @@ export class AuthService {
       { sub: residentId, societyId, role } satisfies AccessTokenPayload,
       { secret: this.accessSecret, expiresIn: this.accessTtlSeconds, algorithm: 'HS256' },
     );
+    const refreshTtl = this.refreshTtlSeconds;
     const refreshToken = await this.jwt.signAsync(
       { sub: residentId, jti } satisfies RefreshTokenPayload,
-      { secret: this.refreshSecret, expiresIn: REFRESH_TTL_SECONDS, algorithm: 'HS256' },
+      {
+        secret: this.refreshSecret,
+        algorithm: 'HS256',
+        // Omitted entirely when lifetime: a token with no `exp` claim, rather than one
+        // carrying a date far enough away to look like it never expires (ADR-0024).
+        ...(refreshTtl === null ? {} : { expiresIn: refreshTtl }),
+      },
     );
     return { accessToken, refreshToken };
   }
@@ -136,14 +176,17 @@ export class AuthService {
     }
 
     const newJti = randomUUID();
-    // Atomic compare-and-set: only rotate if the presented id is still current.
+    // Atomic compare-and-set: only rotate if the presented id is still current. The
+    // lifetime is applied HERE too, not only at issue — a lifetime token guarded by a
+    // handle that quietly re-acquired a 30-day TTL on first use is a session that dies
+    // while every signature says it cannot (ADR-0024, option 3).
     const rotated = (await this.redis.eval(
-      "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3]); return 1 else return 0 end",
+      ROTATE_LUA,
       1,
       this.refreshKey(resident.id),
       payload.jti,
       newJti,
-      String(REFRESH_TTL_SECONDS),
+      String(this.refreshTtlSeconds ?? 0),
     )) as number;
 
     if (rotated !== 1) {
