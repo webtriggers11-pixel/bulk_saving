@@ -9,7 +9,6 @@ import './index.css';
 // render of the Profile tab — Chromium fires it once, on load (FEAT-008 AC5).
 import './features/shell/useInstallPrompt';
 
-
 const rootElement = document.getElementById('root');
 if (rootElement) {
   createRoot(rootElement).render(

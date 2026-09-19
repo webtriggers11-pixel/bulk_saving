@@ -39,8 +39,9 @@ let refreshPromise: Promise<string | null> | null = null;
  * instrumented request path) so a 401 here can never re-enter the refresh flow
  * — this, plus the single-retry guard below, prevents infinite refresh loops.
  * On success the rotated tokens are stored and the new access token returned. On a
- * 401/403 — the server refusing this refresh token — the session is cleared. On any
- * OTHER failure (5xx, 429, a proxy's HTML error page, no answer at all) the session
+ * 401 — the server refusing this refresh token — the session is cleared. On any
+ * OTHER failure (5xx, 429, 403 from an edge proxy, an HTML error page, no answer at
+ * all) the session
  * is KEPT and null is returned, because none of those mean the session is invalid
  * (BUG-008).
  */
@@ -68,7 +69,12 @@ async function doRefresh(): Promise<string | null> {
     // body-based check destroyed the session on a 500 and kept it on a 502 that
     // happened to render HTML. Session lifetime cannot depend on the content type
     // of an error page.
-    if (response.status === 401 || response.status === 403) {
+    // 401 ONLY. The backend answers every refresh failure with 401
+    // (`AuthService.refresh` throws UnauthorizedException on all three paths), so 403
+    // covers no real server behaviour — while a WAF, an edge proxy or a bot challenge
+    // answering 403 would end a valid session. That is this bug's own mistake, one
+    // status narrower (V2 round 2).
+    if (response.status === 401) {
       logout();
       return null;
     }

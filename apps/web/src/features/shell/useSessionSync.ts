@@ -12,8 +12,11 @@ import { useAuthStore } from '../auth/auth.store';
  * network on purpose (ADR-0015: it is the one screen that must work offline), so the
  * fix is to teach the store, not to make Profile fetch.
  *
- * Uses the SAME query key as HomePage, so TanStack serves both from one request
- * rather than adding a second.
+ * Write-once per session, deliberately: once the society is known the query is
+ * disabled, so a society RENAMED mid-session keeps its old name here until the next
+ * sign-in, while Home (which has its own always-enabled `me` query) shows the new
+ * one. That is the price of not adding a request to four screens that never had one;
+ * it is a rename, and a sign-in fixes it (V2 round 2).
  */
 export function useSessionSync(): void {
   const setSociety = useAuthStore((state) => state.setSociety);

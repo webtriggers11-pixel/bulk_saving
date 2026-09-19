@@ -58,18 +58,21 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 /**
- * Sizes a title can take. A PROP, not a className: `cn` is a plain join, so a
- * `text-[25px]` passed alongside the base `text-title` does not replace it — both
- * land and Tailwind's output order picks the winner, which for every size in this
- * app was the base (BUG-007). Five screens were asking for a size they never got.
- */
-/**
- * Each size carries its own tracking. The arbitrary sizes (`text-[24px]`) bring none
- * of their own, unlike the named tokens, so the Home hero name was tracked and the
- * Profile hero name — same role, 1px larger — was not (V2 P2-5).
+ * Sizes a title can take, each carrying its own tracking.
+ *
+ * A PROP, not a className: `cn` is a plain join, so a `text-[25px]` passed alongside
+ * the base `text-title` does not replace it — both land and Tailwind's output order
+ * picks the winner, which for every size in this app was the base (BUG-007). Five
+ * screens were asking for a size they never got.
+ *
+ * The tracking lives here for the same reason: arbitrary sizes bring none of their
+ * own, unlike the named tokens, so the Home hero name was tracked and the Profile
+ * hero name — same role, 1px larger — was not, depending on which caller remembered
+ * (V2 P2-5). `sm` carries none because none was ever specified for it; inventing one
+ * in a review round with no browser open would be guessing.
  */
 const TITLE_SIZE = {
-  sm: 'text-[18px] tracking-[-0.036em]',
+  sm: 'text-[18px]',
   md: 'text-title',
   lg: 'text-headline',
   xl: 'text-[24px] tracking-[-0.042em]',

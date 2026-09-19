@@ -34,10 +34,12 @@
 | BUG-007 | A primitive's base class and a caller's className silently fight (13 dead overrides) | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-007-primitive-class-conflicts/ | ADR-0022 |
 | CHORE-009 | Design-parity pass — every screen vs its artboard, in a browser | in-progress | P1 | 2026-09-19 | — | loop/work/CHORE-009-design-parity-pass/ | ADR-0021, ADR-0022 |
 | BUG-008 | A server hiccup signs the resident out (network error treated as a rejected refresh) | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/BUG-008-network-error-logs-you-out/ | — |
-| BUG-009 | Profile showed "—" for society: the sign-in response carries none and the store never learned | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/CHORE-009-design-parity-pass/ | ADR-0015 |
+| BUG-009 | Profile showed "—" for society: the sign-in response carries none and the store never learned | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-009-profile-shows-no-society/ | ADR-0015 |
 | BUG-010 | A resident sees `currentPrice` on a delivered round, not the negotiated `finalPrice` (needs backend) | triaged | P1 | 2026-09-19 | — | loop/work/BUG-010-delivered-round-shows-wrong-price/ | — |
 | CHORE-010 | "Unlocks ₹900 at 4 flats" when ₹900 is already the price — nextTier reads as an unlock that changes nothing | triaged | P3 | 2026-09-19 | — | loop/work/CHORE-010-next-tier-reads-as-no-change/ | — |
 | CHORE-011 | Dev catalog is full of E2E leftovers ("E2E Service 011682", ₹999/unit) — clean before any demo | triaged | P3 | 2026-09-19 | — | loop/work/CHORE-011-dev-catalog-e2e-leftovers/ | — |
+| CHORE-012 | The BUG-007 class-conflict scan does not police letter-spacing (two Input callers exposed) | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-012-letter-spacing-not-policed/ | ADR-0022 |
+| CHORE-013 | act() warnings in the web suite hide the next real one | triaged | P3 | 2026-09-19 | — | loop/work/CHORE-013-act-warnings-in-profile-tests/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |

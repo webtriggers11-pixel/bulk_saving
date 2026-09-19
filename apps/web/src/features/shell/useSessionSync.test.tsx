@@ -17,9 +17,17 @@ const resident = {
 };
 const society = { id: 'soc-1', name: 'Green Meadows', city: 'Pune', inviteCode: 'GREEN001', createdAt: '2026-09-19T00:00:00.000Z' };
 
-function wrapper({ children }: { children: ReactNode }) {
+/**
+ * The client is created per test and handed back, so a test can wait for the DATA to
+ * land before asserting what the hook did with it. Asserting "the store is still
+ * null" without that waits for nothing: it is also true one tick before the write.
+ */
+function makeWrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+  return { client, wrapper };
 }
 
 describe('useSessionSync', () => {
@@ -35,6 +43,7 @@ describe('useSessionSync', () => {
     expect(useAuthStore.getState().society).toBeNull();
 
     vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident, society });
+    const { wrapper } = makeWrapper();
     renderHook(() => useSessionSync(), { wrapper });
 
     await waitFor(() => expect(useAuthStore.getState().society).toEqual(society));
@@ -42,6 +51,7 @@ describe('useSessionSync', () => {
 
   it('asks for nothing while signed out', () => {
     const fetchMe = vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident, society });
+    const { wrapper } = makeWrapper();
     renderHook(() => useSessionSync(), { wrapper });
     expect(fetchMe).not.toHaveBeenCalled();
   });
@@ -49,8 +59,9 @@ describe('useSessionSync', () => {
   it('asks for nothing once the society is known — the shell must not add traffic', async () => {
     useAuthStore.getState().login({ accessToken: 'a', refreshToken: 'r', resident, society });
     const fetchMe = vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident, society });
-    renderHook(() => useSessionSync(), { wrapper });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    const { wrapper } = makeWrapper();
+    const { rerender } = renderHook(() => useSessionSync(), { wrapper });
+    rerender();
     expect(fetchMe).not.toHaveBeenCalled();
   });
 
@@ -62,10 +73,16 @@ describe('useSessionSync', () => {
     const otherSociety = { ...society, id: 'soc-A', name: "A's Society" };
     useAuthStore.getState().login({ accessToken: 'a', refreshToken: 'r', resident });
     vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident: otherResident, society: otherSociety });
+    const { client, wrapper } = makeWrapper();
 
     renderHook(() => useSessionSync(), { wrapper });
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
+    // Wait for the wrong resident's data to be IN THE CACHE — i.e. for the hook to
+    // have had it and every effect to have run on it — and only then assert nothing
+    // was written. `waitFor(() => expect(society).toBeNull())` would have passed on
+    // its first tick, before any write could land, and also if the fetch never
+    // happened at all (V2 round 2, P2-A).
+    await waitFor(() => expect(client.getQueryData(['me'])).toBeTruthy());
     expect(useAuthStore.getState().society).toBeNull();
   });
 });

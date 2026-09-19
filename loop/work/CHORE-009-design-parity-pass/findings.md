@@ -34,7 +34,8 @@ Sizes and radii were read from computed style, not eyeballed.
      the way the two explicit logouts already did.
 2. **The offline and update strips ran edge to edge** while every screen is a centred
    `max-w-md` column, so on anything wider than a phone their text started far left of the
-   content. Now the same column.
+   content. Now the same column **and the same 22px gutter** — the first fix put them in the
+   right column on a 16px inset, 6px wider than the cards they float above.
 3. **A server hiccup signed the resident out** — see BUG-008. The first fix only closed the
    rarer half: it keyed on "did the body parse as JSON", so a 500 from a Redis blip and a 429
    from the global throttler still ended the session, while a 502 that happened to render HTML

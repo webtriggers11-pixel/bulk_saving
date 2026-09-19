@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MeResponse, ResidentDto } from '@bulk/shared';
 import { apiRequest, ApiError } from './api';
 import { useAuthStore } from '../features/auth/auth.store';
+import { queryClient } from './query-client';
 
 const resident: ResidentDto = {
   id: 'res_1',
@@ -197,5 +198,72 @@ describe('a refresh that fails', () => {
 
     await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
     expect(useAuthStore.getState().status).toBe('unauthenticated');
+  });
+});
+
+/**
+ * A 200 that carries `success: false` is a malformed body, not a token refusal — it
+ * used to clear the session through the same branch as a real 401 (V2 round 2).
+ */
+describe('a refresh that answers 200 with a failure envelope', () => {
+  beforeEach(() => {
+    useAuthStore.getState().logout();
+    useAuthStore.getState().login({ accessToken: 'old', refreshToken: 'r1', resident });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the session', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const body = String(input).endsWith('/auth/refresh')
+          ? { success: false, error: { code: 'WEIRD', message: 'no' } }
+          : { success: false, error: { code: 'UNAUTHORIZED', message: 'no' } };
+        return new Response(JSON.stringify(body), {
+          status: String(input).endsWith('/auth/refresh') ? 200 : 401,
+          headers: { 'content-type': 'application/json' },
+        });
+      }),
+    );
+
+    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+    expect(useAuthStore.getState().status).toBe('authenticated');
+  });
+});
+
+/**
+ * P1-2's other half. The identity guard protects `society`; THIS protects rounds,
+ * requests and the catalog — ADR-0015's actual sentence is "the next resident on this
+ * phone must not see the previous one's rounds". Delete the `queryClient.clear()` in
+ * the session port and only this test notices (V2 round 2, P2-B).
+ */
+describe('a forced logout', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    queryClient.clear();
+  });
+
+  it('empties the query cache, not just the session', async () => {
+    useAuthStore.getState().logout();
+    useAuthStore.getState().login({ accessToken: 'old', refreshToken: 'r1', resident });
+    queryClient.setQueryData(['rounds'], [{ id: 'round-of-the-previous-resident' }]);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify({ success: false, error: { code: 'INVALID_TOKEN', message: 'no' } }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+
+    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+    expect(queryClient.getQueryData(['rounds'])).toBeUndefined();
   });
 });
