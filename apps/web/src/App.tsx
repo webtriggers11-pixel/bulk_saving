@@ -3,6 +3,7 @@ import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 import { AdminNewRoundPage } from './features/admin/AdminNewRoundPage';
 import { AdminRoundDetailPage } from './features/admin/AdminRoundDetailPage';
 import { AdminRoute } from './features/admin/AdminRoute';
+import { AdminLoginPage } from './features/auth/AdminLoginPage';
 import { AdminVendorsPage } from './features/admin/AdminVendorsPage';
 import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
@@ -74,6 +75,16 @@ export default function App() {
               <ProfilePage />
             </AppShell>
           </ProtectedRoute>
+        }
+      />
+      {/* The admin door is public and sits OUTSIDE AdminRoute — a guard that redirects
+          the signed-out to this page cannot also be the thing guarding it. */}
+      <Route
+        path="/admin/login"
+        element={
+          <AnonymousRoute to="/admin">
+            <AdminLoginPage />
+          </AnonymousRoute>
         }
       />
       <Route

@@ -11,6 +11,8 @@ export function authErrorMessage(code: string): string {
       return 'That code has expired. Request a new one.';
     case 'OTP_LOCKED':
       return 'Too many incorrect attempts. Request a new code to continue.';
+    case 'NOT_AN_ADMIN':
+      return 'This number is not an administrator. Use the resident sign-in instead.';
     case 'OTP_RATE_LIMITED':
       return 'Too many requests. Please wait a moment before trying again.';
     case 'UNAUTHORIZED':

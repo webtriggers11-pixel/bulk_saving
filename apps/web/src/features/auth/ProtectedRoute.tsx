@@ -11,11 +11,18 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Renders children only when NOT authenticated; otherwise redirects home. */
-export function AnonymousRoute({ children }: { children: ReactNode }) {
+/**
+ * Renders children only when NOT authenticated; otherwise redirects.
+ *
+ * `to` exists because there are now two sign-in doors: an admin who already has a
+ * session and opens `/admin/login` wants the dashboard, not the resident home. A
+ * resident sent to `/admin` from here is bounced onward to `/` by `AdminRoute`, so the
+ * role decision stays in the one place that makes it (FEAT-012).
+ */
+export function AnonymousRoute({ children, to = '/' }: { children: ReactNode; to?: string }) {
   const status = useAuthStore((state) => state.status);
   if (status === 'authenticated') {
-    return <Navigate to="/" replace />;
+    return <Navigate to={to} replace />;
   }
   return <>{children}</>;
 }

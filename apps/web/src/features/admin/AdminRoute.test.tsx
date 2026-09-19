@@ -11,6 +11,7 @@ function renderAtAdmin() {
       <Routes>
         <Route path="/" element={<p>Home page</p>} />
         <Route path="/onboard" element={<p>Onboarding page</p>} />
+        <Route path="/admin/login" element={<p>Admin sign-in page</p>} />
         <Route
           path="/admin"
           element={
@@ -38,9 +39,12 @@ describe('AdminRoute', () => {
     useAuthStore.getState().logout();
   });
 
-  it('sends an unauthenticated visitor to /onboard', () => {
+  // FEAT-012 (AC9): this used to land on the resident door, which asks for an invite
+  // code — a society credential — before it will let an admin reach their dashboard.
+  it('sends an unauthenticated visitor to the admin door, not the resident one', () => {
     renderAtAdmin();
-    expect(screen.getByText('Onboarding page')).toBeInTheDocument();
+    expect(screen.getByText('Admin sign-in page')).toBeInTheDocument();
+    expect(screen.queryByText('Onboarding page')).not.toBeInTheDocument();
     expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
   });
 

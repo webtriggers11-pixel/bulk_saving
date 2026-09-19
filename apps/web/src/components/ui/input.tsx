@@ -20,19 +20,38 @@ const INPUT_TEXT = {
   code: 'text-[27px]',
 } as const;
 
+/**
+ * How hard the field's edge works.
+ *
+ * `normal` used to be `border-white/70` — a white border on the white sheet, which is
+ * to say no border at all: the fields on the app's front door read as gaps rather than
+ * as things you type in. It is now a soft ink hairline, visible on every surface the
+ * system has.
+ *
+ * `primary` is the screen's main field — the one a resident is there to fill. It takes
+ * the brand edge and the focus ring at rest, which the OTP field used to hand-roll in a
+ * className (and which BUG-007 is the standing reminder not to do).
+ */
+const INPUT_EMPHASIS = {
+  normal: 'border-shade/15',
+  primary: 'border-brand/45 shadow-ring',
+} as const;
+
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   textSize?: keyof typeof INPUT_TEXT;
+  emphasis?: keyof typeof INPUT_EMPHASIS;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input({ textSize = 'default', className, ...props }, ref) {
+  function Input({ textSize = 'default', emphasis = 'normal', className, ...props }, ref) {
     return (
       <input
         ref={ref}
         className={cn(
-          'flex h-control w-full rounded-control border border-white/70 bg-transparent paint-glass',
+          'flex h-control w-full rounded-control border bg-transparent paint-glass',
           'px-[15px] font-semibold tracking-[-0.01em] text-ink shadow-field t',
           INPUT_TEXT[textSize],
+          INPUT_EMPHASIS[emphasis],
           'placeholder:font-medium placeholder:text-ink-soft',
           'focus-visible:outline-none focus:outline-none focus:border-brand/60 focus:shadow-ring',
           'aria-[invalid=true]:border-danger-ink/50',

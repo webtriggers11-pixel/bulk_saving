@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Notice } from '../../components/ui/notice';
 
 type Step = 'invite' | 'phone' | 'otp';
 
@@ -113,7 +114,9 @@ export function OnboardingPage() {
             <h2 className="text-title font-extrabold text-ink">Enter your invite code</h2>
             <p className="mb-6 mt-2 text-caption text-ink-muted">The 8-character code shared by your society.</p>
             <Label htmlFor="inviteCode">Invite code</Label>
-            <Input textSize="xl"
+            <Input
+              emphasis="primary"
+              textSize="xl"
               id="inviteCode"
               name="inviteCode"
               autoComplete="off"
@@ -136,7 +139,9 @@ export function OnboardingPage() {
             <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
             <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 6-digit code to verify it.</p>
             <Label htmlFor="phone">Phone number</Label>
-            <Input textSize="lg"
+            <Input
+              emphasis="primary"
+              textSize="lg"
               id="phone"
               name="phone"
               type="tel"
@@ -148,14 +153,12 @@ export function OnboardingPage() {
               className="num h-[60px] font-extrabold"
             />
             {queuedOffline && (
-              <p role="status" data-testid="onboarding-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+              <Notice tone="warn" data-testid="onboarding-offline">
                 {OFFLINE_QUEUED_TEXT}
-              </p>
+              </Notice>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
-                {requestError}
-              </p>
+              <Notice tone="error">{requestError}</Notice>
             )}
             <div className="mt-[22px] flex gap-3">
               <Button
@@ -188,7 +191,9 @@ export function OnboardingPage() {
               Sent by SMS to <span className="num font-bold text-ink">{phone}</span>.
             </p>
             <Label htmlFor="code">6-digit code</Label>
-            <Input textSize="code"
+            <Input
+              emphasis="primary"
+              textSize="code"
               id="code"
               name="code"
               inputMode="numeric"
@@ -197,7 +202,7 @@ export function OnboardingPage() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className="num h-16 border-brand/60 text-center font-extrabold tracking-[0.38em] shadow-ring"
+              className="num h-16 text-center font-extrabold tracking-[0.38em]"
             />
 
             <Label htmlFor="name" className="mt-[18px]">
@@ -213,14 +218,10 @@ export function OnboardingPage() {
             />
 
             {verifyError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
-                {verifyError}
-              </p>
+              <Notice tone="error">{verifyError}</Notice>
             )}
             {requestError && (
-              <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
-                {requestError}
-              </p>
+              <Notice tone="error">{requestError}</Notice>
             )}
 
             <Button
