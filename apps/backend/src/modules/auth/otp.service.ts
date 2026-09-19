@@ -205,15 +205,46 @@ export class OtpService {
     if (dispatch === 'awaited') {
       await this.channel.sendOtp(phone, code);
     } else if (dispatch === 'detached') {
-      // Deliberately not awaited — see the note above. The catch is what keeps a
-      // provider failure from becoming an unhandled rejection.
-      void this.channel.sendOtp(phone, code).catch((err: unknown) => {
-        this.log.warn(
-          `OTP dispatch failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
+      this.dispatchDetached(phone, code);
     }
     return { result: 'SENT' };
+  }
+
+  /**
+   * Send, entirely off the response path — nothing about this call can reach the
+   * caller, by timing or by status.
+   *
+   * `setImmediate`, not a bare `void channel.sendOtp(...)`. Two reasons, both of which
+   * were live defects:
+   *
+   *  1. **A synchronous throw.** `sendOtp` is declared `Promise<void>`, but a method
+   *     that throws BEFORE returning a promise is legal TypeScript, and then `.catch`
+   *     is never attached: the exception walked out through the controller as a 500 —
+   *     for administrators only, because they are the only callers that dispatch. The
+   *     same oracle for the third time, through a mechanism this file's own comment
+   *     claimed was handled (V2 round 3). A malformed provider URL or an SDK guard
+   *     clause is all it takes. The async wrapper turns any throw into a rejection.
+   *  2. **The synchronous prefix.** `void channel.sendOtp(...)` still INVOKES the
+   *     function, so everything an adapter does before its first `await` — request
+   *     signing, reading credentials, rendering a template — ran inside an
+   *     administrator's response and nobody else's. Measured at ~9ms of skew for an
+   *     adapter with a 10ms prefix. Deferring the invocation itself takes that to the
+   *     floor, where admin and stranger are within noise of each other.
+   */
+  private dispatchDetached(phone: string, code: string): void {
+    setImmediate(() => {
+      void (async () => {
+        try {
+          await this.channel.sendOtp(phone, code);
+        } catch (err: unknown) {
+          // The message is redacted rather than trusted: a provider SDK that embeds
+          // the outgoing request body in its error would otherwise put the OTP in the
+          // logs, which ADR-0020 forbids outright.
+          const raw = err instanceof Error ? err.message : String(err);
+          this.log.warn(`OTP dispatch failed: ${raw.split(code).join('******')}`);
+        }
+      })();
+    });
   }
 
   /**

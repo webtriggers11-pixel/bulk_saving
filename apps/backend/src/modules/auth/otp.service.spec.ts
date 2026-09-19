@@ -169,6 +169,11 @@ describe('OtpService dispatch modes (ADR-0023)', () => {
     const outcome = await service.request('detach-test', phone, { dispatch: 'detached' });
 
     expect(outcome.result).toBe('SENT');
+    // Not called YET: the invocation itself is deferred to `setImmediate`, so even an
+    // adapter's synchronous prefix stays out of the response (V2 round 3).
+    expect(channel.calls).toBe(0);
+
+    await new Promise((resolve) => setImmediate(resolve));
     expect(channel.calls).toBe(1);
     channel.finish();
   });
@@ -206,6 +211,49 @@ describe('OtpService dispatch modes (ADR-0023)', () => {
     expect(channel.calls).toBe(0);
   });
 
+  it('survives a provider that throws SYNCHRONOUSLY, without failing the request', async () => {
+    // V2 round 3. `sendOtp` is declared `Promise<void>`, but throwing before returning
+    // one is legal TypeScript — and then `.catch` is never attached, so the exception
+    // walked out as a 500 for administrators and a 200 for everyone else. The same
+    // oracle a third time, through the mechanism this file claimed to handle. The
+    // rejected-promise test below is NOT this case; it was the one that already worked.
+    const throwing: NotificationChannel = {
+      sendOtp(): Promise<void> {
+        throw new Error('malformed provider URL');
+      },
+      send: () => Promise.resolve(),
+    };
+    const service = new OtpService(redis, throwing);
+
+    const outcome = await service.request('sync-throw-test', freshPhone(), {
+      dispatch: 'detached',
+    });
+
+    expect(outcome.result).toBe('SENT');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+
+  it('keeps the code out of the failure log, even if the provider echoes it back', async () => {
+    // ADR-0020: the raw code must never be logged. A provider SDK that embeds the
+    // outgoing request body in its error message would do exactly that.
+    const warnings: string[] = [];
+    const echoing: NotificationChannel = {
+      sendOtp: (_phone: string, code: string) =>
+        Promise.reject(new Error(`POST /sms failed: {"text":"Your code is ${code}"}`)),
+      send: () => Promise.resolve(),
+    };
+    const service = new OtpService(redis, echoing);
+    const spy = vi_spyOnWarn(service, warnings);
+
+    await service.request('redact-test', freshPhone(), { dispatch: 'detached' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    spy();
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('******');
+    expect(warnings[0]).not.toMatch(/Your code is \d{6}/);
+  });
+
   it('survives a provider that rejects, without failing the request', async () => {
     // The other half of P1-A: a provider that throws on an unroutable number used to
     // propagate out as a 500 for administrators and a 200 for everyone else.
@@ -224,3 +272,19 @@ describe('OtpService dispatch modes (ADR-0023)', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 });
+
+/**
+ * Capture what the service logs, without reaching for a mocking framework the backend
+ * suite does not otherwise use: swap the private logger's `warn` and hand back the
+ * restore. Returns the restore function so a test cannot forget it.
+ */
+function vi_spyOnWarn(service: OtpService, sink: string[]): () => void {
+  const holder = service as unknown as { log: { warn: (message: string) => void } };
+  const original = holder.log.warn.bind(holder.log);
+  holder.log.warn = (message: string) => {
+    sink.push(message);
+  };
+  return () => {
+    holder.log.warn = original;
+  };
+}

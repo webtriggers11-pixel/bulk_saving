@@ -46,6 +46,10 @@ function familyOf(token: string): string | null {
   if (/^-?p-(\[|\d)/.test(bare)) return 'padding';
   if (/^-?p[xytrbl]-(\[|\d)/.test(bare)) return `padding-${bare[1]}`;
   if (/^-?m-(\[|\d)/.test(bare)) return 'margin';
+  // Per-side margins. `Notice`'s base sets `mt-3` while its own `className` docstring
+  // reserves that prop for "placement only — margins and grid spans", i.e. the one
+  // family the scan could not police was the prop's documented purpose (V2 round 3).
+  if (/^-?m[xytrbl]-(\[|\d|auto$)/.test(bare)) return `margin-${bare.replace(/^-/, '')[1]}`;
   if (/^gap-(\[|\d)/.test(bare)) return 'gap';
   if (/^rounded(-|$)/.test(bare) && !/^rounded-(t|r|b|l|tl|tr|br|bl)/.test(bare)) return 'radius';
   if (/^(flex|grid|block|inline-flex|inline-block|inline|hidden|contents)$/.test(bare)) return 'display';
@@ -143,7 +147,98 @@ const BUTTON_SIZES = ['md', 'sm', 'icon'] as const;
 const INPUT_SIZES = ['default', 'numeric', 'lg', 'xl', 'code'] as const;
 const INPUT_EMPHASES = ['normal', 'primary'] as const;
 
+const CARD_SURFACES = ['glass', 'solid', 'tint', 'accent'] as const;
+const CARD_PADDING = ['none', 'tight', 'snug', 'default', 'roomy'] as const;
+const CARD_TITLE_SIZES = ['sm', 'md', 'lg', 'xl', '2xl'] as const;
+const STAT_EMPHASES = ['lead', 'normal', 'quiet', 'alert'] as const;
+const BADGE_TONES = ['slate', 'teal', 'amber', 'blue', 'green', 'red'] as const;
+const SKELETON_RADII = ['full', 'chip', 'control', 'inset', 'tile', 'card'] as const;
+
 const PROP_MATRIX: Array<[string, ReactElement]> = [
+  // `tone` is the prop added in the round that introduced this matrix, and it was the
+  // one prop the matrix left out — the same shape as `variant="link"` hiding behind
+  // default props, one level along (V2 round 3).
+  ...(['secondary', 'ghost'] as const).flatMap((variant) =>
+    BUTTON_SIZES.map(
+      (size) =>
+        [
+          `Button variant=${variant} size=${size} tone=onAccent`,
+          <Button key={`t-${variant}-${size}`} variant={variant} size={size} tone="onAccent">
+            x
+          </Button>,
+        ] as [string, ReactElement],
+    ),
+  ),
+  ...CARD_SURFACES.flatMap((surface) =>
+    CARD_PADDING.flatMap((padding) =>
+      [true, false].map(
+        (interactive) =>
+          [
+            `Card surface=${surface} padding=${padding} interactive=${interactive}`,
+            <Card
+              key={`${surface}-${padding}-${interactive}`}
+              surface={surface}
+              padding={padding}
+              interactive={interactive}
+            >
+              x
+            </Card>,
+          ] as [string, ReactElement],
+      ),
+    ),
+  ),
+  ...CARD_TITLE_SIZES.map(
+    (size) =>
+      [`CardTitle size=${size}`, <CardTitle key={`ct-${size}`} size={size}>x</CardTitle>] as [
+        string,
+        ReactElement,
+      ],
+  ),
+  ...(['caption', 'meta'] as const).map(
+    (size) =>
+      [
+        `CardDescription size=${size}`,
+        <CardDescription key={`cd-${size}`} size={size}>x</CardDescription>,
+      ] as [string, ReactElement],
+  ),
+  ...STAT_EMPHASES.flatMap((emphasis) =>
+    (['normal', 'dense'] as const).map(
+      (density) =>
+        [
+          `StatCard emphasis=${emphasis} density=${density}`,
+          <StatCard key={`${emphasis}-${density}`} label="l" value="v" emphasis={emphasis} density={density} />,
+        ] as [string, ReactElement],
+    ),
+  ),
+  ...(['tile', 'row', 'plain'] as const).map(
+    (variant) =>
+      [`Fact variant=${variant}`, <Fact key={`f-${variant}`} term="t" value="v" variant={variant} />] as [
+        string,
+        ReactElement,
+      ],
+  ),
+  ...BADGE_TONES.map(
+    (tone) => [`Badge tone=${tone}`, <Badge key={`b-${tone}`} tone={tone}>x</Badge>] as [string, ReactElement],
+  ),
+  ...(['sm', 'md', 'lg'] as const).map(
+    (size) =>
+      [`Monogram size=${size}`, <Monogram key={`m-${size}`} name="Priya Sharma" size={size} />] as [
+        string,
+        ReactElement,
+      ],
+  ),
+  ...(['error', 'warn'] as const).map(
+    (tone) => [`Notice tone=${tone}`, <Notice key={`n-${tone}`} tone={tone}>x</Notice>] as [string, ReactElement],
+  ),
+  ...SKELETON_RADII.flatMap((radius) =>
+    ([0, 1, 2, 3] as const).map(
+      (delay) =>
+        [
+          `Skeleton radius=${radius} delay=${delay}`,
+          <Skeleton key={`s-${radius}-${delay}`} radius={radius} delay={delay} />,
+        ] as [string, ReactElement],
+    ),
+  ),
   ...BUTTON_VARIANTS.flatMap((variant) =>
     BUTTON_SIZES.map(
       (size) =>
@@ -395,14 +490,20 @@ describe('BUG-007 — a caller must not fight a primitive for the same CSS prope
       for (const [name, baseClasses] of bases) {
         const baseFamilies = new Set(baseClasses.map(familyOf).filter(Boolean) as string[]);
         if (baseFamilies.size === 0) continue;
+        // Two identical tags in one file both resolved to the FIRST one's line number,
+        // because the lookup was `indexOf(tag)` with no cursor. A scan's message is its
+        // product; one that names the wrong line sends the reader to the wrong place.
+        let cursor = 0;
         for (const tag of openingTags(source, name)) {
+          const at = source.indexOf(tag, cursor);
+          cursor = at === -1 ? cursor : at + tag.length;
           const tokens = classNameTokens(tag);
           inspected += tokens.length;
           for (const token of tokens) {
             const family = familyOf(token);
             const optedOut = family ? OPT_OUT[name]?.[family]?.test(tag) : false;
             if (family && baseFamilies.has(family) && !optedOut) {
-              const line = source.slice(0, source.indexOf(tag)).split('\n').length;
+              const line = source.slice(0, at === -1 ? 0 : at).split('\n').length;
               offenders.push(
                 `${file.replace(process.cwd(), '')}:${line} <${name} className="… ${token} …"> fights its base ${family}`,
               );

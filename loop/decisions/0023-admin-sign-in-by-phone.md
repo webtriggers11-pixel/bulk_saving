@@ -96,7 +96,21 @@ space is effectively unbounded and the only volume cap is the global 120 req/min
 throttler. That is the price of uniformity: the alternative is state that differs by
 caller, and state that differs by caller is readable.
 
-The send is dispatched but **not awaited**. Suppressing it for non-admins equalised the
+The send is dispatched but **not awaited**, and the invocation itself is deferred to
+`setImmediate` so that even an adapter's synchronous prefix — request signing, a
+credentials read, template rendering — stays out of the response. Two consequences worth
+naming, because detaching bought them:
+
+- **A send in flight is lost on shutdown.** SIGTERM closes the app with the provider
+  request outstanding, so an administrator who asked for a code during a rolling restart
+  never receives it — and their retry inside 30s is a 429, so the next code is a minute
+  away. An awaited send completed before the response.
+- **Ordering.** Send #1 can now arrive after request #2 has already replaced the stored
+  code, so the SMS someone is reading may no longer verify. The window existed before;
+  detaching widens it.
+
+Both are the price of a uniform response, and both argue for moving the OTP send onto the
+notification queue (ADR-0013) rather than back onto the response path. Suppressing it for non-admins equalised the
 status, the body and the stored state, and left the one step that costs real time inside
 an administrator's response and nobody else's — with a real provider, ~230ms against
 ~13ms, so a single unauthenticated request separated the two by 15× (V2 round 2, P1-A).

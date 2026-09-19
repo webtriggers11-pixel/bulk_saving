@@ -328,6 +328,44 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     }
   }, 15_000);
 
+  /**
+   * V2 round 3. A channel that throws BEFORE returning a promise never gets a `.catch`
+   * attached, so the exception left the controller as a 500 — and only administrators
+   * dispatch, so only administrators got one. `500` ⇒ admin, `200` ⇒ not: the same
+   * oracle a third time, through a mechanism two comments claimed was handled.
+   *
+   * Asserted as parity rather than "admin gets 200", because the property is that the
+   * two are indistinguishable, not that either has a particular status.
+   */
+  it('answers identically when the SMS provider throws synchronously (AC2)', async () => {
+    const throwing = new CapturingChannel();
+    throwing.sendOtp = () => {
+      throw new Error('malformed provider URL');
+    };
+
+    const throwingApp = await createTestApp(throwing);
+    try {
+      const adminPhone = randomPhone();
+      await throwingApp.get(PrismaService).resident.create({
+        data: { societyId: society.id, phone: adminPhone, role: 'SUPER_ADMIN', verifiedAt: new Date() },
+      });
+      const strangerPhone = randomPhone();
+
+      const probe = async (phone: string) => {
+        const res = await request(throwingApp.getHttpServer())
+          .post('/auth/admin/otp/request')
+          .send({ phone });
+        return { status: res.status, body: res.body };
+      };
+
+      const asAdmin = await probe(adminPhone);
+      expect(await probe(strangerPhone)).toEqual(asAdmin);
+      expect(asAdmin.status).toBe(200);
+    } finally {
+      await throwingApp.close();
+    }
+  }, 15_000);
+
   it('leaves the resident door exactly as it was (AC6)', async () => {
     const phone = randomPhone();
 
