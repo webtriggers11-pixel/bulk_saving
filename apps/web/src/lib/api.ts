@@ -38,8 +38,11 @@ let refreshPromise: Promise<string | null> | null = null;
  * Perform one refresh using the stored refresh token. Uses raw fetch (NOT the
  * instrumented request path) so a 401 here can never re-enter the refresh flow
  * — this, plus the single-retry guard below, prevents infinite refresh loops.
- * On success the rotated tokens are stored and the new access token returned;
- * on any failure the session is cleared (logged-out state) and null returned.
+ * On success the rotated tokens are stored and the new access token returned. On a
+ * 401/403 — the server refusing this refresh token — the session is cleared. On any
+ * OTHER failure (5xx, 429, a proxy's HTML error page, no answer at all) the session
+ * is KEPT and null is returned, because none of those mean the session is invalid
+ * (BUG-008).
  */
 async function doRefresh(): Promise<string | null> {
   const { refreshToken, setTokens, logout } = session();
@@ -54,20 +57,33 @@ async function doRefresh(): Promise<string | null> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken: token }),
     });
-    const parsed = (await response.json()) as ApiResponse<AuthTokens>;
-    if (!response.ok || !parsed.success) {
-      // The server answered and refused: the refresh token is spent, rotated or
-      // revoked. Clearing the session is the only honest thing to do.
+    // Only a REFUSAL ends a session. 401/403 means this refresh token is spent,
+    // rotated or revoked, and no amount of retrying will help. Everything else —
+    // 500 from a Redis blip, 429 from the global throttler, a 502 HTML page from a
+    // proxy, a socket that never answered — is the server having a bad minute, and
+    // the session is very likely still valid (BUG-008).
+    //
+    // Keying on the STATUS rather than on "did the body parse as JSON" matters: the
+    // backend's exception filter returns a JSON envelope for every status, so a
+    // body-based check destroyed the session on a 500 and kept it on a 502 that
+    // happened to render HTML. Session lifetime cannot depend on the content type
+    // of an error page.
+    if (response.status === 401 || response.status === 403) {
       logout();
+      return null;
+    }
+    if (!response.ok) {
+      return null;
+    }
+    const parsed = (await response.json()) as ApiResponse<AuthTokens>;
+    if (!parsed.success) {
       return null;
     }
     setTokens(parsed.data);
     return parsed.data.accessToken;
   } catch {
-    // Nothing answered — API down, DNS, CORS, captive wifi. The session may be
-    // perfectly valid, and throwing it away costs the resident an SMS OTP to get
-    // back in, over the same network that just failed (BUG-008). Leave it alone and
-    // let the caller surface the failure; the screens already have the copy.
+    // Nothing answered, or the body was not the envelope we expected. Same reasoning:
+    // keep the session, surface the failure, let the screens say so.
     return null;
   }
 }

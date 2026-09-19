@@ -45,4 +45,27 @@ describe('useSessionSync', () => {
     renderHook(() => useSessionSync(), { wrapper });
     expect(fetchMe).not.toHaveBeenCalled();
   });
+
+  it('asks for nothing once the society is known — the shell must not add traffic', async () => {
+    useAuthStore.getState().login({ accessToken: 'a', refreshToken: 'r', resident, society });
+    const fetchMe = vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident, society });
+    renderHook(() => useSessionSync(), { wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fetchMe).not.toHaveBeenCalled();
+  });
+
+  it('refuses a society belonging to the PREVIOUS resident on this phone', async () => {
+    // The shared-phone case ADR-0015 is about: a cached `me` from resident A, served
+    // to resident B because it is still fresh. The store is persisted, so writing it
+    // would outlive the cache entry that caused it (V2 P1-2).
+    const otherResident = { ...resident, id: 'res-A', name: 'Someone Else' };
+    const otherSociety = { ...society, id: 'soc-A', name: "A's Society" };
+    useAuthStore.getState().login({ accessToken: 'a', refreshToken: 'r', resident });
+    vi.spyOn(authApi, 'fetchMe').mockResolvedValue({ resident: otherResident, society: otherSociety });
+
+    renderHook(() => useSessionSync(), { wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(useAuthStore.getState().society).toBeNull();
+  });
 });

@@ -18,14 +18,28 @@ Sizes and radii were read from computed style, not eyeballed.
 
 ## Fixed in this pass
 
-1. **Profile showed "—" for Society.** `POST /auth/otp/verify` returns tokens and a resident
-   and no society, so the store held `null`; Profile reads the store on purpose (ADR-0015 —
-   it is the screen that must work offline). Fixed by teaching the store from the `me` query
-   (`useSessionSync`, same query key as Home, so no extra request).
+1. **Profile showed "—" for Society** (now tracked as BUG-009). `POST /auth/otp/verify`
+   returns tokens and a resident and no society, so the store held `null`; Profile reads the
+   store on purpose (ADR-0015 — it is the screen that must work offline). Fixed by teaching
+   the store from the `me` query (`useSessionSync`).
+
+   Two corrections to what this originally claimed, both from V2:
+   - It is **not** free. `AppShell` is instantiated per route, so the sync would have added a
+     `me` request on four screens that never had one. It now asks **only while the society is
+     unknown**, so the normal case costs nothing and a deep link to `/profile` still fills in.
+   - It must not write a society it cannot **prove** belongs to the signed-in resident: a
+     cached `me` from the previous resident on a shared phone is the exact scenario ADR-0015
+     exists for, and this store is persisted, so the mistake would outlive the cache. The
+     write is now guarded on resident id, and the forced-logout path clears the query cache
+     the way the two explicit logouts already did.
 2. **The offline and update strips ran edge to edge** while every screen is a centred
    `max-w-md` column, so on anything wider than a phone their text started far left of the
    content. Now the same column.
-3. **A server hiccup signed the resident out** — see BUG-008. Triaged separately because it
+3. **A server hiccup signed the resident out** — see BUG-008. The first fix only closed the
+   rarer half: it keyed on "did the body parse as JSON", so a 500 from a Redis blip and a 429
+   from the global throttler still ended the session, while a 502 that happened to render HTML
+   kept it. Session lifetime cannot depend on the content type of an error page. It now keys
+   on the status: **401/403 clears, everything else keeps**. Triaged separately because it
    is an auth behaviour, not a style: a thrown `fetch` was treated like a refusal, so an API
    that is merely unreachable ended the session. Now only a server that *answers and refuses*
    clears it.
@@ -38,8 +52,13 @@ Sizes and radii were read from computed style, not eyeballed.
 | Column is 448px (`max-w-md`); artboards are 390px frames | The artboard is a phone frame, not a max width. The app has used `max-w-md` since FEAT-008. |
 | No arrow on the services hero card | The artboard draws one; V2 (FEAT-011) removed it because it advertises a tap target that card does not have. |
 | Ring shows a lower count for ~1s after load | `useCountUp` — the intro animation, by design (Motion artboard). |
+| Profile hero name now carries the same tracking as Home's | V2 caught the two hero names at different letter-spacings: arbitrary sizes bring no tracking, so whichever caller remembered it won. Tracking now lives in the size token. |
 
-## Recorded, NOT fixed — they need the owner or the backend
+## Recorded, NOT fixed — and now tracked in the registry, not just here
+
+BUG-010 (P1), CHORE-010 and CHORE-011. V2's point stands: a finding that lives only in a
+findings file is untracked work, and the first of these is a resident being shown the wrong
+amount of money.
 
 1. **A delivered round shows `currentPrice`, not the negotiated `finalPrice`.** The admin
    assigned ₹700; the resident's card says ₹900. `RoundDto` carries no `finalPrice`, so this

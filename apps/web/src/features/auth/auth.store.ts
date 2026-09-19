@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { queryClient } from '../../lib/query-client';
 import { provideSession } from '../../lib/session-port';
 import type { AuthTokens, ResidentDto, SocietyDto } from '@bulk/shared';
 
@@ -125,5 +126,11 @@ provideSession({
   accessToken: () => useAuthStore.getState().accessToken,
   refreshToken: () => useAuthStore.getState().refreshToken,
   setTokens: (tokens) => useAuthStore.getState().setTokens(tokens),
-  logout: () => useAuthStore.getState().logout(),
+  logout: () => {
+    useAuthStore.getState().logout();
+    // A forced logout must empty the cache too, or the next resident to sign in on
+    // this phone can be served the previous one's data (ADR-0015, V2 P1-2). The two
+    // explicit logouts already do this; this is the path that could not reach it.
+    queryClient.clear();
+  },
 });

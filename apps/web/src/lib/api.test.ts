@@ -119,8 +119,47 @@ describe('apiRequest transparent refresh', () => {
  */
 describe('a refresh that fails', () => {
   beforeEach(() => {
+    try {
+      localStorage.clear();
+    } catch {
+      /* ignore */
+    }
     useAuthStore.getState().logout();
     useAuthStore.getState().login({ accessToken: 'old', refreshToken: 'r1', resident });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** A refresh that answers with `status`, over a request that 401s. */
+  function refreshRespondsWith(status: number, body: string, contentType = 'application/json') {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('/auth/refresh')) {
+        return new Response(body, { status, headers: { 'content-type': contentType } });
+      }
+      return new Response(JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'no' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+  }
+
+  const ENVELOPE = JSON.stringify({ success: false, error: { code: 'INTERNAL', message: 'no' } });
+
+  it.each([
+    ['500 — a Redis or database blip inside the refresh', 500, ENVELOPE, 'application/json'],
+    ['429 — the global throttler, which a reconnect stampede can trip', 429, ENVELOPE, 'application/json'],
+    ['502 — a proxy error page, which is HTML and does not parse', 502, '<html>bad gateway</html>', 'text/html'],
+  ])('keeps the session on %s', async (_label, status, body, contentType) => {
+    // The bug's own title is "a server hiccup signs the resident out". A body-based
+    // check left that literally true for 500 and 429, and accidentally right for 502
+    // only because the HTML failed to parse (V2 P1-1).
+    refreshRespondsWith(status as number, body as string, contentType as string);
+    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    expect(useAuthStore.getState().refreshToken).toBe('r1');
   });
 
   it('keeps the session when nothing answered (network error)', async () => {
@@ -135,7 +174,8 @@ describe('a refresh that fails', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(apiRequest('/rounds')).rejects.toBeInstanceOf(ApiError);
+    // The spec promises the ORIGINAL error surfaces, so assert which one.
+    await expect(apiRequest('/rounds')).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
     expect(useAuthStore.getState().status).toBe('authenticated');
     expect(useAuthStore.getState().refreshToken).toBe('r1');
   });

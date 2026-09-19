@@ -63,12 +63,17 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
  * land and Tailwind's output order picks the winner, which for every size in this
  * app was the base (BUG-007). Five screens were asking for a size they never got.
  */
+/**
+ * Each size carries its own tracking. The arbitrary sizes (`text-[24px]`) bring none
+ * of their own, unlike the named tokens, so the Home hero name was tracked and the
+ * Profile hero name — same role, 1px larger — was not (V2 P2-5).
+ */
 const TITLE_SIZE = {
-  sm: 'text-[18px]',
+  sm: 'text-[18px] tracking-[-0.036em]',
   md: 'text-title',
   lg: 'text-headline',
-  xl: 'text-[24px]',
-  '2xl': 'text-[25px]',
+  xl: 'text-[24px] tracking-[-0.042em]',
+  '2xl': 'text-[25px] tracking-[-0.045em]',
 } as const;
 
 interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {

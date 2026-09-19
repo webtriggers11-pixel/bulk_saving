@@ -59,7 +59,7 @@ export function HomePage() {
             <Monogram name={data.resident.name} />
             <div className="relative min-w-0 flex-1">
               <CardEyebrow>Signed in as</CardEyebrow>
-              <CardTitle size="xl" className="animate-blur-in mt-2 tracking-[-0.042em]">
+              <CardTitle size="xl" className="animate-blur-in mt-2">
                 {data.resident.name ?? 'Resident'}
               </CardTitle>
               <p

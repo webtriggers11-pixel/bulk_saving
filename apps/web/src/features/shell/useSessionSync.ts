@@ -17,17 +17,26 @@ import { useAuthStore } from '../auth/auth.store';
  */
 export function useSessionSync(): void {
   const setSociety = useAuthStore((state) => state.setSociety);
-  const signedIn = useAuthStore((state) => state.accessToken !== null);
+  const residentId = useAuthStore((state) => state.resident?.id);
+  const society = useAuthStore((state) => state.society);
+
+  // Only asks when there is something to learn. Without this the shell issued a
+  // `me` request on four screens that never had one — a behavioural change inside a
+  // parity pass (V2 P2-3). Once the society is known, this costs nothing.
   const { data } = useQuery({
     queryKey: ['me'],
     queryFn: fetchMe,
-    enabled: signedIn,
+    enabled: residentId !== undefined && society == null,
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
-    if (data?.society) {
+    // Only write a society we can prove belongs to the resident in the session. A
+    // cached `me` from the PREVIOUS resident on a shared phone is exactly the thing
+    // ADR-0015 exists to prevent, and this store is persisted, so the mistake would
+    // outlive the cache (V2 P1-2).
+    if (data?.society && data.resident.id === residentId && data.society.id !== society?.id) {
       setSociety(data.society);
     }
-  }, [data, setSociety]);
+  }, [data, residentId, society, setSociety]);
 }

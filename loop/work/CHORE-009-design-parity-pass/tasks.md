@@ -9,5 +9,5 @@
 - [x] T5: Every difference closed in the app, or recorded with its reason in `findings.md`.
       — depends: T2, T3, T4
 - [x] T6: Interaction pass — every control exercised in the browser. — depends: T5
-- [ ] T7: V2 independent review. — depends: T6
+- [x] T7: V2 independent review. — depends: T6
 - [ ] T8: V3 double gate run. — depends: T7

@@ -29,8 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           offline with a worker waiting (V2 P2-8). */}
       {/* Same column as the screens below it: the strips were full-bleed, so on
           anything wider than a phone their text started far left of the content
-          they are about (CHORE-009). */}
-      <div className="sticky top-0 z-20 mx-auto flex max-w-md flex-col gap-2 px-4 pt-3">
+          they are about — and on the same 22px gutter as the cards, not a 16px one
+          that left them 6px wider than everything they float above (CHORE-009). */}
+      <div className="sticky top-0 z-20 mx-auto flex max-w-md flex-col gap-2 px-[22px] pt-3">
         <UpdatePrompt />
         <OfflineBanner />
       </div>
