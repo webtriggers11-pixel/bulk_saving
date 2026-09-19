@@ -114,12 +114,17 @@ export class AuthController {
   async requestAdminOtp(@Body() dto: AdminOtpRequestDto): Promise<OtpRequestResponse> {
     const admin = await this.residents.findAdminByPhone(dto.phone);
     // EVERY caller takes the same path: same scope, same rate-limit keys, same stored
-    // OTP. Only the SMS differs. Returning early for a non-admin — which is what this
-    // did first — left the limiter untouched for them, so two requests 30s apart
-    // answered 200/429 for an administrator and 200/200 for everyone else: a perfect
-    // oracle, built by the one branch that was meant to prevent one (V2 P1-1).
+    // OTP. Two leaks were closed here, in that order:
+    //  - Returning early for a non-admin left the limiter untouched for them, so two
+    //    requests 30s apart answered 200/429 for an administrator and 200/200 for
+    //    everyone else — an oracle built by the branch meant to prevent one (V2 P1-1).
+    //  - Awaiting the send put an SMS provider's round-trip (100–500ms) inside an
+    //    administrator's response and nobody else's, which is the same oracle measured
+    //    with a stopwatch instead (V2 round 2, P1-A). Hence 'detached', not 'awaited':
+    //    the response is uniform by design, so the send's outcome could never have
+    //    reached the caller anyway — awaiting it only leaked the timing.
     const outcome = await this.otp.request(ADMIN_OTP_SCOPE, dto.phone, {
-      dispatch: admin !== null,
+      dispatch: admin !== null ? 'detached' : 'suppressed',
     });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(

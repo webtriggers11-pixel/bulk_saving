@@ -12,12 +12,22 @@ import { cn } from '../../lib/utils';
  * the base `text-lead` every time, so the invite, phone and OTP fields have all been
  * rendering at 15px (BUG-007).
  */
+/**
+ * A field's size: type, height and weight together, because they are one decision.
+ *
+ * Height and weight used to live in the base while three callers passed `h-[60px]`,
+ * `h-16` and `font-extrabold` in a className. None of those landed — `.h-control` and
+ * `.font-semibold` are emitted after them, so the OTP field asked for 64px/800 and
+ * rendered at 50px/600 (V2 round 2, P2-D). This is CardTitle's tracking and Input's own
+ * font-size, for the third time: a property split between a base and a caller is a
+ * property decided by Tailwind's emission order.
+ */
 const INPUT_TEXT = {
-  default: 'text-lead',
-  numeric: 'text-[17px]',
-  lg: 'text-[19px]',
-  xl: 'text-[21px]',
-  code: 'text-[27px]',
+  default: 'text-lead h-control font-semibold',
+  numeric: 'text-[17px] h-control font-semibold',
+  lg: 'text-[19px] h-[60px] font-extrabold',
+  xl: 'text-[21px] h-[60px] font-extrabold',
+  code: 'text-[27px] h-16 font-extrabold',
 } as const;
 
 /**
@@ -48,11 +58,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         className={cn(
-          'flex h-control w-full rounded-control border bg-transparent paint-glass',
-          // The shadow belongs to `emphasis`, not the base: with `shadow-field` here as
-          // well, `primary` emitted two box-shadow classes and the inset field shadow
-          // was dropped by emission order rather than by intent (V2 P2-7).
-          'px-[15px] font-semibold tracking-[-0.01em] text-ink t',
+          'flex w-full rounded-control border bg-transparent paint-glass',
+          // Height, weight and the shadow all belong to a prop rather than to the base:
+          // each was a property the base set AND a caller tried to override, which is a
+          // property neither of them actually decides (V2 P2-7, P2-D).
+          'px-[15px] tracking-[-0.01em] text-ink t',
           INPUT_TEXT[textSize],
           INPUT_EMPHASIS[emphasis],
           'placeholder:font-medium placeholder:text-ink-soft',

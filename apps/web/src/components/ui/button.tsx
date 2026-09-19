@@ -5,12 +5,23 @@ type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'd
 type ButtonSize = 'md' | 'sm' | 'icon';
 type ButtonTone = 'default' | 'onAccent';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  /** `onAccent` for a button sitting on a brand/dark surface — see {@link TONES}. */
-  tone?: ButtonTone;
-}
+/** The variants that define an `onAccent` treatment. Only these accept `tone`. */
+type AccentVariant = 'secondary' | 'ghost';
+
+/**
+ * `tone` is available only on the variants that actually define one.
+ *
+ * `TONES.onAccent` covers `secondary` and `ghost`, and a lookup that falls back to the
+ * plain variant meant `<Button variant="primary" tone="onAccent">` type-checked,
+ * rendered the ordinary primary and gave no signal at all — so the next person putting
+ * a primary button on the brand surface writes the prop, sees nothing, and reaches for
+ * a className, reintroducing exactly what the prop removed (V2 round 2, P3-F). The
+ * union makes that a compile error instead of a silent no-op.
+ */
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { size?: ButtonSize } & (
+    | { variant?: Exclude<ButtonVariant, AccentVariant>; tone?: never }
+    | { variant: AccentVariant; tone?: ButtonTone }
+  );
 
 /**
  * The one button (FEAT-011, ADR-0021). Every variant shares one geometry — 16px
@@ -42,7 +53,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
  * `onAccent` is that treatment, owned in one place. It REPLACES the variant's border
  * and label colour, so a caller still has nothing to fight.
  */
-const TONES: Record<ButtonTone, Partial<Record<ButtonVariant, string>>> = {
+const TONES: Record<ButtonTone, Record<AccentVariant, string> | Record<string, never>> = {
   default: {},
   onAccent: {
     secondary: 'paint-glass text-brand-ink border border-white/50 shadow-control sweep ripple',
@@ -70,8 +81,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         'font-bold tracking-[-0.015em] t press',
         'focus-visible:outline-none focus-visible:shadow-focus',
         'disabled:pointer-events-none disabled:opacity-40',
-        SIZES[size],
-        TONES[tone][variant] ?? VARIANTS[variant],
+        // `link` brings its own geometry (`h-auto`, `px-0`) and must not also take a
+        // size block: `.h-control` and `.px-[22px]` are emitted after it, so every link
+        // button was rendering as a 50px-tall, 22px-padded block inside a caption
+        // (V2 round 2, P2-C). A primitive can fight itself, not only its callers.
+        variant !== 'link' && SIZES[size],
+        (TONES[tone] as Partial<Record<ButtonVariant, string>>)[variant] ?? VARIANTS[variant],
         variant !== 'link' && 'hover:-translate-y-0.5',
         className,
       )}

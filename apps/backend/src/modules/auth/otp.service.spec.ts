@@ -116,3 +116,111 @@ describe('OtpService (integration, needs Redis)', () => {
     });
   });
 });
+
+/**
+ * V2 round 2, P1-A. Suppressing the send for non-admins equalised the status, the body
+ * and the stored state, and left the one step that costs real time — the SMS provider's
+ * round-trip — inside an administrator's response and nobody else's. With a 200ms
+ * provider that was ~230ms against ~13ms: one unauthenticated request, 15× apart.
+ *
+ * A timing assertion would be flaky, so the property is tested as a fact about control
+ * flow instead: with a channel that NEVER resolves, a detached request still returns.
+ * That cannot pass if the send is awaited, and it does not depend on a clock.
+ */
+describe('OtpService dispatch modes (ADR-0023)', () => {
+  let redis: RedisService;
+
+  /** A provider that accepts the send and never comes back. */
+  class HangingChannel implements NotificationChannel {
+    public calls = 0;
+    private release: (() => void) | null = null;
+    async sendOtp(): Promise<void> {
+      this.calls += 1;
+      return new Promise<void>((resolve) => {
+        this.release = resolve;
+      });
+    }
+    async send(): Promise<void> {}
+    /** Let the pending send finish so the test does not leak a dangling promise. */
+    finish(): void {
+      this.release?.();
+    }
+  }
+
+  beforeAll(() => {
+    redis = new RedisService();
+  });
+
+  afterAll(async () => {
+    await redis.quit();
+  });
+
+  /** A phone nobody else in this suite uses, so the rate limiter never collides. */
+  function freshPhone(): string {
+    return `+9198${randomBytes(4).toString('hex').replace(/\D/g, '').padEnd(8, '0').slice(0, 8)}`;
+  }
+
+  it('returns without waiting for the provider when the dispatch is detached', async () => {
+    const channel = new HangingChannel();
+    const service = new OtpService(redis, channel);
+    const phone = freshPhone();
+
+    // If this awaited the send, it would hang here until the test timed out.
+    const outcome = await service.request('detach-test', phone, { dispatch: 'detached' });
+
+    expect(outcome.result).toBe('SENT');
+    expect(channel.calls).toBe(1);
+    channel.finish();
+  });
+
+  it('DOES wait for the provider when the dispatch is awaited', async () => {
+    const channel = new HangingChannel();
+    const service = new OtpService(redis, channel);
+    const phone = freshPhone();
+
+    let settled = false;
+    const pending = service.request('await-test', phone, { dispatch: 'awaited' }).then(() => {
+      settled = true;
+    });
+
+    // Give the event loop every chance to settle it; it must not, because the
+    // provider has not returned. This is the mirror that proves the test above
+    // is measuring the dispatch mode and not something incidental.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(settled).toBe(false);
+
+    channel.finish();
+    await pending;
+    expect(settled).toBe(true);
+  });
+
+  it('never calls the provider at all when the dispatch is suppressed', async () => {
+    const channel = new HangingChannel();
+    const service = new OtpService(redis, channel);
+
+    const outcome = await service.request('suppress-test', freshPhone(), {
+      dispatch: 'suppressed',
+    });
+
+    expect(outcome.result).toBe('SENT');
+    expect(channel.calls).toBe(0);
+  });
+
+  it('survives a provider that rejects, without failing the request', async () => {
+    // The other half of P1-A: a provider that throws on an unroutable number used to
+    // propagate out as a 500 for administrators and a 200 for everyone else.
+    const failing: NotificationChannel = {
+      sendOtp: () => Promise.reject(new Error('provider unavailable')),
+      send: () => Promise.resolve(),
+    };
+    const service = new OtpService(redis, failing);
+
+    const outcome = await service.request('reject-test', freshPhone(), {
+      dispatch: 'detached',
+    });
+
+    expect(outcome.result).toBe('SENT');
+    // Let the rejection land; an unhandled rejection here would fail the run.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+});

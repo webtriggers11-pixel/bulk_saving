@@ -33,6 +33,12 @@ export class ResidentsService {
     // since been deleted `update` throws P2025 — a 500 out of a sign-in that should
     // simply have refused. Zero rows updated is not an error here; the caller has
     // already made its authorisation decision on the row it holds.
+    //
+    // The residual cost of that race, stated rather than hidden: a session is issued
+    // for a resident that no longer exists. It is bounded — `GET /me` and
+    // `AuthService.refresh` both re-read the row and refuse — so it costs one
+    // 15-minute access token and one orphaned `refresh:<id>` key, which now has no TTL
+    // (ADR-0024) and must be deleted by hand if it ever matters.
     await this.prisma.resident.updateMany({ where: { id: resident.id }, data: { verifiedAt } });
     return { ...resident, verifiedAt };
   }

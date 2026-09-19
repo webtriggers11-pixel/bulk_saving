@@ -122,7 +122,7 @@ export function AdminLoginPage() {
               placeholder="+91 98765 43210"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="num h-[60px] font-extrabold"
+              className="num"
             />
             {queuedOffline && (
               <Notice tone="warn" data-testid="admin-login-offline">
@@ -163,7 +163,7 @@ export function AdminLoginPage() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className="num h-16 text-center font-extrabold tracking-[0.38em]"
+              className="num text-center tracking-[0.38em]"
             />
             {verifyError && <Notice tone="error">{verifyError}</Notice>}
             {requestError && <Notice tone="error">{requestError}</Notice>}

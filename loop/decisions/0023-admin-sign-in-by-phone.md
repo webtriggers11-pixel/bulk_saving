@@ -78,18 +78,31 @@ both paths. Nothing about the resident flow changed, so nothing about it can hav
 
 Bad: a resident who types their number into the admin page waits for an SMS that never
 arrives, because (3) means the admin door sends nothing to a non-admin. They are stuck at
-a code they will not receive. The page says who it is for; the API still does not. The
-honest `NOT_AN_ADMIN` refusal is reachable only by someone who obtained a code through
-the resident door and brought it here — which is the demoted-admin case, and it is the
-one case where the plain answer costs nothing.
+a code they will not receive. The page says who it is for; the API still does not.
+
+The `NOT_AN_ADMIN` refusal is consequently reachable by exactly one route: a number that
+WAS an administrator when it requested a code, and is not one when it presents it. A
+resident-door code cannot be brought here — the scopes are `otp:<societyId>:<phone>` and
+`otp:admin-door:<phone>`, so it answers `OTP_INVALID` like any other wrong code. (An
+earlier draft of this section claimed the opposite; the single-scope decision in (3)
+made it false and the prose was not updated with it — V2 round 2, P3-G.)
 
 ## What this costs
 
-Every phone poked at the admin door gets an OTP generated and stored in Redis for five
-minutes, delivered to no one. That is the price of uniformity: the alternative is state
-that differs by caller, and state that differs by caller is readable. It is bounded by
-the same 1-per-30s and 5-per-hour limits as any other request, which now apply to every
-number rather than only to administrators.
+Every phone poked at the admin door gets **three** Redis keys written, for any number at
+all: the OTP itself (5 min), the resend interval (30s) and the hourly counter (1 hour).
+Previously a non-admin wrote none. The phone DTO accepts `^\+?[0-9]{7,15}$`, so the key
+space is effectively unbounded and the only volume cap is the global 120 req/min/IP
+throttler. That is the price of uniformity: the alternative is state that differs by
+caller, and state that differs by caller is readable.
+
+The send is dispatched but **not awaited**. Suppressing it for non-admins equalised the
+status, the body and the stored state, and left the one step that costs real time inside
+an administrator's response and nobody else's — with a real provider, ~230ms against
+~13ms, so a single unauthenticated request separated the two by 15× (V2 round 2, P1-A).
+Nothing is lost by not awaiting it, because this response is uniform by design: the
+send's outcome could never have reached the caller. A provider that throws is logged
+rather than becoming a 500 for administrators and a 200 for everyone else.
 
 Not addressed here: `findAdminByPhone` queries on `phone` alone, and the only index is
 `@@unique([societyId, phone])`, whose leading column is `societyId`. An unauthenticated

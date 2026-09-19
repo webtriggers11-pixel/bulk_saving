@@ -10,6 +10,7 @@ import { StatCard } from './stat';
 import { Field } from './field';
 import { DataRow, DataRows, DataCell } from './data-rows';
 import { Card } from './card';
+import { Button } from './button';
 import { Input } from './input';
 
 /** Every app source file (no tests), for the structural assertions below. */
@@ -284,5 +285,29 @@ describe('Card padding is a prop, not a className (V2 P1-1)', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('Button tone (V2 round 2, P3-F)', () => {
+  /**
+   * V2 round 2, P3-F: `tone` had no test anywhere, and for four of six variants it
+   * rendered the ordinary variant with no signal. The union now makes those a compile
+   * error; this asserts the two that ARE defined actually change something.
+   */
+  it('tone="onAccent" changes the treatment of the variants that define it', () => {
+    const { container: plain } = render(<Button variant="secondary">x</Button>);
+    const { container: accent } = render(
+      <Button variant="secondary" tone="onAccent">
+        x
+      </Button>,
+    );
+
+    const plainClasses = plain.firstElementChild?.getAttribute('class') ?? '';
+    const accentClasses = accent.firstElementChild?.getAttribute('class') ?? '';
+    expect(accentClasses).not.toBe(plainClasses);
+    expect(accentClasses).toContain('text-brand-ink');
+    // It REPLACES the variant rather than appending, so the plain label colour is gone
+    // — which is what leaves a caller nothing to fight.
+    expect(accentClasses).not.toContain('text-ink ');
   });
 });

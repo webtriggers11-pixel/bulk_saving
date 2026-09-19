@@ -1,5 +1,5 @@
 import { createHmac, randomInt } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../../redis/redis.service';
 import {
   NOTIFICATION_CHANNEL,
@@ -109,6 +109,8 @@ return 'INVALID'`;
  */
 @Injectable()
 export class OtpService {
+  private readonly log = new Logger(OtpService.name);
+
   constructor(
     private readonly redis: RedisService,
     @Inject(NOTIFICATION_CHANNEL) private readonly channel: NotificationChannel,
@@ -136,21 +138,34 @@ export class OtpService {
   }
 
   /**
-   * Generate + store a 6-digit OTP and, unless told otherwise, dispatch it via the
-   * notification channel. Enforces resend rate-limits atomically. Returns a result
-   * enum — never the code.
+   * Generate + store a 6-digit OTP and dispatch it via the notification channel.
+   * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    *
-   * `scopeId` is a key namespace, normally a society id. `dispatch: false` runs every
-   * other step unchanged — limiter, generation, storage — and simply does not send.
-   * That is what lets the admin door treat an administrator and a stranger
-   * identically in everything the caller can observe (ADR-0023): same rate-limit
-   * consumption, so the second request inside 30s is 429 for both, and same stored
-   * state, so `verify` cannot tell them apart either.
+   * `scopeId` is a key namespace, normally a society id.
+   *
+   * `dispatch` decides what happens to the send, and the three values exist for the
+   * admin door (ADR-0023):
+   *  - `'awaited'` — the resident path. The send completes before the response.
+   *  - `'suppressed'` — nothing is sent. Every other step still runs.
+   *  - `'detached'` — sent, but NOT awaited.
+   *
+   * `'detached'` is the one that needs explaining. Suppressing the send equalised the
+   * status, the body and the stored state, and left the one step that actually costs
+   * time inside the response: with a real SMS provider (100–500ms), an administrator's
+   * request took ~230ms and everyone else's ~13ms, so a SINGLE unauthenticated request
+   * separated the two by 15× — no second request, no rate-limit trick, no OTP needed
+   * (V2 round 2, P1-A). Detaching takes the varying step off the response path, which
+   * is the same move as suppressing it, applied one layer further out.
+   *
+   * Nothing is lost by not awaiting it, because the admin door's response is uniform
+   * by design: the send's outcome could never have reached the caller anyway. A
+   * provider that throws is logged here instead of becoming a 500 for administrators
+   * and a 200 for everyone else — which was the same leak wearing a different hat.
    */
   async request(
     scopeId: string,
     phone: string,
-    options: { dispatch?: boolean } = {},
+    options: { dispatch?: 'awaited' | 'detached' | 'suppressed' } = {},
   ): Promise<OtpRequestOutcome> {
     // 1/30s window: SET NX with a 30s TTL. If the key already exists -> too soon.
     const intervalSet = await this.redis.set(
@@ -186,8 +201,17 @@ export class OtpService {
 
     // Dispatch through the channel boundary. The raw code leaves this service ONLY
     // here: it is never returned to the caller and never logged (ADR-0020).
-    if (options.dispatch ?? true) {
+    const dispatch = options.dispatch ?? 'awaited';
+    if (dispatch === 'awaited') {
       await this.channel.sendOtp(phone, code);
+    } else if (dispatch === 'detached') {
+      // Deliberately not awaited — see the note above. The catch is what keeps a
+      // provider failure from becoming an unhandled rejection.
+      void this.channel.sendOtp(phone, code).catch((err: unknown) => {
+        this.log.warn(
+          `OTP dispatch failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
     }
     return { result: 'SENT' };
   }

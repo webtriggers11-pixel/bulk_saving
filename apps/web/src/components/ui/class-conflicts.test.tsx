@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { Card, CardTitle, CardDescription, CardEyebrow } from './card';
+import { Card, CardHeader, CardTitle, CardDescription, CardEyebrow } from './card';
 import { Badge } from './badge';
 import { Button } from './button';
 import { EmptyState } from './empty-state';
@@ -11,11 +11,11 @@ import { Fact } from './fact';
 import { Input } from './input';
 import { Label } from './label';
 import { Monogram } from './monogram';
-import { Skeleton } from './skeleton';
+import { Skeleton, SkeletonScreen } from './skeleton';
 import { StatCard } from './stat';
-import { DataCell, RowSurface } from './data-rows';
+import { DataCell, DataRow, DataRows, RowSurface } from './data-rows';
 import { Field } from './field';
-import { Icon } from './icon';
+import { Icon, StarGlyph } from './icon';
 import { Notice } from './notice';
 import { PageHeader } from './page-header';
 import { Select } from './select';
@@ -62,6 +62,13 @@ function familyOf(token: string): string | null {
   // `border-white/70 shadow-ring` pair the change existed to remove (V2 P2-6).
   if (/^border-/.test(bare)) return 'border-color';
   if (/^shadow(-|$)/.test(bare)) return 'box-shadow';
+  // Both were unclassified while `Input`'s base set them AND its callers overrode them
+  // on the two auth screens, so the OTP field asked for 64px/800 and rendered at
+  // 50px/600 (V2 round 2, P2-D).
+  if (/^h-(\[|\d|auto$|full$|screen$|control$|icon$|tab$)/.test(bare)) return 'height';
+  if (/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.test(bare)) {
+    return 'font-weight';
+  }
   return null;
 }
 
@@ -106,6 +113,10 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ['PageHeader', <PageHeader key="ph" title="t" />],
   ['Field', <Field key="fd" label="Status">{(props) => <Select {...props} />}</Field>],
   ['Icon', <Icon key="ic" name="users" />],
+  ['DataRows', <DataRows key="drs">x</DataRows>],
+  ['DataRow', <DataRow key="dr" title="t" columns={<DataCell label="l" value="v" />} />],
+  ['CardHeader', <CardHeader key="ch">x</CardHeader>],
+  ['StarGlyph', <StarGlyph key="sg" filled />],
 ];
 
 /**
@@ -117,11 +128,63 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
 const NO_CLASSNAME: Record<string, string> = {
   AmbientGround: 'decorative, fixed-position; takes only an id',
   Toast: 'rendered by the toast host, never written by a caller with classes',
-  StarGlyph: 'a raw glyph inside Rating; its className is the caller-owned fill colour only',
-  CardHeader: 'layout-only wrapper with a fixed shape',
-  SkeletonScreen: 'takes className but only as a caller-owned container; it renders none of its own',
-  DataRows: 'takes no className; the row primitives carry the shape',
-  DataRow: 'composed of RowSurface + DataCell, both covered above',
+};
+
+/**
+ * Every combination of closed props a primitive offers, for the base-vs-base check.
+ *
+ * Rendering only the DEFAULT props is how `variant="link"` hid: the conflict is between
+ * the link variant and the size block, and the default variant is `primary`, so nothing
+ * ever rendered the pair that fights. A closed prop is a promise that each of its values
+ * produces a coherent base, and each value has to be rendered to check that.
+ */
+const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link', 'danger'] as const;
+const BUTTON_SIZES = ['md', 'sm', 'icon'] as const;
+const INPUT_SIZES = ['default', 'numeric', 'lg', 'xl', 'code'] as const;
+const INPUT_EMPHASES = ['normal', 'primary'] as const;
+
+const PROP_MATRIX: Array<[string, ReactElement]> = [
+  ...BUTTON_VARIANTS.flatMap((variant) =>
+    BUTTON_SIZES.map(
+      (size) =>
+        [
+          `Button variant=${variant} size=${size}`,
+          <Button key={`${variant}-${size}`} variant={variant} size={size}>
+            x
+          </Button>,
+        ] as [string, ReactElement],
+    ),
+  ),
+  ...INPUT_SIZES.flatMap((textSize) =>
+    INPUT_EMPHASES.map(
+      (emphasis) =>
+        [
+          `Input textSize=${textSize} emphasis=${emphasis}`,
+          <Input key={`${textSize}-${emphasis}`} textSize={textSize} emphasis={emphasis} />,
+        ] as [string, ReactElement],
+    ),
+  ),
+];
+
+/**
+ * The other way a component has nothing to fight: it ACCEPTS a `className` and renders
+ * no classes of its own, so the caller's are the only ones on the element. Checked by
+ * rendering it and asserting the base really is empty — the claim is not taken on
+ * trust, because the last version of this list had four false entries out of seven.
+ */
+const NO_BASE_CLASSES: Array<[string, ReactElement]> = [
+  ['SkeletonScreen', <SkeletonScreen key="ss" label="Loading">x</SkeletonScreen>],
+];
+
+/**
+ * A component that renders no classes on its own outer element but forwards a caller's
+ * `className` into another primitive's base. Checking it against its own (empty) base
+ * would pass everything, while the caller's classes really do land next to the target's
+ * base — which is how a `<DataRows className="grid gap-8">` fighting `flex gap-2.5`
+ * went unseen (V2 round 2, P2-B).
+ */
+const FORWARDS_TO: Record<string, string> = {
+  DataRow: 'RowSurface',
 };
 
 function appSources(dir = join(process.cwd(), 'src'), out: string[] = []): string[] {
@@ -233,7 +296,75 @@ function exportedComponents(): Array<[string, string]> {
 }
 
 describe('BUG-007 — a caller must not fight a primitive for the same CSS property', () => {
-  const bases = new Map(PRIMITIVES.map(([name, element]) => [name, baseClassesOf(element)]));
+  const rendered = new Map(PRIMITIVES.map(([name, element]) => [name, baseClassesOf(element)]));
+  const bases = new Map(
+    [...rendered].map(([name, classes]) => {
+      const target = FORWARDS_TO[name];
+      return [name, target ? (rendered.get(target) ?? classes) : classes] as const;
+    }),
+  );
+
+  /**
+   * V2 round 2, P2-B: the coverage test closed "nobody remembered" and opened "write a
+   * sentence and the component is exempt" — four of seven exemptions were factually
+   * wrong, three of them for components that plainly take a className. The claim is
+   * now checked against the source instead of believed.
+   */
+  it('every NO_CLASSNAME entry really does refuse a className', () => {
+    const dir = join(process.cwd(), 'src/components/ui');
+    const liars: string[] = [];
+    for (const name of Object.keys(NO_CLASSNAME)) {
+      for (const entry of readdirSync(dir)) {
+        if (!/\.tsx$/.test(entry) || /\.test\.tsx$/.test(entry)) continue;
+        const source = readFileSync(join(dir, entry), 'utf8');
+        const at = source.search(new RegExp(`export (?:function|const) ${name}\\b`));
+        if (at === -1) continue;
+        // Only the SIGNATURE — up to the `) {` that opens the body. A component that
+        // uses `className` on its own inner elements is not the question; whether it
+        // ACCEPTS one from a caller is.
+        const rest = source.slice(at);
+        const opens = rest.search(/\)\s*{/);
+        const signature = opens === -1 ? rest.slice(0, 400) : rest.slice(0, opens);
+        if (signature.includes('className')) {
+          liars.push(`${name} (${entry}) is exempt as "${NO_CLASSNAME[name]}" but takes a className`);
+        }
+      }
+    }
+    expect(liars).toEqual([]);
+  });
+
+  it('every NO_BASE_CLASSES entry really does render no classes of its own', () => {
+    const liars = NO_BASE_CLASSES.filter(([, element]) => baseClassesOf(element).length > 0).map(
+      ([name]) => `${name} is exempt as having no base classes, but renders some`,
+    );
+    expect(liars).toEqual([]);
+  });
+
+  /**
+   * V2 round 2, P2-C. `Button variant="link"` carried `h-auto px-0` in its variant AND
+   * `h-control px-[22px]` from its size block, so every link button rendered 50px tall
+   * with 22px of padding — decided by emission order, inside one primitive, with no
+   * caller involved. P2-7 was the same shape; fixing the instance did not add the check.
+   */
+  it('no primitive emits two classes in one property family from its own base', () => {
+    const offenders: string[] = [];
+    for (const [name, classes] of [...rendered, ...PROP_MATRIX.map(
+      ([label, element]) => [label, baseClassesOf(element)] as const,
+    )]) {
+      const seen = new Map<string, string>();
+      for (const token of classes) {
+        const family = familyOf(token);
+        if (!family) continue;
+        const first = seen.get(family);
+        if (first) {
+          offenders.push(`<${name}> base sets ${family} twice: "${first}" and "${token}"`);
+        } else {
+          seen.set(family, token);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 
   // V2 P2-5: the scan's own doc comment claimed a primitive written tomorrow was
   // covered the day it existed. It was not — `PRIMITIVES` is a list, and `Notice`
@@ -242,13 +373,15 @@ describe('BUG-007 — a caller must not fight a primitive for the same CSS prope
     const components = exportedComponents();
     expect(components.length, 'found no components to check — this test is vacuous').toBeGreaterThan(15);
 
+    const exempt = new Set(NO_BASE_CLASSES.map(([name]) => name));
     const uncovered = components
-      .filter(([name]) => !bases.has(name) && !(name in NO_CLASSNAME))
-      .map(([name, file]) => `${name} (${file}) is in neither PRIMITIVES nor NO_CLASSNAME`);
+      .filter(([name]) => !bases.has(name) && !(name in NO_CLASSNAME) && !exempt.has(name))
+      .map(([name, file]) => `${name} (${file}) is covered by no list in this file`);
     expect(uncovered).toEqual([]);
   });
 
   it('every primitive renders at least one class, or this scan proves nothing', () => {
+    // `bases`, not `rendered`: a forwarding component's base is its target's.
     for (const [name, classes] of bases) {
       expect(classes.length, `${name} rendered no classes — the scan below is vacuous`).toBeGreaterThan(0);
     }

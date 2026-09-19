@@ -47,6 +47,7 @@
 | FEAT-013 | One OTP, then signed in for good — sessions no longer expire | in-progress | P1 | 2026-09-19 | — | loop/work/FEAT-013-lifetime-sessions/ | ADR-0024 |
 | CHORE-014 | Input boxes read as gaps — a white border on a white sheet | in-progress | P2 | 2026-09-19 | — | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0022 |
 | CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
+| CHORE-016 | An admin's sign-in can be denied by six unauthenticated OTP requests | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-016-admin-otp-denial/ | ADR-0023 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

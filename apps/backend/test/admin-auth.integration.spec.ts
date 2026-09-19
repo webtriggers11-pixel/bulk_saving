@@ -56,16 +56,30 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
 
   const server = () => request(app.getHttpServer());
 
+  /**
+   * The admin door dispatches WITHOUT awaiting (ADR-0023, V2 round 2 P1-A), so the
+   * response can land before the SMS does. Tests that need the code wait for it here
+   * rather than reading `lastCode` off a race.
+   */
+  async function waitForSend(from: number): Promise<string> {
+    for (let i = 0; i < 100; i += 1) {
+      if (channel.sends > from) return channel.lastCode as string;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`no OTP dispatched within 1s (sends stayed at ${from})`);
+  }
+
   it('signs an admin in with a phone number and nothing else (AC1, AC3)', async () => {
     const phone = await makeAdmin();
 
+    const sendsBefore = channel.sends;
     const requested = await server()
       .post('/auth/admin/otp/request')
       .send({ phone })
       .expect(200);
     expect(requested.body).toEqual({ success: true, data: { requested: true } });
 
-    const code = channel.lastCode as string;
+    const code = await waitForSend(sendsBefore);
     expect(code).toMatch(/^\d{6}$/);
     expect(JSON.stringify(requested.body)).not.toContain(code);
 
@@ -126,7 +140,9 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(asAdmin.statuses).toEqual([200, 429]);
 
     // The one thing that does differ is the only thing the caller cannot observe:
-    // exactly one SMS was dispatched, to the administrator.
+    // exactly one SMS was dispatched, to the administrator — and it is dispatched
+    // off the response path, so it is awaited here rather than asserted inline.
+    await waitForSend(sendsBefore);
     expect(channel.sends).toBe(sendsBefore + 1);
     expect(channel.lastPhone).toBe(adminPhone);
   });
@@ -183,8 +199,9 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
 
   it('refuses a valid code from a number that is no longer an admin (AC5)', async () => {
     const phone = await makeAdmin();
+    const sendsBefore = channel.sends;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    const code = channel.lastCode as string;
+    const code = await waitForSend(sendsBefore);
 
     // Demoted between requesting the code and using it — the role is an authorisation
     // decision, so it is read at the moment it is acted on, not when the OTP was sent.
@@ -227,8 +244,9 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       data: { societyId: otherSociety.id, phone, role: 'RESIDENT', verifiedAt: new Date() },
     });
 
+    const sendsBefore = channel.sends;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    const code = channel.lastCode as string;
+    const code = await waitForSend(sendsBefore);
 
     const res = await server().post('/auth/admin/otp/verify').send({ phone, code }).expect(200);
     // Signed into the society they ADMINISTER, not the one they merely live in.
@@ -238,6 +256,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
 
   it('ignores a body that tries to name its own society or invite code (ADR-0003)', async () => {
     const phone = await makeAdmin();
+    const sendsBefore = channel.sends;
 
     // The global pipe is `whitelist: true`, so these extra fields are stripped rather
     // than rejected — which is why the assertion that matters is about WHERE the
@@ -246,7 +265,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       .post('/auth/admin/otp/request')
       .send({ phone, societyId: otherSociety.id, inviteCode: otherSociety.inviteCode })
       .expect(200);
-    const code = channel.lastCode as string;
+    const code = await waitForSend(sendsBefore);
 
     const res = await server()
       .post('/auth/admin/otp/verify')
@@ -269,6 +288,45 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       .expect(429);
     expect(second.body.error.code).toBe(ErrorCode.OTP_RATE_LIMITED);
   });
+
+  /**
+   * V2 round 2, P1-A — at the ENDPOINT, not at the service.
+   *
+   * `OtpService`'s own spec proves the three dispatch modes behave differently; none
+   * of it stops this controller from asking for the wrong one. Here the provider never
+   * returns, so an awaited dispatch can never answer — and the request is RACED against
+   * a timer rather than simply awaited, so that mutation fails in two seconds with a
+   * readable message instead of hanging until the suite times out.
+   */
+  it('does not wait for the SMS provider before answering an admin (AC2)', async () => {
+    let release: (() => void) | null = null;
+    const hanging = new CapturingChannel();
+    hanging.sendOtp = () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+    const hangingApp = await createTestApp(hanging);
+    try {
+      const phone = randomPhone();
+      await hangingApp.get(PrismaService).resident.create({
+        data: { societyId: society.id, phone, role: 'SUPER_ADMIN', verifiedAt: new Date() },
+      });
+
+      const responded = request(hangingApp.getHttpServer())
+        .post('/auth/admin/otp/request')
+        .send({ phone })
+        .then((res) => res.status);
+      const timedOut = new Promise<'TIMED_OUT'>((resolve) =>
+        setTimeout(() => resolve('TIMED_OUT'), 2_000),
+      );
+
+      await expect(Promise.race([responded, timedOut])).resolves.toBe(200);
+    } finally {
+      (release as (() => void) | null)?.();
+      await hangingApp.close();
+    }
+  }, 15_000);
 
   it('leaves the resident door exactly as it was (AC6)', async () => {
     const phone = randomPhone();
