@@ -97,9 +97,22 @@ throttler. That is the price of uniformity: the alternative is state that differ
 caller, and state that differs by caller is readable.
 
 The send is dispatched but **not awaited**, and the invocation itself is deferred to
-`setImmediate` so that even an adapter's synchronous prefix — request signing, a
-credentials read, template rendering — stays out of the response. Two consequences worth
-naming, because detaching bought them:
+`setImmediate`.
+
+Both halves were earned the hard way. Suppressing the send for non-admins equalised the
+status, the body and the stored state, and left the one step that costs real time inside
+an administrator's response and nobody else's — with a real provider, ~230ms against
+~13ms, so a single unauthenticated request separated the two by 15×. Then `void
+channel.sendOtp(...)` still INVOKED the adapter, so everything it did before its first
+`await` — request signing, a credentials read, template rendering — was back inside that
+same response, at ~9ms of skew for a 10ms prefix. Deferring the invocation puts the
+response on the wire before any of it begins; `finish` precedes the deferred work.
+Nothing is lost by not awaiting, because this response is uniform by design: the send's
+outcome could never have reached the caller. A provider that throws — synchronously or
+otherwise — is logged rather than becoming a 500 for administrators and a 200 for
+everyone else.
+
+Two consequences detaching bought, worth naming:
 
 - **A send in flight is lost on shutdown.** SIGTERM closes the app with the provider
   request outstanding, so an administrator who asked for a code during a rolling restart
@@ -109,14 +122,16 @@ naming, because detaching bought them:
   code, so the SMS someone is reading may no longer verify. The window existed before;
   detaching widens it.
 
-Both are the price of a uniform response, and both argue for moving the OTP send onto the
-notification queue (ADR-0013) rather than back onto the response path. Suppressing it for non-admins equalised the
-status, the body and the stored state, and left the one step that costs real time inside
-an administrator's response and nobody else's — with a real provider, ~230ms against
-~13ms, so a single unauthenticated request separated the two by 15× (V2 round 2, P1-A).
-Nothing is lost by not awaiting it, because this response is uniform by design: the
-send's outcome could never have reached the caller. A provider that throws is logged
-rather than becoming a 500 for administrators and a 200 for everyone else.
+Both are the price of a uniform response, and both point the same way as the residual
+risk below: the send still runs in the process that serves requests, so the complete
+answer is the notification queue (ADR-0013), not a better arrangement of this line.
+Tracked as CHORE-017.
+
+Residual, not closed: the deferred work still occupies the shared event loop, so an
+adapter's synchronous prefix delays whatever else the process is doing. A reviewer could
+not produce a usable signal from it in-process, and it is bounded by that prefix
+(~0.1–1ms for a normal HTTP client) — but it is the same leak one level out, and only
+moving the send off this process removes it.
 
 Not addressed here: `findAdminByPhone` queries on `phone` alone, and the only index is
 `@@unique([societyId, phone])`, whose leading column is `societyId`. An unauthenticated

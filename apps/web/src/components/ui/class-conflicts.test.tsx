@@ -36,44 +36,58 @@ import { Select } from './select';
  * `NO_CLASSNAME`, so the gap closes itself rather than waiting for a reviewer.
  */
 
-/** Which CSS property a Tailwind class sets — only the families that can collide. */
-function familyOf(token: string): string | null {
+/**
+ * Which CSS PROPERTIES a Tailwind class sets — only the families that can collide.
+ *
+ * A list, not one value, because a shorthand and a per-axis utility are the same
+ * property seen from different angles: `p-6` and `px-4` were two different keys, so a
+ * caller's `px-4` beating a base's `p-6` on the horizontal axis (and losing on the
+ * vertical) was invisible — a property split between base and caller, decided by
+ * emission order, which is the whole of BUG-007 (V2 round 4). Anything that resolves
+ * to overlapping properties now collides.
+ */
+function familiesOf(token: string): string[] {
   // A variant-prefixed class (`md:gap-5`, `hover:bg-white/60`) is a CONDITIONAL
   // override and lands in a later block, so it cannot be silently beaten by a base
   // class. Only unconditional ones can fight.
-  if (token.includes(':')) return null;
+  if (token.includes(':')) return [];
   const bare = token;
-  if (/^-?p-(\[|\d)/.test(bare)) return 'padding';
-  if (/^-?p[xytrbl]-(\[|\d)/.test(bare)) return `padding-${bare[1]}`;
-  if (/^-?m-(\[|\d)/.test(bare)) return 'margin';
-  // Per-side margins. `Notice`'s base sets `mt-3` while its own `className` docstring
-  // reserves that prop for "placement only — margins and grid spans", i.e. the one
-  // family the scan could not police was the prop's documented purpose (V2 round 3).
-  if (/^-?m[xytrbl]-(\[|\d|auto$)/.test(bare)) return `margin-${bare.replace(/^-/, '')[1]}`;
-  if (/^gap-(\[|\d)/.test(bare)) return 'gap';
-  if (/^rounded(-|$)/.test(bare) && !/^rounded-(t|r|b|l|tl|tr|br|bl)/.test(bare)) return 'radius';
-  if (/^(flex|grid|block|inline-flex|inline-block|inline|hidden|contents)$/.test(bare)) return 'display';
+
+  /** `p`/`m` → the four edges a shorthand or axis utility actually writes. */
+  function edges(prefix: 'padding' | 'margin', axis: string): string[] {
+    const sides =
+      axis === '' ? ['t', 'r', 'b', 'l'] : axis === 'x' ? ['l', 'r'] : axis === 'y' ? ['t', 'b'] : [axis];
+    return sides.map((side) => `${prefix}-${side}`);
+  }
+
+  const spacing = /^-?([pm])([xytrbl]?)-(\[|\d|auto$)/.exec(bare);
+  if (spacing) {
+    return edges(spacing[1] === 'p' ? 'padding' : 'margin', spacing[2]);
+  }
+
+  if (/^gap-(\[|\d)/.test(bare)) return ['gap'];
+  if (/^rounded(-|$)/.test(bare) && !/^rounded-(t|r|b|l|tl|tr|br|bl)/.test(bare)) return ['radius'];
+  if (/^(flex|grid|block|inline-flex|inline-block|inline|hidden|contents)$/.test(bare)) return ['display'];
   // text-* is a size only when it names one; text-ink / text-white are colour.
-  if (/^text-\[\d/.test(bare)) return 'font-size';
+  if (/^text-\[\d/.test(bare)) return ['font-size'];
   if (/^text-(xs|sm|base|lg|xl|[2-9]xl|eyebrow|label|micro|meta|caption|body|lead|title|headline|display|amount|hero)$/.test(bare)) {
-    return 'font-size';
+    return ['font-size'];
   }
   // A side-specific border sets its own property and cannot fight an all-round one.
-  if (/^border-(t|r|b|l|x|y|tl|tr|br|bl)(-|$)/.test(bare)) return null;
-  if (/^border(-(\[|\d))?$/.test(bare)) return 'border-width';
-  // `emphasis` moved both of these into a primitive's base (CHORE-014), and nothing
-  // was watching either family: a caller could hand `Input` back the exact
-  // `border-white/70 shadow-ring` pair the change existed to remove (V2 P2-6).
-  if (/^border-/.test(bare)) return 'border-color';
-  if (/^shadow(-|$)/.test(bare)) return 'box-shadow';
-  // Both were unclassified while `Input`'s base set them AND its callers overrode them
-  // on the two auth screens, so the OTP field asked for 64px/800 and rendered at
-  // 50px/600 (V2 round 2, P2-D).
-  if (/^h-(\[|\d|auto$|full$|screen$|control$|icon$|tab$)/.test(bare)) return 'height';
+  if (/^border-(t|r|b|l|x|y|tl|tr|br|bl)(-|$)/.test(bare)) return [];
+  if (/^border(-(\[|\d))?$/.test(bare)) return ['border-width'];
+  if (/^border-/.test(bare)) return ['border-color'];
+  if (/^shadow(-|$)/.test(bare)) return ['box-shadow'];
+  if (/^h-(\[|\d|auto$|full$|screen$|control$|icon$|tab$)/.test(bare)) return ['height'];
+  // `Input` and `Select` both set `w-full`; a caller passing `w-auto` is making a
+  // sizing decision, which has the same "neither of them decides it" character height
+  // had. Deliberately NOT extended to colour families, where a caller legitimately
+  // overrides and flagging it would only train people to ignore the scan.
+  if (/^w-(\[|\d|auto$|full$|fit$|screen$|icon$)/.test(bare)) return ['width'];
   if (/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.test(bare)) {
-    return 'font-weight';
+    return ['font-weight'];
   }
-  return null;
+  return [];
 }
 
 /** The classes a primitive renders when the caller passes none. */
@@ -91,8 +105,11 @@ function baseClassesOf(element: ReactElement): string[] {
  * escape hatch today; `size`/`textSize`/`radius` REPLACE the base, so a className in
  * those families is still a conflict and is still flagged.
  */
-const OPT_OUT: Record<string, Record<string, RegExp>> = {
-  Card: { padding: /padding="none"/ },
+const OPT_OUT: Record<string, Array<{ family: RegExp; when: RegExp }>> = {
+  // Keyed by a family PATTERN, because one `p-*` class now resolves to four edges —
+  // an opt-out keyed on the single name `padding` silently stopped matching any of
+  // them the moment the classifier started returning property sets.
+  Card: [{ family: /^padding-/, when: /padding="none"/ }],
 };
 
 /** Each primitive, rendered with no className, keyed by the JSX tag callers write. */
@@ -295,8 +312,8 @@ function appSources(dir = join(process.cwd(), 'src'), out: string[] = []): strin
  * The whole opening tag for `<Name`, brace- and quote-aware — `[^>]*` stops at the
  * first `>` and would miss a `p-4` that sits after `action={<Icon />}`.
  */
-function openingTags(source: string, name: string): string[] {
-  const tags: string[] = [];
+function openingTags(source: string, name: string): Array<{ tag: string; at: number }> {
+  const tags: Array<{ tag: string; at: number }> = [];
   const opener = new RegExp(`<${name}(?=[\\s/>])`, 'g');
   for (const match of source.matchAll(opener)) {
     let i = match.index! + match[0].length;
@@ -317,7 +334,7 @@ function openingTags(source: string, name: string): string[] {
       }
       i += 1;
     }
-    tags.push(source.slice(match.index!, i));
+    tags.push({ tag: source.slice(match.index!, i), at: match.index! });
   }
   return tags;
 }
@@ -448,13 +465,13 @@ describe('BUG-007 — a caller must not fight a primitive for the same CSS prope
     )]) {
       const seen = new Map<string, string>();
       for (const token of classes) {
-        const family = familyOf(token);
-        if (!family) continue;
-        const first = seen.get(family);
-        if (first) {
-          offenders.push(`<${name}> base sets ${family} twice: "${first}" and "${token}"`);
-        } else {
-          seen.set(family, token);
+        for (const family of familiesOf(token)) {
+          const first = seen.get(family);
+          if (first) {
+            offenders.push(`<${name}> base sets ${family} twice: "${first}" and "${token}"`);
+          } else {
+            seen.set(family, token);
+          }
         }
       }
     }
@@ -488,26 +505,32 @@ describe('BUG-007 — a caller must not fight a primitive for the same CSS prope
     for (const file of appSources()) {
       const source = readFileSync(file, 'utf8');
       for (const [name, baseClasses] of bases) {
-        const baseFamilies = new Set(baseClasses.map(familyOf).filter(Boolean) as string[]);
+        const baseFamilies = new Set(baseClasses.flatMap(familiesOf));
         if (baseFamilies.size === 0) continue;
-        // Two identical tags in one file both resolved to the FIRST one's line number,
-        // because the lookup was `indexOf(tag)` with no cursor. A scan's message is its
-        // product; one that names the wrong line sends the reader to the wrong place.
-        let cursor = 0;
-        for (const tag of openingTags(source, name)) {
-          const at = source.indexOf(tag, cursor);
-          cursor = at === -1 ? cursor : at + tag.length;
+        // The position comes from the match, not from a second `indexOf`. Re-finding
+        // the tag reported the wrong line twice over: first for two identical tags (no
+        // cursor), then — with a cursor — for a same-name NESTED tag, because the outer
+        // tag's string spans past the inner one, so the cursor had already moved beyond
+        // it and the lookup returned -1, reporting line 1. A scan's message is its
+        // product, and this one was sending the reader to the wrong place (V2 round 4).
+        for (const { tag, at } of openingTags(source, name)) {
           const tokens = classNameTokens(tag);
           inspected += tokens.length;
           for (const token of tokens) {
-            const family = familyOf(token);
-            const optedOut = family ? OPT_OUT[name]?.[family]?.test(tag) : false;
-            if (family && baseFamilies.has(family) && !optedOut) {
-              const line = source.slice(0, at === -1 ? 0 : at).split('\n').length;
-              offenders.push(
-                `${file.replace(process.cwd(), '')}:${line} <${name} className="… ${token} …"> fights its base ${family}`,
-              );
-            }
+            const clashes = familiesOf(token).filter(
+              (family) =>
+                baseFamilies.has(family) &&
+                !(OPT_OUT[name] ?? []).some(
+                  (rule) => rule.family.test(family) && rule.when.test(tag),
+                ),
+            );
+            if (clashes.length === 0) continue;
+            // One message per token, not one per property it writes: `p-4` resolves to
+            // four edges and four identical-looking lines are noise, not detail.
+            const line = source.slice(0, at).split('\n').length;
+            offenders.push(
+              `${file.replace(process.cwd(), '')}:${line} <${name} className="… ${token} …"> fights its base ${clashes.join('/')}`,
+            );
           }
         }
       }

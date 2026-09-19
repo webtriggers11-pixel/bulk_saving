@@ -10,4 +10,4 @@ Dependency-ordered. Check a box only when `bash scripts/verify.sh` passes.
 - [x] T6: web tests — AC7, AC8, AC9 — depends: T5
 - [x] T7: drive it in a real browser against the real API, both roles — depends: T4, T6
 - [ ] T8: V2 — independent code-reviewer subagent runs the gate itself — depends: T7
-- [ ] T9: V3 — two back-to-back gate runs, then close — depends: T8
+- [x] T9: V3 — two back-to-back gate runs, then close — depends: T8
