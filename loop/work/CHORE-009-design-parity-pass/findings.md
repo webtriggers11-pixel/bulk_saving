@@ -50,3 +50,20 @@ Sizes and radii were read from computed style, not eyeballed.
    that changes nothing. Backend semantics; the copy is only as clear as the field.
 3. **E2E leftovers are in the catalog** ("E2E Service 011682" and friends, ₹999/unit). Test
    data in the dev database, not a product defect — worth a cleanup task before any demo.
+
+## Interaction pass — every control driven in the browser, against the real API
+
+| Control | Result |
+|---|---|
+| Group buys — stepper `+` | 2 → 3 rooms; the server accepted it and the refetched card agreed |
+| Group buys — Leave | "pledged 1 flat" → not joined, and the units input + Join came back |
+| My Requests — rating | 4th star → Submit → saved state renders "4 / 5" with Change and Remove |
+| Tab bar | all four tabs route; no tab claims `aria-current` on `/rounds`, which is not a tab |
+| Profile — society | now reads "Green Meadows", and it is persisted, so a reload and offline both keep it |
+| Admin — status filter | 94 rows → 23, every one of them "Needs vendor"; the `Field` label is linked to the select |
+| Admin — add vendor (invalid) | `aria-invalid="true"` + `aria-describedby` pointing at the real message, "Phone must be 8–15 digits, optionally starting with +." |
+| Admin — add vendor (valid) | vendor created, list 18 → 19, the new row rendered |
+| `/admin` as a resident | redirects to `/` — the guard holds |
+
+The `Field` primitive's aria wiring, which CHORE-008 introduced and V2 asked about, is
+confirmed end to end in a real browser rather than only in jsdom.
