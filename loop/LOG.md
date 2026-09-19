@@ -589,3 +589,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **P2-6** — the strips were in the right column on the wrong gutter (16px against the screens' 22px).
 - Evidence: gate exit 0 after the fixes — backend 317/24, web 273/43, 1223 class tokens.
 - By: agent (autonomous) + code-reviewer subagent (V2)
+
+## 2026-09-19 — CHORE-009 + BUG-008 — V2 PASS, V3 identical twice, both CLOSED
+- V2 round 2 passed the code and then broke my tests, twice, both fairly:
+  1. The shared-phone test asserted "society is still null" behind a sleep — which is equally true one tick BEFORE a write lands, and true if the fetch never happened. My first fix made it worse: with `waitFor(() => expect(society).toBeNull())` it passed even with the identity guard deleted, because `waitFor` succeeds on its first passing tick. It now waits for the wrong resident's data to reach the cache — proof it arrived and every effect ran — then asserts nothing was written. Proven by mutation in both directions.
+  2. `queryClient.clear()` on the forced logout had no test, and that is the half of the fix protecting ROUNDS — which is ADR-0015's actual sentence, not society. Deleting the line left the suite green. Now it does not.
+- Also from that round: **403 is out of the refusal path**. The backend throws `UnauthorizedException` on all three refresh failures, so it never emits 403 there — while a WAF or edge proxy answering 403 would end a valid session. That is this bug's own mistake, one status narrower. And a 200 carrying `success:false` now keeps the session, with a test.
+- Reverted honestly: I had given `CardTitle size="sm"` a tracking value no artboard and no caller ever asked for, decided in a review round with no browser open. Inventing a design value in a code review is how a system drifts.
+- Two findings that would have lived only in a review comment are now tracked: **CHORE-012** — the class-conflict scan does not police letter-spacing, and the invite-code and OTP fields already fight `Input`'s base tracking, winning only because Tailwind happens to emit the callers later — and **CHORE-013** (act() warnings).
+- Process leak worth naming: I ticked T7 (the V2 checkpoint) in the same commit that requested the review. The box is the outcome, not the request; CLAUDE.md rule 6 puts that checkpoint outside the implementer's hands.
+- V3: two back-to-back runs, exit 0 both, byte-identical — backend 317/24, web 275/43, 1221 class tokens.
+- **CHORE-009 and BUG-008 CLOSED.** Every screen has now been seen in its finished state, every control driven against the real API, and the three defects the browser found are fixed with tests that bite.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

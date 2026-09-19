@@ -32,7 +32,7 @@
 | FEAT-011 | Resident UI redesign — themeable design system, motion layer, skeletons | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-011-resident-ui-redesign/ | ADR-0021 |
 | CHORE-008 | Every remaining screen on the design system + shared screen primitives | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/CHORE-008-admin-ui-and-shared-primitives/ | ADR-0022 |
 | BUG-007 | A primitive's base class and a caller's className silently fight (13 dead overrides) | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-007-primitive-class-conflicts/ | ADR-0022 |
-| CHORE-009 | Design-parity pass — every screen vs its artboard, in a browser | in-progress | P1 | 2026-09-19 | — | loop/work/CHORE-009-design-parity-pass/ | ADR-0021, ADR-0022 |
+| CHORE-009 | Design-parity pass — every screen vs its artboard, in a browser | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/CHORE-009-design-parity-pass/ | ADR-0021, ADR-0022 |
 | BUG-008 | A server hiccup signs the resident out (network error treated as a rejected refresh) | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/BUG-008-network-error-logs-you-out/ | — |
 | BUG-009 | Profile showed "—" for society: the sign-in response carries none and the store never learned | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-009-profile-shows-no-society/ | ADR-0015 |
 | BUG-010 | A resident sees `currentPrice` on a delivered round, not the negotiated `finalPrice` (needs backend) | triaged | P1 | 2026-09-19 | — | loop/work/BUG-010-delivered-round-shows-wrong-price/ | — |
