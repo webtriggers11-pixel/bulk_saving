@@ -561,3 +561,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back full gate runs on a clean tree, **exit 0 both times, byte-identical** — backend 317/24, web 264/42, 1216 class tokens. No flake.
 - **CHORE-008 CLOSED.** Both halves of the product are on one system: eight screen primitives with one owner per shape, admin rebuilt from them, the canvas covering all ten screens, and the dependency direction asserted by test in both shared folders.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-09-19 — CHORE-009 — OPENED — no screen has been seen in its finished state
+- What: BUG-007 showed that 35 size and radius choices had never rendered, which means every browser check before it ran against a build where titles were 19px, code fields 15px and skeleton corners stadiums. The design has been built, reviewed and gated — and not yet actually looked at as drawn.
+- The owner's ask is the whole spec: "properly working same design UI that we have created". So this item does the one thing no test can — each screen beside its artboard, at the size a resident holds it, with differences either closed or written down.
+- Frontend only, by instruction: no SMS, no backend, no schema. The API is a data source here, nothing more. The webfont stays on the CDN and is not raised again — the owner has said the font is provisional.
+- By: agent (autonomous)
