@@ -1,6 +1,6 @@
 # FEAT-016 — Premium phone-app feel: dark mode with a Telegram-style switch, sheets, native chrome
 
-**Status:** in-progress · **Priority:** P1 · **Opened:** 2026-10-18 · **Asked by:** owner
+**Status:** in-review · **Priority:** P1 · **Opened:** 2026-10-18 · **Asked by:** owner
 ("better UI/UX, dark mode light mode similar to telegram effect and much more like using
 sheets and all so it look premium phone app look") · **Decisions:** ADR-0028 (builds on ADR-0021/0022)
 

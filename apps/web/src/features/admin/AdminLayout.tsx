@@ -45,7 +45,7 @@ export function AdminLayout({
 
       <header className="sticky top-0 z-20 border-b border-paper/80 bg-gradient-to-b from-paper/70 to-paper/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
-          <span className="flex items-center gap-2.5">
+          <span className="order-1 flex items-center gap-2.5">
             <span className="animate-breathe flex h-9 w-9 items-center justify-center rounded-chip paint-mono text-white shadow-accent">
               <Icon name="bolt" size={19} strokeWidth={1.9} />
             </span>
@@ -53,7 +53,7 @@ export function AdminLayout({
               Bulk Saving <span className="text-brand-ink">Admin</span>
             </span>
           </span>
-          <nav aria-label="Admin" className="flex flex-wrap items-center gap-1">
+          <nav aria-label="Admin" className="order-3 flex w-full flex-wrap items-center gap-1 sm:order-2 sm:w-auto">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -73,8 +73,10 @@ export function AdminLayout({
               </NavLink>
             ))}
           </nav>
-          {/* FEAT-016: the night switch, same gesture as the resident app. */}
-          <SchemeToggle className="ml-auto sm:ml-0" />
+          {/* FEAT-016: the night switch, same gesture as the resident app. Ordered beside the
+              brand on a phone (the nav takes its own full row below), after the nav on wider
+              screens — one control, placed by `order`, never rendered twice. */}
+          <SchemeToggle className="order-2 ml-auto sm:order-3 sm:ml-0" />
         </div>
       </header>
 

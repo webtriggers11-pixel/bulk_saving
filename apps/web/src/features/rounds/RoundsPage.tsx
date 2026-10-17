@@ -152,8 +152,11 @@ function PledgeSheet({ round, open, onClose }: { round: RoundDto; open: boolean;
           </Button>
           {joined && (
             <Button
-              variant="ghost"
-              className="w-full text-danger-ink"
+              // The danger VARIANT, not ghost + a colour class: a caller's text colour
+              // lost to the variant's own (stylesheet order), and "Leave" read as an
+              // ordinary action (FEAT-016 browser pass).
+              variant="danger"
+              className="w-full"
               disabled={busy}
               onClick={() => leave.mutate(round.id, done)}
               data-testid={`leave-${round.id}`}

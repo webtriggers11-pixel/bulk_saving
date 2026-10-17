@@ -158,7 +158,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
       ) : (
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-line/10 pt-4" data-testid="rating-prompt">
           <p className="text-meta font-bold text-ink-muted">How did it go? Your rating helps the next resident.</p>
-          <Button size="sm" aria-haspopup="dialog" onClick={() => setEditing(true)}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" aria-haspopup="dialog" onClick={() => setEditing(true)}>
             Rate this job
           </Button>
         </div>
