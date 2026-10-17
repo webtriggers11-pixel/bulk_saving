@@ -56,6 +56,7 @@
 | FEAT-015 | Server-side filters on every list; URL filter state; modern filtering UI with micro-interactions | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-015-server-filters-and-motion/ | ADR-0021, ADR-0022, ADR-0026 |
 | BUG-011 | One component that throws blanks the whole app — there is no error boundary | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/BUG-011-no-error-boundary/ | — |
 | CHORE-021 | Node v24.6.0 segfaults inside V8's GC during the backend suite (1 run in 4) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-021-node-v8-gc-segfault/ | — |
+| CHORE-022 | An admin's sign-in rests on a 6-digit code reachable through two doors (~30%/yr sustained-attack residual) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-022-admin-otp-strength/ | ADR-0027 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

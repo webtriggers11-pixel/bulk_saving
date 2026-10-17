@@ -106,10 +106,16 @@ ADR-0023's four review rounds.
   builds — instant at today's size. On a large table, build it out of band with
   `CREATE INDEX CONCURRENTLY` before deploying the migration.
 
+- **Single-node Redis assumed.** `BUDGETED_VERIFY_LUA` touches three keys with no shared
+  hash tag; Redis Cluster would refuse it (CROSSSLOT). Nothing plans a cluster (STACK.md,
+  DEPLOY.md). Before any move to one, tag the keys `{<scope>:<phone>}`.
+
 ## Revisit triggers
 
 - Any admin reports being locked out → per-phone ceiling too low, or a botnet: add a
   CAPTCHA-free proof (e.g. a signed device token) rather than raising limits.
+- **Tracked as CHORE-022** (owner's call): longer codes or a second factor for
+  administrators, so the ~30%/year sustained-attack residual is not left to a trigger.
 - Any LOCKED answer for an administrator's phone that the administrator did not cause —
   i.e. a support report of "my code is refused" — is a sustained guessing attempt: move
   administrators to 8-digit codes or a second factor. (There is no alerting yet; until
