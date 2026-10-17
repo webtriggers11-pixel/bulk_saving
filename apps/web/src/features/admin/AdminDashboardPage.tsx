@@ -1,10 +1,12 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { AdminRoundsQuery, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { DataCell, DataRow, DataRows } from '../../components/ui/data-rows';
 import { EmptyState } from '../../components/ui/empty-state';
+import { FilterChips } from '../../components/ui/filter-chips';
+import { ResultSummary } from '../../components/ui/result-summary';
+import { SearchField } from '../../components/ui/search-field';
 import { Field } from '../../components/ui/field';
 import { Icon } from '../../components/ui/icon';
 import { Select } from '../../components/ui/select';
@@ -14,7 +16,9 @@ import { AdminLayout } from './AdminLayout';
 import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
+import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { queryStalled } from '../../lib/offline';
+import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
 import { formatUnits } from '../../lib/units';
 
 /** Statuses where the admin has work to do; their tiles are highlighted. */
@@ -160,12 +164,25 @@ function DashboardSummary() {
   );
 }
 
-/** Rounds across societies with status + society filters; rows link to the detail page. */
+const ROUND_FILTER_KEYS = ['status', 'societyId', 'q', 'category'] as const;
+
+/**
+ * Rounds across societies, filtered on the server by status, society, category and a
+ * search over service, society and vendor name (FEAT-015). The filters live in the URL,
+ * so a refresh — or a link sent to a colleague — opens the same list.
+ */
 function RoundsPanel() {
-  const [filters, setFilters] = useState<AdminRoundsQuery>({});
+  const { filters: raw, setFilters, clear, activeCount } = useUrlFilters(ROUND_FILTER_KEYS);
+  const [search, setSearch] = useDebouncedSearch(raw.q, (q) => setFilters({ q }));
+  const filters: AdminRoundsQuery = {
+    status: toStatus(raw.status ?? ''),
+    societyId: raw.societyId,
+    q: raw.q,
+    category: raw.category,
+  };
   const societies = useAdminSocieties();
   const roundsQuery = useAdminRounds(filters);
-  const { data, isLoading, refetch } = roundsQuery;
+  const { data, isLoading, isPlaceholderData, refetch } = roundsQuery;
   const isError = queryStalled(roundsQuery);
 
   return (
@@ -174,13 +191,28 @@ function RoundsPanel() {
         <CardTitle>Rounds</CardTitle>
       </CardHeader>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+      <div className="mb-3 flex flex-col gap-3" role="search" aria-label="Filter rounds">
+        <SearchField
+          label="Search rounds"
+          placeholder="Search by service, society or vendor"
+          value={search}
+          onChange={setSearch}
+          maxLength={80}
+        />
+        <FilterChips
+          label="Category"
+          options={CATEGORY_FILTER_OPTIONS}
+          value={raw.category ?? ''}
+          onChange={(category) => setFilters({ category: category || undefined })}
+        />
+      </div>
+      <div className="mb-2 grid gap-3 sm:grid-cols-2">
         <Field label="Status">
           {(props) => (
             <Select
               {...props}
               value={filters.status ?? ''}
-              onChange={(e) => setFilters((f) => ({ ...f, status: toStatus(e.target.value) }))}
+              onChange={(e) => setFilters({ status: toStatus(e.target.value) })}
             >
               <option value="">All statuses</option>
               {STATUS_ORDER.map((status) => (
@@ -196,7 +228,7 @@ function RoundsPanel() {
             <Select
               {...props}
               value={filters.societyId ?? ''}
-              onChange={(e) => setFilters((f) => ({ ...f, societyId: e.target.value || undefined }))}
+              onChange={(e) => setFilters({ societyId: e.target.value || undefined })}
             >
               <option value="">All societies</option>
               {(societies.data ?? []).map((society) => (
@@ -208,6 +240,14 @@ function RoundsPanel() {
           )}
         </Field>
       </div>
+      <ResultSummary
+        className="mb-3"
+        count={data?.length}
+        noun={['round', 'rounds']}
+        activeCount={activeCount}
+        onClear={clear}
+        busy={isPlaceholderData}
+      />
 
       {isLoading && (
         <SkeletonScreen label="Loading rounds…" testId="admin-rounds-skeleton" className="flex flex-col gap-2.5">
@@ -225,16 +265,25 @@ function RoundsPanel() {
       {data && data.length === 0 && (
         <EmptyState
           icon="info"
-          title="No rounds match these filters"
-          description="Clear a filter, or open a new round for a society."
+          title={activeCount > 0 ? 'No rounds match these filters' : 'No rounds yet'}
+          description={activeCount > 0 ? 'Loosen a filter, or clear them all.' : 'Open a round for a society to start pooling demand.'}
           data-testid="admin-rounds-empty"
+          action={
+            activeCount > 0 ? (
+              <Button variant="secondary" onClick={clear}>
+                Clear filters
+              </Button>
+            ) : undefined
+          }
         />
       )}
       {data && data.length > 0 && (
+        <div className="results" aria-busy={isPlaceholderData}>
         <DataRows>
           {data.map((round) => (
             <DataRow
               key={round.id}
+              className="row-in"
               data-testid="admin-round-row"
               title={
                 <Link
@@ -273,6 +322,7 @@ function RoundsPanel() {
             />
           ))}
         </DataRows>
+        </div>
       )}
     </Card>
   );

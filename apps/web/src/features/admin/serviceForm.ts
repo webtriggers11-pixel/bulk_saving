@@ -1,18 +1,8 @@
 import type { AdminServiceDto, CreateServiceBody, ServiceCategory, UpdateServiceBody } from '@bulk/shared';
 
-/**
- * The closed category list (FEAT-014, ADR-0025), in catalog order. A copy, not an
- * import: `@bulk/shared` builds to CommonJS and the Vite build cannot see its runtime
- * exports (see rating-cap.test.ts). `serviceForm.test.ts` fails on any drift.
- */
-export const SERVICE_CATEGORY_OPTIONS: readonly ServiceCategory[] = [
-  'Appliances',
-  'Home Care',
-  'Renovation',
-  'Utilities',
-  'Vehicle',
-  'Bulk Staples',
-];
+// The closed category list lives in lib/categories.ts (shared with the resident catalog).
+export { SERVICE_CATEGORY_OPTIONS } from '../../lib/categories';
+import { SERVICE_CATEGORY_OPTIONS } from '../../lib/categories';
 
 /** Mirrors the backend caps — pinned to `@bulk/shared` by the same test. */
 export const UNIT_LABEL_MAX = 16;

@@ -12,8 +12,8 @@ interface SwitchProps {
 }
 
 /**
- * An on/off switch (FEAT-015) — `role="switch"`, so a screen reader says "on"/"off"
- * rather than "pressed". Space and Enter toggle it, as a native button does.
+ * An on/off switch (FEAT-015) — `role="switch"`, so a screen reader announces on or off
+ * rather than pressed or not pressed. Space and Enter toggle it, as a native button does.
  *
  * The knob overshoots slightly on its way across and squashes under the finger
  * (`.switch`, theme.css). It reflects `checked` immediately; the caller decides

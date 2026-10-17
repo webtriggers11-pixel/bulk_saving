@@ -31,11 +31,11 @@ const fetchDashboardMock = vi.mocked(fetchDashboard);
 const fetchSocietiesMock = vi.mocked(fetchSocieties);
 const fetchAdminRoundsMock = vi.mocked(fetchAdminRounds);
 
-function renderPage() {
+function renderPage(url = '/admin') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/admin']}>
+      <MemoryRouter initialEntries={[url]}>
         <AdminDashboardPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -95,5 +95,29 @@ describe('AdminDashboardPage', () => {
     renderPage();
 
     expect(await screen.findByText(/couldn't load the dashboard/i)).toBeInTheDocument();
+  });
+
+  it('filters rounds on the server from the URL — a shared link opens the same list (FEAT-015)', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue([roundSummary]);
+    renderPage(`/admin?status=CLOSED_MET&societyId=${society.id}&q=ac&category=Appliances`);
+
+    await screen.findAllByTestId('admin-round-row');
+    expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith({
+      status: 'CLOSED_MET',
+      societyId: society.id,
+      q: 'ac',
+      category: 'Appliances',
+    });
+    expect(screen.getByRole('searchbox', { name: 'Search rounds' })).toHaveValue('ac');
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument();
+  });
+
+  it('drops a status the server would refuse instead of sending it', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue([]);
+    renderPage('/admin?status=BOGUS');
+    await screen.findByTestId('admin-rounds-empty');
+    expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
   });
 });

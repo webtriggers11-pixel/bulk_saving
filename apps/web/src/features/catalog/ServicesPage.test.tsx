@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -31,11 +31,11 @@ const services: ServiceDto[] = [
   },
 ];
 
-function renderPage() {
+function renderPage(url = '/services') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/services']}>
+      <MemoryRouter initialEntries={[url]}>
         <ServicesPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -53,7 +53,8 @@ describe('ServicesPage', () => {
 
     await waitFor(() => expect(screen.getByText('AC Servicing')).toBeInTheDocument());
     expect(screen.getByText('Painting')).toBeInTheDocument();
-    expect(screen.getByText('Appliances')).toBeInTheDocument();
+    // Scoped to the list: the category chips above it say 'Appliances' too.
+    expect(within(screen.getByRole('region', { name: 'Available services' })).getByText('Appliances')).toBeInTheDocument();
 
     // Indicative price formatted in ₹ (Indian locale, no decimals).
     expect(screen.getByText(/From ₹499/)).toBeInTheDocument();
@@ -81,5 +82,45 @@ describe('ServicesPage', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     expect(screen.getByRole('alert')).toHaveTextContent(/couldn't load/i);
+  });
+
+  describe('search and categories (FEAT-015)', () => {
+    it('sends the URL’s filters to the server and shows them in the controls', async () => {
+      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      renderPage('/services?q=ac&category=Appliances');
+
+      await screen.findByText('AC Servicing');
+      expect(spy).toHaveBeenLastCalledWith({ q: 'ac', category: 'Appliances' });
+      expect(screen.getByRole('searchbox', { name: 'Search services' })).toHaveValue('ac');
+      expect(screen.getByRole('radio', { name: 'Appliances' })).toHaveAttribute('aria-checked', 'true');
+    });
+
+    it('filters by category from a chip', async () => {
+      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      renderPage();
+      await screen.findByText('AC Servicing');
+
+      fireEvent.click(screen.getByRole('radio', { name: 'Bulk Staples' }));
+      await waitFor(() => expect(spy).toHaveBeenLastCalledWith({ q: undefined, category: 'Bulk Staples' }));
+    });
+
+    it('a search that finds nothing is not "no services yet" — and offers everything back', async () => {
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue([]);
+      renderPage('/services?q=zzz');
+
+      const noMatch = await screen.findByTestId('catalog-no-match');
+      expect(screen.queryByTestId('catalog-empty')).not.toBeInTheDocument();
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      fireEvent.click(within(noMatch).getByRole('button', { name: 'Show all services' }));
+      expect(await screen.findByText('AC Servicing')).toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Search services' })).toHaveValue('');
+    });
+
+    it('keeps the unfiltered page quiet — no result count until a filter is set', async () => {
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      renderPage();
+      await screen.findByText('AC Servicing');
+      expect(screen.queryByText(/match$/)).not.toBeInTheDocument();
+    });
   });
 });

@@ -11,6 +11,11 @@ import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog } from './useCatalog';
+import { FilterChips } from '../../components/ui/filter-chips';
+import { ResultSummary } from '../../components/ui/result-summary';
+import { SearchField } from '../../components/ui/search-field';
+import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
+import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { CatalogSkeleton } from './CatalogSkeleton';
 
 /**
@@ -147,11 +152,18 @@ function ServiceRow({ service }: { service: ServiceDto }) {
  *
  * FEAT-011 gives the list a bento rhythm — lead card, two tiles, then rows — rather
  * than one repeated card shape. The order and the data are untouched.
+ *
+ * FEAT-015: search and category chips, filtered on the server within the resident's own
+ * society, with the filters in the URL.
  */
+const CATALOG_FILTER_KEYS = ['q', 'category'] as const;
+
 export function ServicesPage() {
   const navigate = useNavigate();
-  const query = useCatalog();
-  const { data, isLoading, refetch } = query;
+  const { filters, setFilters, clear, activeCount } = useUrlFilters(CATALOG_FILTER_KEYS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const query = useCatalog({ q: filters.q, category: filters.category });
+  const { data, isLoading, isPlaceholderData, refetch } = query;
   const failed = queryStalled(query);
 
   return (
@@ -166,11 +178,50 @@ export function ServicesPage() {
         }
       />
 
+      <div className="flex flex-col gap-3" role="search" aria-label="Find a service">
+        <SearchField
+          label="Search services"
+          placeholder="Try “tank”, “AC” or “rice”"
+          value={search}
+          onChange={setSearch}
+          maxLength={80}
+        />
+        <FilterChips
+          label="Category"
+          options={CATEGORY_FILTER_OPTIONS}
+          value={filters.category ?? ''}
+          onChange={(category) => setFilters({ category: category || undefined })}
+        />
+        {activeCount > 0 && (
+          <ResultSummary
+            count={data?.length}
+            noun={['service', 'services']}
+            activeCount={activeCount}
+            onClear={clear}
+            busy={isPlaceholderData}
+          />
+        )}
+      </div>
+
       {isLoading && <CatalogSkeleton />}
 
       {failed && <QueryErrorState subject="services" hasData={hasRows(data)} onRetry={() => void refetch()} />}
 
-      {data && data.length === 0 && !failed && (
+      {data && data.length === 0 && !failed && activeCount > 0 && (
+        <EmptyState
+          icon="search"
+          title="Nothing matches that"
+          description="Try another word, or a different category."
+          data-testid="catalog-no-match"
+          action={
+            <Button variant="secondary" onClick={clear}>
+              Show all services
+            </Button>
+          }
+        />
+      )}
+
+      {data && data.length === 0 && !failed && activeCount === 0 && (
         <EmptyState
           icon="clean"
           title="No services yet"
@@ -180,7 +231,7 @@ export function ServicesPage() {
       )}
 
       {data && data.length > 0 && (
-        <section aria-label="Available services">
+        <section aria-label="Available services" className="results" aria-busy={isPlaceholderData}>
           <ul className="stagger grid grid-cols-2 gap-3.5">
             {data.map((service, index) => (
               <li key={service.id} className={index === 1 || index === 2 ? '' : 'col-span-2'}>

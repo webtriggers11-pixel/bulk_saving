@@ -14,6 +14,7 @@ import { SavedTick } from '../../components/ui/saved-tick';
 import { SearchField } from '../../components/ui/search-field';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
+import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
 import { AdminLayout } from './AdminLayout';
@@ -433,7 +434,6 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
 /** The URL keys this page owns (ADR-0026). */
 const FILTER_KEYS = ['q', 'category', 'status', 'offeredIn'] as const;
 
-const CATEGORY_CHIPS = [{ value: '', label: 'All' }, ...SERVICE_CATEGORY_OPTIONS.map((c) => ({ value: c, label: c }))];
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
   { value: 'active', label: 'Active' },
@@ -499,7 +499,7 @@ export function AdminServicesPage() {
           </div>
           <FilterChips
             label="Category"
-            options={CATEGORY_CHIPS}
+            options={CATEGORY_FILTER_OPTIONS}
             value={filters.category ?? ''}
             onChange={(category) => setFilters({ category: category || undefined })}
           />

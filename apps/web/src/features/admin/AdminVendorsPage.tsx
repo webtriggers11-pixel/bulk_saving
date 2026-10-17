@@ -7,7 +7,7 @@ import { SearchField } from '../../components/ui/search-field';
 import { Switch } from '../../components/ui/switch';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { formatVendorRating } from '../rating/formatRating';
-import { SERVICE_CATEGORY_OPTIONS } from './serviceForm';
+import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
 import {
   OFFLINE_QUEUED_TEXT,
   OFFLINE_WAITING_LABEL,
@@ -242,9 +242,6 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
 }
 
 const VENDOR_FILTER_KEYS = ['q', 'category', 'status'] as const;
-// Vendor trades are free text, but in practice they are the service categories; a vendor
-// with another trade is still found by search.
-const TRADE_CHIPS = [{ value: '', label: 'All' }, ...SERVICE_CATEGORY_OPTIONS.map((c) => ({ value: c, label: c }))];
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
   { value: 'active', label: 'Active' },
@@ -286,7 +283,9 @@ export function AdminVendorsPage() {
           />
           <FilterChips
             label="Trade"
-            options={TRADE_CHIPS}
+            // Vendor trades are free text, but in practice they are the service categories; a
+            // vendor with another trade is still found by search.
+            options={CATEGORY_FILTER_OPTIONS}
             value={filters.category ?? ''}
             onChange={(category) => setFilters({ category: category || undefined })}
           />
