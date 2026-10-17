@@ -18,7 +18,7 @@ import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { queryStalled } from '../../lib/offline';
-import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
+import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
 import { formatUnits } from '../../lib/units';
 
 /** Statuses where the admin has work to do; their tiles are highlighted. */
@@ -165,6 +165,10 @@ function DashboardSummary() {
 }
 
 const ROUND_FILTER_KEYS = ['status', 'societyId', 'q', 'category'] as const;
+const ROUND_FILTER_VALID = {
+  category: isListedCategory,
+  status: (value: string) => toStatus(value) !== undefined,
+};
 
 /**
  * Rounds across societies, filtered on the server by status, society, category and a
@@ -172,8 +176,8 @@ const ROUND_FILTER_KEYS = ['status', 'societyId', 'q', 'category'] as const;
  * so a refresh — or a link sent to a colleague — opens the same list.
  */
 function RoundsPanel() {
-  const { filters: raw, setFilters, clear, activeCount } = useUrlFilters(ROUND_FILTER_KEYS);
-  const [search, setSearch] = useDebouncedSearch(raw.q, (q) => setFilters({ q }));
+  const { filters: raw, setFilters, clear, activeCount, generation } = useUrlFilters(ROUND_FILTER_KEYS, ROUND_FILTER_VALID);
+  const [search, setSearch] = useDebouncedSearch(raw.q, (q) => setFilters({ q }), generation);
   const filters: AdminRoundsQuery = {
     status: toStatus(raw.status ?? ''),
     societyId: raw.societyId,

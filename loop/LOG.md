@@ -750,3 +750,25 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **T6 browser pass found five defects no test caught:** (1) WebKit's own search clear button drawn beside ours — preflight does not hide it, my comment claimed it did; (2) our clear button dropped half its height — `animate-pop` animates `transform` and replaced the centring translate; (3) two chip rows both starting "All" read as one muddle — labels now visible; (4) on a phone the chosen chip could sit off the end of the rail, so no chip looked chosen — now scrolled into view (tested); (5) "1 service match". And one I caused while fixing (4): a hook placed above the variable it read threw on render and **blanked the whole app — there is no error boundary anywhere → BUG-011 (P1)**.
 - Real writes: Car Interior Detailing switched off and on through the UI; `?q=car&status=inactive` showed exactly it, then the no-match state once reactivated; DB confirms active. Dashboard `q=green` matched by society name. Window resize to 400px did not take effect, so this round's admin screens were seen at desktop width only; the resident page (max-w-md) exercised the narrow chip rail.
 - By: agent (autonomous)
+
+## 2026-10-17 — BUG-011 — reproduced (owner: "fix all")
+- Failing test first: `features/shell/crash-containment.test.tsx` renders a throwing child inside `AppShell` and `AdminLayout`; both fail with the raw "render failed" escaping — the blank-app failure, reproduced. Also on the owner's instruction: the 3 leftover `svc-*` services from FEAT-014's V2 run deleted (0 rounds, 0 offerings; DELETE guarded on no rounds). Catalog back to 23.
+- By: agent (autonomous)
+
+## 2026-10-17 — FEAT-015 V2 PASS (3 P1, 6 P2 — all fixed) · BUG-011 fixed · CHORE-020 fixed (owner: "fix all")
+- **FEAT-015 V2: PASS.** Reviewer probed tenant isolation with object-shaped params (`q[contains]`, `category[not]`, `societyId[not]`) against the running stack: Express 5's simple parser makes them literal keys and `whitelist` strips them; repeated keys become arrays that `@IsString` rejects. Mutation-proved the tenant scope and the `replace` guard. **Proved one of my tests vacuous**: deleting `committed.current = next` left the "does not overwrite typed letters" test green, because a synchronous commit updates the URL before the next keystroke and the race never happens.
+- Fixed, each with a test that fails when the fix is reverted:
+  - **P1-1** `saved-flash` ends at opacity 0; under reduced motion the collapsed duration jumped it to that frame, so the "Saved" tick was invisible for its life. Now `animation: none` there — and a GENERAL guard: any keyframes ending at opacity 0 used with `both`/`forwards` must be switched off in the reduced-motion block (names `.animate-saved` when reverted).
+  - **P1-2** optimistic switches flickered on → off → on: `onSuccess` returned void, so the mutation settled before the refetch landed. The list's invalidate is now returned/awaited (services and vendors); test hangs the refetch and asserts the switch holds.
+  - **P1-3** `scrollIntoView({block:'nearest'})` scrolls every scrollable ancestor, including the window; a chip row below the fold pulled the page on load. `lib/scroll.ts` moves only the rail; test asserts `scrollIntoView` is never called.
+  - **P2-1** race test rewritten with a commit that lands 50 ms late; fails with the guard deleted.
+  - **P2-2** `useUrlFilters` takes validators; `?category=Foo` / `?status=maybe` are neither sent nor counted.
+  - **P2-3** `Switch` gains `busy` (taps ignored, focus kept) instead of `disabled` while saving; state text is `aria-hidden` (aria-checked says it; the name names the thing switched).
+  - **P2-4** `SavedTick` mounts its status region only while it shows (was ~25 silent regions on one page).
+  - **P2-5** `clear()` bumps a generation that `useDebouncedSearch` watches, so a half-typed, never-committed search dies with "Clear filters".
+  - **P2-6** FEAT-015 CSS moved above the AC5 comment it had split from its media query.
+- **BUG-011 fixed.** `ErrorBoundary` + `CrashCard` + `CrashScreen` (components/). Page-level boundaries in `AppShell` and `AdminLayout`, keyed by pathname — the tab bar / admin nav survive and navigating away clears the crash (mutation: removing `resetKey` fails that test); top-level boundary in main.tsx. 5 tests; the failing test came first.
+- **CHORE-020 fixed.** (1) offering saves keyed per service; the row shows the offline line when its panel is closed (`useMutationState`). (2) price input follows the stored price unless the admin has unsaved text — the remounting `key` is gone. (3) catalog-admin spec's afterAll fails on any service created during the run and still present (mutation: re-leaking makes the suite fail with all 21 tests green). The mutation's 4 leaked rows deleted.
+- 3 leftover `svc-*` services from FEAT-014's V2 deleted on the owner's instruction.
+- V1: gate exit 0 — backend 366/366, web 373/373, 1409 class tokens. Catalog = 23.
+- By: agent (autonomous) + code-reviewer subagent (FEAT-015 V2)

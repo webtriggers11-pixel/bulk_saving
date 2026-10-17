@@ -21,3 +21,8 @@ export const CATEGORY_FILTER_OPTIONS = [
   { value: '', label: 'All' },
   ...SERVICE_CATEGORY_OPTIONS.map((category) => ({ value: category, label: category })),
 ];
+
+/** True for a category on the closed list — a URL's `?category=` is checked against it. */
+export function isListedCategory(value: string): boolean {
+  return (SERVICE_CATEGORY_OPTIONS as readonly string[]).includes(value);
+}

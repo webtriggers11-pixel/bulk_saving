@@ -510,10 +510,6 @@ button:hover .nudge {
   border-width: 0;
 }
 
-/**
- * AC5: one switch turns the whole motion layer off. Everything above is
- * decoration; nothing here carries meaning that is lost when it stops.
- */
 /* ---- filtering (FEAT-015, ADR-0026) -------------------------------------
    Every effect below is a named class so the reduced-motion block underneath
    collapses it with the rest. None is decorative-only: each one answers "did my
@@ -620,6 +616,10 @@ button:hover .nudge {
   scroll-snap-align: start;
 }
 
+/**
+ * AC5: one switch turns the whole motion layer off. Everything above is
+ * decoration; nothing here carries meaning that is lost when it stops.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -632,5 +632,11 @@ button:hover .nudge {
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+  /* `saved-flash` ENDS at opacity 0. Collapsed to 0.01ms with fill-mode `both`, the
+     "Saved" tick jumped straight to its invisible last frame for its whole life
+     (FEAT-015 V2 P1-1). Without the animation it simply shows, then unmounts. */
+  .animate-saved {
+    animation: none !important;
   }
 }

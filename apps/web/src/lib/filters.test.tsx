@@ -13,9 +13,11 @@ describe('toQueryString', () => {
 
 const KEYS = ['q', 'category'] as const;
 
+const VALIDATORS = { category: (v: string) => v === 'Vehicle' || v === 'Utilities' };
+
 function Probe() {
-  const { filters, setFilters, clear, activeCount } = useUrlFilters(KEYS);
-  const [text, setText] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const { filters, setFilters, clear, activeCount, generation } = useUrlFilters(KEYS, VALIDATORS);
+  const [text, setText] = useDebouncedSearch(filters.q, (q) => setFilters({ q }), generation);
   const location = useLocation();
   const navigationType = useNavigationType();
   return (
@@ -25,7 +27,23 @@ function Probe() {
       <button onClick={clear}>clear</button>
       <output data-testid="url">{location.search}</output>
       <output data-testid="count">{activeCount}</output>
+      <output data-testid="category">{filters.category ?? ''}</output>
       <output data-testid="nav">{navigationType}</output>
+    </div>
+  );
+}
+
+/** Like Probe, but the URL catches up 50ms after a commit — a slow navigation. */
+function SlowProbe() {
+  const { filters, setFilters } = useUrlFilters(KEYS);
+  const [text, setText] = useDebouncedSearch(filters.q, (q) => {
+    setTimeout(() => setFilters({ q }), 50);
+  });
+  const location = useLocation();
+  return (
+    <div>
+      <input aria-label="search" value={text} onChange={(e) => setText(e.target.value)} />
+      <output data-testid="url">{location.search}</output>
     </div>
   );
 }
@@ -66,16 +84,45 @@ describe('useUrlFilters + useDebouncedSearch', () => {
   });
 
   it('does not overwrite letters typed after a commit when that commit comes back from the URL', () => {
+    // The race needs the URL to catch up AFTER more typing. With a synchronous commit
+    // the URL updates before the next keystroke and the race never happens — which is
+    // how the first version of this test passed with the guard deleted (V2 P2-1).
     vi.useFakeTimers();
-    renderAt('/x');
+    render(
+      <MemoryRouter initialEntries={['/x']}>
+        <SlowProbe />
+      </MemoryRouter>,
+    );
     const box = screen.getByLabelText('search');
     fireEvent.change(box, { target: { value: 'tan' } });
     act(() => {
-      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS); // commit("tan") — URL not updated yet
     });
     fireEvent.change(box, { target: { value: 'tank cl' } });
-    // The URL now says "tan"; the box must keep what the admin is typing.
+    act(() => {
+      vi.advanceTimersByTime(50); // now the URL says "tan"
+    });
+    expect(screen.getByTestId('url')).toHaveTextContent('?q=tan');
     expect(box).toHaveValue('tank cl');
+  });
+
+  it('"Clear filters" drops a half-typed search that was never committed (V2 P2-5)', () => {
+    vi.useFakeTimers();
+    renderAt('/x?category=Vehicle');
+    const box = screen.getByLabelText('search');
+    fireEvent.change(box, { target: { value: 'tan' } });
+    fireEvent.click(screen.getByText('clear'));
+    act(() => {
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS * 2);
+    });
+    expect(box).toHaveValue('');
+    expect(screen.getByTestId('url')).toHaveTextContent(/^$/);
+  });
+
+  it('ignores an invalid value — not sent, not counted (V2 P2-2)', () => {
+    renderAt('/x?category=Foo&q=tank');
+    expect(screen.getByTestId('count')).toHaveTextContent('1');
+    expect(screen.getByTestId('category')).toHaveTextContent('');
   });
 
   it('adopts an external change — "Clear filters" empties the box too', () => {

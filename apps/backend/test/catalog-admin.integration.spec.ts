@@ -24,6 +24,10 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
   let residentToken: string;
   const createdServiceIds: string[] = [];
 
+  // CHORE-020: the suite must leave the shared dev catalog as it found it. Anything
+  // created after this instant and still present after cleanup is a leak.
+  const startedAt = new Date();
+
   beforeAll(async () => {
     app = await createTestApp(new CapturingChannel());
     prisma = app.get(PrismaService);
@@ -47,8 +51,15 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     await prisma.service.deleteMany({
       where: { OR: [{ id: { in: createdServiceIds } }, { slug: { in: issuedSlugs } }] },
     });
+    const leaked = await prisma.service.findMany({
+      where: { createdAt: { gte: startedAt } },
+      select: { slug: true, name: true },
+    });
     await prisma.society.delete({ where: { id: society.id } });
     await app.close();
+    // Thrown from afterAll, this fails the suite: three FEAT-010 tests leaked a service a
+    // run for weeks with every test green (FEAT-014 browser pass, CHORE-020).
+    expect(leaked).toEqual([]);
   });
 
   // Every slug handed out is remembered and cleaned up in afterAll, whether or not the

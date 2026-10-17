@@ -5,9 +5,9 @@ import { ResultSummary } from '../../components/ui/result-summary';
 import { SavedTick } from '../../components/ui/saved-tick';
 import { SearchField } from '../../components/ui/search-field';
 import { Switch } from '../../components/ui/switch';
-import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
+import { isActiveFilter, useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { formatVendorRating } from '../rating/formatRating';
-import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
+import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
 import {
   OFFLINE_QUEUED_TEXT,
   OFFLINE_WAITING_LABEL,
@@ -203,7 +203,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
               onChange={(next) => update.mutate({ id: vendor.id, body: { active: next } })}
               label={`${vendor.name} active`}
               text={active ? 'Active' : 'Inactive'}
-              disabled={update.isPending}
+              busy={update.isPending}
             />
             <Button
               variant="secondary"
@@ -242,6 +242,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
 }
 
 const VENDOR_FILTER_KEYS = ['q', 'category', 'status'] as const;
+const VENDOR_FILTER_VALIDATORS = { category: isListedCategory, status: isActiveFilter };
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
   { value: 'active', label: 'Active' },
@@ -253,8 +254,8 @@ const STATUS_CHIPS = [
  * add form, inline edit and activate/deactivate (vendors are never deleted).
  */
 export function AdminVendorsPage() {
-  const { filters, setFilters, clear, activeCount } = useUrlFilters(VENDOR_FILTER_KEYS);
-  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const { filters, setFilters, clear, activeCount, generation } = useUrlFilters(VENDOR_FILTER_KEYS, VENDOR_FILTER_VALIDATORS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }), generation);
   const status: ActiveFilter | undefined =
     filters.status === 'active' || filters.status === 'inactive' ? filters.status : undefined;
   const vendorsQuery = useVendors({ q: filters.q, category: filters.category, status });

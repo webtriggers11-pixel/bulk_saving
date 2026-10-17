@@ -6,6 +6,11 @@ interface SwitchProps {
   /** The accessible name — say what is being switched, e.g. "Water Tank Cleaning active". */
   label: string;
   disabled?: boolean;
+  /**
+   * A save is in flight: taps are ignored, but the switch stays focusable. `disabled`
+   * here dropped keyboard focus off the control the admin had just pressed (V2 P2-3).
+   */
+  busy?: boolean;
   /** Shown beside the track, e.g. "Active" / "Inactive". Purely visual; `label` is the name. */
   text?: string;
   className?: string;
@@ -19,15 +24,20 @@ interface SwitchProps {
  * (`.switch`, theme.css). It reflects `checked` immediately; the caller decides
  * whether that is optimistic or waits for the server.
  */
-export function Switch({ checked, onChange, label, disabled, text, className }: SwitchProps) {
+export function Switch({ checked, onChange, label, disabled, busy, text, className }: SwitchProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      aria-busy={busy || undefined}
       disabled={disabled}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        if (!busy) {
+          onChange(!checked);
+        }
+      }}
       className={cn(
         'switch group inline-flex min-h-touch items-center gap-2.5 rounded-full text-meta font-bold text-ink-muted',
         'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
@@ -44,7 +54,13 @@ export function Switch({ checked, onChange, label, disabled, text, className }: 
       >
         <span className="switch-knob block h-5 w-5 rounded-full bg-white shadow-field" />
       </span>
-      {text && <span className={checked ? 'text-ink' : undefined}>{text}</span>}
+      {/* The state, for sighted users. Hidden from assistive tech: aria-checked already
+          says it, and the accessible name is `label`, which names the thing switched. */}
+      {text && (
+        <span aria-hidden="true" className={checked ? 'text-ink' : undefined}>
+          {text}
+        </span>
+      )}
     </button>
   );
 }

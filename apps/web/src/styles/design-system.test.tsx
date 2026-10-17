@@ -147,6 +147,26 @@ describe('AC5 — motion has one off switch', () => {
     expect(query).toContain('transition-delay: 0s !important');
   });
 
+  it('an animation that ENDS invisible is switched off, not just shortened (FEAT-015 V2 P1-1)', () => {
+    // Collapsing the duration jumps a `both`-filled animation to its last frame. For one
+    // that ends at opacity 0 — the "Saved" tick — that frame is nothing: the confirmation
+    // was invisible for its whole life to anyone who asked for less motion.
+    const query = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+    const fadesOut = [...css.matchAll(/@keyframes ([\w-]+) \{([\s\S]*?)\n\}/g)]
+      .filter(([, , body]) => /(?:100%|\bto)\s*\{[^}]*opacity:\s*0\s*;/.test(body))
+      .map(([, name]) => name);
+    expect(fadesOut, 'found no fade-out keyframes — this check is vacuous').toContain('saved-flash');
+
+    const unguarded: string[] = [];
+    for (const name of fadesOut) {
+      for (const [, selector] of css.matchAll(new RegExp(`(\\.[\\w-]+)\\s*\\{[^}]*animation:\\s*${name}\\b[^}]*\\b(?:both|forwards)\\b`, 'g'))) {
+        const disabled = new RegExp(`\\${selector}\\s*\\{[^}]*animation:\\s*none`).test(query);
+        if (!disabled) unguarded.push(`${selector} (${name})`);
+      }
+    }
+    expect(unguarded).toEqual([]);
+  });
+
   it('no component sets an inline animation, so nothing escapes the media query', () => {
     const offenders = appSources().filter((file) => {
       const source = readFileSync(file, 'utf8');

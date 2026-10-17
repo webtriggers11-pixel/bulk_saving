@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import { CrashCard, ErrorBoundary } from '../../components/ErrorBoundary';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { BottomNav } from './BottomNav';
 import { OfflineBanner } from './OfflineBanner';
@@ -18,6 +20,9 @@ import { useSessionSync } from './useSessionSync';
  * light rather than dragging the light with it.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  // BUG-011: a crashed screen stays inside this boundary; the tab bar survives, and
+  // moving to another tab (a new path) clears the crash.
+  const { pathname } = useLocation();
   // One place for the whole resident app to keep its session in step (CHORE-009).
   useSessionSync();
 
@@ -35,7 +40,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         <UpdatePrompt />
         <OfflineBanner />
       </div>
-      <div className="relative z-0 pb-28">{children}</div>
+      <div className="relative z-0 pb-28">
+        <ErrorBoundary
+          resetKey={pathname}
+          fallback={(reset) => (
+            <div className="mx-auto max-w-md p-[22px]">
+              <CrashCard onRetry={reset} />
+            </div>
+          )}
+        >
+          {children}
+        </ErrorBoundary>
+      </div>
       <BottomNav />
     </div>
   );

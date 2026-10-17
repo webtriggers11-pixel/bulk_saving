@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { CrashCard, ErrorBoundary } from '../../components/ErrorBoundary';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { PageHeader } from '../../components/ui/page-header';
@@ -34,6 +35,9 @@ export function AdminLayout({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  // BUG-011: a crashed screen stays inside the boundary below; the admin nav survives,
+  // and moving to another page clears the crash.
+  const { pathname } = useLocation();
   return (
     <div className="relative min-h-screen">
       <AmbientGround id="admin-grain" />
@@ -73,7 +77,9 @@ export function AdminLayout({
 
       <main className="relative mx-auto flex max-w-6xl flex-col gap-6 px-5 py-7">
         <PageHeader title={title} subtitle={subtitle} action={action} />
-        {children}
+        <ErrorBoundary resetKey={pathname} fallback={(reset) => <CrashCard onRetry={reset} />}>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );

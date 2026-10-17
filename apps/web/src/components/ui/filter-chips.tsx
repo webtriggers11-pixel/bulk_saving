@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
+import { scrollIntoRail } from '../../lib/scroll';
 import { cn } from '../../lib/utils';
 
 export interface FilterChipOption {
@@ -33,11 +34,16 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
     options.findIndex((option) => option.value === value),
   );
 
+  const rail = useRef<HTMLDivElement>(null);
+
   // On a phone the rail scrolls, and a choice made elsewhere (a shared link, a refresh)
   // can sit off-screen — the row then shows no chosen chip at all (FEAT-015 browser pass).
-  // `nearest` scrolls the rail sideways only as far as needed and never jumps the page.
+  // Only the rail moves: scrollIntoView also scrolled the page (V2 P1-3).
   useEffect(() => {
-    refs.current[selected]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    const chip = refs.current[selected];
+    if (rail.current && chip) {
+      scrollIntoRail(rail.current, chip);
+    }
   }, [selected]);
 
   function move(event: KeyboardEvent, from: number) {
@@ -68,6 +74,7 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
       {label}
     </span>
     <div
+      ref={rail}
       role="radiogroup"
       aria-labelledby={labelId}
       className="chip-rail -mx-1 flex min-w-0 gap-2 overflow-x-auto px-1 py-1"

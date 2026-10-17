@@ -14,7 +14,7 @@ import { useCatalog } from './useCatalog';
 import { FilterChips } from '../../components/ui/filter-chips';
 import { ResultSummary } from '../../components/ui/result-summary';
 import { SearchField } from '../../components/ui/search-field';
-import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
+import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { CatalogSkeleton } from './CatalogSkeleton';
 
@@ -157,11 +157,12 @@ function ServiceRow({ service }: { service: ServiceDto }) {
  * society, with the filters in the URL.
  */
 const CATALOG_FILTER_KEYS = ['q', 'category'] as const;
+const CATALOG_FILTER_VALIDATORS = { category: isListedCategory };
 
 export function ServicesPage() {
   const navigate = useNavigate();
-  const { filters, setFilters, clear, activeCount } = useUrlFilters(CATALOG_FILTER_KEYS);
-  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const { filters, setFilters, clear, activeCount, generation } = useUrlFilters(CATALOG_FILTER_KEYS, CATALOG_FILTER_VALIDATORS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }), generation);
   const query = useCatalog({ q: filters.q, category: filters.category });
   const { data, isLoading, isPlaceholderData, refetch } = query;
   const failed = queryStalled(query);

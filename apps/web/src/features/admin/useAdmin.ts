@@ -1,6 +1,7 @@
 import {
   keepPreviousData,
   useMutation,
+  useMutationState,
   useQuery,
   useQueryClient,
   type QueryClient,
@@ -65,6 +66,8 @@ export const adminKeys = {
   servicesFiltered: (filters: AdminServicesQuery) => ['admin', 'services', filters] as const,
   /** Mutation key for an in-flight assign, so sibling actions can disable themselves. */
   assignMutation: (id: string) => ['admin', 'assign', id] as const,
+  /** Mutation key for any offering save on one service — lets the row see a paused one. */
+  offeringMutation: (serviceId: string) => ['admin', 'offering', serviceId] as const,
 };
 
 /**
@@ -217,10 +220,11 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
   return useMutation({
     mutationFn: ({ id, body }: UpdateVendorVars) => updateVendor(id, body),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: adminKeys.vendors });
       // Round summaries/details embed the vendor's name + phone.
       void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
+      // Returned, so the optimistic switch holds until the fresh list lands (V2 P1-2).
+      return queryClient.invalidateQueries({ queryKey: adminKeys.vendors });
     },
   });
 }
@@ -230,14 +234,19 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
  * "Back to app" must not see a stale one). Round views — admin and resident, and the
  * dashboard's demand table — embed the service's name and unit labels, so they refetch too.
  */
-function invalidateCatalog(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: adminKeys.services });
+function invalidateCatalog(queryClient: QueryClient): Promise<void> {
+  // The list a switch sits on is awaited, and returned from onSuccess: the mutation then
+  // stays pending — and an optimistic switch keeps its new position — until the fresh
+  // list has landed. Returning void let the switch fall back to the stale cached value
+  // for a beat, so it flickered on → off → on (FEAT-015 V2 P1-2). The rest refresh in
+  // the background.
   void queryClient.invalidateQueries({ queryKey: catalogQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
   // Prefix match: covers the resident feed and "My Requests" (['rounds', 'mine']).
   void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
   void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
+  return queryClient.invalidateQueries({ queryKey: adminKeys.services });
 }
 
 /** POST /admin/services (FEAT-014). */
@@ -271,12 +280,25 @@ interface UpsertOfferingVars {
   body: UpsertOfferingBody;
 }
 
-/** PUT /admin/societies/:societyId/offerings/:serviceId (FEAT-014). */
-export function useUpsertOffering(): UseMutationResult<ServiceOfferingDto, Error, UpsertOfferingVars> {
+/**
+ * PUT /admin/societies/:societyId/offerings/:serviceId (FEAT-014). Keyed by service, so a
+ * row can tell when one of its offering saves is queued offline even after the panel
+ * that started it has closed (CHORE-020).
+ */
+export function useUpsertOffering(serviceId: string): UseMutationResult<ServiceOfferingDto, Error, UpsertOfferingVars> {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: adminKeys.offeringMutation(serviceId),
     mutationFn: ({ societyId, serviceId, body }: UpsertOfferingVars) =>
       upsertOffering(societyId, serviceId, body),
     onSuccess: () => invalidateCatalog(queryClient),
   });
+}
+
+/** True while any offering save for this service is queued offline (CHORE-020). */
+export function useOfferingSavePaused(serviceId: string): boolean {
+  return useMutationState({
+    filters: { mutationKey: adminKeys.offeringMutation(serviceId), status: 'pending' },
+    select: (mutation) => mutation.state.isPaused,
+  }).some(Boolean);
 }

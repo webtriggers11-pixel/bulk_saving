@@ -238,6 +238,31 @@ describe('AdminServicesPage', () => {
     expect(await within(screen.getByTestId('service-row')).findByText('Saved')).toBeInTheDocument();
   });
 
+  it('holds the new position until the refreshed list lands — no on → off → on flicker (V2 P1-2)', async () => {
+    fetchServicesMock.mockResolvedValue([tank]);
+    updateServiceMock.mockResolvedValue({ ...tank, active: false });
+    renderPage();
+    const toggle = await screen.findByRole('switch', { name: 'Water Tank Cleaning active' });
+
+    // The save succeeds; the refetch that follows it hangs. The cache still says active.
+    fetchServicesMock.mockReturnValue(new Promise(() => {}));
+    fireEvent.click(toggle);
+    await waitFor(() => expect(updateServiceMock).toHaveBeenCalled());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30));
+    });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('a category or status the URL invents is ignored: not sent, and no "Clear filters" (V2 P2-2)', async () => {
+    fetchServicesMock.mockResolvedValue([tank]);
+    renderPage('/admin/services?category=Foo&status=maybe');
+    await screen.findByText('Water Tank Cleaning');
+    expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ category: undefined, status: undefined }));
+    expect(within(screen.getByRole('radiogroup', { name: 'Category' })).getByRole('radio', { name: 'All' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
+  });
+
   it('puts the switch back when the server refuses, and says why', async () => {
     fetchServicesMock.mockResolvedValue([tank]);
     updateServiceMock.mockRejectedValue(new ApiError('CONFLICT', 'Service is in use.', 409));

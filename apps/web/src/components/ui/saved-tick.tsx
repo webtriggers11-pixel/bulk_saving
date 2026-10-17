@@ -24,17 +24,20 @@ export function SavedTick({ trigger, text = 'Saved' }: { trigger: number | null;
     return () => clearTimeout(timer);
   }, [trigger]);
 
+  // The live region exists only while the tick does. One always-mounted region per row
+  // put two dozen silent status regions on the services page (V2 P2-4); a status region
+  // inserted with its content is announced by current screen readers.
+  if (shown === null) {
+    return null;
+  }
   return (
-    <span role="status" aria-live="polite" className="inline-flex min-h-6 items-center">
-      {shown !== null && (
-        <span
-          key={shown}
-          className="animate-saved inline-flex items-center gap-1.5 rounded-full bg-success-ink/10 px-2.5 py-1 text-meta font-bold text-success-ink"
-        >
-          <Icon name="check" size={14} strokeWidth={2.6} />
-          {text}
-        </span>
-      )}
+    <span
+      key={shown}
+      role="status"
+      className="animate-saved inline-flex items-center gap-1.5 rounded-full bg-success-ink/10 px-2.5 py-1 text-meta font-bold text-success-ink"
+    >
+      <Icon name="check" size={14} strokeWidth={2.6} />
+      {text}
     </span>
   );
 }

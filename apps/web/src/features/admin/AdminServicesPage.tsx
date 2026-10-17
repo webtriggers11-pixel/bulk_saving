@@ -14,8 +14,8 @@ import { SavedTick } from '../../components/ui/saved-tick';
 import { SearchField } from '../../components/ui/search-field';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
-import { CATEGORY_FILTER_OPTIONS } from '../../lib/categories';
-import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
+import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
+import { isActiveFilter, useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatRupees } from './adminFormat';
@@ -39,6 +39,7 @@ import {
   useAdminSocieties,
   useCreateService,
   useUpdateService,
+  useOfferingSavePaused,
   useUpsertOffering,
 } from './useAdmin';
 
@@ -229,12 +230,24 @@ function OfferingControl({
   society: AdminSocietyDto;
   offering: ServiceOfferingDto | undefined;
 }) {
-  const upsert = useUpsertOffering();
+  const upsert = useUpsertOffering(service.id);
   // Optimistic: the switch moves the moment it is tapped, and falls back to the stored
   // value if the server refuses (the error line then says why).
   const enabled = upsert.isPending ? (upsert.variables?.body.enabled ?? false) : (offering?.enabled ?? false);
-  const [price, setPrice] = useState(offering?.indicativePrice != null ? String(offering.indicativePrice) : '');
+  const stored = offering?.indicativePrice != null ? String(offering.indicativePrice) : '';
+  const [price, setPrice] = useState(stored);
   const [priceError, setPriceError] = useState<string | null>(null);
+  // CHORE-020: follow the stored price when it changes (a save here, or another tab) —
+  // but never over text the admin has typed and not saved. This replaced a `key` that
+  // re-mounted the control on every price change and threw that text away.
+  const [dirty, setDirty] = useState(false);
+  const [seen, setSeen] = useState(stored);
+  if (stored !== seen) {
+    setSeen(stored);
+    if (!dirty) {
+      setPrice(stored);
+    }
+  }
 
   function save(nextEnabled: boolean) {
     const parsed = parseIndicativePrice(price);
@@ -243,11 +256,14 @@ function OfferingControl({
       return;
     }
     setPriceError(null);
-    upsert.mutate({
-      societyId: society.id,
-      serviceId: service.id,
-      body: { enabled: nextEnabled, indicativePrice: parsed },
-    });
+    upsert.mutate(
+      {
+        societyId: society.id,
+        serviceId: service.id,
+        body: { enabled: nextEnabled, indicativePrice: parsed },
+      },
+      { onSuccess: () => setDirty(false) },
+    );
   }
 
   return (
@@ -263,7 +279,8 @@ function OfferingControl({
               text={upsert.isPaused ? OFFLINE_WAITING_LABEL : enabled ? 'Offered' : 'Not offered'}
               // An inactive service can be switched off here but not newly on: residents
               // would never see it.
-              disabled={upsert.isPending || (!service.active && !enabled)}
+              disabled={!service.active && !enabled}
+              busy={upsert.isPending}
             />
             <SavedTick trigger={upsert.isSuccess ? upsert.submittedAt : null} />
           </div>
@@ -281,7 +298,15 @@ function OfferingControl({
           className="w-40"
         >
           {(props) => (
-            <Input {...props} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <Input
+              {...props}
+              inputMode="numeric"
+              value={price}
+              onChange={(e) => {
+                setPrice(e.target.value);
+                setDirty(true);
+              }}
+            />
           )}
         </Field>
         <Button
@@ -331,6 +356,8 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
   }
 
   const offeredIn = service.offerings.filter((o) => o.enabled).length;
+  // CHORE-020: a queued offering save must stay visible when its panel is closed.
+  const offeringPaused = useOfferingSavePaused(service.id);
   // Optimistic, as with the offering switch: moves on tap, reverts if refused.
   const pendingActive = update.isPending ? update.variables?.body.active : undefined;
   const active = pendingActive ?? service.active;
@@ -381,7 +408,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                   onChange={(next) => update.mutate({ id: service.id, body: { active: next } })}
                   label={`${service.name} active`}
                   text={active ? 'Active' : 'Inactive'}
-                  disabled={update.isPending}
+                  busy={update.isPending}
                 />
                 <Button
                   variant="secondary"
@@ -413,8 +440,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
             <div id={`offerings-${service.id}`} className="animate-rise flex flex-col gap-4">
               {societies.map((society) => (
                 <OfferingControl
-                  // Re-mount when the stored price changes, so the input shows the saved value.
-                  key={`${society.id}:${service.offerings.find((o) => o.societyId === society.id)?.indicativePrice ?? ''}`}
+                  key={society.id}
                   service={service}
                   society={society}
                   offering={service.offerings.find((o) => o.societyId === society.id)}
@@ -425,6 +451,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
           </div>
         )}
         {update.isPaused && <OfflineLine testId="service-update-offline" />}
+        {offeringPaused && !showSocieties && <OfflineLine testId="service-offering-offline" />}
         {update.isError && <ErrorLine error={update.error} />}
       </RowSurface>
     </li>
@@ -433,6 +460,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
 
 /** The URL keys this page owns (ADR-0026). */
 const FILTER_KEYS = ['q', 'category', 'status', 'offeredIn'] as const;
+const FILTER_VALIDATORS = { category: isListedCategory, status: isActiveFilter };
 
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
@@ -454,8 +482,8 @@ function toActiveFilter(value: string | undefined): ActiveFilter | undefined {
  * filters in the URL. The last result stays on screen, dimmed, while the next one loads.
  */
 export function AdminServicesPage() {
-  const { filters, setFilters, clear, activeCount } = useUrlFilters(FILTER_KEYS);
-  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const { filters, setFilters, clear, activeCount, generation } = useUrlFilters(FILTER_KEYS, FILTER_VALIDATORS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }), generation);
   const query: AdminServicesQuery = {
     q: filters.q,
     category: filters.category,

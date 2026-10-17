@@ -90,16 +90,24 @@ describe('FilterChips', () => {
     expect(screen.getByRole('radio', { name: 'Vehicle' })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('scrolls the chosen chip into view — on a phone it can start off the end of the rail', () => {
-    const scroll = vi.fn();
+  it('scrolls only the chip rail to the chosen chip — never the page (V2 P1-3)', () => {
+    const pageScroll = vi.fn();
     const original = HTMLElement.prototype.scrollIntoView;
-    HTMLElement.prototype.scrollIntoView = scroll;
+    HTMLElement.prototype.scrollIntoView = pageScroll;
+    const rect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      // The rail is 0–200; "Vehicle", the chosen chip, sits at 260–340, off its end.
+      if (this.getAttribute('role') === 'radiogroup') return { left: 0, right: 200 } as DOMRect;
+      if (this.textContent === 'Vehicle') return { left: 260, right: 340 } as DOMRect;
+      return { left: 0, right: 50 } as DOMRect;
+    };
     try {
       render(<FilterChips label="Category" options={OPTIONS} value="Vehicle" onChange={() => {}} />);
-      expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
-      expect(scroll.mock.contexts.at(-1)).toBe(screen.getByRole('radio', { name: 'Vehicle' }));
+      expect(screen.getByRole('radiogroup').scrollLeft).toBe(152);
+      expect(pageScroll).not.toHaveBeenCalled();
     } finally {
       HTMLElement.prototype.scrollIntoView = original;
+      HTMLElement.prototype.getBoundingClientRect = rect;
     }
   });
 
@@ -119,6 +127,23 @@ describe('Switch', () => {
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
+  it('while busy: ignores taps but keeps focus — disabling it dropped focus (V2 P2-3)', () => {
+    const onChange = vi.fn();
+    render(<Switch checked onChange={onChange} label="Tank active" text="Active" busy />);
+    const control = screen.getByRole('switch', { name: 'Tank active' });
+    control.focus();
+    fireEvent.click(control);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(control).toHaveFocus();
+    expect(control).toBeEnabled();
+    expect(control).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('is named by what it switches, not by its state text', () => {
+    render(<Switch checked onChange={() => {}} label="Tank active" text="Active" />);
+    expect(screen.getByRole('switch')).toHaveAccessibleName('Tank active');
+  });
+
   it('does nothing when disabled', () => {
     const onChange = vi.fn();
     render(<Switch checked onChange={onChange} label="x" disabled />);
@@ -135,7 +160,8 @@ describe('SavedTick', () => {
   it('shows nothing until a save happens, plays once, then leaves', () => {
     vi.useFakeTimers();
     const { rerender } = render(<SavedTick trigger={null} />);
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    // No live region at all until there is something to say (V2 P2-4).
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
 
     rerender(<SavedTick trigger={1000} />);
     expect(screen.getByRole('status')).toHaveTextContent('Saved');
@@ -143,7 +169,7 @@ describe('SavedTick', () => {
     act(() => {
       vi.advanceTimersByTime(1800);
     });
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('replays for a second save rather than staying put', () => {
