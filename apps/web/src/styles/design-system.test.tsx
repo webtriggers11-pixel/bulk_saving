@@ -341,29 +341,61 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
    * fills, which stay brand-coloured at night. This is the list; adding a file to it is a
    * design decision, not a fix for a red test.
    */
-  const ACCENT_FILL_FILES = [
-    'components/ui/button.tsx', // primary + on-accent variants
-    'components/ui/monogram.tsx',
-    'components/ui/stat.tsx', // the lead stat sits on the accent surface
-    'components/ui/switch.tsx', // the knob is white in both schemes, like iOS
-    'features/home/HomePage.tsx', // the hero card is the accent surface
-    'features/admin/AdminLayout.tsx', // the brand mark
-    'features/appearance/AppearanceSheet.tsx', // the tick on a palette swatch (a brand fill)
-  ];
+  /**
+   * Each accent-fill file and EXACTLY how many white utilities it uses. A count, not a
+   * free pass: a new `white` in one of these files is a new decision, and should have to
+   * say so here (V2 P2-6). Adding or removing one means editing the number.
+   */
+  const ACCENT_FILL_USES: Record<string, number> = {
+    'components/ui/button.tsx': 7, // primary + on-accent variants
+    'components/ui/monogram.tsx': 1,
+    'components/ui/stat.tsx': 6, // the lead stat sits on the accent surface
+    'components/ui/switch.tsx': 1, // the knob is white in both schemes, like iOS
+    'features/home/HomePage.tsx': 8, // the hero card is the accent surface, and the brand mark
+    'features/admin/AdminLayout.tsx': 1, // the brand mark
+    'features/appearance/AppearanceSheet.tsx': 1, // the tick on a palette swatch
+  };
+  // Every utility that can paint a colour, plus arbitrary white literals.
+  const WHITE = /\b(?:bg|border|from|to|via|ring|divide|text|stroke|fill|shadow|outline|decoration|caret|accent|placeholder)-white\b|-\[(?:#fff(?:fff)?|white|rgb\(255[ ,_]+255[ ,_]+255)/gi;
 
-  it('uses white utilities only in the accent-fill files', () => {
+  it('uses white only on accent fills — and exactly as often as the allowlist says', () => {
     const offenders: string[] = [];
+    const counts: Record<string, number> = {};
     for (const file of appSources()) {
       const rel = file.replace(/^.*\/src\//, '');
-      if (ACCENT_FILL_FILES.includes(rel)) continue;
       const source = readFileSync(file, 'utf8');
-      for (const match of source.matchAll(/\b(?:bg|border|from|to|via|ring|divide|text)-white\b/g)) {
+      for (const match of source.matchAll(WHITE)) {
         const line = source.slice(0, match.index ?? 0).split('\n').length;
         const text = source.split('\n')[line - 1].trim();
         if (text.startsWith('*') || text.startsWith('//')) continue;
-        offenders.push(`${rel}:${line} ${match[0]}`);
+        counts[rel] = (counts[rel] ?? 0) + 1;
+        if (!(rel in ACCENT_FILL_USES)) offenders.push(`${rel}:${line} ${match[0]}`);
       }
     }
     expect(offenders).toEqual([]);
+    for (const [file, expected] of Object.entries(ACCENT_FILL_USES)) {
+      expect(counts[file] ?? 0, `${file} white uses`).toBe(expected);
+    }
+  });
+
+  it('the pre-paint status-bar colours in index.html are the ground tokens (V2 P2-9)', () => {
+    const html = readFileSync(join(WEB, 'index.html'), 'utf8');
+    const ground = (selector: string) => {
+      const start = css.indexOf(selector);
+      const block = css.slice(start, css.indexOf('}', start));
+      const [, rgb] = /--ground:\s*(\d+ \d+ \d+);/.exec(block) ?? [];
+      return `rgb(${rgb.split(' ').join(', ')})`;
+    };
+    const expected: Record<string, string> = {
+      'light:teal': ground(":root,\n[data-theme='teal']"),
+      'light:indigo': ground("[data-theme='indigo'] {"),
+      'light:ember': ground("[data-theme='ember'] {"),
+      'dark:teal': ground("html[data-scheme='dark']:not([data-theme='indigo'])"),
+      'dark:indigo': ground("html[data-scheme='dark'][data-theme='indigo']"),
+      'dark:ember': ground("html[data-scheme='dark'][data-theme='ember']"),
+    };
+    for (const [key, value] of Object.entries(expected)) {
+      expect(html, key).toContain(`'${key}': '${value}'`);
+    }
   });
 });

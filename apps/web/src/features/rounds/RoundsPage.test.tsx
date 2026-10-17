@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { onlineManager } from '@tanstack/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoundDto } from '@bulk/shared';
@@ -161,6 +162,19 @@ describe('RoundsPage', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       fireEvent.click(screen.getByTestId('pledge-open-round_1'));
       expect(screen.getByTestId('units-input-round_1')).toHaveValue(1);
+    });
+
+    it('a pledge queued OFFLINE still says so on the card once the sheet is closed (FEAT-016 V2 P2-3)', async () => {
+      fetchRoundsMock.mockResolvedValue([openRound]);
+      renderPage();
+      fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+      onlineManager.setOnline(false);
+      fireEvent.click(screen.getByTestId('join-round_1'));
+      await screen.findByTestId('pledge-paused');
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(screen.getByTestId('pledge-paused')).toBeInTheDocument();
+      onlineManager.setOnline(true);
     });
   });
 });

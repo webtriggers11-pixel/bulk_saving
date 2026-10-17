@@ -75,6 +75,18 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
 function JoinControl({ round }: { round: RoundDto }) {
   const [open, setOpen] = useState(false);
   const joined = round.myUnits > 0;
+  // The writes live HERE, not in the sheet, so a pledge queued offline still says so on
+  // the card after the sheet is closed (V2 P2-3).
+  const join = useJoinRound();
+  const update = useUpdatePledge();
+  const leave = useLeaveRound();
+  const paused = anyPaused(join, update, leave);
+
+  function openSheet() {
+    // A failure from an earlier attempt should not greet the next one.
+    for (const m of [join, update, leave]) if (!m.isPending) m.reset();
+    setOpen(true);
+  }
   return (
     <>
       <div className="flex items-center gap-3">
@@ -92,13 +104,18 @@ function JoinControl({ round }: { round: RoundDto }) {
           variant={joined ? 'secondary' : 'primary'}
           size="sm"
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={openSheet}
           data-testid={`pledge-open-${round.id}`}
         >
           {joined ? 'Change' : 'Join'}
         </Button>
       </div>
-      <PledgeSheet round={round} open={open} onClose={() => setOpen(false)} />
+      {paused && !open && (
+        <div className="mt-3">
+          <PledgeNotices paused failed={false} />
+        </div>
+      )}
+      <PledgeSheet round={round} open={open} onClose={() => setOpen(false)} mutations={{ join, update, leave }} />
     </>
   );
 }
@@ -108,7 +125,21 @@ function JoinControl({ round }: { round: RoundDto }) {
  * today's and the next tier's — for the number being chosen. Adjusting is free; the one
  * action at the bottom commits it, and the sheet closes when the server agrees.
  */
-function PledgeSheet({ round, open, onClose }: { round: RoundDto; open: boolean; onClose: () => void }) {
+function PledgeSheet({
+  round,
+  open,
+  onClose,
+  mutations: { join, update, leave },
+}: {
+  round: RoundDto;
+  open: boolean;
+  onClose: () => void;
+  mutations: {
+    join: ReturnType<typeof useJoinRound>;
+    update: ReturnType<typeof useUpdatePledge>;
+    leave: ReturnType<typeof useLeaveRound>;
+  };
+}) {
   const joined = round.myUnits > 0;
   const [draft, setDraft] = useState<number>(joined ? round.myUnits : MIN_UNITS);
   const [seenOpen, setSeenOpen] = useState(open);
@@ -117,9 +148,6 @@ function PledgeSheet({ round, open, onClose }: { round: RoundDto; open: boolean;
     setSeenOpen(open);
     if (open) setDraft(joined ? round.myUnits : MIN_UNITS);
   }
-  const join = useJoinRound();
-  const update = useUpdatePledge();
-  const leave = useLeaveRound();
   const busy = join.isPending || update.isPending || leave.isPending;
   const failed = join.isError || update.isError || leave.isError;
   // A paused (offline) write is not a failure — it resumes on reconnect (CHORE-005).

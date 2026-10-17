@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Sheet } from '../../components/ui/sheet';
 import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
@@ -60,7 +60,13 @@ export function RateRound({ round }: { round: MyRoundDto }) {
   const [comment, setComment] = useState(saved?.comment ?? '');
 
   const busy = rate.isPending || remove.isPending;
-  const error = rate.isError ? rate.error : remove.isError ? remove.error : null;
+  // Each error shows where it happened, once: a failed withdrawal on the card, a failed
+  // submit in the sheet. One shared `error` put the same alert in both (V2 P2-10).
+  const removeError = remove.isError ? remove.error : null;
+  const rateError = rate.isError ? rate.error : null;
+  // Focus lands on "Change" after the sheet closes — after a FIRST rating the button
+  // that opened the sheet ("Rate this job") no longer exists (V2 P2-4).
+  const changeButton = useRef<HTMLButtonElement>(null);
   /**
    * TanStack Query v5's default `networkMode: 'online'` PAUSES a mutation when the
    * browser is offline rather than failing it: `isPending` stays true, `isError`
@@ -105,6 +111,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
             </div>
             <div className="flex gap-2">
               <Button
+                ref={changeButton}
                 variant="secondary"
                 size="sm"
                 onClick={() => {
@@ -148,10 +155,10 @@ export function RateRound({ round }: { round: MyRoundDto }) {
               {OFFLINE_QUEUED_TEXT}
             </p>
           )}
-          {error && (
+          {removeError && (
             <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
               <Icon name="alert" size={16} strokeWidth={2} />
-              {ratingErrorMessage(error)}
+              {ratingErrorMessage(removeError)}
             </p>
           )}
         </div>
@@ -165,9 +172,11 @@ export function RateRound({ round }: { round: MyRoundDto }) {
       )}
       <Sheet
         open={editing}
-        onClose={() => {
-          if (!busy) setEditing(false);
-        }}
+        // Always closable. A save paused offline keeps `busy` true until the network
+        // returns, and refusing to close held the resident in a modal for that long
+        // (V2 P1-1). The draft lives here, not in the sheet, so nothing is lost.
+        onClose={() => setEditing(false)}
+        returnFocus={() => changeButton.current}
         title={saved ? 'Change your rating' : 'How did it go?'}
         description={round.service.name}
       >
@@ -200,10 +209,10 @@ export function RateRound({ round }: { round: MyRoundDto }) {
               {OFFLINE_QUEUED_TEXT}
             </p>
           )}
-          {error && (
+          {rateError && (
             <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
               <Icon name="alert" size={16} strokeWidth={2} />
-              {ratingErrorMessage(error)}
+              {ratingErrorMessage(rateError)}
             </p>
           )}
 
@@ -217,7 +226,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
                     ? 'Save changes'
                     : 'Submit rating'}
             </Button>
-            <Button variant="ghost" type="button" disabled={busy} onClick={() => setEditing(false)}>
+            <Button variant="ghost" type="button" onClick={() => setEditing(false)}>
               Cancel
             </Button>
           </div>

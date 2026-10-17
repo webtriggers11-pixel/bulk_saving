@@ -259,6 +259,24 @@ describe('RateRound (on the My Requests card)', () => {
     await waitFor(() => expect(rateRoundMock).toHaveBeenCalledTimes(1));
   });
 
+  it('can always be closed — a submit paused OFFLINE does not hold the resident in the sheet (FEAT-016 V2 P1-1)', async () => {
+    fetchMyRoundsMock.mockResolvedValue([round()]);
+    renderPage();
+    await openRating();
+    fireEvent.click(await screen.findByRole('radio', { name: '4 stars' }));
+    act(() => {
+      onlineManager.setOnline(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
+    expect(await screen.findByTestId('rating-offline')).toBeInTheDocument();
+
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+  });
+
   it('shows the SAVED card after a successful submit, even if the refetch never lands', async () => {
     // V2 P1-5: the card derived "saved" purely from the polled query, so between a
     // successful PUT and the refetch — or forever, if that refetch pauses offline —

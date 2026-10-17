@@ -868,3 +868,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **Dev note:** with two backends on one Redis (the owner's :3000 and a test API), the admin door's queued OTP is sent by whichever worker takes it — the code appears in THAT terminal. Run a second backend with its own `BULLMQ_PREFIX`.
 - V1: gate exit 0 — backend 396/396, web 420/420, 1608 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-18 — FEAT-016 — V2 round 1 FAIL → fixed (2×P1, 10×P2)
+- V2 (independent, ran the gate itself: exit 0; its three mutations killed) returned FAIL. All twelve findings fixed:
+  - P1-1 a save paused offline made the rating / New service sheets impossible to close (and a refused drag stayed half-dragged) → sheets always close (drafts live outside the sheet); a refused dismiss springs home.
+  - P1-2 Tab escaped the Appearance sheet past roving `tabIndex=-1` radios → trap counts only tabbable elements.
+  - P2: reveal origin passed from the chip itself (not `activeElement`); sink animation starts from the drag position; pledge "queued offline" notice stays on the card after the sheet closes and stale errors reset on reopen; `returnFocus` for an opener that unmounts + Escape/Tab trap on the document so they work after focus drops to <body>; compact bar no longer duplicates the action; AC3 white guard now counts uses per allowlisted file and covers stroke/fill/shadow/outline/arbitrary literals; TierRing track `stroke-shade` → `stroke-line`; stacked sheets share a scroll-lock counter; pre-paint script sets `theme-color` (pinned to the ground tokens by a test); rating errors shown once, where they happened.
+- New tests: 8 (sheet ×5, rating offline-close, pledge queued-after-close, theme-color pin). Mutations: trap filter removed → fails; rating close-guard restored → fails; `stroke-white` → AC3 fails; wrong night theme-color → fails.
+- V1: gate exit 0 — backend 396/396, web 428/428, 1606 class tokens.
+- By: agent (autonomous)

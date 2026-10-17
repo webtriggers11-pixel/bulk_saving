@@ -44,7 +44,7 @@ export function TierRing({ percent, value, unitLabel, label, size = 108 }: TierR
             <stop offset="1" className="[stop-color:rgb(var(--brand-light))]" />
           </linearGradient>
         </defs>
-        <circle cx="40" cy="40" r={RADIUS} fill="none" strokeWidth="7" className="stroke-shade/15" />
+        <circle cx="40" cy="40" r={RADIUS} fill="none" strokeWidth="7" className="stroke-line/15" />
         <circle
           cx="40"
           cy="40"

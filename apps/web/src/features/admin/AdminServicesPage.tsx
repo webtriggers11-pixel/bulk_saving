@@ -194,9 +194,9 @@ function AddServiceForm() {
       {/* FEAT-016: the form is a sheet — bottom sheet on a phone, centred on a laptop. */}
       <Sheet
         open={open}
-        onClose={() => {
-          if (!create.isPending) setOpen(false);
-        }}
+        // Always closable — a create paused offline must not trap the admin (V2 P1-1).
+        // The typed values live in this component, so reopening finds them.
+        onClose={() => setOpen(false)}
         title="New service"
         description="It starts active but offered nowhere — switch it on per society afterwards."
       >

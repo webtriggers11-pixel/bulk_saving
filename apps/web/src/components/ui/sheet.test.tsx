@@ -149,4 +149,107 @@ describe('Sheet', () => {
     fireEvent.pointerMove(handle, { clientY: 175, pointerId: 1 });
     expect(screen.getByRole('dialog')).toHaveStyle({ transform: 'translateY(75px)' });
   });
+
+  describe('V2 fixes', () => {
+    it('Tab cannot walk out past a roving radio group (tabIndex -1 options are not tabbable)', () => {
+      function Radios() {
+        const [open, setOpen] = useState(true);
+        return (
+          <Sheet open={open} onClose={() => setOpen(false)} title="Appearance">
+            <div role="radiogroup" aria-label="Colour">
+              <button role="radio" aria-checked="true" tabIndex={0}>Lagoon</button>
+              <button role="radio" aria-checked="false" tabIndex={-1}>Dusk</button>
+              <button role="radio" aria-checked="false" tabIndex={-1}>Ember</button>
+            </div>
+          </Sheet>
+        );
+      }
+      render(<Radios />);
+      const checked = screen.getByRole('radio', { name: 'Lagoon' });
+      checked.focus();
+      fireEvent.keyDown(checked, { key: 'Tab' });
+      // Lagoon is the LAST tabbable item, so Tab wraps to the first (Close) — inside.
+      expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close appearance' }));
+    });
+
+    it('Escape still closes when focus has dropped to <body> (a disabled control lost it)', () => {
+      const onClose = vi.fn();
+      openSheet(onClose);
+      (document.activeElement as HTMLElement).blur();
+      expect(document.activeElement).toBe(document.body);
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('two sheets open and closed out of order leave the page scrollable', () => {
+      function Two() {
+        const [a, setA] = useState(true);
+        const [b, setB] = useState(true);
+        return (
+          <>
+            <button onClick={() => setA(false)}>close A</button>
+            <button onClick={() => setB(false)}>close B</button>
+            <Sheet open={a} onClose={() => setA(false)} title="A">a</Sheet>
+            <Sheet open={b} onClose={() => setB(false)} title="B">b</Sheet>
+          </>
+        );
+      }
+      render(<Two />);
+      expect(document.body.style.overflow).toBe('hidden');
+      fireEvent.click(screen.getByText('close A'));
+      expect(document.body.style.overflow).toBe('hidden');
+      fireEvent.click(screen.getByText('close B'));
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('a dismissing drag the caller refuses springs home instead of staying half-dragged', () => {
+      vi.useFakeTimers();
+      render(
+        <Sheet open onClose={() => {}} title="Stays">
+          <p>content</p>
+        </Sheet>,
+      );
+      dragHandle(300, 500);
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByRole('dialog').style.transform).toBe('');
+    });
+
+    it('returns focus to `returnFocus` when the opener is gone', () => {
+      vi.useFakeTimers();
+      function Replaced() {
+        const [open, setOpen] = useState(false);
+        const [done, setDone] = useState(false);
+        return (
+          <>
+            {done ? <button id="after">Change</button> : <button onClick={() => setOpen(true)}>Rate this job</button>}
+            <Sheet
+              open={open}
+              onClose={() => setOpen(false)}
+              returnFocus={() => document.getElementById('after')}
+              title="Rate"
+            >
+              <button
+                onClick={() => {
+                  setDone(true);
+                  setOpen(false);
+                }}
+              >
+                Submit
+              </button>
+            </Sheet>
+          </>
+        );
+      }
+      render(<Replaced />);
+      fireEvent.click(screen.getByRole('button', { name: 'Rate this job' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Change' }));
+    });
+  });
 });

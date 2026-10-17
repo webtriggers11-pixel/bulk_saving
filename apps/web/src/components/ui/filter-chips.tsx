@@ -13,7 +13,8 @@ interface FilterChipsProps {
   label: string;
   options: readonly FilterChipOption[];
   value: string;
-  onChange: (value: string) => void;
+  /** The chosen value, and the chip that chose it (an origin for any effect it starts). */
+  onChange: (value: string, chip?: HTMLElement | null) => void;
   className?: string;
 }
 
@@ -62,7 +63,7 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
       return;
     }
     event.preventDefault();
-    onChange(options[to].value);
+    onChange(options[to].value, refs.current[to]);
     refs.current[to]?.focus();
   }
 
@@ -91,7 +92,7 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
             role="radio"
             aria-checked={checked}
             tabIndex={checked ? 0 : -1}
-            onClick={() => onChange(option.value)}
+            onClick={(event) => onChange(option.value, event.currentTarget)}
             onKeyDown={(event) => move(event, index)}
             className={cn(
               'chip min-h-touch shrink-0 whitespace-nowrap rounded-full border px-4 text-meta font-bold',

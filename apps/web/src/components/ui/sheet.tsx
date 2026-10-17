@@ -12,6 +12,12 @@ interface SheetProps {
   children: ReactNode;
   /** Pinned under the scrolling content — the sheet's one action. */
   footer?: ReactNode;
+  /**
+   * Where focus goes when the sheet closes, if not back to whatever opened it — for an
+   * opener that no longer exists afterwards (rating a job replaces "Rate this job" with
+   * the saved rating and its "Change"). Falls back to the opener when that is connected.
+   */
+  returnFocus?: () => HTMLElement | null;
 }
 
 /** How far down (px) or how fast (px/ms) a drag must go to dismiss. */
@@ -22,6 +28,35 @@ const EXIT_MS = 240;
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * What Tab can actually reach. A roving radio group (FilterChips, the palette swatches)
+ * leaves its unchosen options at tabIndex -1 — matched by FOCUSABLE as buttons, but not
+ * reachable — and counting them as "the last item" let Tab walk out of the dialog
+ * (V2 P1-2).
+ */
+function tabbable(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.tabIndex >= 0);
+}
+
+/**
+ * Page scroll lock shared by every open sheet. Each sheet used to save and restore
+ * `body.style.overflow` itself, so A-opens, B-opens, A-closes, B-closes ended `hidden`
+ * — a page that never scrolls again (V2 P2-8). Counted instead.
+ */
+let locks = 0;
+let unlockedOverflow = '';
+function lockPage(): () => void {
+  if (locks === 0) {
+    unlockedOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  locks += 1;
+  return () => {
+    locks -= 1;
+    if (locks === 0) document.body.style.overflow = unlockedOverflow;
+  };
+}
 
 function reducedMotion(): boolean {
   try {
@@ -43,7 +78,7 @@ function reducedMotion(): boolean {
  * Motion (`sheet-in`, `sheet-out`, `backdrop-in/out`) lives in theme.css, so reduced motion
  * collapses it with everything else; the exit then unmounts at once.
  */
-export function Sheet({ open, onClose, title, description, children, footer }: SheetProps) {
+export function Sheet({ open, onClose, title, description, children, footer, returnFocus }: SheetProps) {
   const [mounted, setMounted] = useState(open);
   const [leaving, setLeaving] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -55,6 +90,10 @@ export function Sheet({ open, onClose, title, description, children, footer }: S
   const descriptionId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const returnFocusRef = useRef(returnFocus);
+  returnFocusRef.current = returnFocus;
+  const openRef = useRef(open);
+  openRef.current = open;
 
   // Mount on open; on close, play the exit, then unmount.
   useEffect(() => {
@@ -83,40 +122,51 @@ export function Sheet({ open, onClose, title, description, children, footer }: S
   useEffect(() => {
     if (!open || !mounted) return;
     returnTo.current = document.activeElement as HTMLElement | null;
-    const first = panel.current?.querySelector<HTMLElement>(FOCUSABLE);
+    const first = panel.current ? tabbable(panel.current)[0] : undefined;
     (first ?? panel.current)?.focus();
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlock = lockPage();
+
+    // Escape and the Tab trap listen on the DOCUMENT, not the panel: when the focused
+    // control becomes disabled (a save in flight), focus drops to <body> and a panel
+    // listener never hears another key (V2 P2-4).
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab' || !panel.current) return;
+      const items = tabbable(panel.current);
+      if (items.length === 0) {
+        event.preventDefault();
+        panel.current.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = panel.current.contains(document.activeElement);
+      if (!inside) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.body.style.overflow = previous;
-      returnTo.current?.focus?.();
+      document.removeEventListener('keydown', onKeyDown);
+      unlock();
+      const preferred = returnFocusRef.current?.();
+      const target = preferred?.isConnected ? preferred : returnTo.current;
+      if (target?.isConnected) target.focus?.();
     };
   }, [open, mounted]);
 
   if (!mounted) return null;
-
-  function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onCloseRef.current();
-      return;
-    }
-    if (event.key !== 'Tab' || !panel.current) return;
-    const items = [...panel.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-    if (items.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest('button')) return; // the close button is a button, not a handle
@@ -141,13 +191,19 @@ export function Sheet({ open, onClose, title, description, children, footer }: S
     setDragging(false);
     if (dy > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY) {
       onCloseRef.current();
+      // The exit animation sinks from wherever the finger let go (`sheet-sink` has no
+      // `from`). But a caller may refuse to close — then spring home rather than stay
+      // stuck half-dragged (V2 P1-1).
+      setTimeout(() => {
+        if (openRef.current) setDragY(0);
+      }, 0);
     } else {
       setDragY(0);
     }
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" onKeyDown={onKeyDown}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
       <div
         aria-hidden="true"
         data-testid="sheet-backdrop"

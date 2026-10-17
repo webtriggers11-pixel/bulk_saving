@@ -60,11 +60,12 @@ export function PageHeader({ title, subtitle, action, lead, collapsible = false,
           data-testid="compact-bar"
           className="compact-bar fixed inset-x-0 top-0 z-30 border-b border-paper/60 bg-paper/75 pt-[env(safe-area-inset-top)] shadow-nav backdrop-blur-chrome backdrop-saturate-200"
         >
-          <div className="mx-auto flex h-[52px] max-w-md items-center justify-between gap-3 px-[22px]">
+          <div className="mx-auto flex h-[52px] max-w-md items-center justify-center gap-3 px-[22px]">
+            {/* Title only. Repeating `action` here put a second live control with the same
+                name in the tab order (V2 P2-5); the real one is a short scroll away. */}
             <span aria-hidden="true" className="truncate text-body font-extrabold text-ink">
               {title}
             </span>
-            {action && <span className="shrink-0 scale-90">{action}</span>}
           </div>
         </div>
       )}

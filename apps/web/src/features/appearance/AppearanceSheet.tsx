@@ -58,9 +58,10 @@ export function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () 
           label="Mode"
           options={SCHEME_OPTIONS}
           value={preference}
-          onChange={(value) => {
-            const target = document.activeElement;
-            setSchemePreference(value as SchemePreference, target ? originOf(target) : undefined);
+          // The circle grows from the chip that chose it — not from whatever had focus
+          // (iOS does not focus a tapped button; arrow keys move focus after the change).
+          onChange={(value, chip) => {
+            setSchemePreference(value as SchemePreference, chip ? originOf(chip) : undefined);
           }}
         />
 

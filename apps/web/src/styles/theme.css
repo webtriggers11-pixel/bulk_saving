@@ -729,8 +729,9 @@ button:hover .nudge {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+/* No `from`: the sink starts wherever the panel IS — after a drag, where the finger let
+   go, rather than snapping back to 0 first (V2 P2-2). */
 @keyframes sheet-sink {
-  from { transform: translateY(0); }
   to { transform: translateY(100%); }
 }
 @keyframes sheet-pop {
