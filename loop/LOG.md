@@ -813,3 +813,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Remainder was ProfilePage's own: window events (`beforeinstallprompt`, `appinstalled`, `offline`) dispatched outside act, and the palette test rendering three copies without unmounting so each store reset re-rendered the others. Both fixed.
 - Result: 382/382, **0 act warnings, 0 stderr blocks** in the web run.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-015 — `Resident.phone` indexed (migration, owner: "fix")
+- Failing test first: `test/indexes.integration.spec.ts` EXPLAINs the admin-door lookup with seq scans disabled and requires `Resident_phone_idx` by name; it showed a full walk of the `(societyId, phone)` composite instead.
+- `@@index([phone])` + migration `20261017153046_resident_phone_index` — one additive `CREATE INDEX`, applied to the dev DB. Production applies it via `prisma migrate deploy`; Resident is small, so the brief write lock of a non-concurrent CREATE INDEX is not a concern at this size (revisit if it ever is).
+- Decision recorded: CLAUDE.md asks for owner approval before migrations; the owner's "fix" on a list that named this item is that approval.
+- By: agent (autonomous)

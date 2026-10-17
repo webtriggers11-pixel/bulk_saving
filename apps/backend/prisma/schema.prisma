@@ -77,6 +77,9 @@ model Resident {
   ratings             Rating[]
 
   @@unique([societyId, phone])
+  // CHORE-015: the admin door (unauthenticated) looks residents up by phone ALONE; the
+  // composite above leads with societyId and cannot serve that.
+  @@index([phone])
 }
 
 // Catalog (FEAT-002, ADR-0009): a global Service master (super-admin managed)

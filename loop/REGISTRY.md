@@ -46,7 +46,7 @@
 | FEAT-012 | Admin sign-in is its own page, and asks only for a phone number | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0023 |
 | FEAT-013 | One OTP, then signed in for good — sessions no longer expire | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-013-lifetime-sessions/ | ADR-0024 |
 | CHORE-014 | Input boxes read as gaps — a white border on a white sheet | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0022 |
-| CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
+| CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
 | CHORE-016 | An admin's sign-in can be denied by six unauthenticated OTP requests | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-016-admin-otp-denial/ | ADR-0023 |
 | CHORE-017 | The OTP send still runs in the request process — the root cause behind three rounds of leaks | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-017-otp-send-on-the-queue/ | ADR-0023, ADR-0013 |
 | CHORE-018 | Demo seed — residents, vendors, and a round in every lifecycle state | done | P2 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-018-demo-seed/ | ADR-0010, ADR-0012 |
