@@ -287,6 +287,13 @@ export interface RoundDto {
   deadline: string;
   tiers: RoundTierDto[];
   myUnits: number;
+  /**
+   * The negotiated per-unit price (integer ₹) once the admin has assigned a vendor;
+   * null until then (BUG-010). When set, THIS is what the resident pays — `currentPrice`
+   * is only the tier the round reached while open, and showing it after assignment told
+   * a resident ₹900 for a job negotiated at ₹680.
+   */
+  finalPrice: number | null;
 }
 
 /** `POST /admin/rounds` body — open a round for a (society, service) with tiers. */

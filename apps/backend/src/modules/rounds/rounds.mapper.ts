@@ -49,5 +49,7 @@ export function buildRoundDto(round: RoundWithView): RoundDto {
     deadline: round.deadline.toISOString(),
     tiers: pricing.tiers,
     myUnits,
+    // BUG-010: the negotiated price, so the resident sees what they actually owe.
+    finalPrice: round.finalPrice,
   };
 }

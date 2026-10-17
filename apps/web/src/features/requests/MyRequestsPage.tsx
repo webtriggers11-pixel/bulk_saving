@@ -137,11 +137,16 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
 
         <dl className="mt-4 flex gap-2.5">
           <Fact term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
+          {/* BUG-010: once the admin has negotiated a price, that is what the resident
+              pays — the tier price the round reached while open is history. */}
           <Fact
-            term={`Price per ${unitLabelFor(round.service)}`}
-            value={formatRupees(round.currentPrice)}
+            term={`${round.finalPrice !== null ? 'Final price' : 'Price'} per ${unitLabelFor(round.service)}`}
+            value={formatRupees(round.finalPrice ?? round.currentPrice)}
             testId="my-price"
           />
+          {round.finalPrice !== null && (
+            <Fact term="You owe" value={formatRupees(round.finalPrice * round.myUnits)} testId="my-total" />
+          )}
         </dl>
 
         {/* FEAT-009: rating lives here rather than on its own route — this card is

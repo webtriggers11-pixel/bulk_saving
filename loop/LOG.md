@@ -787,3 +787,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **V3: two back-to-back gate runs, exit 0 both, identical — backend 366/366, web 379/379, 1409 class tokens.** Catalog 23 after both.
 - FEAT-015, BUG-011, CHORE-020 CLOSED.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)
+
+## 2026-10-17 — BUG-010 — reproduced and fixed (owner: "fix")
+- Failing tests first: `rounds.mapper.spec.ts` (resident DTO of a DELIVERED round negotiated at ₹680 must carry `finalPrice: 680`; an OPEN one `null`) and My Requests (card must say ₹680 labelled final). Both failed — the DTO had no field.
+- Fix: `RoundDto.finalPrice: number | null` (required, so every fixture had to say which it is — six web fixtures updated); mapper copies `round.finalPrice`. My Requests shows "Final price per X" and a "You owe" fact (units × final price) once a price exists, the tier price before. API-level assertion added to the `/rounds/mine` integration test.
+- By: agent (autonomous)

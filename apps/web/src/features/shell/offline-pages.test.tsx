@@ -116,6 +116,7 @@ describe('a pledge submitted while offline', () => {
         deadline: '2099-01-01T12:00:00.000Z',
         tiers: [{ threshold: 5, price: 900 }],
         myUnits: 0,
+        finalPrice: null,
       },
     ]);
     joinRoundMock.mockResolvedValue({} as never);

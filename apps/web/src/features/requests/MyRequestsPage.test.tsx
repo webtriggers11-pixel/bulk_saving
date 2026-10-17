@@ -26,6 +26,7 @@ function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
     deadline: '2099-01-01T12:00:00.000Z',
     tiers: [{ threshold: 5, price: 900 }],
     myUnits: 2,
+    finalPrice: null,
     myRating: null,
     ...overrides,
   };
@@ -157,5 +158,29 @@ describe('MyRequestsPage', () => {
       expect(banner).toHaveAttribute('data-mode', 'error');
       expect(banner).not.toHaveAttribute('data-mode', 'stale');
     }
+  });
+
+  describe('the price a resident owes (BUG-010)', () => {
+    it('shows the negotiated price, labelled final, once the admin has set one — not the tier price', async () => {
+      fetchMyRoundsMock.mockResolvedValue([
+        round({ status: 'DELIVERED', currentPrice: 700, finalPrice: 680, myUnits: 3 }),
+      ]);
+      renderPage();
+
+      const price = await screen.findByTestId('my-price');
+      expect(price).toHaveTextContent('₹680');
+      expect(screen.getByText('Final price per AC unit')).toBeInTheDocument();
+      // And what that comes to: 3 × ₹680.
+      expect(screen.getByTestId('my-total')).toHaveTextContent('₹2,040');
+    });
+
+    it('shows the tier price, and no total, while nothing has been negotiated', async () => {
+      fetchMyRoundsMock.mockResolvedValue([round({ status: 'OPEN', currentPrice: 900, finalPrice: null })]);
+      renderPage();
+
+      expect(await screen.findByTestId('my-price')).toHaveTextContent('₹900');
+      expect(screen.getByText('Price per AC unit')).toBeInTheDocument();
+      expect(screen.queryByTestId('my-total')).not.toBeInTheDocument();
+    });
   });
 });

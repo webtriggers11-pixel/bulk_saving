@@ -308,6 +308,9 @@ describe('Ratings (integration, needs DB + Redis)', () => {
       expect(deliveredRow?.myRating?.stars).toBe(4);
       expect(deliveredRow?.myUnits).toBe(2);
       expect(openRow?.myRating).toBeNull();
+      // BUG-010: the negotiated price reaches the resident; an open round has none yet.
+      expect(deliveredRow?.finalPrice).toBe(700);
+      expect(openRow?.finalPrice).toBeNull();
     });
 
     it('returns newest first', async () => {

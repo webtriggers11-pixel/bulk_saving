@@ -44,6 +44,7 @@ const base: RoundDto = {
     { threshold: 10, price: 3200 },
   ],
   myUnits: 0,
+  finalPrice: null,
 };
 
 function renderWith(ui: React.ReactNode) {

@@ -30,6 +30,7 @@ const openRound: RoundDto = {
     { threshold: 10, price: 700 },
   ],
   myUnits: 0,
+  finalPrice: null,
 };
 
 function renderPage() {
