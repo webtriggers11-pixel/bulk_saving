@@ -3,7 +3,20 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-17)
+## Latest session (2026-10-18)
+
+- **Closed:** FEAT-016 — premium phone-app feel (ADR-0028). Night palette per colour
+  theme; Light / Dark / Match phone + palette in a Profile → Appearance sheet; a
+  Telegram-style circular reveal from the sun/moon switch (Home, Profile, admin header);
+  bottom sheets for pledging (stepper + live tier price), rating and admin New service;
+  collapsing large titles, safe-area insets, sliding tab pill. Browser-checked in both
+  schemes at phone width; V2 two rounds (2×P1 + 13×P2 fixed); V3 two identical runs —
+  backend 396/396, web 430/430.
+- **Still open, needs the owner:** CHORE-022 (admin 8-digit codes / second factor).
+- **Dev note:** a second backend beside the owner's :3000 must use its own
+  `BULLMQ_PREFIX`, or the admin's queued sign-in code prints in the other terminal.
+
+## Session before (2026-10-17)
 
 - **Closed today:** CHORE-018 (demo seed), FEAT-014 (admin Services, closed categories,
   staples pilot), CHORE-006, FEAT-015 (server-side filters + filtering UI), BUG-011 (error
