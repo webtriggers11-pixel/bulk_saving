@@ -17,6 +17,7 @@ export const SERVICE_CATEGORY_OPTIONS: readonly ServiceCategory[] = [
 /** Mirrors the backend caps — pinned to `@bulk/shared` by the same test. */
 export const UNIT_LABEL_MAX = 16;
 export const UNIT_DESCRIPTION_MAX = 140;
+export const INDICATIVE_PRICE_MAX = 10_000_000;
 const NAME_MAX = 120;
 const SLUG_MAX = 120;
 const DESCRIPTION_MAX = 2000;
@@ -181,13 +182,13 @@ export function groupByCategory(services: readonly AdminServiceDto[]): Array<[st
     .map(([category, rows]) => [category, [...rows].sort((a, b) => a.name.localeCompare(b.name))]);
 }
 
-/** "₹499" → 499; "" → null (no indicative price); anything else → undefined (invalid). */
+/** "₹499" → 499; "" → null (no indicative price); anything else, or over the cap → undefined. */
 export function parseIndicativePrice(raw: string): number | null | undefined {
   const trimmed = raw.trim().replace(/^₹/, '').replace(/,/g, '');
   if (trimmed === '') {
     return null;
   }
-  if (!/^\d+$/.test(trimmed)) {
+  if (!/^\d+$/.test(trimmed) || Number(trimmed) > INDICATIVE_PRICE_MAX) {
     return undefined;
   }
   return Number(trimmed);

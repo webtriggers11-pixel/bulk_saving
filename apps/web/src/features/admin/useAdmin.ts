@@ -45,6 +45,7 @@ import {
   upsertOffering,
 } from './admin.api';
 import { catalogQueryKey } from '../catalog/useCatalog';
+import { roundsQueryKey } from '../rounds/useRounds';
 
 /** Query keys for the super-admin screens. All live under ['admin', ...]. */
 export const adminKeys = {
@@ -208,12 +209,15 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
 
 /**
  * After any catalog write: the admin list, and the resident catalog (an admin who taps
- * "Back to app" must not see a stale one). Round views embed the service's name and
- * unit labels, so they refetch too.
+ * "Back to app" must not see a stale one). Round views — admin and resident, and the
+ * dashboard's demand table — embed the service's name and unit labels, so they refetch too.
  */
 function invalidateCatalog(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: adminKeys.services });
   void queryClient.invalidateQueries({ queryKey: catalogQueryKey });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
+  // Prefix match: covers the resident feed and "My Requests" (['rounds', 'mine']).
+  void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
   void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
 }

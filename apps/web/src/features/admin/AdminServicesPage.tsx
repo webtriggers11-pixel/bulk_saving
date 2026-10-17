@@ -203,7 +203,7 @@ function OfferingControl({
   function save(nextEnabled: boolean) {
     const parsed = parseIndicativePrice(price);
     if (parsed === undefined) {
-      setPriceError('Whole rupees only, or leave it empty.');
+      setPriceError('Whole rupees up to ₹1,00,00,000, or leave it empty.');
       return;
     }
     setPriceError(null);

@@ -25,7 +25,7 @@
 | FEAT-009 | Rating UI — resident rates from My Requests; admin sees averages | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/FEAT-009-rating-ui/ | ADR-0018 |
 | BUG-004 | Offline: admin controls hang on "Saving…" forever (v5 pauses, never fails) | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/BUG-004-offline-paused-admin-controls/ | — |
 | FEAT-010 | Per-service unit labels ("2 rooms", not "2 units") | done | P1 | 2026-09-18 | 2026-09-18 | loop/work/FEAT-010-per-service-units/ | ADR-0019 |
-| CHORE-006 | Admin has no services page — the catalog is API-only | in-progress (→ FEAT-014) | P2 | 2026-09-18 | — | loop/work/CHORE-006-admin-services-page/ | ADR-0009 |
+| CHORE-006 | Admin has no services page — the catalog is API-only | done (by FEAT-014) | P2 | 2026-09-18 | 2026-10-17 | loop/work/CHORE-006-admin-services-page/ | ADR-0009 |
 | BUG-005 | Rare 401 in the admin integration suite — mitigated by BUG-006 | done | P2 | 2026-09-18 | 2026-09-18 | loop/work/BUG-005-flaky-401-admin-suite/ | — |
 | CHORE-007 | Production hardening — headers, rate limits, no auth bypass, Docker, CI, runbook | done | P0 | 2026-09-18 | 2026-09-18 | loop/work/CHORE-007-production-hardening/ | ADR-0020 |
 | BUG-006 | The backend gate could not pass twice in a row (parallel suites shared one DB/Redis) | done | P1 | 2026-09-18 | 2026-09-18 | loop/work/BUG-006-parallel-suite-interference/ | — |
@@ -51,7 +51,8 @@
 | CHORE-017 | The OTP send still runs in the request process — the root cause behind three rounds of leaks | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-017-otp-send-on-the-queue/ | ADR-0023, ADR-0013 |
 | CHORE-018 | Demo seed — residents, vendors, and a round in every lifecycle state | done | P2 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-018-demo-seed/ | ADR-0010, ADR-0012 |
 | CHORE-019 | Demo seed mirrors scheduler constants by hand; base seed has no local-DB guard | triaged | P3 | 2026-10-17 | — | loop/work/CHORE-019-demo-seed-drift/ | — |
-| FEAT-014 | Admin services page, closed category list, wider catalog, bulk-staples pilot | in-progress | P1 | 2026-10-17 | — | loop/work/FEAT-014-admin-services-and-categories/ | ADR-0009, ADR-0019, ADR-0025 |
+| FEAT-014 | Admin services page, closed category list, wider catalog, bulk-staples pilot | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-014-admin-services-and-categories/ | ADR-0009, ADR-0019, ADR-0025 |
+| CHORE-020 | FEAT-014 review leftovers: offline notice hides with panel, price input remount, leak guard untested | triaged | P3 | 2026-10-17 | — | loop/work/CHORE-020-services-page-followups/ | — |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

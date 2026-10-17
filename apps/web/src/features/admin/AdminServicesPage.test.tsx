@@ -255,7 +255,7 @@ describe('AdminServicesPage', () => {
     fireEvent.change(within(other).getByLabelText(/^Price per unit/), { target: { value: '12.50' } });
     fireEvent.click(within(other).getByRole('button', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
 
-    expect(await within(other).findByText('Whole rupees only, or leave it empty.')).toBeInTheDocument();
+    expect(await within(other).findByText(/^Whole rupees up to/)).toBeInTheDocument();
     expect(upsertOfferingMock).not.toHaveBeenCalled();
   });
 

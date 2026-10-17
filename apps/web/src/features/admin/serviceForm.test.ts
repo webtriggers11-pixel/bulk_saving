@@ -1,7 +1,8 @@
-import { MAX_UNIT_DESCRIPTION, MAX_UNIT_LABEL, SERVICE_CATEGORIES, type AdminServiceDto } from '@bulk/shared';
+import { MAX_INDICATIVE_PRICE, MAX_UNIT_DESCRIPTION, MAX_UNIT_LABEL, SERVICE_CATEGORIES, type AdminServiceDto } from '@bulk/shared';
 import { describe, expect, it } from 'vitest';
 import {
   EMPTY_SERVICE_FORM,
+  INDICATIVE_PRICE_MAX,
   SERVICE_CATEGORY_OPTIONS,
   UNIT_DESCRIPTION_MAX,
   UNIT_LABEL_MAX,
@@ -26,6 +27,7 @@ describe('service form constants are pinned to the server', () => {
   it('has the server unit caps', () => {
     expect(UNIT_LABEL_MAX).toBe(MAX_UNIT_LABEL);
     expect(UNIT_DESCRIPTION_MAX).toBe(MAX_UNIT_DESCRIPTION);
+    expect(INDICATIVE_PRICE_MAX).toBe(MAX_INDICATIVE_PRICE);
   });
 });
 
@@ -148,5 +150,10 @@ describe('parseIndicativePrice', () => {
     expect(parseIndicativePrice(' ')).toBeNull();
     expect(parseIndicativePrice('12.5')).toBeUndefined();
     expect(parseIndicativePrice('-3')).toBeUndefined();
+  });
+
+  it('refuses a price past the cap — an extra zero must not reach a 32-bit column', () => {
+    expect(parseIndicativePrice(String(INDICATIVE_PRICE_MAX))).toBe(INDICATIVE_PRICE_MAX);
+    expect(parseIndicativePrice('30,00,00,00,000')).toBeUndefined();
   });
 });

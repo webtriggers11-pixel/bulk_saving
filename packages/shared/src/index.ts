@@ -324,6 +324,13 @@ export const MAX_RATING_COMMENT = 500;
  * measured 314 of 320 characters, so a slightly longer service name truncated the
  * "won't go ahead" consequence off the end (V2 P2).
  */
+/**
+ * Cap on an offering's indicative price (whole rupees). The column is a 32-bit Int, so
+ * without a cap a stray extra zero reached Prisma and came back as an unreadable 500
+ * (FEAT-014 V2 P2). ₹1 crore is far above any per-unit price this catalog will carry.
+ */
+export const MAX_INDICATIVE_PRICE = 10_000_000;
+
 export const MAX_UNIT_LABEL = 16;
 export const MAX_UNIT_DESCRIPTION = 140;
 

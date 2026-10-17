@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { MAX_UNIT_LABEL, SERVICE_CATEGORIES } from '@bulk/shared';
+import { MAX_INDICATIVE_PRICE, MAX_UNIT_LABEL, SERVICE_CATEGORIES } from '@bulk/shared';
 import type { Resident, Society } from '@prisma/client';
 import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -281,6 +281,25 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
         .expect(200);
       expect(res.body.data).toMatchObject({ category: 'Home', active: false });
     });
+  });
+
+  it('refuses an indicative price past the cap with 400, not a 500 from the Int column', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/admin/services')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Pricey', slug: uniqueSlug(), description: 'x', category: 'Vehicle' })
+      .expect(201);
+    const id = (created.body.data as AdminServiceDto).id;
+    await request(app.getHttpServer())
+      .put(`/admin/societies/${society.id}/offerings/${id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ enabled: true, indicativePrice: 30_000_000_000 })
+      .expect(400);
+    await request(app.getHttpServer())
+      .put(`/admin/societies/${society.id}/offerings/${id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ enabled: true, indicativePrice: MAX_INDICATIVE_PRICE })
+      .expect(200);
   });
 
   it('lists each service with its per-society offerings (FEAT-014)', async () => {

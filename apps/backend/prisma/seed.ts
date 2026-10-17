@@ -8,6 +8,7 @@
  * Needs Postgres up (`docker compose up -d`) and DATABASE_URL set (apps/backend/.env).
  */
 import { PrismaClient } from '@prisma/client';
+import type { ServiceCategory } from '@bulk/shared';
 
 const prisma = new PrismaClient();
 
@@ -96,7 +97,9 @@ const SERVICES = [
     ['Basmati Rice (25 kg)', 'basmati-rice-25kg', 'Aged basmati in a sealed bag, delivered to the society gate.', 'Bulk Staples', 2750, 'bag', 'bags', 'One sealed 25 kg bag of aged basmati, delivered to the society gate.'],
     ['Sunflower Oil (15 L)', 'sunflower-oil-15l', 'Refined sunflower oil in a sealed tin.', 'Bulk Staples', 2100, 'tin', 'tins', 'One sealed 15 L tin of refined sunflower oil.'],
     ['Whole Wheat Atta (10 kg)', 'whole-wheat-atta-10kg', 'Chakki-fresh whole wheat flour.', 'Bulk Staples', 480, 'bag', 'bags', 'One sealed 10 kg bag of chakki-fresh atta.'],
-  ] as const).map(([name, slug, description, category, indicativePrice, unitLabel, unitLabelPlural, unitDescription]) => ({
+    // Typed so a category typo fails the seed's compile: the seed writes through Prisma,
+    // so the API's closed-list check never sees these rows (FEAT-014 V2 P2).
+  ] as const satisfies ReadonlyArray<readonly [string, string, string, ServiceCategory, number, string, string, string]>).map(([name, slug, description, category, indicativePrice, unitLabel, unitLabelPlural, unitDescription]) => ({
     name,
     slug,
     description,

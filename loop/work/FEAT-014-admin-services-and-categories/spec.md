@@ -1,6 +1,6 @@
 # FEAT-014 — Admin services page, a closed category list, a wider catalog, and a staples pilot
 
-**Status:** in-progress · **Priority:** P1 · **Opened:** 2026-10-17 · **Asked by:** owner
+**Status:** done · **Priority:** P1 · **Opened:** 2026-10-17 · **Closed:** 2026-10-17 · **Asked by:** owner
 ("check admin panel category like grocery, other services and all" → "do it")
 **Supersedes:** CHORE-006 (no admin services page) · **Decisions:** ADR-0025
 

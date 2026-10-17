@@ -6,11 +6,13 @@ import {
   IsString,
   Length,
   Matches,
+  Max,
   Min,
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import {
+  MAX_INDICATIVE_PRICE,
   MAX_UNIT_DESCRIPTION,
   MAX_UNIT_LABEL,
   SERVICE_CATEGORIES,
@@ -132,5 +134,6 @@ export class UpsertOfferingDto implements UpsertOfferingBody {
   @ValidateIf((_o, value) => value !== null)
   @IsInt()
   @Min(0)
+  @Max(MAX_INDICATIVE_PRICE)
   indicativePrice?: number | null;
 }

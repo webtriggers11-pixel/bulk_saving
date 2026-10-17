@@ -728,3 +728,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Real write: Blue Waters tank price 799 → 749 through the UI, card re-read "From ₹749 / tank", restored to 799; DB confirms. Resident catalog shows the basket glyph on staples. No console errors.
 - V1: gate exit 0 — backend 350/350, web 324/324, 1300 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-17 — FEAT-014 — V2 PASS, P2s folded in, V3 identical twice, CLOSED (CHORE-006 with it)
+- **V2: PASS**, no P0/P1. Reviewer ran the gate itself and mutation-proved the web↔shared category pin (renaming "Bulk Staples" fails 3 tests). It also proved a gap: removing the `issuedSlugs` cleanup leaves all 20 tests green while leaking 3 rows — the cleanup works, nothing asserts it (→ CHORE-020).
+- Fixed from its P2s: **indicative price capped** at ₹1 crore (`MAX_INDICATIVE_PRICE` in shared, `@Max` on the DTO, client mirror pinned) — "30,00,00,00,000" passed both sides and would have reached a 32-bit Int column as a 500; integration test proves 400 past the cap, 200 at it. **Catalog writes now also refresh the dashboard and the resident round views** (both embed name + unit labels). **Seed tuples typed** with `satisfies … ServiceCategory`, since the seed writes through Prisma and the API's closed list never sees them.
+- Deferred to **CHORE-020** (P3): offline notice hides with the collapsed panel; price-input remount; no assertion on the leak guard.
+- **Not done, surfaced to the owner:** the reviewer's mutation run left 3 `svc-%` services in the dev DB; its DELETE was refused by the permission classifier and it asked me to delete them instead. Doing so would route around that refusal, so it is left for the owner to approve.
+- **V3: two back-to-back gate runs, exit 0 both, identical — backend 351/351, web 325/325, 1300 class tokens.**
+- FEAT-014 CLOSED. CHORE-006 closed by it.
+- By: agent (autonomous) + code-reviewer subagent (V2)
