@@ -102,6 +102,34 @@ function readDevOtp(phone) {
   return out;
 }
 
+/**
+ * Remove everything this run created (CHORE-011). The API has no deletes — services and
+ * vendors are deactivated, never removed — so past runs piled "E2E Service 011682" rows
+ * into the dev catalog the demo resident browses. Every row this run makes is tagged with
+ * RUN: the service slug `e2e-<RUN>` (deleting it cascades its offerings, rounds,
+ * participants, ratings and notifications), the vendor `E2E Vendor <RUN>`, and resident
+ * phones `+9198<RUN>xx`. Values are checked before they reach SQL; set E2E_KEEP=1 to keep
+ * the data for debugging.
+ */
+function cleanupRun() {
+  if (!/^\d{6}$/.test(RUN)) {
+    throw new Error(`refusing to clean up: unexpected run id ${RUN}`);
+  }
+  const sql = [
+    `DELETE FROM "Service" WHERE slug = 'e2e-${RUN}';`,
+    `DELETE FROM "Vendor" WHERE name = 'E2E Vendor ${RUN}';`,
+    `DELETE FROM "Resident" WHERE phone LIKE '+9198${RUN}%';`,
+  ].join(' ');
+  execFileSync(
+    'docker',
+    [
+      'compose', 'exec', '-T', 'postgres', 'psql', '-v', 'ON_ERROR_STOP=1',
+      '-U', process.env.E2E_DB_USER ?? 'postgres', '-d', process.env.E2E_DB_NAME ?? 'bulk_saving', '-c', sql,
+    ],
+    { encoding: 'utf8' },
+  );
+}
+
 /** Log in as a phone number in a society, via the dev-only OTP stash. */
 async function login(inviteCode, phone, name) {
   await api('/auth/otp/request', {
@@ -324,6 +352,11 @@ async function main() {
     });
     check('admin assigns the vendor', assigned.data?.status === 'ASSIGNED', assigned.data?.status);
 
+    // BUG-010: the resident sees the NEGOTIATED price from here on, not the tier price.
+    const mine = await api('/rounds/mine', { token: state.alice.token, expect: 200 });
+    const myRow = mine.data.find((r) => r.id === state.round.id);
+    check('the resident sees the negotiated final price', myRow?.finalPrice === 650, JSON.stringify({ finalPrice: myRow?.finalPrice, currentPrice: myRow?.currentPrice }));
+
     const detail = await api(`/admin/rounds/${state.round.id}`, { token: admin, expect: 200 });
     check('the detail shows the vendor and final price', detail.data?.vendor?.id === state.vendor.id && detail.data?.finalPrice === 650);
     check('…and both participants', detail.data?.participants?.length === 2, String(detail.data?.participants?.length));
@@ -502,11 +535,26 @@ async function main() {
     check('…as an average out of 5', dash.data.ratings.average > 0 && dash.data.ratings.average <= 5, String(dash.data.ratings.average));
   });
 
+  /* ------------------------------------------------------------- cleanup */
+
+  if (process.env.E2E_KEEP === '1') {
+    console.log(`\n(E2E_KEEP=1 — leaving run ${RUN}'s data in place)`);
+  } else {
+    await scenario('cleanup: the run leaves the dev data as it found it', async () => {
+      cleanupRun();
+      const services = await api('/admin/services', { token: state.admin.token, expect: 200 });
+      check('no E2E service from this run remains', !services.data.some((s) => s.slug === `e2e-${RUN}`));
+      const vendors = await api('/admin/vendors', { token: state.admin.token, expect: 200 });
+      check('no E2E vendor from this run remains', !vendors.data.some((v) => v.name === `E2E Vendor ${RUN}`));
+    });
+  }
+
   /* ------------------------------------------------------------- the report */
 
   // A thrown scenario is one failure, which would otherwise silently shrink the
   // denominator and make a partial run look like a smaller, greener one.
-  const EXPECTED_CHECKS = 83;
+  // 84 scenario checks + 2 cleanup checks (CHORE-011), unless E2E_KEEP=1.
+  const EXPECTED_CHECKS = process.env.E2E_KEEP === '1' ? 84 : 86;
   if (results.length < EXPECTED_CHECKS) {
     results.push({
       scenario: 'harness',
