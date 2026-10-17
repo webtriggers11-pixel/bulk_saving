@@ -44,14 +44,22 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
 
   afterAll(async () => {
     await prisma.serviceOffering.deleteMany({ where: { societyId: society.id } });
-    if (createdServiceIds.length > 0) {
-      await prisma.service.deleteMany({ where: { id: { in: createdServiceIds } } });
-    }
+    await prisma.service.deleteMany({
+      where: { OR: [{ id: { in: createdServiceIds } }, { slug: { in: issuedSlugs } }] },
+    });
     await prisma.society.delete({ where: { id: society.id } });
     await app.close();
   });
 
-  const uniqueSlug = (): string => `svc-${randomInviteCode().toLowerCase()}`;
+  // Every slug handed out is remembered and cleaned up in afterAll, whether or not the
+  // test registered the id — three FEAT-010 tests did not, and each run left three
+  // services in the shared dev catalog (FEAT-014's browser pass found 34).
+  const issuedSlugs: string[] = [];
+  const uniqueSlug = (): string => {
+    const slug = `svc-${randomInviteCode().toLowerCase()}`;
+    issuedSlugs.push(slug);
+    return slug;
+  };
 
   it('creates a master service (SUPER_ADMIN)', async () => {
     const slug = uniqueSlug();

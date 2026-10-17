@@ -720,3 +720,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - T6: base seed 5 → 23 services (46 offerings); demo seed adds a Basmati Rice OPEN round (GREEN) and a Water Tank OPEN round (BLUE), plus a wholesaler and a tank vendor.
 - V1: gate exit 0 — backend 350/350, web 324/324, 1231 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-17 — FEAT-014 — T7 browser pass: two things no test could have shown
+- Signed in as the second admin against a fresh API (:3100) + Vite (:5199), at phone width. The page renders, nav item active, six categories in order.
+- **The dev catalog held 34 test leftovers** ("Wall Painting" ×10, "Paired", "Unlabelled", "Typo") under a legacy "Home" group. Cause: three FEAT-010 tests in `catalog-admin.integration.spec.ts` created services without registering their ids, so every gate run added three to the shared dev DB. Fixed at the root — `uniqueSlug()` now records every slug it issues and `afterAll` deletes by slug — rather than adding three `push` calls the next test could forget. Proven: catalog count is 23 before and after a full backend suite. The 34 rows (all `svc-*`, 0 rounds, 0 offerings) deleted with that guard in the WHERE. "Typo" was mine, left by the T2 mutation run.
+- **23 services × 2 societies of inline controls made a phone screen dozens of swipes long.** Society controls are now behind a per-service "Manage societies" toggle (aria-expanded), closed by default; the summary line already says "offered in N of M societies".
+- Real write: Blue Waters tank price 799 → 749 through the UI, card re-read "From ₹749 / tank", restored to 799; DB confirms. Resident catalog shows the basket glyph on staples. No console errors.
+- V1: gate exit 0 — backend 350/350, web 324/324, 1300 class tokens.
+- By: agent (autonomous)

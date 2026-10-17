@@ -268,6 +268,9 @@ function OfferingControl({
 function ServiceRow({ service, societies }: { service: AdminServiceDto; societies: AdminSocietyDto[] }) {
   const update = useUpdateService();
   const [editing, setEditing] = useState(false);
+  // Closed by default: with every society's controls open, 23 services made a phone
+  // screen dozens of swipes long (FEAT-014 browser pass).
+  const [showSocieties, setShowSocieties] = useState(false);
   const [values, setValues] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
   const [errors, setErrors] = useState<ServiceFormErrors>({});
 
@@ -357,7 +360,18 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                 Inactive — residents see it nowhere, whatever the society settings say.
               </p>
             )}
-            <div className="flex flex-col gap-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="self-start"
+              aria-expanded={showSocieties}
+              aria-controls={`offerings-${service.id}`}
+              onClick={() => setShowSocieties((open) => !open)}
+            >
+              {showSocieties ? 'Hide societies' : 'Manage societies'}
+            </Button>
+            {showSocieties && (
+            <div id={`offerings-${service.id}`} className="flex flex-col gap-4">
               {societies.map((society) => (
                 <OfferingControl
                   // Re-mount when the stored price changes, so the input shows the saved value.
@@ -368,6 +382,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                 />
               ))}
             </div>
+            )}
           </div>
         )}
         {update.isPaused && <OfflineLine testId="service-update-offline" />}

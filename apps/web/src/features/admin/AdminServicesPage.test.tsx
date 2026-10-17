@@ -78,6 +78,12 @@ function renderPage() {
   );
 }
 
+/** Open a service's society controls (closed by default) and return them. */
+async function openSocieties(): Promise<HTMLElement[]> {
+  fireEvent.click(await screen.findByRole('button', { name: 'Manage societies' }));
+  return screen.getAllByTestId('offering-control');
+}
+
 function fill(form: HTMLElement, label: RegExp, value: string) {
   fireEvent.change(within(form).getByLabelText(label), { target: { value } });
 }
@@ -107,7 +113,12 @@ describe('AdminServicesPage', () => {
 
     const row = await screen.findByTestId('service-row');
     expect(within(row).getByText(/offered in 1 of 2 societies/)).toBeInTheDocument();
-    const [green, other] = within(row).getAllByTestId('offering-control');
+    // Closed until asked for — the summary line carries the count.
+    expect(within(row).queryByTestId('offering-control')).not.toBeInTheDocument();
+    const toggle = within(row).getByRole('button', { name: 'Manage societies' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    const [green, other] = await openSocieties();
+    expect(within(row).getByRole('button', { name: 'Hide societies' })).toHaveAttribute('aria-expanded', 'true');
     expect(within(green).getByText('Offered')).toBeInTheDocument();
     expect(within(green).getByText('From ₹799 / tank')).toBeInTheDocument();
     expect(within(other).getByText('Not offered')).toBeInTheDocument();
@@ -213,7 +224,7 @@ describe('AdminServicesPage', () => {
     upsertOfferingMock.mockResolvedValue({ id: 'off_2', societyId: blue.id, serviceId: tank.id, enabled: true, indicativePrice: 899 });
     renderPage();
 
-    const [, other] = await screen.findAllByTestId('offering-control');
+    const [, other] = await openSocieties();
     fireEvent.change(within(other).getByLabelText(/^Price per unit/), { target: { value: '₹899' } });
     fireEvent.click(within(other).getByRole('button', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
 
@@ -227,7 +238,7 @@ describe('AdminServicesPage', () => {
     upsertOfferingMock.mockResolvedValue({ ...tank.offerings[0], enabled: false });
     renderPage();
 
-    const [green] = await screen.findAllByTestId('offering-control');
+    const [green] = await openSocieties();
     expect(within(green).getByLabelText(/^Price per unit/)).toHaveValue('799');
     fireEvent.click(within(green).getByRole('button', { name: `Stop offering Water Tank Cleaning in ${society.name}` }));
 
@@ -240,7 +251,7 @@ describe('AdminServicesPage', () => {
     fetchServicesMock.mockResolvedValue([tank]);
     renderPage();
 
-    const [, other] = await screen.findAllByTestId('offering-control');
+    const [, other] = await openSocieties();
     fireEvent.change(within(other).getByLabelText(/^Price per unit/), { target: { value: '12.50' } });
     fireEvent.click(within(other).getByRole('button', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
 
@@ -252,7 +263,7 @@ describe('AdminServicesPage', () => {
     fetchServicesMock.mockResolvedValue([{ ...tank, active: false }]);
     renderPage();
 
-    const [green, other] = await screen.findAllByTestId('offering-control');
+    const [green, other] = await openSocieties();
     expect(within(other).getByRole('button', { name: /^Offer / })).toBeDisabled();
     // ...but an existing offering can still be switched off.
     expect(within(green).getByRole('button', { name: /^Stop offering / })).toBeEnabled();
