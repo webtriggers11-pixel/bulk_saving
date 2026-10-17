@@ -5,7 +5,12 @@
  *
  * Re-running RESETS the demo: every round whose id starts with `demo_` is deleted
  * (cascading its participants, ratings and notifications) and recreated as written
- * here. Residents are upserted and never deleted. Dev only — refuses NODE_ENV=production.
+ * here, and its BullMQ close + reminder jobs are replaced — the app's schedulers keep
+ * a pending job as-is, so a stale one from a previous seed would close the fresh round
+ * at the OLD deadline. Residents are upserted and never deleted.
+ *
+ * Dev only: refuses NODE_ENV=production, and any DATABASE_URL that is not localhost
+ * unless ALLOW_DEMO_SEED=1 — it rewrites the role of whoever owns the demo phones.
  *
  * The rows obey the same rules RoundsService enforces (ADR-0010, ADR-0011, ADR-0012):
  * `unitsCount` is the sum of participant units, CLOSED_MET/EXPIRED follows the lowest
@@ -13,8 +18,19 @@
  * DELIVERED has none. Notifications are seeded SENT so the outbox never dispatches them.
  */
 import { NotificationType, PrismaClient, Role, RoundStatus } from '@prisma/client';
+import { Queue } from 'bullmq';
 
 const prisma = new PrismaClient();
+
+// Mirrors src/modules/rounds/round-closing.scheduler.ts and round-reminder.scheduler.ts
+// (this script compiles outside src/, so it cannot import them). Keep in step.
+const ROUND_CLOSING_QUEUE = 'round-closing';
+const ROUND_CLOSING_JOB = 'close-round';
+const ROUND_REMINDER_QUEUE = 'round-reminder';
+const ROUND_REMINDER_JOB = 'remind-round';
+const REMINDER_LEAD_MS = 24 * 60 * 60 * 1000;
+const reminderJobId = (roundId: string): string => `reminder-${roundId}`;
+const PENDING = ['delayed', 'waiting', 'active', 'prioritized'];
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -324,30 +340,108 @@ const BASE_AC_ROUND_PARTICIPANTS: ParticipantSeed[] = [
   { resident: 'rahul', units: 1 },
 ];
 
-/** The lifecycle notifications a round in `status` has already sent to each participant. */
+/**
+ * The lifecycle notifications a round in `status` has already sent to each participant.
+ * The "closing soon" reminder fires REMINDER_LEAD_MS before the deadline — so it has
+ * already gone out iff that instant is past and fell inside the round's window.
+ */
 function sentNotifications(r: RoundSeed): { type: NotificationType; sentAt: Date }[] {
   const closed = r.deadline;
+  const remindAt = new Date(r.deadline.getTime() - REMINDER_LEAD_MS);
+  const reminded = remindAt.getTime() <= now && remindAt > r.createdAt;
+  const reminder: { type: NotificationType; sentAt: Date }[] = reminded
+    ? [{ type: 'ROUND_CLOSING_SOON', sentAt: remindAt }]
+    : [];
   switch (r.status) {
+    case 'OPEN':
+      return reminder;
     case 'CLOSED_MET':
-      return [{ type: 'ROUND_CLOSED_MET', sentAt: closed }];
+      return [...reminder, { type: 'ROUND_CLOSED_MET', sentAt: closed }];
     case 'CLOSED_EXPIRED':
-      return [{ type: 'ROUND_CLOSED_EXPIRED', sentAt: closed }];
+      return [...reminder, { type: 'ROUND_CLOSED_EXPIRED', sentAt: closed }];
     case 'CANCELLED':
-      return [{ type: 'ROUND_CANCELLED', sentAt: closed }];
+      return [...reminder, { type: 'ROUND_CANCELLED', sentAt: closed }];
     case 'ASSIGNED':
       return [
+        ...reminder,
         { type: 'ROUND_CLOSED_MET', sentAt: closed },
         { type: 'ROUND_ASSIGNED', sentAt: r.assignedAt! },
       ];
     case 'DELIVERED':
     case 'RATED':
       return [
+        ...reminder,
         { type: 'ROUND_CLOSED_MET', sentAt: closed },
         { type: 'ROUND_ASSIGNED', sentAt: r.assignedAt! },
         { type: 'ROUND_DELIVERED', sentAt: r.deliveredAt! },
       ];
-    default:
-      return [];
+  }
+}
+
+/**
+ * Give an OPEN round a close job at its deadline and a reminder job at deadline − lead,
+ * with the same ids and options the app's schedulers use. With `replace`, any existing
+ * job is removed first (a demo round's old job carries the previous seed's deadline);
+ * without it, a pending job is kept — the schedulers' own rule, for rounds we don't own.
+ */
+async function scheduleJobs(
+  queues: { closing: Queue; reminder: Queue },
+  roundId: string,
+  deadline: Date,
+  replace: boolean,
+): Promise<void> {
+  const jobs = [
+    { queue: queues.closing, name: ROUND_CLOSING_JOB, id: roundId, attempts: 6, delay: deadline.getTime() - Date.now() },
+    { queue: queues.reminder, name: ROUND_REMINDER_JOB, id: reminderJobId(roundId), attempts: 3, delay: deadline.getTime() - REMINDER_LEAD_MS - Date.now() },
+  ];
+  for (const job of jobs) {
+    const existing = await job.queue.getJob(job.id);
+    if (existing) {
+      if (!replace && PENDING.includes(await existing.getState())) continue;
+      await existing.remove();
+    }
+    // Close jobs clamp to 0 (a past deadline closes now); a reminder whose instant has
+    // passed is not sent at all — RoundReminderScheduler.delayFor's rule.
+    if (job.name === ROUND_REMINDER_JOB && job.delay <= 0) continue;
+    await job.queue.add(
+      job.name,
+      { roundId },
+      {
+        jobId: job.id,
+        delay: Math.max(0, job.delay),
+        attempts: job.attempts,
+        backoff: { type: 'exponential', delay: 1_000 },
+        removeOnComplete: true,
+        removeOnFail: { age: 24 * 60 * 60 },
+      },
+    );
+  }
+}
+
+/** Remove a deleted demo round's jobs (best effort: a job mid-processing cannot be removed). */
+async function removeJobs(queues: { closing: Queue; reminder: Queue }, roundId: string): Promise<void> {
+  for (const [queue, id] of [[queues.closing, roundId], [queues.reminder, reminderJobId(roundId)]] as const) {
+    const job = await queue.getJob(id);
+    if (job) await job.remove().catch(() => undefined);
+  }
+}
+
+function assertLocalDatabase(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('seed-demo refuses to run with NODE_ENV=production.');
+  }
+  const url = process.env.DATABASE_URL ?? '';
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // Unparseable: treated as not-local.
+  }
+  if (!['localhost', '127.0.0.1', '::1'].includes(host) && process.env.ALLOW_DEMO_SEED !== '1') {
+    throw new Error(
+      `seed-demo only runs against a local database (DATABASE_URL host is "${host || 'unset'}"). ` +
+        'Set ALLOW_DEMO_SEED=1 to override — it promotes +919999900209 to SUPER_ADMIN.',
+    );
   }
 }
 
@@ -377,10 +471,24 @@ function checkRound(r: RoundSeed, unitsCount: number): void {
 }
 
 async function main(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('seed-demo refuses to run with NODE_ENV=production.');
-  }
+  assertLocalDatabase();
 
+  const connection = {
+    host: process.env.REDIS_HOST ?? 'localhost',
+    port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
+  };
+  const queues = {
+    closing: new Queue(ROUND_CLOSING_QUEUE, { connection }),
+    reminder: new Queue(ROUND_REMINDER_QUEUE, { connection }),
+  };
+  try {
+    await seed(queues);
+  } finally {
+    await Promise.all([queues.closing.close(), queues.reminder.close()]);
+  }
+}
+
+async function seed(queues: { closing: Queue; reminder: Queue }): Promise<void> {
   const societies = await prisma.society.findMany({ where: { inviteCode: { in: ['GREEN001', 'BLUE0002'] } } });
   const societyId = new Map(societies.map((s) => [s.inviteCode, s.id]));
   if (societyId.size !== 2) throw new Error('Base seed missing — run `pnpm --filter backend seed` first.');
@@ -405,7 +513,12 @@ async function main(): Promise<void> {
     await prisma.vendor.upsert({ where: { id: v.id }, create: { id: v.id, ...data }, update: data });
   }
 
-  // Reset: drop every demo round (cascades participants, ratings, notifications).
+  // Reset: drop every demo round (cascades participants, ratings, notifications) and
+  // its queued jobs — including demo ids no longer in ROUNDS.
+  const stale = await prisma.round.findMany({ where: { id: { startsWith: DEMO_PREFIX } }, select: { id: true } });
+  for (const id of new Set([...stale.map((r) => r.id), ...ROUNDS.map((r) => r.id)])) {
+    await removeJobs(queues, id);
+  }
   const { count: removed } = await prisma.round.deleteMany({ where: { id: { startsWith: DEMO_PREFIX } } });
 
   const created: string[] = [];
@@ -499,6 +612,9 @@ async function main(): Promise<void> {
         });
       }
     });
+    if (r.status === 'OPEN') {
+      await scheduleJobs(queues, r.id, r.deadline, true);
+    }
     created.push(`${r.society} ${r.status.padEnd(14)} ${r.service.padEnd(14)} ${unitsCount} units  (${r.id})`);
   }
 
@@ -512,15 +628,32 @@ async function main(): Promise<void> {
     await prisma.$transaction(async (tx) => {
       for (const p of BASE_AC_ROUND_PARTICIPANTS) {
         const rid = residentId.get(p.resident)!;
-        await tx.roundParticipant.upsert({
+        const participant = await tx.roundParticipant.upsert({
           where: { roundId_residentId: { roundId: baseAc.id, residentId: rid } },
           create: { roundId: baseAc.id, residentId: rid, units: p.units },
           update: { units: p.units },
+        });
+        const dedupeKey = `ROUND_JOINED:${participant.id}`;
+        await tx.notification.upsert({
+          where: { dedupeKey },
+          create: {
+            residentId: rid,
+            roundId: baseAc.id,
+            type: 'ROUND_JOINED',
+            status: 'SENT',
+            body: NOTIFICATION_BODY.ROUND_JOINED(ac.name),
+            dedupeKey,
+            attempts: 1,
+            sentAt: participant.createdAt,
+          },
+          update: {},
         });
       }
       const { _sum } = await tx.roundParticipant.aggregate({ where: { roundId: baseAc.id }, _sum: { units: true } });
       await tx.round.update({ where: { id: baseAc.id }, data: { unitsCount: _sum.units ?? 0 } });
     });
+    // Not our round, so a pending job is kept; this only fills in a missing one.
+    await scheduleJobs(queues, baseAc.id, baseAc.deadline, false);
   }
 
   console.log('Demo seed complete:');
