@@ -47,7 +47,7 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
         <p
           role="status"
           data-testid="pledge-paused"
-          className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+          className="flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
         >
           <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
@@ -56,7 +56,7 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
       {failed && !paused && (
         <p
           role="alert"
-          className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+          className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
         >
           <Icon name="alert" size={16} strokeWidth={2} />
           Couldn&apos;t update your pledge. Please try again.
@@ -304,7 +304,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
         </p>
       )}
 
-      <div className="mt-[17px] border-t border-shade/10 pt-[17px]">
+      <div className="mt-[17px] border-t border-line/10 pt-[17px]">
         <JoinControl round={round} />
       </div>
     </Card>

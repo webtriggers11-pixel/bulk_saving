@@ -292,4 +292,77 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     expect(ratio(p['--ink-soft'], WHITE)).toBeGreaterThanOrEqual(4.5);
     expect(ratio(p['--ink-soft'], p['--ground'])).toBeGreaterThanOrEqual(4.5);
   });
+  /**
+   * FEAT-016 (ADR-0028): every palette has a NIGHT, and the night is held to the same bar.
+   * At night the surfaces are `paper` (the night surface), not white, so that is the
+   * honest backdrop; state hues carry small text too, so they are checked as well.
+   */
+  const NIGHTS: Array<[string, string]> = [
+    ['teal', "html[data-scheme='dark']:not([data-theme='indigo']):not([data-theme='ember'])"],
+    ['indigo', "html[data-scheme='dark'][data-theme='indigo']"],
+    ['ember', "html[data-scheme='dark'][data-theme='ember']"],
+  ];
+  const sharedNight = () => palette("[data-scheme='dark'] {");
+
+  it.each(NIGHTS)('%s night: every ink clears 4.5:1 on its ground AND on its surface', (_name, selector) => {
+    const p = palette(selector);
+    for (const ink of ['--ink', '--ink-muted', '--ink-soft', '--brand-ink'] as const) {
+      expect(ratio(p[ink], p['--ground']), `${ink} on ground`).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(p[ink], p['--paper']), `${ink} on paper`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it.each(NIGHTS)('%s night: white on the accent fill still clears 4.5:1', (_name, selector) => {
+    const p = palette(selector);
+    expect(ratio(WHITE, p['--brand'])).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(WHITE, p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(NIGHTS)('%s night: the state hues (error, offline, delivered, booked) read on its surface', (_name, selector) => {
+    const p = { ...sharedNight(), ...palette(selector) };
+    for (const state of ['--state-red', '--state-amber', '--state-green', '--state-blue'] as const) {
+      expect(ratio(p[state], p['--paper']), `${state} on paper`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('every night declares the same tokens — a palette cannot forget part of its night', () => {
+    const names = NIGHTS.map(([, selector]) => Object.keys(palette(selector)).sort());
+    expect(names[1]).toEqual(names[0]);
+    expect(names[2]).toEqual(names[0]);
+    expect(names[0]).toEqual(expect.arrayContaining(['--ground', '--paper', '--ink', '--brand-ink', '--brand']));
+  });
+
+});
+
+describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () => {
+  /**
+   * `white` does not change at night. On a light surface that is a glowing rim on smoked
+   * glass, so light-surface overlays use `paper` (ADR-0028). `white` is kept ONLY on brand
+   * fills, which stay brand-coloured at night. This is the list; adding a file to it is a
+   * design decision, not a fix for a red test.
+   */
+  const ACCENT_FILL_FILES = [
+    'components/ui/button.tsx', // primary + on-accent variants
+    'components/ui/monogram.tsx',
+    'components/ui/stat.tsx', // the lead stat sits on the accent surface
+    'components/ui/switch.tsx', // the knob is white in both schemes, like iOS
+    'features/home/HomePage.tsx', // the hero card is the accent surface
+    'features/admin/AdminLayout.tsx', // the brand mark
+  ];
+
+  it('uses white utilities only in the accent-fill files', () => {
+    const offenders: string[] = [];
+    for (const file of appSources()) {
+      const rel = file.replace(/^.*\/src\//, '');
+      if (ACCENT_FILL_FILES.includes(rel)) continue;
+      const source = readFileSync(file, 'utf8');
+      for (const match of source.matchAll(/\b(?:bg|border|from|to|via|ring|divide|text)-white\b/g)) {
+        const line = source.slice(0, match.index ?? 0).split('\n').length;
+        const text = source.split('\n')[line - 1].trim();
+        if (text.startsWith('*') || text.startsWith('//')) continue;
+        offenders.push(`${rel}:${line} ${match[0]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });

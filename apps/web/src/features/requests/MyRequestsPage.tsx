@@ -79,7 +79,7 @@ function JourneyTrack({ step }: { step: number }) {
       {[1, 2, 3, 4].map((stop) => (
         <span
           key={stop}
-          className="h-[5px] flex-1 overflow-hidden rounded-full bg-shade/15 shadow-hairline"
+          className="h-[5px] flex-1 overflow-hidden rounded-full bg-line/15 shadow-hairline"
         >
           {stop <= step && (
             <span
@@ -111,7 +111,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
                   : 'bg-brand ring-brand/15',
           ].join(' ')}
         />
-        {!last && <span className="mt-1.5 w-0.5 flex-1 rounded-full bg-shade/10" />}
+        {!last && <span className="mt-1.5 w-0.5 flex-1 rounded-full bg-line/10" />}
       </div>
 
       <Card padding="none"

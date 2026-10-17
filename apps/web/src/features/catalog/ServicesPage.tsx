@@ -73,7 +73,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
       <div className="relative mt-[18px] flex items-center gap-2.5">
         {price && (
           <span
-            className="num inline-flex items-baseline gap-1.5 rounded-control border border-white/75 bg-gradient-to-br from-brand-light/30 to-brand/10 px-4 py-2.5 text-[19px] font-extrabold text-brand-ink shadow-hairline"
+            className="num inline-flex items-baseline gap-1.5 rounded-control border border-paper/75 bg-gradient-to-br from-brand-light/30 to-brand/10 px-4 py-2.5 text-[19px] font-extrabold text-brand-ink shadow-hairline"
             data-testid="service-price"
           >
             {/* One text run, for the same reason as PriceLine above. */}
@@ -85,7 +85,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
           resident reads the scope before the price means anything. */}
       {service.unitDescription?.trim() && (
         <p
-          className="relative mt-3.5 border-t border-shade/10 pt-3.5 text-micro text-ink-soft"
+          className="relative mt-3.5 border-t border-line/10 pt-3.5 text-micro text-ink-soft"
           data-testid="service-unit-scope"
         >
           {service.unitDescription}
@@ -99,7 +99,7 @@ function ServiceHero({ service }: { service: ServiceDto }) {
 function ServiceTile({ service }: { service: ServiceDto }) {
   return (
     <Card padding="none" surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
-      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
+      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
         <ServiceGlyph service={service} size={22} />
       </span>
       <CardEyebrow className="mt-3.5">{service.category}</CardEyebrow>
@@ -123,7 +123,7 @@ function ServiceRow({ service }: { service: ServiceDto }) {
       className="col-span-2 flex items-center gap-3.5 p-[17px]"
       data-testid="service-card"
     >
-      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-white/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
+      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
         <ServiceGlyph service={service} size={25} />
       </span>
       <div className="min-w-0 flex-1">

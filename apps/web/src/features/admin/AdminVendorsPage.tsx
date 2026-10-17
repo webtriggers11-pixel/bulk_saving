@@ -104,7 +104,7 @@ function AddVendorForm() {
           <p
             role="status"
             data-testid="vendor-create-offline"
-            className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+            className="flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
           >
             <Icon name="offline" size={16} strokeWidth={2} />
             {OFFLINE_QUEUED_TEXT}
@@ -113,7 +113,7 @@ function AddVendorForm() {
         {create.isError && (
           <p
             role="alert"
-            className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+            className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
           >
             <Icon name="alert" size={16} strokeWidth={2} />
             {errorMessage(create.error)}
@@ -221,7 +221,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
         <p
           role="status"
           data-testid="vendor-update-offline"
-          className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+          className="flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
         >
           <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
@@ -230,7 +230,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
         {update.isError && (
           <p
             role="alert"
-            className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+            className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
           >
             <Icon name="alert" size={16} strokeWidth={2} />
             {errorMessage(update.error)}
@@ -318,7 +318,7 @@ export function AdminVendorsPage() {
         {failed && (
           <div
             role="alert"
-            className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-white/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
+            className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-paper/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
           >
             <p className="flex gap-2.5 text-meta font-bold">
               <Icon name="alert" size={18} strokeWidth={2} />

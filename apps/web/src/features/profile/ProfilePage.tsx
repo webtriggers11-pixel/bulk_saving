@@ -32,7 +32,7 @@ function Tile({
 }) {
   return (
     <Card padding="none" surface="solid" className="flex min-h-[134px] flex-col p-[18px]">
-      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
         <Icon name={icon} size={20} strokeWidth={1.8} />
       </span>
       <p className="mt-auto pt-3.5 term-label">
@@ -106,7 +106,7 @@ export function ProfilePage() {
 
         <Card padding="none" surface="tint" className="col-span-2 p-[22px]">
           <div className="flex items-start gap-4">
-            <span className="animate-breathe flex h-12 w-12 shrink-0 items-center justify-center rounded-inset border border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift">
+            <span className="animate-breathe flex h-12 w-12 shrink-0 items-center justify-center rounded-inset border border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift">
               <Icon name="install" size={23} strokeWidth={1.8} />
             </span>
             <div className="min-w-0 flex-1">
@@ -131,7 +131,7 @@ export function ProfilePage() {
               )}
               <p
                 className={[
-                  'mt-3.5 inline-flex items-center gap-2 rounded-full border border-white/70 px-3 py-1.5 text-micro font-extrabold',
+                  'mt-3.5 inline-flex items-center gap-2 rounded-full border border-paper/70 px-3 py-1.5 text-micro font-extrabold',
                   online ? 'bg-success-ink/15 text-success-ink' : 'bg-amber-ink/15 text-amber-ink',
                 ].join(' ')}
                 data-testid="connection-state"

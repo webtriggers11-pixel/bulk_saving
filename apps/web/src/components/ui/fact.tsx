@@ -37,7 +37,7 @@ export function Fact({ term, value, children, variant = 'tile', testId, classNam
     return (
       <div
         className={cn(
-          'row-hover t -mx-2.5 flex items-center justify-between gap-3 rounded-chip border-t border-shade/10 px-2.5 py-3',
+          'row-hover t -mx-2.5 flex items-center justify-between gap-3 rounded-chip border-t border-line/10 px-2.5 py-3',
           className,
         )}
       >

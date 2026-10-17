@@ -38,8 +38,13 @@ export default {
         success: { ink: rgb('--state-green') },
         info: { ink: rgb('--state-blue') },
         star: rgb('--star'),
-        // The tint every shadow and hairline is mixed from.
+        // The tint every SHADOW is mixed from (stays dark at night).
         shade: rgb('--shadow-rgb'),
+        // FEAT-016 (ADR-0028): hairlines and neutral washes — the shadow tint by day,
+        // light at night; what a light surface is made of; text on a brand fill.
+        line: rgb('--line'),
+        paper: rgb('--paper'),
+        'on-fill': rgb('--on-fill'),
         // The three ambient washes behind the glass — per palette, so the ground
         // shifts with the theme instead of staying teal under an indigo app.
         mesh: {
@@ -88,12 +93,12 @@ export default {
         accent:
           '0 1px 0 rgb(255 255 255 / 0.34) inset, 0 12px 26px -12px rgb(var(--shadow-rgb) / 0.9)',
         control:
-          '0 1px 0 rgb(255 255 255 / 0.9) inset, 0 10px 22px -16px rgb(var(--shadow-rgb) / 0.55)',
-        field: '0 1px 2px rgb(var(--shadow-rgb) / 0.06) inset, 0 1px 0 rgb(255 255 255 / 0.7)',
+          '0 1px 0 var(--edge-strong) inset, 0 10px 22px -16px rgb(var(--shadow-rgb) / 0.55)',
+        field: '0 1px 2px rgb(var(--shadow-rgb) / 0.06) inset, 0 1px 0 var(--edge)',
         ring: '0 0 0 5px rgb(var(--brand) / 0.17)',
         focus: '0 0 0 4px rgb(var(--brand) / 0.28)',
-        sheet: '0 -1px 0 rgb(255 255 255 / 0.9) inset, 0 -30px 64px -30px rgb(var(--shadow-rgb) / 0.6)',
-        nav: '0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -16px 38px -24px rgb(var(--shadow-rgb) / 0.55)',
+        sheet: '0 -1px 0 var(--edge-strong) inset, 0 -30px 64px -30px rgb(var(--shadow-rgb) / 0.6)',
+        nav: '0 1px 0 var(--edge-strong) inset, 0 -16px 38px -24px rgb(var(--shadow-rgb) / 0.55)',
         glow: '0 4px 14px -3px rgb(var(--brand) / 0.9)',
       },
       blur: {

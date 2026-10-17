@@ -59,7 +59,7 @@ export function CrashCard({ onRetry }: { onRetry: () => void }) {
   return (
     <div
       role="alert"
-      className="animate-rise flex flex-col items-start gap-3 rounded-card border border-white/55 bg-danger-ink/10 px-5 py-5 text-danger-ink shadow-hairline"
+      className="animate-rise flex flex-col items-start gap-3 rounded-card border border-paper/55 bg-danger-ink/10 px-5 py-5 text-danger-ink shadow-hairline"
     >
       <p className="flex items-center gap-2.5 text-body font-extrabold">
         <Icon name="alert" size={20} strokeWidth={2} />

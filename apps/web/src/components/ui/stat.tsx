@@ -63,7 +63,7 @@ export function StatCard({
         lead && 'sheen overflow-hidden',
         // An "act on me" tile is amber, and only when it actually holds something:
         // a highlighted zero is noise, and noise is how a dashboard stops being read.
-        alert && 'border-white/60 bg-gradient-to-br from-amber-ink/20 to-amber-ink/5 shadow-lift',
+        alert && 'border-paper/60 bg-gradient-to-br from-amber-ink/20 to-amber-ink/5 shadow-lift',
         className,
       )}
       data-testid={testId}
@@ -74,7 +74,7 @@ export function StatCard({
             'flex h-11 w-11 items-center justify-center rounded-control border',
             lead
               ? 'border-white/40 bg-white/20 text-white'
-              : 'border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift',
+              : 'border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift',
           )}
         >
           <Icon name={icon} size={21} strokeWidth={1.8} />

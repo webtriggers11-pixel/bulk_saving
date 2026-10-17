@@ -17,8 +17,8 @@ interface ToastProps {
 }
 
 const TONES: Record<ToastTone, string> = {
-  slate: 'bg-ink text-white',
-  amber: 'bg-ink text-white ring-1 ring-amber-ink/40',
+  slate: 'bg-ink text-paper',
+  amber: 'bg-ink text-paper ring-1 ring-amber-ink/40',
 };
 
 /**
@@ -71,7 +71,7 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
           aria-label="Dismiss"
           // 44×44: the dismiss target was 32px, which the floor forbids — the glyph
           // stays small, the target does not (found by the strengthened AC6 test).
-          className="t press -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-chip border border-white/15 bg-white/10 opacity-80 hover:opacity-100"
+          className="t press -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-chip border border-paper/15 bg-paper/10 opacity-80 hover:opacity-100"
         >
           <Icon name="close" size={15} strokeWidth={2.2} />
         </button>

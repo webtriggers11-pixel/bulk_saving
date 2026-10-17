@@ -42,7 +42,7 @@ export function AdminLayout({
     <div className="relative min-h-screen">
       <AmbientGround id="admin-grain" />
 
-      <header className="sticky top-0 z-20 border-b border-white/80 bg-gradient-to-b from-white/70 to-white/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200">
+      <header className="sticky top-0 z-20 border-b border-paper/80 bg-gradient-to-b from-paper/70 to-paper/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
           <span className="flex items-center gap-2.5">
             <span className="animate-breathe flex h-9 w-9 items-center justify-center rounded-chip paint-mono text-white shadow-accent">
@@ -62,8 +62,8 @@ export function AdminLayout({
                   cn(
                     'group t press flex min-h-11 items-center gap-2 rounded-control border px-3.5 text-meta font-bold no-underline',
                     isActive && item.to !== '/'
-                      ? 'border-white/70 bg-gradient-to-br from-brand-light/35 to-brand/15 text-brand-ink shadow-lift'
-                      : 'border-transparent text-ink-muted hover:bg-white/60',
+                      ? 'border-paper/70 bg-gradient-to-br from-brand-light/35 to-brand/15 text-brand-ink shadow-lift'
+                      : 'border-transparent text-ink-muted hover:bg-paper/60',
                   )
                 }
               >

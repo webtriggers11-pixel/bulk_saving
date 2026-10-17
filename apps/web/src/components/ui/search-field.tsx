@@ -64,7 +64,7 @@ export function SearchField({ value, onChange, label, placeholder, maxLength, cl
           // the button half its height (FEAT-015 browser pass). The pop is on the disc.
           className="group press absolute inset-y-0 right-0.5 my-auto flex h-touch w-touch items-center justify-center rounded-full focus-visible:outline-none"
         >
-          <span className="animate-pop flex size-7 items-center justify-center rounded-full bg-shade/10 text-ink-muted t group-hover:bg-shade/20 group-hover:text-ink group-focus-visible:shadow-focus">
+          <span className="animate-pop flex size-7 items-center justify-center rounded-full bg-line/10 text-ink-muted t group-hover:bg-line/20 group-hover:text-ink group-focus-visible:shadow-focus">
             <Icon name="close" size={14} strokeWidth={2.4} />
           </span>
         </button>

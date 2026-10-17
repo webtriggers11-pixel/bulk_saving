@@ -35,9 +35,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { size?: ButtonSize
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'paint-brand text-white border border-white/20 shadow-accent sweep ripple',
   secondary:
-    'paint-glass text-ink border border-white/70 shadow-control sweep ripple',
+    'paint-glass text-ink border border-paper/70 shadow-control sweep ripple',
   outline: 'paint-tint text-brand-ink border border-brand/30 ripple',
-  ghost: 'border border-transparent text-ink-muted hover:bg-white/60',
+  ghost: 'border border-transparent text-ink-muted hover:bg-paper/60',
   danger: 'paint-danger text-danger-ink border border-danger-ink/20 ripple',
   link: 'h-auto border-none px-0 text-brand-ink underline decoration-[1.5px] underline-offset-4 hover:text-brand',
 };

@@ -203,7 +203,7 @@ function AssignForm({
         {assign.isPaused ? OFFLINE_WAITING_LABEL : assign.isPending ? 'Assigning…' : 'Assign vendor'}
       </Button>
       {assign.isError && (
-        <p role="alert" className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+        <p role="alert" className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           {errorMessage(assign.error)}
         </p>
       )}
@@ -256,7 +256,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
         {canCancel &&
           (confirmingCancel ? (
             <div
-              className="flex flex-col gap-3 rounded-inset border border-white/55 bg-danger-ink/10 p-4 shadow-hairline"
+              className="flex flex-col gap-3 rounded-inset border border-paper/55 bg-danger-ink/10 p-4 shadow-hairline"
               data-testid="cancel-confirm"
             >
               <p className="text-meta font-bold text-danger-ink">
@@ -337,7 +337,7 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
                 {payable && <th className="py-2">Payment</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-shade/10">
+            <tbody className="divide-y divide-line/10">
               {round.participants.map((participant) => {
                 const name = participant.resident.name ?? 'Resident';
                 return (
@@ -406,12 +406,12 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
       )}
 
       {payment.isPaused && (
-        <p role="status" data-testid="payment-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+        <p role="status" data-testid="payment-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {payment.isError && (
-        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           {errorMessage(payment.error)}
         </p>
       )}

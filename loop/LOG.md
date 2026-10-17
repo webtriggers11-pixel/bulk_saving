@@ -854,3 +854,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **V3 doubled as CHORE-021's verification:** three back-to-back gate runs on Node v24.22.0 — exit 0 all three, identical: backend 396/396, web 382/382. No segfault. `.nvmrc` pins 24.22.0; machine default left at 24.6.0 for the owner.
 - Closed: BUG-010, CHORE-010, CHORE-011, CHORE-012, CHORE-013, CHORE-015, CHORE-016, CHORE-017, CHORE-019, CHORE-021. Open: CHORE-022 (owner decision).
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)
+
+## 2026-10-18 — FEAT-016 — OPENED: dark mode with a Telegram-style switch, sheets, native chrome
+- Owner: "better UI/UX, dark mode light mode similar to telegram effect and much more like using sheets … premium phone app look". Identity kept (ADR-0021); this makes it behave like a native app and gives it a night. ADR-0028: `data-scheme` orthogonal to palettes (3×2); a `paper` token for light-surface overlays (~100 `white/NN` uses) while `white` stays on brand fills; preference light/dark/system applied before paint; circular reveal via View Transitions; one dependency-free Sheet primitive.
+- By: agent (autonomous)

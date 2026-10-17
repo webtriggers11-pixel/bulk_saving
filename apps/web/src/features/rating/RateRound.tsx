@@ -89,7 +89,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
 
   if (!open) {
     return (
-      <div className="mt-4 border-t border-shade/10 pt-4" data-testid="rating-saved">
+      <div className="mt-4 border-t border-line/10 pt-4" data-testid="rating-saved">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="term-label">Your rating</p>
@@ -142,13 +142,13 @@ export function RateRound({ round }: { round: MyRoundDto }) {
           </p>
         )}
         {queuedOffline && (
-          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
             <Icon name="offline" size={16} strokeWidth={2} />
             {OFFLINE_QUEUED_TEXT}
           </p>
         )}
         {error && (
-          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
             <Icon name="alert" size={16} strokeWidth={2} />
             {ratingErrorMessage(error)}
           </p>
@@ -158,7 +158,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
   }
 
   return (
-    <form onSubmit={submit} className="field mt-4 border-t border-shade/10 pt-4" noValidate>
+    <form onSubmit={submit} className="field mt-4 border-t border-line/10 pt-4" noValidate>
       <p className="text-[14px] font-extrabold text-ink">
         {saved ? 'Change your rating' : 'How did it go?'}
       </p>
@@ -181,17 +181,17 @@ export function RateRound({ round }: { round: MyRoundDto }) {
         disabled={busy}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Anything the next resident should know?"
-        className="mt-1 w-full rounded-control border border-white/70 paint-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
+        className="mt-1 w-full rounded-control border border-paper/70 paint-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
       />
 
       {queuedOffline && (
-        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
           <Icon name="offline" size={16} strokeWidth={2} />
           {OFFLINE_QUEUED_TEXT}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
           <Icon name="alert" size={16} strokeWidth={2} />
           {ratingErrorMessage(error)}
         </p>

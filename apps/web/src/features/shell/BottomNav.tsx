@@ -23,7 +23,7 @@ export function BottomNav() {
     <nav
       aria-label="Main"
       data-testid="bottom-nav"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-white/80 bg-gradient-to-b from-white/60 to-white/95 px-2.5 pb-[env(safe-area-inset-bottom)] pt-2 shadow-nav backdrop-blur-chrome backdrop-saturate-200"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-paper/80 bg-gradient-to-b from-paper/60 to-paper/95 px-2.5 pb-[env(safe-area-inset-bottom)] pt-2 shadow-nav backdrop-blur-chrome backdrop-saturate-200"
     >
       <ul className="mx-auto flex max-w-md items-stretch gap-1">
         {TABS.map((tab) => (
@@ -44,7 +44,7 @@ export function BottomNav() {
                       'flex h-[30px] w-11 items-center justify-center rounded-chip border t',
                       'group-hover:-translate-y-0.5 group-active:scale-90',
                       isActive
-                        ? 'border-white/70 bg-gradient-to-br from-brand-light/35 to-brand/15 shadow-lift'
+                        ? 'border-paper/70 bg-gradient-to-br from-brand-light/35 to-brand/15 shadow-lift'
                         : 'border-transparent',
                     ].join(' ')}
                   >

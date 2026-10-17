@@ -177,6 +177,7 @@ const NO_CLASSNAME: Record<string, string> = {
   AmbientGround: 'decorative, fixed-position; takes only an id',
   Toast: 'rendered by the toast host, never written by a caller with classes',
   SavedTick: 'a fixed confirmation chip; placement is its parent\'s job',
+  Sheet: 'a portal-rendered modal; its content brings its own layout',
 };
 
 /**

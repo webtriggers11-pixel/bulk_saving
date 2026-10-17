@@ -76,7 +76,7 @@ export function OnboardingPage() {
       <AmbientGround id="onboard-grain" />
 
       <header className="animate-rise relative flex flex-1 flex-col justify-center gap-[18px] px-7 pb-6 pt-10">
-        <span className="animate-breathe inline-flex w-fit items-center gap-2 rounded-full border border-white/80 bg-gradient-to-br from-white/90 to-white/50 px-3.5 py-1.5 text-eyebrow uppercase text-brand-ink shadow-lift">
+        <span className="animate-breathe inline-flex w-fit items-center gap-2 rounded-full border border-paper/80 bg-gradient-to-br from-paper/90 to-paper/50 px-3.5 py-1.5 text-eyebrow uppercase text-brand-ink shadow-lift">
           <Icon name="users" size={13} strokeWidth={2.2} />
           Society group buys
         </span>
@@ -93,7 +93,7 @@ export function OnboardingPage() {
             <li
               key={label}
               className={[
-                'h-1.5 overflow-hidden rounded-full bg-shade/15 t',
+                'h-1.5 overflow-hidden rounded-full bg-line/15 t',
                 index === stepIndex ? 'w-[52px]' : 'w-[34px]',
               ].join(' ')}
             >
@@ -107,8 +107,8 @@ export function OnboardingPage() {
 
       {/* The form lives in a bottom sheet: thumb-reachable on a phone, and it keeps
           the brand in view while a resident types an OTP. */}
-      <section className="animate-rise relative rounded-t-sheet border-t border-white/95 bg-gradient-to-b from-white/95 to-white/75 px-6 pb-8 pt-7 shadow-sheet backdrop-blur-chrome backdrop-saturate-[1.9] [animation-delay:140ms]">
-        <span aria-hidden="true" className="mx-auto mb-6 block h-[5px] w-11 rounded-full bg-shade/20" />
+      <section className="animate-rise relative rounded-t-sheet border-t border-paper/95 bg-gradient-to-b from-paper/95 to-paper/75 px-6 pb-8 pt-7 shadow-sheet backdrop-blur-chrome backdrop-saturate-[1.9] [animation-delay:140ms]">
+        <span aria-hidden="true" className="mx-auto mb-6 block h-[5px] w-11 rounded-full bg-line/20" />
         {step === 'invite' && (
           <form onSubmit={submitInvite} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">Enter your invite code</h2>

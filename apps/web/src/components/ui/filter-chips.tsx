@@ -97,8 +97,8 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
               'chip min-h-touch shrink-0 whitespace-nowrap rounded-full border px-4 text-meta font-bold',
               'focus-visible:shadow-focus focus-visible:outline-none',
               checked
-                ? 'border-transparent bg-ink text-white shadow-glow'
-                : 'border-shade/15 bg-white/60 text-ink-muted hover:bg-white hover:text-ink',
+                ? 'border-transparent bg-ink text-paper shadow-glow'
+                : 'border-line/15 bg-paper/60 text-ink-muted hover:bg-paper hover:text-ink',
             )}
           >
             {option.label}

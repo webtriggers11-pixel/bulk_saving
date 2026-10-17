@@ -107,7 +107,7 @@ export function HomePage() {
           </Card>
 
           <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[19px]">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/90 bg-gradient-to-br from-white/95 to-white/55 text-brand-ink shadow-lift">
+            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift">
               <Icon name="building" size={22} strokeWidth={1.8} />
             </span>
             <CardEyebrow className="mt-auto pt-4">Your society</CardEyebrow>
@@ -120,7 +120,7 @@ export function HomePage() {
           </Card>
 
           <Card padding="none" className="flex min-h-[168px] flex-col p-[19px]">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
               <Icon name="users" size={22} strokeWidth={1.8} />
             </span>
             <button
@@ -143,7 +143,7 @@ export function HomePage() {
             // Solid, not glass: a super-admin would otherwise carry a fourth
             // blurred surface on this screen (V2 round 2, P2-3).
             <Card padding="none" surface="solid" className="col-span-2 flex items-center gap-4 p-[19px]">
-              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-white/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
                 <Icon name="check" size={22} strokeWidth={1.9} />
               </span>
               <div className="min-w-0 flex-1">

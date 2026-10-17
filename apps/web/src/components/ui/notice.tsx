@@ -30,7 +30,7 @@ export function Notice({ tone, children, className, ...rest }: NoticeProps) {
     <p
       role={role}
       className={cn(
-        'animate-rise mt-3 flex items-center gap-2 rounded-chip border border-white/55 px-3 py-2 text-meta font-bold',
+        'animate-rise mt-3 flex items-center gap-2 rounded-chip border border-paper/55 px-3 py-2 text-meta font-bold',
         surface,
         className,
       )}

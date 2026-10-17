@@ -245,7 +245,7 @@ export function AdminNewRoundPage() {
             {formError && (
               <p
                 role="alert"
-                className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+                className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
               >
                 {formError}
               </p>
@@ -253,7 +253,7 @@ export function AdminNewRoundPage() {
             {create.isError && (
               <p
                 role="alert"
-                className="flex items-center gap-2 rounded-chip border border-white/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
+                className="flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink"
               >
                 {errorMessage(create.error)}
               </p>
@@ -263,7 +263,7 @@ export function AdminNewRoundPage() {
               <p
                 role="status"
                 data-testid="new-round-offline"
-                className="flex items-center gap-2 rounded-chip border border-white/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
+                className="flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink"
               >
                 {OFFLINE_QUEUED_TEXT}
               </p>

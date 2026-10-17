@@ -43,7 +43,7 @@ const INPUT_TEXT = {
  * className (and which BUG-007 is the standing reminder not to do).
  */
 const INPUT_EMPHASIS = {
-  normal: 'border-shade/15 shadow-field',
+  normal: 'border-line/15 shadow-field',
   primary: 'border-brand/45 shadow-ring',
 } as const;
 

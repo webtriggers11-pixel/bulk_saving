@@ -34,7 +34,7 @@ function PanelError({ subject, onRetry }: { subject: string; onRetry: () => void
   return (
     <div
       role="alert"
-      className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-white/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
+      className="animate-rise flex flex-col items-start gap-3 rounded-inset border border-paper/55 bg-danger-ink/10 px-4 py-4 text-danger-ink shadow-hairline"
     >
       <p className="flex gap-2.5 text-meta font-bold">
         <Icon name="alert" size={18} strokeWidth={2} />

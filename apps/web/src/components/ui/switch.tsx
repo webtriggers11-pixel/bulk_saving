@@ -49,7 +49,7 @@ export function Switch({ checked, onChange, label, disabled, busy, text, classNa
         className={cn(
           'switch-track relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1',
           'group-focus-visible:shadow-focus',
-          checked ? 'bg-brand shadow-glow' : 'bg-shade/20',
+          checked ? 'bg-brand shadow-glow' : 'bg-line/20',
         )}
       >
         <span className="switch-knob block h-5 w-5 rounded-full bg-white shadow-field" />
