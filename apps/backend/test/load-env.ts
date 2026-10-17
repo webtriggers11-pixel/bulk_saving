@@ -32,6 +32,14 @@ process.env.NODE_ENV = 'test';
 process.env.OTP_DEV_LOG = 'false';
 
 /**
+ * The suite's queues live under their own BullMQ prefix (CHORE-017). A dev server
+ * (`nest start --watch`) on the same Redis consumes every queue it knows under the
+ * default `bull` prefix — including the suite's OTP sends and notifications — so tests
+ * waiting on a capturing channel waited for a job another process had already taken.
+ */
+process.env.BULLMQ_PREFIX = 'bull-test';
+
+/**
  * Test-only fixtures. Guarantee the vars that boot-time validation (and the auth
  * services) require are present even when no .env file exists (e.g. CI), so
  * integration tests can boot. These are throwaway test values, never real secrets.

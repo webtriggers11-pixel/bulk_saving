@@ -25,7 +25,8 @@ describe('BullMQ demo queue (integration, needs Redis)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
-        BullModule.forRoot({ connection }),
+        // The suite's own prefix, so a dev server on this Redis cannot take the job.
+        BullModule.forRoot({ connection, prefix: process.env.BULLMQ_PREFIX }),
         QueueModule,
       ],
     }).compile();
@@ -34,7 +35,7 @@ describe('BullMQ demo queue (integration, needs Redis)', () => {
     configureApp(app);
     await app.init();
 
-    queueEvents = new QueueEvents(DEMO_QUEUE, { connection });
+    queueEvents = new QueueEvents(DEMO_QUEUE, { connection, prefix: process.env.BULLMQ_PREFIX });
     await queueEvents.waitUntilReady();
   });
 

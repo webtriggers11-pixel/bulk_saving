@@ -91,6 +91,8 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
         host: process.env.REDIS_HOST ?? 'localhost',
         port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
       },
+      // Listen where the suite's jobs are (test/load-env.ts, CHORE-017).
+      prefix: process.env.BULLMQ_PREFIX,
     });
     await queueEvents.waitUntilReady();
 

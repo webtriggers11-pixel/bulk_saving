@@ -66,6 +66,12 @@ That ends exactly one session, and takes effect within one `JWT_ACCESS_TTL_SECON
 screen yet; for a lost or shared **admin** device this command is the whole recovery
 procedure.
 
+`TRUST_PROXY` **must be set when the API sits behind a reverse proxy** (Caddy, nginx, a
+platform load balancer): the number of proxies in front of it (`1` for one), or their
+addresses (`loopback, 10.0.0.0/8`). The OTP budgets are per client (ADR-0027) and so is
+the global throttler; without it, every caller looks like the proxy and shares one budget.
+`true` is refused at boot — it would let any client name its own address.
+
 `VITE_API_URL` is baked into the PWA at **build** time, so changing it means rebuilding the
 web image.
 

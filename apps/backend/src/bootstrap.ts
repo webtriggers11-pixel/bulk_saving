@@ -93,6 +93,27 @@ export function buildCorsOptions(env: NodeJS.ProcessEnv = process.env): CorsOpti
 }
 
 /**
+ * Express's `trust proxy`, from `TRUST_PROXY` (CHORE-016, ADR-0027). Behind a reverse
+ * proxy every request arrives from the proxy's address, so per-client limits — the OTP
+ * budgets and the global throttler — would see one client. Set it to the number of
+ * proxies in front of the API (`1` for a single Caddy/nginx), or to a list of their
+ * addresses. Unset: the socket address, which is right when nothing is in front.
+ *
+ * `true` (trust EVERY hop) is refused: it lets any client name its own address in
+ * X-Forwarded-For and walk past every per-client limit.
+ */
+export function trustProxyFrom(env: NodeJS.ProcessEnv = process.env): number | string | undefined {
+  const raw = env.TRUST_PROXY?.trim();
+  if (!raw || raw === 'false' || raw === '0') {
+    return undefined;
+  }
+  if (raw === 'true') {
+    throw new Error('TRUST_PROXY=true would trust a client-supplied X-Forwarded-For; set a hop count or proxy addresses.');
+  }
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
+}
+
+/**
  * The ONE place that applies the app's global wiring. `main.ts` and every test
  * that boots an app call this, so runtime and test behaviour can never drift
  * (BUG-003: they had, and the drift hid the missing CORS config from the suite).
@@ -103,6 +124,10 @@ export function configureApp(app: INestApplication): INestApplication {
   // off: this process serves JSON only, never HTML, so a CSP here protects nothing and
   // would only be a second place to keep in step with the PWA's own headers.
   app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+  const trustProxy = trustProxyFrom();
+  if (trustProxy !== undefined) {
+    (app.getHttpAdapter().getInstance() as { set(name: string, value: unknown): void }).set('trust proxy', trustProxy);
+  }
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());

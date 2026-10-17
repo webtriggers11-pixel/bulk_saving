@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
+  Ip,
   Post,
   UnauthorizedException,
   UseGuards,
@@ -44,7 +45,7 @@ export class AuthController {
 
   @Post('auth/otp/request')
   @HttpCode(HttpStatus.OK)
-  async requestOtp(@Body() dto: OtpRequestDto): Promise<OtpRequestResponse> {
+  async requestOtp(@Body() dto: OtpRequestDto, @Ip() clientIp: string): Promise<OtpRequestResponse> {
     const society = await this.societies.findByInviteCode(dto.inviteCode);
     if (!society) {
       // No OTP is generated or sent for an unknown invite code.
@@ -54,7 +55,7 @@ export class AuthController {
       });
     }
     // societyId is derived from the invite code, never from the request body.
-    const outcome = await this.otp.request(society.id, dto.phone);
+    const outcome = await this.otp.request(society.id, dto.phone, { clientIp });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
         { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
@@ -111,20 +112,20 @@ export class AuthController {
    */
   @Post('auth/admin/otp/request')
   @HttpCode(HttpStatus.OK)
-  async requestAdminOtp(@Body() dto: AdminOtpRequestDto): Promise<OtpRequestResponse> {
-    const admin = await this.residents.findAdminByPhone(dto.phone);
+  async requestAdminOtp(@Body() dto: AdminOtpRequestDto, @Ip() clientIp: string): Promise<OtpRequestResponse> {
     // EVERY caller takes the same path: same scope, same rate-limit keys, same stored
-    // OTP. Two leaks were closed here, in that order:
+    // OTP, and the same queued job. Leaks closed here, in order:
     //  - Returning early for a non-admin left the limiter untouched for them, so two
     //    requests 30s apart answered 200/429 for an administrator and 200/200 for
     //    everyone else — an oracle built by the branch meant to prevent one (V2 P1-1).
-    //  - Awaiting the send put an SMS provider's round-trip (100–500ms) inside an
-    //    administrator's response and nobody else's, which is the same oracle measured
-    //    with a stopwatch instead (V2 round 2, P1-A). Hence 'detached', not 'awaited':
-    //    the response is uniform by design, so the send's outcome could never have
-    //    reached the caller anyway — awaiting it only leaked the timing.
+    //  - Awaiting the send put the provider's round-trip inside an administrator's
+    //    response (V2 round 2), its synchronous prefix and throws followed (round 3).
+    //  - CHORE-017 (ADR-0027): this request no longer asks whether the number is an
+    //    administrator AT ALL. It queues the code for everyone; the worker asks, after
+    //    the response has gone. Nothing role-dependent is left on the request path.
     const outcome = await this.otp.request(ADMIN_OTP_SCOPE, dto.phone, {
-      dispatch: admin !== null ? 'detached' : 'suppressed',
+      dispatch: 'queued',
+      clientIp,
     });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(

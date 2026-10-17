@@ -34,6 +34,11 @@ import { RedisModule } from './redis/redis.module';
         host: process.env.REDIS_HOST ?? 'localhost',
         port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
       },
+      // CHORE-017: a key namespace for every queue. The test suite pins its own
+      // (test/load-env.ts), because a dev server running against the same Redis was
+      // consuming the suite's jobs — sending its OTPs through the dev stub, so the
+      // test's channel never saw them. Unset in dev and production: BullMQ's `bull`.
+      ...(process.env.BULLMQ_PREFIX ? { prefix: process.env.BULLMQ_PREFIX } : {}),
     }),
     PrismaModule,
     RedisModule,

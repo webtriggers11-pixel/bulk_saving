@@ -1,10 +1,19 @@
 import { createHmac, randomInt } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import type { Queue } from 'bullmq';
 import { RedisService } from '../../redis/redis.service';
 import {
   NOTIFICATION_CHANNEL,
   type NotificationChannel,
 } from '../notifications/notification-channel';
+import { sealOtp } from './otp-seal';
+import {
+  OTP_SEND_ATTEMPTS,
+  OTP_SEND_JOB,
+  OTP_SEND_QUEUE,
+  type OtpSendJobData,
+} from './otp-send.processor';
 
 /** Result of requesting an OTP. */
 export type OtpRequestResult = 'SENT' | 'RATE_LIMITED';
@@ -53,9 +62,42 @@ export type OtpVerifyResult = 'OK' | 'INVALID' | 'EXPIRED' | 'LOCKED';
 /** OTP policy (ADR-0007 · spec resolved decisions). */
 export const OTP_TTL_SECONDS = 5 * 60; // 5-min TTL
 export const OTP_MAX_ATTEMPTS = 5; // lock after 5 failed verify attempts
-export const OTP_RESEND_MIN_INTERVAL_SECONDS = 30; // max 1 / 30s
-export const OTP_RESEND_HOURLY_MAX = 5; // max 5 / hour
+export const OTP_RESEND_MIN_INTERVAL_SECONDS = 30; // max 1 / 30s, per (phone, client)
+export const OTP_RESEND_HOURLY_MAX = 5; // max 5 / hour, per (phone, client)
+/**
+ * Max codes per phone per hour across ALL clients (CHORE-016, ADR-0027). The per-client
+ * budgets above stop one machine locking an owner out; this caps what rotating clients
+ * can buy — SMS cost, and the number of codes a brute-forcer gets to guess against.
+ */
+export const OTP_RESEND_PHONE_HOURLY_MAX = 10;
 const OTP_RESEND_HOUR_SECONDS = 60 * 60;
+
+/**
+ * The rate-limit bucket for a client address (CHORE-016). IPv4 as is (an IPv4-mapped
+ * IPv6 address is the IPv4 address); IPv6 by its /64, because a single subscriber is
+ * routinely handed a whole /64 and can rotate within it for free. A missing address —
+ * no socket, or a misconfigured proxy — falls into one shared bucket, which degrades to
+ * the old per-phone behaviour rather than to no limit at all.
+ */
+export function ipBucket(ip: string | undefined): string {
+  const raw = (ip ?? '').trim().toLowerCase();
+  if (raw === '') {
+    return 'unknown';
+  }
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(raw);
+  if (mapped) {
+    return mapped[1];
+  }
+  if (!raw.includes(':')) {
+    return raw;
+  }
+  // Expand `::` so the first four hextets are the /64.
+  const [head, tail = ''] = raw.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const full = [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right];
+  return `${full.slice(0, 4).map((h) => h.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
 
 /**
  * Atomic hourly-resend counter: INCR, and set the TTL only on the first hit —
@@ -103,29 +145,35 @@ return 'INVALID'`;
  * - Only a keyed HASH of the code is stored — the raw code is never persisted,
  *   returned, or logged.
  * - Verify attempts are capped ({@link OTP_MAX_ATTEMPTS}) then the OTP is locked.
- * - Resend is rate-limited via atomic Redis counters (per scope+phone).
+ * - Resend is rate-limited via atomic Redis counters: per scope+phone+client, under a
+ *   per scope+phone ceiling (CHORE-016, ADR-0027).
  * - The scope always comes from the caller's authenticated/invite context, or is a
  *   fixed server constant ({@link ADMIN_OTP_SCOPE}) — never raw client input (ADR-0003).
  */
 @Injectable()
 export class OtpService {
-  private readonly log = new Logger(OtpService.name);
-
   constructor(
     private readonly redis: RedisService,
     @Inject(NOTIFICATION_CHANNEL) private readonly channel: NotificationChannel,
+    // Optional so the Redis-only unit spec can build the service without a queue; the
+    // app always provides it (AuthModule registers OTP_SEND_QUEUE).
+    @Optional() @InjectQueue(OTP_SEND_QUEUE) private readonly sendQueue?: Queue<OtpSendJobData>,
   ) {}
 
   private otpKey(scopeId: string, phone: string): string {
     return `otp:${scopeId}:${phone}`;
   }
 
-  private resendIntervalKey(scopeId: string, phone: string): string {
-    return `otp:resend:interval:${scopeId}:${phone}`;
+  private resendIntervalKey(scopeId: string, phone: string, client: string): string {
+    return `otp:resend:interval:${scopeId}:${phone}:${client}`;
   }
 
-  private resendHourlyKey(scopeId: string, phone: string): string {
-    return `otp:resend:hourly:${scopeId}:${phone}`;
+  private resendHourlyKey(scopeId: string, phone: string, client: string): string {
+    return `otp:resend:hourly:${scopeId}:${phone}:${client}`;
+  }
+
+  private resendCeilingKey(scopeId: string, phone: string): string {
+    return `otp:resend:ceiling:${scopeId}:${phone}`;
   }
 
   // No hardcoded fallback — the OTP hashing secret comes from validated env only.
@@ -143,33 +191,34 @@ export class OtpService {
    *
    * `scopeId` is a key namespace, normally a society id.
    *
-   * `dispatch` decides what happens to the send, and the three values exist for the
-   * admin door (ADR-0023):
-   *  - `'awaited'` — the resident path. The send completes before the response.
-   *  - `'suppressed'` — nothing is sent. Every other step still runs.
-   *  - `'detached'` — sent, but NOT awaited.
-   *
-   * `'detached'` is the one that needs explaining. Suppressing the send equalised the
-   * status, the body and the stored state, and left the one step that actually costs
-   * time inside the response: with a real SMS provider (100–500ms), an administrator's
-   * request took ~230ms and everyone else's ~13ms, so a SINGLE unauthenticated request
-   * separated the two by 15× — no second request, no rate-limit trick, no OTP needed
-   * (V2 round 2, P1-A). Detaching takes the varying step off the response path, which
-   * is the same move as suppressing it, applied one layer further out.
-   *
-   * Nothing is lost by not awaiting it, because the admin door's response is uniform
-   * by design: the send's outcome could never have reached the caller anyway. A
-   * provider that throws is logged here instead of becoming a 500 for administrators
-   * and a 200 for everyone else — which was the same leak wearing a different hat.
+   * `dispatch` decides what happens to the send:
+   *  - `'awaited'` — the resident door. The send completes before the response, which is
+   *    what makes a provider outage visible to the resident at all; that door has nothing
+   *    to hide (its latency varies only with invite-code validity, which its 400-vs-200
+   *    already discloses).
+   *  - `'queued'` — the admin door (CHORE-017, ADR-0027). The code is sealed into a job on
+   *    the send queue for EVERY caller, and the worker decides whether this number is an
+   *    administrator and should get it. The request path is then identical for everyone:
+   *    the provider is never touched here, in any phase, so neither its latency, its
+   *    synchronous prefix nor its failures can reach the caller — the three mechanisms
+   *    ADR-0023's review rounds closed one at a time. And a queued send survives a restart,
+   *    which the earlier `setImmediate` send did not.
+   *  - `'suppressed'` — nothing is sent; every other step still runs.
    */
   async request(
     scopeId: string,
     phone: string,
-    options: { dispatch?: 'awaited' | 'detached' | 'suppressed' } = {},
+    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string } = {},
   ): Promise<OtpRequestOutcome> {
+    // CHORE-016 (ADR-0027): the interval and hourly budgets are per (phone, client), so
+    // one machine cannot spend an owner's budget; the ceiling below is per phone. Every
+    // caller takes every step, whatever their role — the limiter must not become the
+    // oracle ADR-0023 closed.
+    const client = ipBucket(options.clientIp);
+
     // 1/30s window: SET NX with a 30s TTL. If the key already exists -> too soon.
     const intervalSet = await this.redis.set(
-      this.resendIntervalKey(scopeId, phone),
+      this.resendIntervalKey(scopeId, phone, client),
       '1',
       'EX',
       OTP_RESEND_MIN_INTERVAL_SECONDS,
@@ -179,14 +228,27 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    // 5/hour window: atomic INCR + first-hit EXPIRE via a single Lua script.
+    // 5/hour per client: atomic INCR + first-hit EXPIRE via a single Lua script.
     const hourlyCount = (await this.redis.eval(
       RESEND_HOURLY_LUA,
       1,
-      this.resendHourlyKey(scopeId, phone),
+      this.resendHourlyKey(scopeId, phone, client),
       String(OTP_RESEND_HOUR_SECONDS),
     )) as number;
     if (hourlyCount > OTP_RESEND_HOURLY_MAX) {
+      return { result: 'RATE_LIMITED' };
+    }
+
+    // 10/hour per phone across every client. Counted only for requests the per-client
+    // budgets let through, so a client hammering inside its own 30s window cannot spend
+    // the owner's ceiling.
+    const phoneCount = (await this.redis.eval(
+      RESEND_HOURLY_LUA,
+      1,
+      this.resendCeilingKey(scopeId, phone),
+      String(OTP_RESEND_HOUR_SECONDS),
+    )) as number;
+    if (phoneCount > OTP_RESEND_PHONE_HOURLY_MAX) {
       return { result: 'RATE_LIMITED' };
     }
 
@@ -204,47 +266,25 @@ export class OtpService {
     const dispatch = options.dispatch ?? 'awaited';
     if (dispatch === 'awaited') {
       await this.channel.sendOtp(phone, code);
-    } else if (dispatch === 'detached') {
-      this.dispatchDetached(phone, code);
+    } else if (dispatch === 'queued') {
+      if (!this.sendQueue) {
+        throw new Error('OTP send queue is not configured.');
+      }
+      // Sealed, never in the clear: the job lives in Redis until the worker runs.
+      // removeOnFail: true — a job that exhausted its retries is deleted, not kept
+      // around holding a (sealed) code for the default retention window.
+      await this.sendQueue.add(
+        OTP_SEND_JOB,
+        { door: 'admin', phone, sealed: sealOtp(code) },
+        {
+          attempts: OTP_SEND_ATTEMPTS,
+          backoff: { type: 'exponential', delay: 1_000 },
+          removeOnComplete: true,
+          removeOnFail: true,
+        },
+      );
     }
     return { result: 'SENT' };
-  }
-
-  /**
-   * Send, entirely off the response path — nothing about this call can reach the
-   * caller, by timing or by status.
-   *
-   * `setImmediate`, not a bare `void channel.sendOtp(...)`. Two reasons, both of which
-   * were live defects:
-   *
-   *  1. **A synchronous throw.** `sendOtp` is declared `Promise<void>`, but a method
-   *     that throws BEFORE returning a promise is legal TypeScript, and then `.catch`
-   *     is never attached: the exception walked out through the controller as a 500 —
-   *     for administrators only, because they are the only callers that dispatch. The
-   *     same oracle for the third time, through a mechanism this file's own comment
-   *     claimed was handled (V2 round 3). A malformed provider URL or an SDK guard
-   *     clause is all it takes. The async wrapper turns any throw into a rejection.
-   *  2. **The synchronous prefix.** `void channel.sendOtp(...)` still INVOKES the
-   *     function, so everything an adapter does before its first `await` — request
-   *     signing, reading credentials, rendering a template — ran inside an
-   *     administrator's response and nobody else's. Measured at ~9ms of skew for an
-   *     adapter with a 10ms prefix. Deferring the invocation itself takes that to the
-   *     floor, where admin and stranger are within noise of each other.
-   */
-  private dispatchDetached(phone: string, code: string): void {
-    setImmediate(() => {
-      void (async () => {
-        try {
-          await this.channel.sendOtp(phone, code);
-        } catch (err: unknown) {
-          // The message is redacted rather than trusted: a provider SDK that embeds
-          // the outgoing request body in its error would otherwise put the OTP in the
-          // logs, which ADR-0020 forbids outright.
-          const raw = err instanceof Error ? err.message : String(err);
-          this.log.warn(`OTP dispatch failed: ${raw.split(code).join('******')}`);
-        }
-      })();
-    });
   }
 
   /**

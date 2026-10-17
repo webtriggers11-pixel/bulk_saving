@@ -89,6 +89,12 @@ made it false and the prose was not updated with it — V2 round 2, P3-G.)
 
 ## What this costs
 
+> **Superseded in part by ADR-0027 (2026-10-17):** the admin door's send is no longer
+> detached with `setImmediate`; it is queued for every caller and the worker decides
+> whether to send (CHORE-017). OTP budgets are now per client under a per-phone ceiling
+> (CHORE-016), and `Resident.phone` is indexed (CHORE-015). The history below is kept
+> because it is why ADR-0027 is shaped the way it is.
+
 Every phone poked at the admin door gets **three** Redis keys written, for any number at
 all: the OTP itself (5 min), the resend interval (30s) and the hourly counter (1 hour).
 Previously a non-admin wrote none. The phone DTO accepts `^\+?[0-9]{7,15}$`, so the key

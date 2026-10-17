@@ -1,7 +1,17 @@
 import { randomBytes } from 'node:crypto';
 import { RedisService } from '../../redis/redis.service';
+import type { Queue } from 'bullmq';
 import type { NotificationChannel } from '../notifications/notification-channel';
-import { OtpService, OTP_MAX_ATTEMPTS, devOtpEchoEnabled } from './otp.service';
+import { unsealOtp } from './otp-seal';
+import type { OtpSendJobData } from './otp-send.processor';
+import {
+  OtpService,
+  OTP_MAX_ATTEMPTS,
+  OTP_RESEND_HOURLY_MAX,
+  OTP_RESEND_PHONE_HOURLY_MAX,
+  devOtpEchoEnabled,
+  ipBucket,
+} from './otp.service';
 
 /**
  * OtpService unit tests against REAL Redis (needs `docker compose up -d`),
@@ -86,6 +96,58 @@ describe('OtpService (integration, needs Redis)', () => {
     expect((await service.request(societyId, phone)).result).toBe('RATE_LIMITED');
   });
 
+  /**
+   * CHORE-016: six unauthenticated requests used to deny an administrator their own
+   * sign-in for an hour, because every budget was keyed by phone alone. The budgets are
+   * now per (phone, client IP), with a ceiling per phone across all IPs — and identical
+   * for every caller, so no budget differs by role (ADR-0023's oracle stays closed).
+   */
+  describe('budgets are per client, under a per-phone ceiling (CHORE-016)', () => {
+    const at = (clientIp: string) => ({ clientIp });
+
+    it('one machine’s requests do not lock out the owner on another', async () => {
+      const phone = uniquePhone();
+      expect((await service.request(societyId, phone, at('198.51.100.7'))).result).toBe('SENT');
+      expect((await service.request(societyId, phone, at('198.51.100.7'))).result).toBe('RATE_LIMITED');
+      // The owner, elsewhere, is not inside the attacker's 30s window.
+      expect((await service.request(societyId, phone, at('203.0.113.9'))).result).toBe('SENT');
+    });
+
+    it('an exhausted hourly budget on one IP leaves another IP its own', async () => {
+      const phone = uniquePhone();
+      await redis.set(`otp:resend:hourly:${societyId}:${phone}:198.51.100.7`, String(OTP_RESEND_HOURLY_MAX), 'EX', 3600);
+      expect((await service.request(societyId, phone, at('198.51.100.7'))).result).toBe('RATE_LIMITED');
+      expect((await service.request(societyId, phone, at('203.0.113.9'))).result).toBe('SENT');
+    });
+
+    it('caps a phone across ALL clients — rotating IPs does not buy unlimited codes', async () => {
+      const phone = uniquePhone();
+      for (let n = 1; n <= OTP_RESEND_PHONE_HOURLY_MAX; n += 1) {
+        expect((await service.request(societyId, phone, at(`192.0.2.${n}`))).result).toBe('SENT');
+      }
+      expect((await service.request(societyId, phone, at('192.0.2.200'))).result).toBe('RATE_LIMITED');
+    });
+
+    it('a refused request does not spend the per-phone ceiling', async () => {
+      const phone = uniquePhone();
+      expect((await service.request(societyId, phone, at('198.51.100.7'))).result).toBe('SENT');
+      for (let n = 0; n < 20; n += 1) {
+        await service.request(societyId, phone, at('198.51.100.7')); // all inside the 30s window
+      }
+      expect(await redis.get(`otp:resend:ceiling:${societyId}:${phone}`)).toBe('1');
+    });
+
+    it('buckets IPv6 by /64 — an attacker gets a whole /64 for free', () => {
+      expect(ipBucket('2001:db8:aa:bb:1::1')).toBe(ipBucket('2001:db8:aa:bb:ffff::2'));
+      expect(ipBucket('2001:db8:aa:bb::1')).not.toBe(ipBucket('2001:db8:aa:cc::1'));
+    });
+
+    it('treats an IPv4-mapped address as the IPv4 address, and a missing one as one shared bucket', () => {
+      expect(ipBucket('::ffff:198.51.100.7')).toBe(ipBucket('198.51.100.7'));
+      expect(ipBucket(undefined)).toBe(ipBucket(''));
+    });
+  });
+
   describe('the OTP never leaves this service (ADR-0020)', () => {
     const OLD_FLAG = process.env.OTP_DEV_LOG;
 
@@ -127,7 +189,7 @@ describe('OtpService (integration, needs Redis)', () => {
  * flow instead: with a channel that NEVER resolves, a detached request still returns.
  * That cannot pass if the send is awaited, and it does not depend on a clock.
  */
-describe('OtpService dispatch modes (ADR-0023)', () => {
+describe('OtpService dispatch modes (ADR-0023, ADR-0027)', () => {
   let redis: RedisService;
 
   /** A provider that accepts the send and never comes back. */
@@ -160,22 +222,38 @@ describe('OtpService dispatch modes (ADR-0023)', () => {
     return `+9198${randomBytes(4).toString('hex').replace(/\D/g, '').padEnd(8, '0').slice(0, 8)}`;
   }
 
-  it('returns without waiting for the provider when the dispatch is detached', async () => {
+  it('queued: never touches the provider, and hands the worker a SEALED code that verifies (CHORE-017)', async () => {
     const channel = new HangingChannel();
-    const service = new OtpService(redis, channel);
+    const jobs: Array<{ name: string; data: OtpSendJobData; opts: Record<string, unknown> }> = [];
+    const queue = {
+      add: async (name: string, data: OtpSendJobData, opts: Record<string, unknown>) => {
+        jobs.push({ name, data, opts });
+      },
+    } as unknown as Queue<OtpSendJobData>;
+    const service = new OtpService(redis, channel, queue);
     const phone = freshPhone();
 
-    // If this awaited the send, it would hang here until the test timed out.
-    const outcome = await service.request('detach-test', phone, { dispatch: 'detached' });
+    const outcome = await service.request('queue-test', phone, { dispatch: 'queued' });
 
     expect(outcome.result).toBe('SENT');
-    // Not called YET: the invocation itself is deferred to `setImmediate`, so even an
-    // adapter's synchronous prefix stays out of the response (V2 round 3).
+    // The provider is not on the request path in any phase — not even deferred.
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(channel.calls).toBe(0);
 
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(channel.calls).toBe(1);
-    channel.finish();
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].data).toMatchObject({ door: 'admin', phone });
+    const code = unsealOtp(jobs[0].data.sealed);
+    expect(jobs[0].data.sealed).not.toContain(code);
+    expect(await service.verify('queue-test', phone, code)).toBe('OK');
+    // A job that exhausts its retries is deleted, not kept holding a sealed code.
+    expect(jobs[0].opts).toMatchObject({ removeOnComplete: true, removeOnFail: true });
+  });
+
+  it('queued without a queue fails loudly rather than silently sending nothing', async () => {
+    const service = new OtpService(redis, new HangingChannel());
+    await expect(service.request('queue-missing', freshPhone(), { dispatch: 'queued' })).rejects.toThrow(
+      /queue is not configured/,
+    );
   });
 
   it('DOES wait for the provider when the dispatch is awaited', async () => {
@@ -211,80 +289,6 @@ describe('OtpService dispatch modes (ADR-0023)', () => {
     expect(channel.calls).toBe(0);
   });
 
-  it('survives a provider that throws SYNCHRONOUSLY, without failing the request', async () => {
-    // V2 round 3. `sendOtp` is declared `Promise<void>`, but throwing before returning
-    // one is legal TypeScript — and then `.catch` is never attached, so the exception
-    // walked out as a 500 for administrators and a 200 for everyone else. The same
-    // oracle a third time, through the mechanism this file claimed to handle. The
-    // rejected-promise test below is NOT this case; it was the one that already worked.
-    const throwing: NotificationChannel = {
-      sendOtp(): Promise<void> {
-        throw new Error('malformed provider URL');
-      },
-      send: () => Promise.resolve(),
-    };
-    const service = new OtpService(redis, throwing);
-
-    const outcome = await service.request('sync-throw-test', freshPhone(), {
-      dispatch: 'detached',
-    });
-
-    expect(outcome.result).toBe('SENT');
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-
-  it('keeps the code out of the failure log, even if the provider echoes it back', async () => {
-    // ADR-0020: the raw code must never be logged. A provider SDK that embeds the
-    // outgoing request body in its error message would do exactly that.
-    const warnings: string[] = [];
-    const echoing: NotificationChannel = {
-      sendOtp: (_phone: string, code: string) =>
-        Promise.reject(new Error(`POST /sms failed: {"text":"Your code is ${code}"}`)),
-      send: () => Promise.resolve(),
-    };
-    const service = new OtpService(redis, echoing);
-    const spy = vi_spyOnWarn(service, warnings);
-
-    await service.request('redact-test', freshPhone(), { dispatch: 'detached' });
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    spy();
-
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain('******');
-    expect(warnings[0]).not.toMatch(/Your code is \d{6}/);
-  });
-
-  it('survives a provider that rejects, without failing the request', async () => {
-    // The other half of P1-A: a provider that throws on an unroutable number used to
-    // propagate out as a 500 for administrators and a 200 for everyone else.
-    const failing: NotificationChannel = {
-      sendOtp: () => Promise.reject(new Error('provider unavailable')),
-      send: () => Promise.resolve(),
-    };
-    const service = new OtpService(redis, failing);
-
-    const outcome = await service.request('reject-test', freshPhone(), {
-      dispatch: 'detached',
-    });
-
-    expect(outcome.result).toBe('SENT');
-    // Let the rejection land; an unhandled rejection here would fail the run.
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
+  // The provider-failure cases (a synchronous throw, an error that echoes the code, a
+  // rejection) moved with the send: see otp-send.processor.spec.ts (CHORE-017).
 });
-
-/**
- * Capture what the service logs, without reaching for a mocking framework the backend
- * suite does not otherwise use: swap the private logger's `warn` and hand back the
- * restore. Returns the restore function so a test cannot forget it.
- */
-function vi_spyOnWarn(service: OtpService, sink: string[]): () => void {
-  const holder = service as unknown as { log: { warn: (message: string) => void } };
-  const original = holder.log.warn.bind(holder.log);
-  holder.log.warn = (message: string) => {
-    sink.push(message);
-  };
-  return () => {
-    holder.log.warn = original;
-  };
-}

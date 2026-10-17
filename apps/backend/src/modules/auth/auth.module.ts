@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -7,6 +8,7 @@ import { SocietiesModule } from '../societies/societies.module';
 import { AccessTokenGuard } from './access-token.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { OtpSendProcessor, OTP_SEND_QUEUE } from './otp-send.processor';
 import { OtpService } from './otp.service';
 import { RolesGuard } from './roles.guard';
 
@@ -18,12 +20,14 @@ import { RolesGuard } from './roles.guard';
 @Module({
   imports: [
     JwtModule.register({}),
+    // CHORE-017: the admin door's OTP sends (ADR-0027).
+    BullModule.registerQueue({ name: OTP_SEND_QUEUE }),
     NotificationsModule,
     SocietiesModule,
     ResidentsModule,
   ],
   controllers: [AuthController, ResidentsController],
-  providers: [OtpService, AuthService, AccessTokenGuard, RolesGuard],
+  providers: [OtpService, OtpSendProcessor, AuthService, AccessTokenGuard, RolesGuard],
   exports: [AuthService, AccessTokenGuard, RolesGuard],
 })
 export class AuthModule {}
