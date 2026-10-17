@@ -73,19 +73,19 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
       data: { name: 'AC Servicing', slug: `ac-${s}`, description: 'x', category: 'Appliances', active: true },
     });
     serviceClosed = await prisma.service.create({
-      data: { name: 'Closed Svc', slug: `cl-${s}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Closed Svc', slug: `cl-${s}`, description: 'x', category: 'Home Care', active: true },
     });
     serviceConc = await prisma.service.create({
-      data: { name: 'Concurrency Svc', slug: `co-${s}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Concurrency Svc', slug: `co-${s}`, description: 'x', category: 'Home Care', active: true },
     });
     serviceSameRes = await prisma.service.create({
-      data: { name: 'Same-Resident Svc', slug: `sr-${s}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Same-Resident Svc', slug: `sr-${s}`, description: 'x', category: 'Home Care', active: true },
     });
     serviceSameRes2 = await prisma.service.create({
-      data: { name: 'Same-Resident Svc 2', slug: `sr2-${s}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Same-Resident Svc 2', slug: `sr2-${s}`, description: 'x', category: 'Home Care', active: true },
     });
     serviceB = await prisma.service.create({
-      data: { name: 'B Svc', slug: `b-${s}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'B Svc', slug: `b-${s}`, description: 'x', category: 'Home Care', active: true },
     });
 
     roundA = await createRound(societyA.id, service.id, 'OPEN');
@@ -363,7 +363,7 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
 
   it('BUG-001: a join queued behind a long-held round lock (> 5s) still succeeds, never 500', async () => {
     const svc = await prisma.service.create({
-      data: { name: 'Lock-wait Svc', slug: `lw-${randomInviteCode().toLowerCase()}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Lock-wait Svc', slug: `lw-${randomInviteCode().toLowerCase()}`, description: 'x', category: 'Home Care', active: true },
     });
     try {
       const round = await createRound(societyA.id, svc.id, 'OPEN');

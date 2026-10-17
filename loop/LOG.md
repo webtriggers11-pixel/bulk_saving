@@ -706,3 +706,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **V3: two back-to-back gate runs, exit 0 both, identical — backend 345/345, web 293/293, 1201 class tokens.**
 - CHORE-018 CLOSED.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-17 — FEAT-014 — OPENED: admin services page, closed categories, wider catalog, staples pilot
+- Owner asked to check the admin panel's categories ("grocery, other services and all"), then "do it" to the three recommendations: services page, more services, a grocery pilot.
+- Found: admin has no services page (CHORE-006, now folded in); `category` is free text and fixtures already mix "Home" with "Home Care"; Payments and Societies admin pages listed in BRIEF were never built (not in scope here).
+- Decision ADR-0025: closed `SERVICE_CATEGORIES` in @bulk/shared, `@IsIn` at the DTO, column stays a string. Grocery enters as **Bulk Staples** — a category whose unit is a pack — not as a new domain. BRIEF gains a Scope changes section recording the approval.
+- By: agent (autonomous), owner approval for the scope change
+
+## 2026-10-17 — FEAT-014 — T1–T6: closed categories, the services page, 18 new services, staples pilot
+- T1/T2: `SERVICE_CATEGORIES` in @bulk/shared; `@IsIn` on create/update; `GET /admin/services` now carries per-society `offerings`. 32 fixtures moved off "Home". New tests: every listed category accepted; "Home" and "home care" refused on create, "Groceries" refused on PATCH with the row unchanged; a pre-ADR legacy row still editable; offerings listed. **Mutation-proved:** swapping `@IsIn` back to `@IsString` fails both refusal tests. (First mutation attempt was a sed that matched nothing and "passed" — caught by checking the count before trusting the run.)
+- T3/T4: `/admin/services` (nav "Services"): grouped by category, add form with slug following the name until edited, category as a select over the list, inline edit that never resends an unchanged legacy category, activate/deactivate, per-society Offer/Stop offering + indicative price. An inactive service cannot be newly offered. The web category list and unit caps are copies pinned to @bulk/shared by `serviceForm.test.ts`.
+- T5: `car`, `water`, `basket` glyphs; FEAT-014 categories decide the glyph outright, because "Car Wash" and "Washing Machine" match the cleaning keyword.
+- T6: base seed 5 → 23 services (46 offerings); demo seed adds a Basmati Rice OPEN round (GREEN) and a Water Tank OPEN round (BLUE), plus a wholesaler and a tank vendor.
+- V1: gate exit 0 — backend 350/350, web 324/324, 1231 class tokens.
+- By: agent (autonomous)

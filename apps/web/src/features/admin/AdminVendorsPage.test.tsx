@@ -22,6 +22,9 @@ vi.mock('./admin.api', () => ({
   fetchVendors: vi.fn(),
   createVendor: vi.fn(),
   updateVendor: vi.fn(),
+  createService: vi.fn(),
+  updateService: vi.fn(),
+  upsertOffering: vi.fn(),
 }));
 
 const fetchVendorsMock = vi.mocked(fetchVendors);

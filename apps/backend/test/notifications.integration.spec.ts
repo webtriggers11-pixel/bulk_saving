@@ -87,7 +87,7 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
         name: `Notify ${serviceIds.length}`,
         slug: `nt-${serviceIds.length}-${suffix}`,
         description: 'x',
-        category: 'Home',
+        category: 'Home Care',
         active: true,
       },
     });
@@ -571,7 +571,7 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
           name: `Notify reminder ${suffix}`,
           slug: `nt-rem-${suffix}`,
           description: 'x',
-          category: 'Home',
+          category: 'Home Care',
           active: true,
         },
       });
@@ -601,7 +601,7 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
           name: `Notify cancel ${suffix}`,
           slug: `nt-cancel-${suffix}`,
           description: 'x',
-          category: 'Home',
+          category: 'Home Care',
           active: true,
         },
       });

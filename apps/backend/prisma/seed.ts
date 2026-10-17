@@ -75,6 +75,37 @@ const SERVICES = [
     unitLabelPlural: 'rooms',
     unitDescription: 'One room up to 12x12 ft: walls only, two coats, putty where needed.',
   },
+  // FEAT-014: the wider catalog, one entry per category in SERVICE_CATEGORIES (ADR-0025).
+  ...([
+    ['RO Water Purifier Service', 'ro-service', 'Filter check, cleaning and TDS test for your water purifier.', 'Appliances', 399, 'purifier', 'purifiers', 'One RO purifier: filter check, cleaning, TDS test. Filters billed separately.'],
+    ['Washing Machine Service', 'washing-machine-service', 'Drum descaling, filter cleaning and a general check-up.', 'Appliances', 449, 'machine', 'machines', 'One washing machine: drum clean, inlet filter, general check.'],
+    ['Kitchen Chimney Cleaning', 'chimney-cleaning', 'Degreasing of filters, hood and duct.', 'Appliances', 699, 'chimney', 'chimneys', 'One kitchen chimney: filters degreased, hood and duct wiped.'],
+    ['Geyser Service', 'geyser-service', 'Descaling and safety check for storage geysers.', 'Appliances', 349, 'geyser', 'geysers', 'One storage geyser: descaling, anode check, thermostat test.'],
+    ['Sofa Shampooing', 'sofa-shampoo', 'Deep shampoo and extraction for fabric sofas.', 'Home Care', 249, 'seat', 'seats', 'One seat of a fabric sofa: vacuum, shampoo, extraction.'],
+    ['Termite Treatment', 'termite-treatment', 'Drill-fill-seal anti-termite treatment with warranty.', 'Home Care', 2999, 'flat', 'flats', 'One flat: drill-fill-seal along walls and woodwork, 1-year warranty.'],
+    ['Bed Bug Treatment', 'bed-bug-treatment', 'Two-visit treatment for beds, sofas and cupboards.', 'Home Care', 1499, 'flat', 'flats', 'One flat, two visits two weeks apart.'],
+    ['Mattress Cleaning', 'mattress-cleaning', 'Vacuum, shampoo and sanitise, both sides.', 'Home Care', 499, 'mattress', 'mattresses', 'One mattress, both sides: vacuum, shampoo, sanitise.'],
+    ['Water Tank Cleaning', 'water-tank-cleaning', 'Drain, scrub and disinfect overhead and loft tanks.', 'Utilities', 799, 'tank', 'tanks', 'One overhead or loft tank up to 1000 L: drain, scrub, disinfect.'],
+    ['Inverter Battery Check', 'inverter-battery-check', 'Terminal cleaning, water top-up and a load test.', 'Utilities', 299, 'battery', 'batteries', 'One inverter battery: terminal clean, water top-up, load test.'],
+    ['Mosquito Mesh Fitting', 'mosquito-mesh', 'Aluminium-frame fibreglass mesh for windows.', 'Utilities', 650, 'window', 'windows', 'One window up to 4x4 ft: aluminium frame with fibreglass mesh.'],
+    ['Car Wash (Doorstep)', 'car-wash', 'Foam wash at your parking spot.', 'Vehicle', 399, 'car', 'cars', 'One car at your parking spot: foam wash, wipe-down, tyre shine.'],
+    ['Car Interior Detailing', 'car-interior-detailing', 'Vacuum, upholstery shampoo and trim cleaning.', 'Vehicle', 1499, 'car', 'cars', 'One car: vacuum, upholstery shampoo, dashboard and door trims.'],
+    ['Bike Service', 'bike-service', 'Oil change, brake and chain adjustment, and a wash.', 'Vehicle', 599, 'bike', 'bikes', 'One two-wheeler: oil change, brake and chain adjust, wash. Parts extra.'],
+    ['Pre-monsoon Waterproofing', 'waterproofing', 'Seal balconies, terrace patches and wet walls before the rains.', 'Renovation', 2499, 'area', 'areas', 'One balcony, terrace patch or bathroom wall up to 60 sq ft.'],
+    // Bulk Staples — the grocery pilot (BRIEF "Scope changes", 2026-10-17).
+    ['Basmati Rice (25 kg)', 'basmati-rice-25kg', 'Aged basmati in a sealed bag, delivered to the society gate.', 'Bulk Staples', 2750, 'bag', 'bags', 'One sealed 25 kg bag of aged basmati, delivered to the society gate.'],
+    ['Sunflower Oil (15 L)', 'sunflower-oil-15l', 'Refined sunflower oil in a sealed tin.', 'Bulk Staples', 2100, 'tin', 'tins', 'One sealed 15 L tin of refined sunflower oil.'],
+    ['Whole Wheat Atta (10 kg)', 'whole-wheat-atta-10kg', 'Chakki-fresh whole wheat flour.', 'Bulk Staples', 480, 'bag', 'bags', 'One sealed 10 kg bag of chakki-fresh atta.'],
+  ] as const).map(([name, slug, description, category, indicativePrice, unitLabel, unitLabelPlural, unitDescription]) => ({
+    name,
+    slug,
+    description,
+    category,
+    indicativePrice,
+    unitLabel,
+    unitLabelPlural,
+    unitDescription,
+  })),
 ];
 
 async function main(): Promise<void> {

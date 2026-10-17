@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -12,7 +13,9 @@ import { Transform } from 'class-transformer';
 import {
   MAX_UNIT_DESCRIPTION,
   MAX_UNIT_LABEL,
+  SERVICE_CATEGORIES,
   type CreateServiceBody,
+  type ServiceCategory,
   type UpdateServiceBody,
   type UpsertOfferingBody,
 } from '@bulk/shared';
@@ -33,9 +36,9 @@ export class CreateServiceDto implements CreateServiceBody {
   @Length(1, 2000)
   description!: string;
 
-  @IsString()
-  @Length(1, 80)
-  category!: string;
+  // FEAT-014 (ADR-0025): a closed list, so a typo cannot become a catalog section.
+  @IsIn(SERVICE_CATEGORIES, { message: `category must be one of: ${SERVICE_CATEGORIES.join(', ')}.` })
+  category!: ServiceCategory;
 
   @IsOptional()
   @IsString()
@@ -83,9 +86,8 @@ export class UpdateServiceDto implements UpdateServiceBody {
   description?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(1, 80)
-  category?: string;
+  @IsIn(SERVICE_CATEGORIES, { message: `category must be one of: ${SERVICE_CATEGORIES.join(', ')}.` })
+  category?: ServiceCategory;
 
   // Nullable: null clears the image. Validate as a string only when non-null.
   @IsOptional()

@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 const NAV_ITEMS: Array<{ to: string; label: string; end: boolean; icon: IconName }> = [
   { to: '/admin', label: 'Dashboard', end: true, icon: 'services' },
   { to: '/admin/rounds/new', label: 'New round', end: true, icon: 'plus' },
+  { to: '/admin/services', label: 'Services', end: true, icon: 'service' },
   { to: '/admin/vendors', label: 'Vendors', end: true, icon: 'users' },
   { to: '/', label: 'Back to app', end: true, icon: 'back' },
 ];

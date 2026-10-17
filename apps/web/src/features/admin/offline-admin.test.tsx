@@ -31,6 +31,9 @@ vi.mock('./admin.api', () => ({
   setPayment: vi.fn(),
   createVendor: vi.fn(),
   updateVendor: vi.fn(),
+  createService: vi.fn(),
+  updateService: vi.fn(),
+  upsertOffering: vi.fn(),
 }));
 
 /**

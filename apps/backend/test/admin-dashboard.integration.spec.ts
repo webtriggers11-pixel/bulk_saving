@@ -141,7 +141,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
             name: `Dash Svc ${i}`,
             slug: `dash-${i}-${suffix.toLowerCase()}`,
             description: 'x',
-            category: 'Home',
+            category: 'Home Care',
             active: true,
           },
         }),

@@ -247,3 +247,13 @@ payments, no real-time collaboration, single region.
 new: Bulk Saving group-buy home-services platform
 ```
 `new-app:` reads BRIEF.md + ARCHITECTURE.md and scaffolds the project kit.
+
+---
+
+## Scope changes
+
+- **2026-10-17 — Bulk staples pilot (FEAT-014, ADR-0025).** Owner approved adding grocery as
+  **bulk staples only**: a single product in a fixed pack (25 kg rice, 15 L oil, 10 kg atta),
+  pooled through the existing round mechanic and delivered once to the society. Mixed
+  baskets, fresh produce, inventory and delivery slots remain out of scope. Success test:
+  do staples rounds fill as services do? Revisit after 3 close.

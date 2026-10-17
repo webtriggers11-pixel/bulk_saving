@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { MAX_UNIT_LABEL } from '@bulk/shared';
+import { MAX_UNIT_LABEL, SERVICE_CATEGORIES } from '@bulk/shared';
 import type { Resident, Society } from '@prisma/client';
 import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -58,11 +58,11 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     const res = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Deep Cleaning', slug, description: 'Full home deep clean', category: 'Home' })
+      .send({ name: 'Deep Cleaning', slug, description: 'Full home deep clean', category: 'Home Care' })
       .expect(201);
     const svc = res.body.data as AdminServiceDto;
     createdServiceIds.push(svc.id);
-    expect(svc).toMatchObject({ name: 'Deep Cleaning', slug, category: 'Home', active: true, imageUrl: null });
+    expect(svc).toMatchObject({ name: 'Deep Cleaning', slug, category: 'Home Care', active: true, imageUrl: null });
   });
 
   it('rejects a duplicate slug with 409 SERVICE_SLUG_TAKEN', async () => {
@@ -70,14 +70,14 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     const first = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'First', slug, description: 'x', category: 'Home' })
+      .send({ name: 'First', slug, description: 'x', category: 'Home Care' })
       .expect(201);
     createdServiceIds.push((first.body.data as AdminServiceDto).id);
 
     const dup = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Second', slug, description: 'y', category: 'Home' })
+      .send({ name: 'Second', slug, description: 'y', category: 'Home Care' })
       .expect(409);
     expect(dup.body.error.code).toBe(ErrorCode.SERVICE_SLUG_TAKEN);
   });
@@ -97,7 +97,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     const created = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Toggle Me', slug, description: 'x', category: 'Home' })
+      .send({ name: 'Toggle Me', slug, description: 'x', category: 'Home Care' })
       .expect(201);
     const id = (created.body.data as AdminServiceDto).id;
     createdServiceIds.push(id);
@@ -117,7 +117,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     const created = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Offerable', slug, description: 'x', category: 'Home' })
+      .send({ name: 'Offerable', slug, description: 'x', category: 'Home Care' })
       .expect(201);
     const serviceId = (created.body.data as AdminServiceDto).id;
     createdServiceIds.push(serviceId);
@@ -151,7 +151,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${residentToken}`)
-      .send({ name: 'Nope', slug: uniqueSlug(), description: 'x', category: 'Home' })
+      .send({ name: 'Nope', slug: uniqueSlug(), description: 'x', category: 'Home Care' })
       .expect(403);
     await request(app.getHttpServer())
       .get('/admin/services')
@@ -183,7 +183,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     const created = await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'For Missing Society', slug, description: 'x', category: 'Home' })
+      .send({ name: 'For Missing Society', slug, description: 'x', category: 'Home Care' })
       .expect(201);
     createdServiceIds.push((created.body.data as AdminServiceDto).id);
 
@@ -208,8 +208,97 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
     await request(app.getHttpServer())
       .post('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: '', slug: 'Bad Slug!', description: 'x', category: 'Home' })
+      .send({ name: '', slug: 'Bad Slug!', description: 'x', category: 'Home Care' })
       .expect(400);
+  });
+
+  describe('closed category list (FEAT-014, ADR-0025)', () => {
+    it('accepts every listed category, including the Bulk Staples pilot', async () => {
+      for (const category of SERVICE_CATEGORIES) {
+        const res = await request(app.getHttpServer())
+          .post('/admin/services')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: `In ${category}`, slug: uniqueSlug(), description: 'x', category })
+          .expect(201);
+        createdServiceIds.push((res.body.data as AdminServiceDto).id);
+        expect(res.body.data.category).toBe(category);
+      }
+    });
+
+    it('REFUSES a category outside the list on create — "Home" is how "Home Care" splits in two', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Typo', slug: uniqueSlug(), description: 'x', category: 'Home' })
+        .expect(400);
+      expect(res.body.error.code).toBe(ErrorCode.BAD_REQUEST);
+      // The message names the valid choices, so the admin can correct it.
+      expect(res.body.error.message).toContain('Bulk Staples');
+      // Case matters too: "home care" is a different catalog section from "Home Care".
+      await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Case', slug: uniqueSlug(), description: 'x', category: 'home care' })
+        .expect(400);
+    });
+
+    it('REFUSES an unlisted category on PATCH, and leaves the service unchanged', async () => {
+      const created = await request(app.getHttpServer())
+        .post('/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Keep', slug: uniqueSlug(), description: 'x', category: 'Utilities' })
+        .expect(201);
+      const id = (created.body.data as AdminServiceDto).id;
+      createdServiceIds.push(id);
+
+      await request(app.getHttpServer())
+        .patch(`/admin/services/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ category: 'Groceries' })
+        .expect(400);
+      const row = await prisma.service.findUniqueOrThrow({ where: { id } });
+      expect(row.category).toBe('Utilities');
+    });
+
+    it('still lets a service written before the list existed be edited without its category', async () => {
+      // A pre-ADR-0025 row: the column is a plain string, so this is reachable.
+      const legacy = await prisma.service.create({
+        data: { name: 'Legacy', slug: uniqueSlug(), description: 'x', category: 'Home' },
+      });
+      createdServiceIds.push(legacy.id);
+      const res = await request(app.getHttpServer())
+        .patch(`/admin/services/${legacy.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ active: false })
+        .expect(200);
+      expect(res.body.data).toMatchObject({ category: 'Home', active: false });
+    });
+  });
+
+  it('lists each service with its per-society offerings (FEAT-014)', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/admin/services')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Offered', slug: uniqueSlug(), description: 'x', category: 'Vehicle' })
+      .expect(201);
+    const id = (created.body.data as AdminServiceDto).id;
+    createdServiceIds.push(id);
+    expect(created.body.data.offerings).toEqual([]);
+
+    await request(app.getHttpServer())
+      .put(`/admin/societies/${society.id}/offerings/${id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ enabled: true, indicativePrice: 299 })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get('/admin/services')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const svc = (res.body.data as AdminServiceDto[]).find((s) => s.id === id);
+    expect(svc?.offerings).toEqual([
+      expect.objectContaining({ societyId: society.id, serviceId: id, enabled: true, indicativePrice: 299 }),
+    ]);
   });
 
   describe('unit labels (FEAT-010, V2 P1-D)', () => {
@@ -240,7 +329,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       const res = await request(app.getHttpServer())
         .post('/admin/services')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Unlabelled', slug: uniqueSlug(), description: 'x', category: 'Home' })
+        .send({ name: 'Unlabelled', slug: uniqueSlug(), description: 'x', category: 'Home Care' })
         .expect(201);
 
       expect(res.body.data).toMatchObject({ unitLabel: 'unit', unitLabelPlural: 'units' });
@@ -254,7 +343,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       const res = await request(app.getHttpServer())
         .post('/admin/services')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Half', slug: uniqueSlug(), description: 'x', category: 'Home', unitLabel: 'room' })
+        .send({ name: 'Half', slug: uniqueSlug(), description: 'x', category: 'Home Care', unitLabel: 'room' })
         .expect(400);
 
       expect(res.body.error.message).toContain('together');
@@ -265,13 +354,13 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       await request(app.getHttpServer())
         .post('/admin/services')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Half2', slug, description: 'x', category: 'Home', unitLabelPlural: 'rooms' })
+        .send({ name: 'Half2', slug, description: 'x', category: 'Home Care', unitLabelPlural: 'rooms' })
         .expect(400);
 
       const created = await request(app.getHttpServer())
         .post('/admin/services')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Paired', slug: uniqueSlug(), description: 'x', category: 'Home' })
+        .send({ name: 'Paired', slug: uniqueSlug(), description: 'x', category: 'Home Care' })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -289,7 +378,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
           name: 'TooLong',
           slug: uniqueSlug(),
           description: 'x',
-          category: 'Home',
+          category: 'Home Care',
           unitLabel: 'x'.repeat(MAX_UNIT_LABEL + 1),
           unitLabelPlural: 'xs',
         })

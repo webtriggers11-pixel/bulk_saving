@@ -18,7 +18,12 @@ import { CatalogSkeleton } from './CatalogSkeleton';
  * picks from the one icon family by category keyword rather than falling back to an
  * emoji, so a society with no artwork still gets a designed card (FEAT-011).
  */
-function glyphFor(service: ServiceDto): IconName {
+export function glyphFor(service: Pick<ServiceDto, 'category' | 'name'>): IconName {
+  // FEAT-014 categories decide outright: their names collide with the keywords below
+  // ("Car Wash" would read as cleaning, "Washing Machine" too).
+  if (service.category === 'Vehicle') return 'car';
+  if (service.category === 'Bulk Staples') return 'basket';
+  if (service.category === 'Utilities') return /(inverter|battery|electric)/i.test(service.name) ? 'bolt' : 'water';
   const haystack = `${service.category} ${service.name}`.toLowerCase();
   if (/(ac|air|appliance|fridge|geyser)/.test(haystack)) return 'ac';
   if (/(pest|termite|cockroach)/.test(haystack)) return 'pest';

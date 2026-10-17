@@ -49,7 +49,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         name: `Rating ${serviceIds.length}`,
         slug: `rt-${serviceIds.length}-${suffix}`,
         description: 'x',
-        category: 'Home',
+        category: 'Home Care',
         active: true,
       },
     });

@@ -71,6 +71,8 @@ const VENDORS = [
   { id: 'demo_vendor_shieldpro', name: 'ShieldPro Pest Control', phone: '+919888800002', category: 'Home Care', notes: 'Odourless gel treatment available.' },
   { id: 'demo_vendor_sparkle', name: 'SparkleHome Cleaning', phone: '+919888800003', category: 'Home Care', notes: null },
   { id: 'demo_vendor_colourcraft', name: 'ColourCraft Painters', phone: '+919888800004', category: 'Renovation', notes: 'Asian Paints certified.' },
+  { id: 'demo_vendor_balaji', name: 'Shree Balaji Wholesale', phone: '+919888800006', category: 'Bulk Staples', notes: 'Delivers to the gate in one trip; needs 48h notice.' },
+  { id: 'demo_vendor_aquaclean', name: 'AquaClean Tank Services', phone: '+919888800007', category: 'Utilities', notes: null },
   { id: 'demo_vendor_oldtown', name: 'OldTown Pest Co.', phone: '+919888800005', category: 'Home Care', notes: 'Deactivated after missed visits.', active: false },
 ];
 
@@ -270,7 +272,43 @@ const ROUNDS: RoundSeed[] = [
       { resident: 'rahul', units: 1 },
     ],
   },
+  {
+    // FEAT-014: the grocery pilot — a staple pooled like a service.
+    id: 'demo_g_rice_open',
+    society: 'GREEN001',
+    service: 'basmati-rice-25kg',
+    status: 'OPEN',
+    createdAt: at(-2 * DAY),
+    deadline: at(5 * DAY),
+    tiers: [
+      { threshold: 10, price: 2600 },
+      { threshold: 20, price: 2450 },
+    ],
+    participants: [
+      { resident: 'asha', units: 1 },
+      { resident: 'vikram', units: 2 },
+      { resident: 'priya', units: 1 },
+      { resident: 'meera', units: 1 },
+    ],
+  },
   // ---- BLUE0002 -------------------------------------------------------------
+  {
+    id: 'demo_b_tank_open',
+    society: 'BLUE0002',
+    service: 'water-tank-cleaning',
+    status: 'OPEN',
+    createdAt: at(-1 * DAY),
+    deadline: at(3 * DAY),
+    tiers: [
+      { threshold: 4, price: 699 },
+      { threshold: 8, price: 599 },
+    ],
+    participants: [
+      { resident: 'farah', units: 1 },
+      { resident: 'rohan', units: 1 },
+      { resident: 'ananya', units: 2 },
+    ],
+  },
   {
     id: 'demo_b_paint_open',
     society: 'BLUE0002',

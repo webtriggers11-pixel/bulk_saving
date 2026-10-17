@@ -59,18 +59,18 @@ describe('GET /catalog (integration, needs DB + Redis)', () => {
         name: 'Pest Control',
         slug: `pest-${s}`,
         description: 'General pest treatment',
-        category: 'Home',
+        category: 'Home Care',
         active: true,
       },
     });
     painting = await prisma.service.create({
-      data: { name: 'Painting', slug: `paint-${s}`, description: 'Interior painting', category: 'Home', active: true },
+      data: { name: 'Painting', slug: `paint-${s}`, description: 'Interior painting', category: 'Home Care', active: true },
     });
     inactive = await prisma.service.create({
-      data: { name: 'Retired', slug: `old-${s}`, description: 'Discontinued', category: 'Home', active: false },
+      data: { name: 'Retired', slug: `old-${s}`, description: 'Discontinued', category: 'Home Care', active: false },
     });
     bOnly = await prisma.service.create({
-      data: { name: 'B Only Wash', slug: `bwash-${s}`, description: 'Bathroom wash', category: 'Home', active: true },
+      data: { name: 'B Only Wash', slug: `bwash-${s}`, description: 'Bathroom wash', category: 'Home Care', active: true },
     });
 
     // Society A: AC (enabled, priced), Pest (enabled), Painting (DISABLED),

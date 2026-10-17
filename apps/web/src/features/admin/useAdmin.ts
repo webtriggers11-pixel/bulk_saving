@@ -16,9 +16,13 @@ import type {
   AdminSocietyDto,
   AssignRoundBody,
   CreateRoundBody,
+  CreateServiceBody,
   CreateVendorBody,
   RoundDto,
+  ServiceOfferingDto,
+  UpdateServiceBody,
   UpdateVendorBody,
+  UpsertOfferingBody,
   VendorDto,
 } from '@bulk/shared';
 import {
@@ -26,6 +30,7 @@ import {
   cancelRound,
   closeRound,
   createRound,
+  createService,
   createVendor,
   deliverRound,
   fetchAdminRound,
@@ -35,8 +40,11 @@ import {
   fetchSocieties,
   fetchVendors,
   setPayment,
+  updateService,
   updateVendor,
+  upsertOffering,
 } from './admin.api';
+import { catalogQueryKey } from '../catalog/useCatalog';
 
 /** Query keys for the super-admin screens. All live under ['admin', ...]. */
 export const adminKeys = {
@@ -195,5 +203,58 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
       void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
     },
+  });
+}
+
+/**
+ * After any catalog write: the admin list, and the resident catalog (an admin who taps
+ * "Back to app" must not see a stale one). Round views embed the service's name and
+ * unit labels, so they refetch too.
+ */
+function invalidateCatalog(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: adminKeys.services });
+  void queryClient.invalidateQueries({ queryKey: catalogQueryKey });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
+}
+
+/** POST /admin/services (FEAT-014). */
+export function useCreateService(): UseMutationResult<AdminServiceDto, Error, CreateServiceBody> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateServiceBody) => createService(body),
+    onSuccess: () => invalidateCatalog(queryClient),
+  });
+}
+
+/** Arguments for a service update. */
+interface UpdateServiceVars {
+  id: string;
+  body: UpdateServiceBody;
+}
+
+/** PATCH /admin/services/:id (FEAT-014). */
+export function useUpdateService(): UseMutationResult<AdminServiceDto, Error, UpdateServiceVars> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: UpdateServiceVars) => updateService(id, body),
+    onSuccess: () => invalidateCatalog(queryClient),
+  });
+}
+
+/** Arguments for an offering upsert: one (society, service) pair. */
+interface UpsertOfferingVars {
+  societyId: string;
+  serviceId: string;
+  body: UpsertOfferingBody;
+}
+
+/** PUT /admin/societies/:societyId/offerings/:serviceId (FEAT-014). */
+export function useUpsertOffering(): UseMutationResult<ServiceOfferingDto, Error, UpsertOfferingVars> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ societyId, serviceId, body }: UpsertOfferingVars) =>
+      upsertOffering(societyId, serviceId, body),
+    onSuccess: () => invalidateCatalog(queryClient),
   });
 }

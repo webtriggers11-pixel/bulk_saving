@@ -8,10 +8,14 @@ import type {
   AdminSocietyDto,
   AssignRoundBody,
   CreateRoundBody,
+  CreateServiceBody,
   CreateVendorBody,
   RoundDto,
+  ServiceOfferingDto,
   SetPaymentBody,
+  UpdateServiceBody,
   UpdateVendorBody,
+  UpsertOfferingBody,
   VendorDto,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
@@ -35,6 +39,34 @@ export function fetchSocieties(): Promise<AdminSocietyDto[]> {
 /** GET /admin/services — every master service, including inactive ones. */
 export function fetchServices(): Promise<AdminServiceDto[]> {
   return apiRequest<AdminServiceDto[]>('/admin/services');
+}
+
+/** POST /admin/services — create a master service (409 SERVICE_SLUG_TAKEN for a duplicate slug). */
+export function createService(body: CreateServiceBody): Promise<AdminServiceDto> {
+  return apiRequest<AdminServiceDto>('/admin/services', {
+    method: 'POST',
+    body: body satisfies CreateServiceBody,
+  });
+}
+
+/** PATCH /admin/services/:id — edit fields or toggle `active`. */
+export function updateService(id: string, body: UpdateServiceBody): Promise<AdminServiceDto> {
+  return apiRequest<AdminServiceDto>(`/admin/services/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: body satisfies UpdateServiceBody,
+  });
+}
+
+/** PUT /admin/societies/:societyId/offerings/:serviceId — offer (or stop offering) a service. */
+export function upsertOffering(
+  societyId: string,
+  serviceId: string,
+  body: UpsertOfferingBody,
+): Promise<ServiceOfferingDto> {
+  return apiRequest<ServiceOfferingDto>(
+    `/admin/societies/${encodeURIComponent(societyId)}/offerings/${encodeURIComponent(serviceId)}`,
+    { method: 'PUT', body: body satisfies UpsertOfferingBody },
+  );
 }
 
 /** Build `?status=&societyId=` from the filters, omitting empty values. */

@@ -122,6 +122,25 @@ export interface MeResponse {
 }
 
 /**
+ * The closed list of service categories (FEAT-014, ADR-0025). Create requires one and
+ * update validates one, so the resident catalog cannot grow a "Home" section next to
+ * "Home Care" from a typo. Extending it is a one-line change here. `Bulk Staples` is the
+ * grocery pilot: a single product in a fixed pack, pooled like any other service.
+ *
+ * The web app holds a copy (it cannot import runtime values from this package) and a
+ * test pins it to this one.
+ */
+export const SERVICE_CATEGORIES = [
+  'Appliances',
+  'Home Care',
+  'Renovation',
+  'Utilities',
+  'Vehicle',
+  'Bulk Staples',
+] as const;
+export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
+
+/**
  * Resident-facing view of a service available in the caller's society (FEAT-002).
  * Returned by `GET /catalog` — one entry per enabled offering ⋈ active service.
  * `indicativePrice` is display-only (integer rupees), present only when set for
@@ -153,6 +172,8 @@ export interface AdminServiceDto extends ServiceUnitLabels {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Per-society availability (FEAT-014). A society with no row has never been offered it. */
+  offerings: ServiceOfferingDto[];
 }
 
 /**
@@ -163,7 +184,7 @@ export interface CreateServiceBody {
   name: string;
   slug: string;
   description: string;
-  category: string;
+  category: ServiceCategory;
   imageUrl?: string;
   unitLabel?: string;
   unitLabelPlural?: string;
@@ -175,7 +196,7 @@ export interface UpdateServiceBody {
   name?: string;
   slug?: string;
   description?: string;
-  category?: string;
+  category?: ServiceCategory;
   imageUrl?: string | null;
   active?: boolean;
   unitLabel?: string;

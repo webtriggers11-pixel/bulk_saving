@@ -62,7 +62,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
         name: `Lifecycle ${serviceIds.length}`,
         slug: `lc-${serviceIds.length}-${suffix}`,
         description: 'x',
-        category: 'Home',
+        category: 'Home Care',
         active: true,
       },
     });

@@ -24,6 +24,9 @@ vi.mock('./admin.api', () => ({
   fetchVendors: vi.fn(),
   createVendor: vi.fn(),
   updateVendor: vi.fn(),
+  createService: vi.fn(),
+  updateService: vi.fn(),
+  upsertOffering: vi.fn(),
 }));
 
 const fetchSocietiesMock = vi.mocked(fetchSocieties);
@@ -43,6 +46,7 @@ const service: AdminServiceDto = {
   active: true,
   createdAt: '2026-09-16T10:00:00.000Z',
   updatedAt: '2026-09-16T10:00:00.000Z',
+  offerings: [],
 };
 
 const createdRound: RoundDto = {

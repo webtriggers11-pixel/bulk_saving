@@ -56,7 +56,7 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
       data: { name: 'AC Servicing', slug: `ac-${slugSuffix}`, description: 'x', category: 'Appliances', active: true },
     });
     disabledService = await prisma.service.create({
-      data: { name: 'Disabled Svc', slug: `dis-${slugSuffix}`, description: 'x', category: 'Home', active: true },
+      data: { name: 'Disabled Svc', slug: `dis-${slugSuffix}`, description: 'x', category: 'Home Care', active: true },
     });
     await prisma.serviceOffering.createMany({
       data: [
@@ -168,7 +168,7 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
 
       // A second offered+enabled service with no OPEN round, so create reaches the enqueue.
       const extra = await prisma.service.create({
-        data: { name: 'Rollback Svc', slug: `rb-${slugSuffix}`, description: 'x', category: 'Home', active: true },
+        data: { name: 'Rollback Svc', slug: `rb-${slugSuffix}`, description: 'x', category: 'Home Care', active: true },
       });
       await prisma.serviceOffering.create({ data: { societyId: society.id, serviceId: extra.id, enabled: true } });
       try {

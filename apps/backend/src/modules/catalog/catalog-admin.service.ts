@@ -63,10 +63,13 @@ export class CatalogAdminService {
     }
   }
 
-  /** All master services (super-admin view), newest first. */
+  /** All master services (super-admin view), newest first, each with its per-society offerings. */
   async listServices(): Promise<AdminServiceDto[]> {
-    const services = await this.prisma.service.findMany({ orderBy: { createdAt: 'desc' } });
-    return services.map(toAdminServiceDto);
+    const services = await this.prisma.service.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { offerings: { orderBy: { createdAt: 'asc' } } },
+    });
+    return services.map((service) => toAdminServiceDto(service, service.offerings));
   }
 
   /**
@@ -140,8 +143,11 @@ export class CatalogAdminService {
   }
 }
 
-/** Map a Prisma Service to the full super-admin DTO. */
-function toAdminServiceDto(service: Service): AdminServiceDto {
+/**
+ * Map a Prisma Service to the full super-admin DTO. Create and update return the
+ * service alone — their callers refetch the list — so `offerings` defaults to empty.
+ */
+function toAdminServiceDto(service: Service, offerings: ServiceOffering[] = []): AdminServiceDto {
   return {
     id: service.id,
     name: service.name,
@@ -155,6 +161,7 @@ function toAdminServiceDto(service: Service): AdminServiceDto {
     active: service.active,
     createdAt: service.createdAt.toISOString(),
     updatedAt: service.updatedAt.toISOString(),
+    offerings: offerings.map(toOfferingDto),
   };
 }
 

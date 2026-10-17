@@ -4,6 +4,7 @@ import { AdminNewRoundPage } from './features/admin/AdminNewRoundPage';
 import { AdminRoundDetailPage } from './features/admin/AdminRoundDetailPage';
 import { AdminRoute } from './features/admin/AdminRoute';
 import { AdminLoginPage } from './features/auth/AdminLoginPage';
+import { AdminServicesPage } from './features/admin/AdminServicesPage';
 import { AdminVendorsPage } from './features/admin/AdminVendorsPage';
 import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
@@ -108,6 +109,14 @@ export default function App() {
         element={
           <AdminRoute>
             <AdminRoundDetailPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/services"
+        element={
+          <AdminRoute>
+            <AdminServicesPage />
           </AdminRoute>
         }
       />
