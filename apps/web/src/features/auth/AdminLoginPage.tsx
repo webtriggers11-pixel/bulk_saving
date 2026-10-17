@@ -155,6 +155,7 @@ export function AdminLoginPage() {
             <Input
               emphasis="primary"
               textSize="code"
+              tracking="code"
               id="admin-code"
               name="code"
               inputMode="numeric"
@@ -163,7 +164,7 @@ export function AdminLoginPage() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className="num text-center tracking-[0.38em]"
+              className="num text-center"
             />
             {verifyError && <Notice tone="error">{verifyError}</Notice>}
             {requestError && <Notice tone="error">{requestError}</Notice>}

@@ -117,6 +117,7 @@ export function OnboardingPage() {
             <Input
               emphasis="primary"
               textSize="xl"
+              tracking="invite"
               id="inviteCode"
               name="inviteCode"
               autoComplete="off"
@@ -125,7 +126,7 @@ export function OnboardingPage() {
               maxLength={8}
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
-              className="num text-center tracking-[0.26em]"
+              className="num text-center"
             />
             <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.trim().length === 0}>
               Continue
@@ -194,6 +195,7 @@ export function OnboardingPage() {
             <Input
               emphasis="primary"
               textSize="code"
+              tracking="code"
               id="code"
               name="code"
               inputMode="numeric"
@@ -202,7 +204,7 @@ export function OnboardingPage() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className="num text-center tracking-[0.38em]"
+              className="num text-center"
             />
 
             <Label htmlFor="name" className="mt-[18px]">

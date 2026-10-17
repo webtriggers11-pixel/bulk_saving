@@ -802,3 +802,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Also a live BUG-010 check: after assignment the resident's `/rounds/mine` row carries `finalPrice: 650`.
 - Live run: **87/87 checks**; Service/Vendor/Resident/Round counts identical before and after (23/7/14/14). A second run hit the super-admin's 5-per-hour OTP limit (the known dev constraint) and aborted; its cleanup still ran and left nothing. Cleared that one phone's hourly counter in dev Redis and re-ran green.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-012 — letter-spacing (and line-height) now policed
+- Failing guard first: `familiesOf` gained `letter-spacing` (`-?tracking-*`) and `line-height` (`leading-*`). It flagged exactly the three predicted sites — the invite code and both OTP fields passing `tracking-*` against `Input`'s base `tracking-[-0.01em]`.
+- Fixed BUG-007's way: a closed `tracking` prop on `Input` (`default | invite | code`); the callers pass the prop, not a class. The prop matrix renders all 5×2×2×3 Input combinations. font-weight and box-shadow were already families.
+- By: agent (autonomous)

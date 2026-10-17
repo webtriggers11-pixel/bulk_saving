@@ -38,7 +38,7 @@
 | BUG-010 | A resident sees `currentPrice` on a delivered round, not the negotiated `finalPrice` (needs backend) | in-review | P1 | 2026-09-19 | — | loop/work/BUG-010-delivered-round-shows-wrong-price/ | — |
 | CHORE-010 | "Unlocks ₹900 at 4 flats" when ₹900 is already the price — nextTier reads as an unlock that changes nothing | in-review | P3 | 2026-09-19 | — | loop/work/CHORE-010-next-tier-reads-as-no-change/ | — |
 | CHORE-011 | Dev catalog is full of E2E leftovers ("E2E Service 011682", ₹999/unit) — clean before any demo | in-review | P3 | 2026-09-19 | — | loop/work/CHORE-011-dev-catalog-e2e-leftovers/ | — |
-| CHORE-012 | The BUG-007 class-conflict scan does not police letter-spacing (two Input callers exposed) | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-012-letter-spacing-not-policed/ | ADR-0022 |
+| CHORE-012 | The BUG-007 class-conflict scan does not police letter-spacing (two Input callers exposed) | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-012-letter-spacing-not-policed/ | ADR-0022 |
 | CHORE-013 | act() warnings in the web suite hide the next real one | triaged | P3 | 2026-09-19 | — | loop/work/CHORE-013-act-warnings-in-profile-tests/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |

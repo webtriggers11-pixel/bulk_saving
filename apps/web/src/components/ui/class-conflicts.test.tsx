@@ -88,6 +88,11 @@ function familiesOf(token: string): string[] {
   // had. Deliberately NOT extended to colour families, where a caller legitimately
   // overrides and flagging it would only train people to ignore the scan.
   if (/^w-(\[|\d|auto$|full$|fit$|screen$|icon$)/.test(bare)) return ['width'];
+  // CHORE-012: letter-spacing and line-height were unpoliced, and Input's base
+  // `tracking-[-0.01em]` was fighting three callers' `tracking-[0.26em|0.38em]` —
+  // the callers won only because Tailwind happened to emit them later.
+  if (/^-?tracking-/.test(bare)) return ['letter-spacing'];
+  if (/^leading-/.test(bare)) return ['line-height'];
   if (/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.test(bare)) {
     return ['font-weight'];
   }
@@ -187,6 +192,7 @@ const BUTTON_SIZES = ['md', 'sm', 'icon'] as const;
 const INPUT_SIZES = ['default', 'numeric', 'lg', 'xl', 'code'] as const;
 const INPUT_EMPHASES = ['normal', 'primary'] as const;
 const INPUT_INSETS = ['default', 'icons'] as const;
+const INPUT_TRACKINGS = ['default', 'invite', 'code'] as const;
 
 const CARD_SURFACES = ['glass', 'solid', 'tint', 'accent'] as const;
 const CARD_PADDING = ['none', 'tight', 'snug', 'default', 'roomy'] as const;
@@ -293,12 +299,20 @@ const PROP_MATRIX: Array<[string, ReactElement]> = [
   ),
   ...INPUT_SIZES.flatMap((textSize) =>
     INPUT_EMPHASES.flatMap((emphasis) =>
-      INPUT_INSETS.map(
-        (inset) =>
-          [
-            `Input textSize=${textSize} emphasis=${emphasis} inset=${inset}`,
-            <Input key={`${textSize}-${emphasis}-${inset}`} textSize={textSize} emphasis={emphasis} inset={inset} />,
-          ] as [string, ReactElement],
+      INPUT_INSETS.flatMap((inset) =>
+        INPUT_TRACKINGS.map(
+          (tracking) =>
+            [
+              `Input textSize=${textSize} emphasis=${emphasis} inset=${inset} tracking=${tracking}`,
+              <Input
+                key={`${textSize}-${emphasis}-${inset}-${tracking}`}
+                textSize={textSize}
+                emphasis={emphasis}
+                inset={inset}
+                tracking={tracking}
+              />,
+            ] as [string, ReactElement],
+        ),
       ),
     ),
   ),

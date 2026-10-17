@@ -57,14 +57,29 @@ const INPUT_INSET = {
   icons: 'pl-11 pr-11',
 } as const;
 
+/**
+ * Letter-spacing (CHORE-012). The two fields whose design IS their spacing — the invite
+ * code and the OTP — passed `tracking-*` in a className against the base
+ * `tracking-[-0.01em]`, and won only because Tailwind emitted them later.
+ */
+const INPUT_TRACKING = {
+  default: 'tracking-[-0.01em]',
+  invite: 'tracking-[0.26em]',
+  code: 'tracking-[0.38em]',
+} as const;
+
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   textSize?: keyof typeof INPUT_TEXT;
   emphasis?: keyof typeof INPUT_EMPHASIS;
   inset?: keyof typeof INPUT_INSET;
+  tracking?: keyof typeof INPUT_TRACKING;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input({ textSize = 'default', emphasis = 'normal', inset = 'default', className, ...props }, ref) {
+  function Input(
+    { textSize = 'default', emphasis = 'normal', inset = 'default', tracking = 'default', className, ...props },
+    ref,
+  ) {
     return (
       <input
         ref={ref}
@@ -74,7 +89,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           // each was a property the base set AND a caller tried to override, which is a
           // property neither of them actually decides (V2 P2-7, P2-D).
           INPUT_INSET[inset],
-          'tracking-[-0.01em] text-ink t',
+          INPUT_TRACKING[tracking],
+          'text-ink t',
           INPUT_TEXT[textSize],
           INPUT_EMPHASIS[emphasis],
           'placeholder:font-medium placeholder:text-ink-soft',
