@@ -599,6 +599,15 @@ button:hover .nudge {
   filter: saturate(0.7);
 }
 
+/* A search box draws exactly one clear button — ours (SearchField). WebKit adds its own
+   to every type=search input, and Tailwind's preflight leaves it alone. */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 /* A horizontally scrolling chip rail that does not draw a scrollbar on touch. */
 .chip-rail {
   scrollbar-width: none;

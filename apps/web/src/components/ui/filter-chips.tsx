@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import { cn } from '../../lib/utils';
 
 export interface FilterChipOption {
@@ -8,7 +8,7 @@ export interface FilterChipOption {
 }
 
 interface FilterChipsProps {
-  /** The group's accessible name, e.g. "Category". */
+  /** The group's name, e.g. "Category" — shown before the chips and used as their accessible name. */
   label: string;
   options: readonly FilterChipOption[];
   value: string;
@@ -26,10 +26,19 @@ interface FilterChipsProps {
  */
 export function FilterChips({ label, options, value, onChange, className }: FilterChipsProps) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const labelId = useId();
+
   const selected = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   );
+
+  // On a phone the rail scrolls, and a choice made elsewhere (a shared link, a refresh)
+  // can sit off-screen — the row then shows no chosen chip at all (FEAT-015 browser pass).
+  // `nearest` scrolls the rail sideways only as far as needed and never jumps the page.
+  useEffect(() => {
+    refs.current[selected]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [selected]);
 
   function move(event: KeyboardEvent, from: number) {
     const last = options.length - 1;
@@ -51,11 +60,17 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
     refs.current[to]?.focus();
   }
 
+  // Visible, because two rows of chips that both start with "All" read as one muddle
+  // (FEAT-015 browser pass) — the label says which row is which.
   return (
+    <div className={cn('flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3', className)}>
+    <span id={labelId} className="term-label shrink-0 text-ink-soft sm:w-20">
+      {label}
+    </span>
     <div
       role="radiogroup"
-      aria-label={label}
-      className={cn('chip-rail -mx-1 flex gap-2 overflow-x-auto px-1 py-1', className)}
+      aria-labelledby={labelId}
+      className="chip-rail -mx-1 flex min-w-0 gap-2 overflow-x-auto px-1 py-1"
     >
       {options.map((option, index) => {
         const checked = index === selected;
@@ -83,6 +98,7 @@ export function FilterChips({ label, options, value, onChange, className }: Filt
           </button>
         );
       })}
+    </div>
     </div>
   );
 }

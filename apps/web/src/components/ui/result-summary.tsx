@@ -32,7 +32,7 @@ export function ResultSummary({ count, noun, activeCount, onClear, busy, classNa
               {count}
             </span>{' '}
             {count === 1 ? noun[0] : noun[1]}
-            {activeCount > 0 ? ' match' : ''}
+            {activeCount > 0 ? (count === 1 ? ' matches' : ' match') : ''}
             {busy && <span className="sr-only"> — updating</span>}
           </>
         )}

@@ -90,6 +90,19 @@ describe('FilterChips', () => {
     expect(screen.getByRole('radio', { name: 'Vehicle' })).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('scrolls the chosen chip into view — on a phone it can start off the end of the rail', () => {
+    const scroll = vi.fn();
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scroll;
+    try {
+      render(<FilterChips label="Category" options={OPTIONS} value="Vehicle" onChange={() => {}} />);
+      expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
+      expect(scroll.mock.contexts.at(-1)).toBe(screen.getByRole('radio', { name: 'Vehicle' }));
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
+  });
+
   it('falls back to the first chip when the value matches no option', () => {
     render(<FilterChips label="Category" options={OPTIONS} value="Gone" onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'All' })).toHaveAttribute('aria-checked', 'true');
