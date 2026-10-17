@@ -41,12 +41,17 @@ export class OtpSendProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<OtpSendJobData>): Promise<{ sent: boolean }> {
+  /**
+   * Resolves to nothing on purpose: BullMQ copies a job's return value into the queue's
+   * events stream, which outlives the job — `{ sent: true | false }` there would tell a
+   * Redis reader which numbers were administrators' (ADR-0027 V2).
+   */
+  async process(job: Job<OtpSendJobData>): Promise<void> {
     const { phone, sealed } = job.data;
     const admin = await this.residents.findAdminByPhone(phone);
     if (!admin) {
       // Generated, stored, and sent nowhere — exactly as before, but decided here.
-      return { sent: false };
+      return;
     }
     const code = unsealOtp(sealed);
     try {
@@ -57,6 +62,5 @@ export class OtpSendProcessor extends WorkerHost {
       this.logger.warn(`OTP dispatch to ${redactPhone(phone)} failed: ${redacted}`);
       throw new Error(redacted);
     }
-    return { sent: true };
   }
 }

@@ -9,6 +9,8 @@ import {
   OTP_MAX_ATTEMPTS,
   OTP_RESEND_HOURLY_MAX,
   OTP_RESEND_PHONE_HOURLY_MAX,
+  OTP_VERIFY_FAIL_CLIENT_MAX,
+  OTP_VERIFY_FAIL_PHONE_MAX,
   devOtpEchoEnabled,
   ipBucket,
 } from './otp.service';
@@ -142,9 +144,76 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(ipBucket('2001:db8:aa:bb::1')).not.toBe(ipBucket('2001:db8:aa:cc::1'));
     });
 
+    it('ignores a port a proxy may append — otherwise every source port is a fresh budget (ADR-0027 V2)', () => {
+      expect(ipBucket('198.51.100.7:51234')).toBe(ipBucket('198.51.100.7'));
+      expect(ipBucket('[2001:db8:aa:bb::1]:443')).toBe(ipBucket('2001:db8:aa:bb::9'));
+    });
+
     it('treats an IPv4-mapped address as the IPv4 address, and a missing one as one shared bucket', () => {
       expect(ipBucket('::ffff:198.51.100.7')).toBe(ipBucket('198.51.100.7'));
       expect(ipBucket(undefined)).toBe(ipBucket(''));
+    });
+  });
+
+  /**
+   * ADR-0027 V2 P1: the request ceiling is per scope, and an admin's number is reachable
+   * through BOTH doors — so a multi-IP guesser got ~100 guesses an hour at a SUPER_ADMIN.
+   * Failed guesses now spend a budget per (phone, client) and per phone, across scopes.
+   */
+  describe('failed guesses spend a budget across both doors (ADR-0027)', () => {
+    const at = (clientIp: string) => ({ clientIp });
+    const wrong = (code: string) => (code === '000000' ? '111111' : '000000');
+
+    /**
+     * One wrong guess against a fresh code, from `ip` — the per-code lock never trips.
+     * The REQUEST budgets for that client are cleared first: this suite is about guess
+     * budgets, and needs more codes per client than the request budget hands out.
+     */
+    async function guessWrong(scope: string, phone: string, ip: string) {
+      await redis.del(`otp:resend:interval:${scope}:${phone}:${ip}`, `otp:resend:hourly:${scope}:${phone}:${ip}`);
+      await service.request(scope, phone, at(ip));
+      return service.verify(scope, phone, wrong(channel.lastCode as string), at(ip));
+    }
+
+    it('a guesser on one client is stopped — even a correct code is refused once its budget is spent', async () => {
+      const phone = uniquePhone();
+      for (let n = 0; n < OTP_VERIFY_FAIL_CLIENT_MAX; n += 1) {
+        expect(await guessWrong(societyId, phone, '198.51.100.7')).toBe('INVALID');
+      }
+      await redis.del(`otp:resend:interval:${societyId}:${phone}:198.51.100.7`);
+      await service.request(societyId, phone, at('198.51.100.7'));
+      expect(await service.verify(societyId, phone, channel.lastCode as string, at('198.51.100.7'))).toBe('LOCKED');
+    });
+
+    it('…while the owner, on another client, still signs in', async () => {
+      const phone = uniquePhone();
+      for (let n = 0; n < OTP_VERIFY_FAIL_CLIENT_MAX; n += 1) {
+        await guessWrong(societyId, phone, '198.51.100.7');
+      }
+      await service.request(societyId, phone, at('203.0.113.9'));
+      expect(await service.verify(societyId, phone, channel.lastCode as string, at('203.0.113.9'))).toBe('OK');
+    });
+
+    it('caps a phone across clients AND across doors — the admin door and a society door share it', async () => {
+      const phone = uniquePhone();
+      let spent = 0;
+      for (let client = 1; spent < OTP_VERIFY_FAIL_PHONE_MAX; client += 1) {
+        for (let n = 0; n < OTP_VERIFY_FAIL_CLIENT_MAX && spent < OTP_VERIFY_FAIL_PHONE_MAX; n += 1) {
+          // Alternate the scope: guesses through either door count against the same phone.
+          await guessWrong(spent % 2 === 0 ? societyId : 'admin-door', phone, `192.0.2.${client}`);
+          spent += 1;
+        }
+      }
+      await service.request('admin-door', phone, at('203.0.113.50'));
+      expect(await service.verify('admin-door', phone, channel.lastCode as string, at('203.0.113.50'))).toBe('LOCKED');
+    });
+
+    it('a correct code costs nothing, and neither does verifying with no code outstanding', async () => {
+      const phone = uniquePhone();
+      await service.request(societyId, phone, at('198.51.100.7'));
+      expect(await service.verify(societyId, phone, channel.lastCode as string, at('198.51.100.7'))).toBe('OK');
+      expect(await service.verify(societyId, phone, '123456', at('198.51.100.7'))).toBe('EXPIRED');
+      expect(await redis.get(`otp:verify-fail:${phone}`)).toBeNull();
     });
   });
 

@@ -70,7 +70,7 @@ export class AuthController {
 
   @Post('auth/otp/verify')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() dto: OtpVerifyDto): Promise<AuthResult> {
+  async verifyOtp(@Body() dto: OtpVerifyDto, @Ip() clientIp: string): Promise<AuthResult> {
     const society = await this.societies.findByInviteCode(dto.inviteCode);
     if (!society) {
       throw new BadRequestException({
@@ -79,7 +79,7 @@ export class AuthController {
       });
     }
 
-    const result = await this.otp.verify(society.id, dto.phone, dto.code);
+    const result = await this.otp.verify(society.id, dto.phone, dto.code, { clientIp });
     if (result === 'INVALID') {
       throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
     }
@@ -138,12 +138,12 @@ export class AuthController {
 
   @Post('auth/admin/otp/verify')
   @HttpCode(HttpStatus.OK)
-  async verifyAdminOtp(@Body() dto: AdminOtpVerifyDto): Promise<AuthResult> {
+  async verifyAdminOtp(@Body() dto: AdminOtpVerifyDto, @Ip() clientIp: string): Promise<AuthResult> {
     // The code is checked FIRST, against a scope that does not depend on the caller.
     // Looking the row up first — which is what this did before — meant an unknown
     // number got OTP_INVALID while a registered one got OTP_EXPIRED, so a single
     // unauthenticated request revealed whether a phone was in the product (V2 P1-2).
-    const result = await this.otp.verify(ADMIN_OTP_SCOPE, dto.phone, dto.code);
+    const result = await this.otp.verify(ADMIN_OTP_SCOPE, dto.phone, dto.code, { clientIp });
     if (result === 'INVALID') {
       throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
     }

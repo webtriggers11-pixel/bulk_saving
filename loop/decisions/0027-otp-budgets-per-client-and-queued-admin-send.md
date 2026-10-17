@@ -65,25 +65,45 @@ ADR-0023's four review rounds.
 
 ## Consequences
 
-- One machine can no longer lock an owner out. A **multi-IP attacker still can**: 10
-  requests across ≥2 addresses spend the per-phone ceiling for an hour. That is the price
-  of capping SMS cost and guesses; per-IP limits are not a defence against a botnet.
-- **Brute force**: a multi-IP attacker gets up to 10 codes/hour × 5 guesses = 50 guesses
-  per hour per phone, against 25 before (single-IP attackers are unchanged at 25). Odds
-  per hour ≈ 5×10⁻⁵. Accepted; revisit trigger below.
+- **Lock-out.** A single client can no longer spend an owner's request budget. "One
+  machine" needs care, though: a dual-stack laptop is two clients (an IPv4 address and an
+  IPv6 /64), and an ISP that hands out a /56 gives one subscriber 256 /64s. So the honest
+  claim is "a single address cannot"; **a determined attacker with two or more addresses
+  can still spend the per-phone ceiling (10 requests) and deny for an hour.** That is the
+  price of capping SMS cost and guesses; per-address limits are no defence against a botnet.
+- **Brute force (corrected in V2).** The first version of this ADR said a multi-IP attacker
+  got 50 guesses/hour per phone. Wrong: the request ceiling is per SCOPE, and an
+  administrator's number is reachable through both doors (the admin door, and the resident
+  door with their society's invite code, which any resident knows) — ~100 guesses/hour at a
+  SUPER_ADMIN. Fixed by a **failed-guess budget per phone ACROSS scopes**: 10 per
+  (phone, client) — two codes' worth, so a person who fat-fingers one code can still try
+  another — and **20 per phone per hour**. A spent budget refuses even a correct code
+  (`LOCKED`), or it would not be a cap. Odds against a 6-digit code: 20 guesses/hour ≈
+  2×10⁻⁵ per hour, ≈1.4% per month, ≈16% per year **if sustained for a year from many
+  addresses** — far better than the ~58%/year the first version allowed, and better than
+  the pre-ADR design (2 scopes × 25/hour), but not nothing. Longer codes, or a second factor
+  for administrators, are the real answer if that ever matters (revisit trigger).
 - The admin door's request path is now identical for every caller in every phase. The
   worker still shares the process (and event loop) with the API in v1; running workers as
-  a separate process removes that last residual and needs no code change.
+  a separate process removes that last residual and needs no code change. The worker's
+  return value is `undefined` on purpose: BullMQ copies return values into the events
+  stream, which outlives the job.
 - A queued send survives a restart (ADR-0023's "lost on shutdown" is gone); delivery is
   now worker latency, normally milliseconds. Ordering is unchanged: a later request still
   replaces the stored code, so an earlier SMS may not verify.
 - Deployments behind a proxy MUST set `TRUST_PROXY` (DEPLOY.md), or every caller is one
-  client — which degrades to the old per-phone behaviour, not worse.
+  client — which degrades to the old per-phone behaviour, not worse. A port appended by the
+  proxy (`1.2.3.4:5678`, `[v6]:443`) and an IPv6 zone id are stripped before bucketing.
+- CHORE-015's index is a plain `CREATE INDEX`, which blocks writes to `Resident` while it
+  builds — instant at today's size. On a large table, build it out of band with
+  `CREATE INDEX CONCURRENTLY` before deploying the migration.
 
 ## Revisit triggers
 
 - Any admin reports being locked out → per-phone ceiling too low, or a botnet: add a
   CAPTCHA-free proof (e.g. a signed device token) rather than raising limits.
-- OTP verify failures per phone per hour exceed ~30 in logs → add a per-phone failed-verify
-  budget.
+- Any LOCKED answer for an administrator's phone that the administrator did not cause —
+  i.e. a support report of "my code is refused" — is a sustained guessing attempt: move
+  administrators to 8-digit codes or a second factor. (There is no alerting yet; until
+  there is, the trigger is the support report.)
 - Production traffic on the API process: move BullMQ workers to their own process.

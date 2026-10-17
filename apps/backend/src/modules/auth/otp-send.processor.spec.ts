@@ -40,13 +40,13 @@ describe('OtpSendProcessor', () => {
 
   it('sends the unsealed code to an administrator', async () => {
     const { processor, job, sent } = setup(true);
-    await expect(processor.process(job('481516'))).resolves.toEqual({ sent: true });
+    await expect(processor.process(job('481516'))).resolves.toBeUndefined();
     expect(sent).toEqual([{ phone: '+919800000001', code: '481516' }]);
   });
 
   it('sends nothing to a number that is not an administrator — the decision the request no longer makes', async () => {
     const { processor, job, sent } = setup(false);
-    await expect(processor.process(job('481516'))).resolves.toEqual({ sent: false });
+    await expect(processor.process(job('481516'))).resolves.toBeUndefined();
     expect(sent).toEqual([]);
   });
 
@@ -55,6 +55,12 @@ describe('OtpSendProcessor', () => {
       throw new Error('malformed provider URL');
     });
     await expect(processor.process(job('481516'))).rejects.toThrow('malformed provider URL');
+  });
+
+  it('returns nothing for the events stream to keep — a stored {sent} would mark admin numbers', async () => {
+    const admin = setup(true);
+    const stranger = setup(false);
+    expect(await admin.processor.process(admin.job('1'))).toEqual(await stranger.processor.process(stranger.job('1')));
   });
 
   it('keeps the code out of the failure BullMQ stores, even if the provider echoes it', async () => {

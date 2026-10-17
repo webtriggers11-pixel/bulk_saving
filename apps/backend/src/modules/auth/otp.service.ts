@@ -70,6 +70,16 @@ export const OTP_RESEND_HOURLY_MAX = 5; // max 5 / hour, per (phone, client)
  * can buy — SMS cost, and the number of codes a brute-forcer gets to guess against.
  */
 export const OTP_RESEND_PHONE_HOURLY_MAX = 10;
+/**
+ * Wrong codes per hour (ADR-0027, V2 P1). The request ceiling above is per SCOPE, and an
+ * administrator's number is reachable through both doors — so guesses are budgeted per
+ * phone ACROSS scopes: 10 per (phone, client) — two codes' worth of OTP_MAX_ATTEMPTS, so a
+ * person who fat-fingers one code can still request another and try again, and one
+ * machine cannot lock the owner out; 20 per phone, which caps a multi-client guesser at
+ * 20 tries an hour at any account.
+ */
+export const OTP_VERIFY_FAIL_CLIENT_MAX = 10;
+export const OTP_VERIFY_FAIL_PHONE_MAX = 20;
 const OTP_RESEND_HOUR_SECONDS = 60 * 60;
 
 /**
@@ -80,10 +90,19 @@ const OTP_RESEND_HOUR_SECONDS = 60 * 60;
  * the old per-phone behaviour rather than to no limit at all.
  */
 export function ipBucket(ip: string | undefined): string {
-  const raw = (ip ?? '').trim().toLowerCase();
+  let raw = (ip ?? '').trim().toLowerCase();
   if (raw === '') {
     return 'unknown';
   }
+  // A proxy may append a port (`1.2.3.4:5678`, `[v6]:443`); without stripping it every
+  // source port would be a fresh budget (ADR-0027 V2).
+  const bracketed = /^\[([^\]]+)\](?::\d+)?$/.exec(raw);
+  if (bracketed) {
+    raw = bracketed[1];
+  } else if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(raw)) {
+    raw = raw.slice(0, raw.lastIndexOf(':'));
+  }
+  raw = raw.replace(/%.*$/, ''); // an IPv6 zone id names an interface, not a client
   const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(raw);
   if (mapped) {
     return mapped[1];
@@ -174,6 +193,15 @@ export class OtpService {
 
   private resendCeilingKey(scopeId: string, phone: string): string {
     return `otp:resend:ceiling:${scopeId}:${phone}`;
+  }
+
+  // Not scoped: a phone's failed guesses are counted across both doors (ADR-0027).
+  private verifyFailClientKey(phone: string, client: string): string {
+    return `otp:verify-fail:${phone}:${client}`;
+  }
+
+  private verifyFailPhoneKey(phone: string): string {
+    return `otp:verify-fail:${phone}`;
   }
 
   // No hardcoded fallback — the OTP hashing secret comes from validated env only.
@@ -291,14 +319,38 @@ export class OtpService {
    * Verify a submitted code. Consumes the OTP on success; increments attempts
    * on failure and locks after {@link OTP_MAX_ATTEMPTS}.
    */
-  async verify(scopeId: string, phone: string, code: string): Promise<OtpVerifyResult> {
+  async verify(
+    scopeId: string,
+    phone: string,
+    code: string,
+    options: { clientIp?: string } = {},
+  ): Promise<OtpVerifyResult> {
+    // ADR-0027: a spent guess budget refuses BEFORE the code is looked at — a correct
+    // code included, or it would not be a cap. The answer is LOCKED either way, and the
+    // budgets are the same for every caller, so this says nothing about who owns the phone.
+    const client = ipBucket(options.clientIp);
+    const clientKey = this.verifyFailClientKey(phone, client);
+    const phoneKey = this.verifyFailPhoneKey(phone);
+    const [clientFails, phoneFails] = await this.redis.mget(clientKey, phoneKey);
+    if (Number(clientFails ?? 0) >= OTP_VERIFY_FAIL_CLIENT_MAX || Number(phoneFails ?? 0) >= OTP_VERIFY_FAIL_PHONE_MAX) {
+      return 'LOCKED';
+    }
+
     const status = (await this.redis.eval(
       VERIFY_LUA,
       1,
       this.otpKey(scopeId, phone),
       this.hash(code),
       String(OTP_MAX_ATTEMPTS),
-    )) as string;
-    return status as OtpVerifyResult;
+    )) as OtpVerifyResult;
+
+    // A wrong guess spends both budgets. A right one, or a verify with no code
+    // outstanding (nothing to guess against), spends nothing.
+    if (status === 'INVALID' || status === 'LOCKED') {
+      for (const key of [clientKey, phoneKey]) {
+        await this.redis.eval(RESEND_HOURLY_LUA, 1, key, String(OTP_RESEND_HOUR_SECONDS));
+      }
+    }
+    return status;
   }
 }

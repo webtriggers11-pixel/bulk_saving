@@ -832,3 +832,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Docs: ADR-0027; ADR-0023's "What this costs" marked superseded in part; DEPLOY.md + env examples gain `TRUST_PROXY`.
 - V1: gate exit 0 — backend 388/388, web 382/382.
 - By: agent (autonomous)
+
+## 2026-10-17 — batch V2: PASS with one P1 (fixed) and five P2s (fixed)
+- Reviewer ran the gate (backend 388, web 382) and mutation-proved BUG-010, CHORE-012, CHORE-016, CHORE-017 (worker admin check; redaction) and CHORE-019. Admin-door request path: no role lookup, identical seal/enqueue for all, no job ids returned, worker touches no limiter key, `TRUST_PROXY=true` refused, secret rotation fails jobs cleanly.
+- **P1 (ADR-0027's risk, not the code): the brute-force bound was wrong.** The request ceiling is per SCOPE and an admin's number is reachable through both doors (the resident door with any resident's invite code) — ~100 guesses/hour at a SUPER_ADMIN, ~58%/year sustained. Fixed with a defence, not just prose: a failed-guess budget per phone ACROSS scopes — 10 per (phone, client), 20 per phone, per hour; a spent budget refuses even a correct code. Failing tests first; the guard's removal fails both cap tests. **My first number (5 per client) equalled the per-code attempt limit, so one fat-fingered code would have locked a person's own device out for an hour — the old "lock after 5 attempts" test caught it.** Raised to 10. ADR-0027's Consequences now carry the corrected arithmetic (≈16%/year if sustained from many addresses) and the real answer if that ever matters (longer codes / a second factor for admins).
+- P2s fixed: dual-stack/ISP wording ("a single address cannot", not "one machine"); `ipBucket` strips a proxy-appended port and an IPv6 zone id (tested); GCM `authTagLength: 16` pinned on both sides (DEP0182 — Node otherwise accepts a truncated tag); the worker returns nothing (BullMQ keeps return values in the events stream, so `{sent}` marked admin numbers); `CREATE INDEX CONCURRENTLY` note for large tables; `spec.md` added to CHORE-016/017.
+- `.nvmrc` the reviewer saw is CHORE-021's (mine).
+- V1: gate exit 0 — backend 394/394, web 382/382.
+- By: agent (autonomous) + code-reviewer subagent (V2)
