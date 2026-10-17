@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -13,7 +14,9 @@ import type {
   AdminRoundsQuery,
   AdminRoundSummaryDto,
   AdminServiceDto,
+  AdminServicesQuery,
   AdminSocietyDto,
+  AdminVendorsQuery,
   AssignRoundBody,
   CreateRoundBody,
   CreateServiceBody,
@@ -53,9 +56,13 @@ export const adminKeys = {
   roundsAll: ['admin', 'rounds'] as const,
   rounds: (filters: AdminRoundsQuery) => ['admin', 'rounds', filters] as const,
   round: (id: string) => ['admin', 'round', id] as const,
+  /** Prefix of every filtered vendor list — invalidate this to refresh them all. */
   vendors: ['admin', 'vendors'] as const,
+  vendorsFiltered: (filters: AdminVendorsQuery) => ['admin', 'vendors', filters] as const,
   societies: ['admin', 'societies'] as const,
+  /** Prefix of every filtered service list. */
   services: ['admin', 'services'] as const,
+  servicesFiltered: (filters: AdminServicesQuery) => ['admin', 'services', filters] as const,
   /** Mutation key for an in-flight assign, so sibling actions can disable themselves. */
   assignMutation: (id: string) => ['admin', 'assign', id] as const,
 };
@@ -83,6 +90,9 @@ export function useAdminRounds(filters: AdminRoundsQuery): UseQueryResult<AdminR
   return useQuery({
     queryKey: adminKeys.rounds(filters),
     queryFn: () => fetchAdminRounds(filters),
+    // FEAT-015: hold the last result on screen while a new filter loads, rather than
+    // flashing to a skeleton between keystrokes.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -100,14 +110,22 @@ export function useAdminSocieties(): UseQueryResult<AdminSocietyDto[]> {
   return useQuery({ queryKey: adminKeys.societies, queryFn: fetchSocieties });
 }
 
-/** GET /admin/services. */
-export function useAdminServices(): UseQueryResult<AdminServiceDto[]> {
-  return useQuery({ queryKey: adminKeys.services, queryFn: fetchServices });
+/** GET /admin/services, filtered on the server (FEAT-015). No filters = every service. */
+export function useAdminServices(filters: AdminServicesQuery = {}): UseQueryResult<AdminServiceDto[]> {
+  return useQuery({
+    queryKey: adminKeys.servicesFiltered(filters),
+    queryFn: () => fetchServices(filters),
+    placeholderData: keepPreviousData,
+  });
 }
 
-/** GET /admin/vendors. */
-export function useVendors(): UseQueryResult<VendorDto[]> {
-  return useQuery({ queryKey: adminKeys.vendors, queryFn: fetchVendors });
+/** GET /admin/vendors, filtered on the server (FEAT-015). No filters = every vendor. */
+export function useVendors(filters: AdminVendorsQuery = {}): UseQueryResult<VendorDto[]> {
+  return useQuery({
+    queryKey: adminKeys.vendorsFiltered(filters),
+    queryFn: () => fetchVendors(filters),
+    placeholderData: keepPreviousData,
+  });
 }
 
 /** POST /admin/rounds; refreshes the rounds lists and dashboard. */

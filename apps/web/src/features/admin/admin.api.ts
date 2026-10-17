@@ -5,7 +5,9 @@ import type {
   AdminRoundsQuery,
   AdminRoundSummaryDto,
   AdminServiceDto,
+  AdminServicesQuery,
   AdminSocietyDto,
+  AdminVendorsQuery,
   AssignRoundBody,
   CreateRoundBody,
   CreateServiceBody,
@@ -19,6 +21,7 @@ import type {
   VendorDto,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
+import { toQueryString } from '../../lib/filters';
 
 /**
  * Super-admin API (FEAT-005, ADR-0012). Every route is SUPER_ADMIN-only and
@@ -36,9 +39,9 @@ export function fetchSocieties(): Promise<AdminSocietyDto[]> {
   return apiRequest<AdminSocietyDto[]>('/admin/societies');
 }
 
-/** GET /admin/services — every master service, including inactive ones. */
-export function fetchServices(): Promise<AdminServiceDto[]> {
-  return apiRequest<AdminServiceDto[]>('/admin/services');
+/** GET /admin/services — master services, including inactive ones, filtered on the server (FEAT-015). */
+export function fetchServices(query: AdminServicesQuery = {}): Promise<AdminServiceDto[]> {
+  return apiRequest<AdminServiceDto[]>(`/admin/services${toQueryString(query)}`);
 }
 
 /** POST /admin/services — create a master service (409 SERVICE_SLUG_TAKEN for a duplicate slug). */
@@ -69,17 +72,9 @@ export function upsertOffering(
   );
 }
 
-/** Build `?status=&societyId=` from the filters, omitting empty values. */
+/** Build `?status=&societyId=&q=&category=` from the filters, omitting empty values. */
 export function buildRoundsQueryString(query: AdminRoundsQuery): string {
-  const params = new URLSearchParams();
-  if (query.status) {
-    params.set('status', query.status);
-  }
-  if (query.societyId) {
-    params.set('societyId', query.societyId);
-  }
-  const qs = params.toString();
-  return qs ? `?${qs}` : '';
+  return toQueryString(query);
 }
 
 /** GET /admin/rounds — round summaries across societies, newest first. */
@@ -141,9 +136,9 @@ export function setPayment(
   );
 }
 
-/** GET /admin/vendors — the global vendor list. */
-export function fetchVendors(): Promise<VendorDto[]> {
-  return apiRequest<VendorDto[]>('/admin/vendors');
+/** GET /admin/vendors — the global vendor list, filtered on the server (FEAT-015). */
+export function fetchVendors(query: AdminVendorsQuery = {}): Promise<VendorDto[]> {
+  return apiRequest<VendorDto[]>(`/admin/vendors${toQueryString(query)}`);
 }
 
 /** POST /admin/vendors — add a vendor. */

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import type { AdminServiceDto } from '@bulk/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -67,15 +67,26 @@ const rice: AdminServiceDto = {
 
 const legacy: AdminServiceDto = { ...tank, id: 'svc_old', name: 'Old Thing', slug: 'old-thing', category: 'Home', offerings: [] };
 
-function renderPage() {
+function UrlProbe() {
+  return <output data-testid="url">{useLocation().search}</output>;
+}
+
+function renderPage(url = '/admin/services') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/admin/services']}>
+      <MemoryRouter initialEntries={[url]}>
         <AdminServicesPage />
+        <UrlProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+/** The add form is closed behind "New service" (FEAT-015). */
+function openAddForm(): HTMLElement {
+  fireEvent.click(screen.getByRole('button', { name: 'New service' }));
+  return screen.getByRole('form', { name: 'Add service' });
 }
 
 /** Open a service's society controls (closed by default) and return them. */
@@ -119,9 +130,9 @@ describe('AdminServicesPage', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     const [green, other] = await openSocieties();
     expect(within(row).getByRole('button', { name: 'Hide societies' })).toHaveAttribute('aria-expanded', 'true');
-    expect(within(green).getByText('Offered')).toBeInTheDocument();
+    expect(within(green).getByRole('switch', { name: `Offer Water Tank Cleaning in ${society.name}` })).toHaveAttribute('aria-checked', 'true');
     expect(within(green).getByText('From ₹799 / tank')).toBeInTheDocument();
-    expect(within(other).getByText('Not offered')).toBeInTheDocument();
+    expect(within(other).getByRole('switch', { name: 'Offer Water Tank Cleaning in Blue Waters' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('creates a service with a slug derived from the name and a category from the list', async () => {
@@ -130,7 +141,7 @@ describe('AdminServicesPage', () => {
     renderPage();
     await screen.findByTestId('services-empty');
 
-    const form = screen.getByRole('form', { name: 'Add service' });
+    const form = openAddForm();
     fill(form, /^Name/, '  Basmati Rice — 25 kg ');
     expect(within(form).getByLabelText(/^Slug/)).toHaveValue('basmati-rice-25-kg');
     fireEvent.change(within(form).getByLabelText(/^Category/), { target: { value: 'Bulk Staples' } });
@@ -157,7 +168,7 @@ describe('AdminServicesPage', () => {
     renderPage();
     await screen.findByTestId('services-empty');
 
-    const form = screen.getByRole('form', { name: 'Add service' });
+    const form = openAddForm();
     fill(form, /^Name/, 'Car Wash');
     fill(form, /^Slug/, 'car-wash-weekly');
     fill(form, /^Name/, 'Car Wash Subscription');
@@ -169,7 +180,7 @@ describe('AdminServicesPage', () => {
     renderPage();
     await screen.findByTestId('services-empty');
 
-    const form = screen.getByRole('form', { name: 'Add service' });
+    const form = openAddForm();
     fill(form, /^Name/, 'Geyser Service');
     fill(form, /^Description/, 'Descale and check.');
     fill(form, /^One unit is a/, 'geyser');
@@ -185,7 +196,7 @@ describe('AdminServicesPage', () => {
     renderPage();
     await screen.findByTestId('services-empty');
 
-    const select = within(screen.getByRole('form', { name: 'Add service' })).getByLabelText(/^Category/);
+    const select = within(openAddForm()).getByLabelText(/^Category/);
     expect(select.tagName).toBe('SELECT');
     const options = within(select).getAllByRole('option').map((o) => o.textContent);
     expect(options).toEqual(['Choose a category', 'Appliances', 'Home Care', 'Renovation', 'Utilities', 'Vehicle', 'Bulk Staples']);
@@ -210,13 +221,32 @@ describe('AdminServicesPage', () => {
     expect(body).not.toHaveProperty('category');
   });
 
-  it('deactivates a service', async () => {
+  it('deactivates a service with its switch, which moves at once and says "Saved" when the server agrees', async () => {
     fetchServicesMock.mockResolvedValue([tank]);
-    updateServiceMock.mockResolvedValue({ ...tank, active: false });
+    let resolve: (value: AdminServiceDto) => void = () => {};
+    updateServiceMock.mockReturnValue(new Promise((r) => (resolve = r)));
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Deactivate Water Tank Cleaning' }));
-    await waitFor(() => expect(updateServiceMock).toHaveBeenCalledWith('svc_tank', { active: false }));
+    const toggle = await screen.findByRole('switch', { name: 'Water Tank Cleaning active' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    // Optimistic: off before the server has answered (the request is still unresolved).
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'));
+    expect(updateServiceMock).toHaveBeenCalledWith('svc_tank', { active: false });
+
+    await act(async () => resolve({ ...tank, active: false }));
+    expect(await within(screen.getByTestId('service-row')).findByText('Saved')).toBeInTheDocument();
+  });
+
+  it('puts the switch back when the server refuses, and says why', async () => {
+    fetchServicesMock.mockResolvedValue([tank]);
+    updateServiceMock.mockRejectedValue(new ApiError('CONFLICT', 'Service is in use.', 409));
+    renderPage();
+
+    const toggle = await screen.findByRole('switch', { name: 'Water Tank Cleaning active' });
+    fireEvent.click(toggle);
+    expect(await screen.findByText('Service is in use.')).toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
   });
 
   it('offers a service in a society with its indicative price', async () => {
@@ -226,7 +256,7 @@ describe('AdminServicesPage', () => {
 
     const [, other] = await openSocieties();
     fireEvent.change(within(other).getByLabelText(/^Price per unit/), { target: { value: '₹899' } });
-    fireEvent.click(within(other).getByRole('button', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
+    fireEvent.click(within(other).getByRole('switch', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
 
     await waitFor(() =>
       expect(upsertOfferingMock).toHaveBeenCalledWith(blue.id, tank.id, { enabled: true, indicativePrice: 899 }),
@@ -240,7 +270,7 @@ describe('AdminServicesPage', () => {
 
     const [green] = await openSocieties();
     expect(within(green).getByLabelText(/^Price per unit/)).toHaveValue('799');
-    fireEvent.click(within(green).getByRole('button', { name: `Stop offering Water Tank Cleaning in ${society.name}` }));
+    fireEvent.click(within(green).getByRole('switch', { name: `Offer Water Tank Cleaning in ${society.name}` }));
 
     await waitFor(() =>
       expect(upsertOfferingMock).toHaveBeenCalledWith(society.id, tank.id, { enabled: false, indicativePrice: 799 }),
@@ -253,7 +283,7 @@ describe('AdminServicesPage', () => {
 
     const [, other] = await openSocieties();
     fireEvent.change(within(other).getByLabelText(/^Price per unit/), { target: { value: '12.50' } });
-    fireEvent.click(within(other).getByRole('button', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
+    fireEvent.click(within(other).getByRole('switch', { name: 'Offer Water Tank Cleaning in Blue Waters' }));
 
     expect(await within(other).findByText(/^Whole rupees up to/)).toBeInTheDocument();
     expect(upsertOfferingMock).not.toHaveBeenCalled();
@@ -264,9 +294,9 @@ describe('AdminServicesPage', () => {
     renderPage();
 
     const [green, other] = await openSocieties();
-    expect(within(other).getByRole('button', { name: /^Offer / })).toBeDisabled();
+    expect(within(other).getByRole('switch', { name: /^Offer / })).toBeDisabled();
     // ...but an existing offering can still be switched off.
-    expect(within(green).getByRole('button', { name: /^Stop offering / })).toBeEnabled();
+    expect(within(green).getByRole('switch', { name: /^Offer / })).toBeEnabled();
   });
 
   it('shows the server’s message when a create is refused', async () => {
@@ -275,12 +305,103 @@ describe('AdminServicesPage', () => {
     renderPage();
     await screen.findByTestId('services-empty');
 
-    const form = screen.getByRole('form', { name: 'Add service' });
+    const form = openAddForm();
     fill(form, /^Name/, 'X');
     fireEvent.change(within(form).getByLabelText(/^Category/), { target: { value: 'Vehicle' } });
     fill(form, /^Description/, 'x');
     fireEvent.click(within(form).getByRole('button', { name: 'Add service' }));
 
     expect(await within(form).findByText('A service with slug "x" already exists.')).toBeInTheDocument();
+  });
+
+  describe('server-side filters (FEAT-015)', () => {
+    it('reads its filters from the URL and sends them to the server', async () => {
+      fetchServicesMock.mockResolvedValue([tank]);
+      renderPage(`/admin/services?q=tank&category=Utilities&status=active&offeredIn=${society.id}`);
+
+      await screen.findByText('Water Tank Cleaning');
+      expect(fetchServicesMock).toHaveBeenLastCalledWith({
+        q: 'tank',
+        category: 'Utilities',
+        status: 'active',
+        offeredIn: society.id,
+      });
+      expect(screen.getByRole('searchbox', { name: 'Search services' })).toHaveValue('tank');
+      expect(within(screen.getByRole('radiogroup', { name: 'Category' })).getByRole('radio', { name: 'Utilities' })).toHaveAttribute('aria-checked', 'true');
+    });
+
+    it('ignores a status the server would refuse rather than sending it', async () => {
+      fetchServicesMock.mockResolvedValue([tank]);
+      renderPage('/admin/services?status=archived');
+      await screen.findByText('Water Tank Cleaning');
+      expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
+    });
+
+    it('choosing a chip filters on the server and lands in the URL', async () => {
+      fetchServicesMock.mockResolvedValue([tank, rice]);
+      renderPage();
+      await screen.findByText('Water Tank Cleaning');
+
+      fetchServicesMock.mockResolvedValue([rice]);
+      fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Category' })).getByRole('radio', { name: 'Bulk Staples' }));
+
+      await waitFor(() => expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'Bulk Staples' })));
+      expect(screen.getByTestId('url')).toHaveTextContent('category=Bulk+Staples');
+      await waitFor(() => expect(screen.queryByText('Water Tank Cleaning')).not.toBeInTheDocument());
+    });
+
+    it('debounces the search: one request once typing pauses, not one per keystroke', async () => {
+      fetchServicesMock.mockResolvedValue([tank]);
+      renderPage();
+      await screen.findByText('Water Tank Cleaning');
+      const calls = fetchServicesMock.mock.calls.length;
+
+      const box = screen.getByRole('searchbox', { name: 'Search services' });
+      fireEvent.change(box, { target: { value: 't' } });
+      fireEvent.change(box, { target: { value: 'ta' } });
+      fireEvent.change(box, { target: { value: 'tank' } });
+      expect(fetchServicesMock.mock.calls.length).toBe(calls);
+
+      await waitFor(() => expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'tank' })));
+      expect(fetchServicesMock.mock.calls.length).toBe(calls + 1);
+    });
+
+    it('keeps the previous rows on screen, marked busy, while the next result loads', async () => {
+      fetchServicesMock.mockResolvedValue([tank]);
+      renderPage();
+      await screen.findByText('Water Tank Cleaning');
+
+      fetchServicesMock.mockReturnValue(new Promise(() => {}));
+      fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Status' })).getByRole('radio', { name: 'Inactive' }));
+
+      // Not a skeleton, not an empty page: the old rows, dimmed.
+      await waitFor(() => expect(screen.getByText('Water Tank Cleaning').closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true'));
+      expect(screen.queryByTestId('services-skeleton')).not.toBeInTheDocument();
+    });
+
+    it('a filtered-to-nothing list says so, names the filters, and offers the way back', async () => {
+      fetchServicesMock.mockResolvedValue([]);
+      renderPage('/admin/services?q=zzz&category=Vehicle&other=keep');
+
+      const noMatch = await screen.findByTestId('services-no-match');
+      expect(noMatch).toHaveTextContent('No services match');
+      expect(noMatch).toHaveTextContent('for “zzz”, in Vehicle');
+      // Not the "No services yet" empty state — the catalog is not empty, the filter is.
+      expect(screen.queryByTestId('services-empty')).not.toBeInTheDocument();
+
+      fetchServicesMock.mockResolvedValue([tank]);
+      fireEvent.click(within(noMatch).getByRole('button', { name: 'Clear filters' }));
+      expect(screen.getByTestId('url')).toHaveTextContent('?other=keep');
+      expect(await screen.findByText('Water Tank Cleaning')).toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Search services' })).toHaveValue('');
+    });
+
+    it('counts the result, and only offers "Clear filters" when a filter is set', async () => {
+      fetchServicesMock.mockResolvedValue([tank, rice]);
+      renderPage();
+      await screen.findByText('Water Tank Cleaning');
+      expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === '2 services')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
+    });
   });
 });

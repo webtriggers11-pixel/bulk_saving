@@ -1,6 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type {
   AdminServiceDto,
+  AdminServicesQuery,
   CreateServiceBody,
   ServiceOfferingDto,
   UpdateServiceBody,
@@ -8,6 +10,7 @@ import type {
 } from '@bulk/shared';
 import type { Service, ServiceOffering } from '@prisma/client';
 import { ErrorCode } from '../../common/error-codes';
+import { activeFrom, containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -63,9 +66,24 @@ export class CatalogAdminService {
     }
   }
 
-  /** All master services (super-admin view), newest first, each with its per-society offerings. */
-  async listServices(): Promise<AdminServiceDto[]> {
+  /**
+   * Master services (super-admin view), newest first, each with its per-society offerings.
+   * Filters (FEAT-015): `q` over name, description and slug; exact `category`; `status`;
+   * `offeredIn` = only services ENABLED in that society.
+   */
+  async listServices(query: AdminServicesQuery = {}): Promise<AdminServiceDto[]> {
+    const q = searchTerm(query.q);
+    const active = activeFrom(query.status);
+    const where: Prisma.ServiceWhereInput = {
+      ...(q
+        ? { OR: [{ name: containsInsensitive(q) }, { description: containsInsensitive(q) }, { slug: containsInsensitive(q) }] }
+        : {}),
+      ...(query.category ? { category: query.category } : {}),
+      ...(active !== undefined ? { active } : {}),
+      ...(query.offeredIn ? { offerings: { some: { societyId: query.offeredIn, enabled: true } } } : {}),
+    };
     const services = await this.prisma.service.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: { offerings: { orderBy: { createdAt: 'asc' } } },
     });

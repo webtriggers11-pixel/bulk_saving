@@ -475,10 +475,45 @@ export interface AdminRoundDetailDto extends AdminRoundSummaryDto {
   ratings: RatingSummary;
 }
 
-/** `GET /admin/rounds` query filters (both optional). */
+/** `GET /admin/rounds` query filters (all optional). `q` matches service, society or vendor name. */
 export interface AdminRoundsQuery {
   status?: RoundStatus;
   societyId?: string;
+  q?: string;
+  category?: string;
+}
+
+/* ---------------------------------------------------------------------------
+ * List filters (FEAT-015, ADR-0026). Every list filters on the server. `q` is a
+ * case-insensitive substring search, trimmed; a blank `q` means "no search".
+ * ------------------------------------------------------------------------- */
+
+/** Longest search term any list accepts. */
+export const MAX_SEARCH = 80;
+
+/** Active/inactive filter shared by services and vendors. Omitted = both. */
+export type ActiveFilter = 'active' | 'inactive';
+export const ACTIVE_FILTERS: readonly ActiveFilter[] = ['active', 'inactive'];
+
+/** `GET /admin/services` query. `offeredIn` = a society id: only services enabled there. */
+export interface AdminServicesQuery {
+  q?: string;
+  category?: string;
+  status?: ActiveFilter;
+  offeredIn?: string;
+}
+
+/** `GET /admin/vendors` query. `q` matches name, phone or notes. */
+export interface AdminVendorsQuery {
+  q?: string;
+  category?: string;
+  status?: ActiveFilter;
+}
+
+/** `GET /catalog` query — always within the caller's own society. */
+export interface CatalogQuery {
+  q?: string;
+  category?: string;
 }
 
 /** `POST /admin/rounds/:id/assign` body: vendor + negotiated per-unit price (integer ₹, 1–1,000,000). */

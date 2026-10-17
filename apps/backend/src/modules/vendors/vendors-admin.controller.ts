@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import type { VendorDto } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateVendorDto, UpdateVendorDto } from './vendors.dto';
+import { AdminVendorsQueryDto, CreateVendorDto, UpdateVendorDto } from './vendors.dto';
 import { VendorsService } from './vendors.service';
 
 /**
@@ -19,8 +19,8 @@ export class VendorsAdminController {
   constructor(private readonly vendors: VendorsService) {}
 
   @Get()
-  list(): Promise<VendorDto[]> {
-    return this.vendors.list();
+  list(@Query() query: AdminVendorsQueryDto): Promise<VendorDto[]> {
+    return this.vendors.list(query);
   }
 
   @Post()

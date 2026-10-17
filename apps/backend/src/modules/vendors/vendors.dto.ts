@@ -8,7 +8,8 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
-import type { CreateVendorBody, UpdateVendorBody } from '@bulk/shared';
+import type { AdminVendorsQuery, CreateVendorBody, UpdateVendorBody } from '@bulk/shared';
+import { SearchCategoryStatusQuery } from '../../common/list-filters';
 
 /** Vendor phone: optional leading `+`, then 8–15 digits. */
 const VENDOR_PHONE = /^\+?[0-9]{8,15}$/;
@@ -78,3 +79,6 @@ export class UpdateVendorDto implements UpdateVendorBody {
   @IsBoolean()
   active?: boolean;
 }
+
+/** `GET /admin/vendors` query (FEAT-015, ADR-0026): `q` over name, phone and notes. */
+export class AdminVendorsQueryDto extends SearchCategoryStatusQuery implements AdminVendorsQuery {}

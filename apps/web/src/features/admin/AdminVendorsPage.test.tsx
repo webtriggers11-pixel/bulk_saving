@@ -57,8 +57,8 @@ describe('AdminVendorsPage', () => {
     renderPage();
 
     expect(await screen.findByText('CoolFix')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
-    expect(screen.getByText('Inactive')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'CoolFix active' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: 'OldCo active' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('shows each vendor’s average rating with its count (FEAT-009)', async () => {
@@ -115,7 +115,7 @@ describe('AdminVendorsPage', () => {
     updateVendorMock.mockResolvedValue(activeVendor);
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Deactivate CoolFix' }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'CoolFix active' }));
     await waitFor(() =>
       expect(updateVendorMock).toHaveBeenCalledWith('ven_1', { active: false }),
     );
@@ -161,5 +161,22 @@ describe('AdminVendorsPage', () => {
       onlineManager.setOnline(true);
     });
     await waitFor(() => expect(createVendorMock).toHaveBeenCalledTimes(1));
+  });
+
+  it('filters on the server from the URL, and says when nothing matches (FEAT-015)', async () => {
+    fetchVendorsMock.mockResolvedValue([]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/admin/vendors?q=cool&category=Utilities&status=inactive']}>
+          <AdminVendorsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByTestId('vendors-no-match')).toHaveTextContent('No vendors match');
+    expect(fetchVendorsMock).toHaveBeenLastCalledWith({ q: 'cool', category: 'Utilities', status: 'inactive' });
+    expect(screen.queryByTestId('vendors-empty')).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search vendors' })).toHaveValue('cool');
   });
 });

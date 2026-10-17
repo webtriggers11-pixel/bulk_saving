@@ -17,6 +17,7 @@ import type {
 } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
+import { containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RatingsService } from './ratings.service';
 import { RoundClosingScheduler } from './round-closing.scheduler';
@@ -147,13 +148,26 @@ export class RoundsAdminService {
 
   /**
    * Rounds across ALL societies (the explicit cross-tenant admin read), optionally
-   * filtered by status and society, newest first, capped at {@link ADMIN_ROUNDS_LIMIT}.
+   * filtered by status and society — and (FEAT-015) a search over service, society and
+   * vendor name plus an exact service category — newest first, capped at
+   * {@link ADMIN_ROUNDS_LIMIT}.
    */
   async listRounds(query: AdminRoundsQuery): Promise<AdminRoundSummaryDto[]> {
+    const q = searchTerm(query.q);
     const rounds = await this.prisma.round.findMany({
       where: {
         ...(query.status ? { status: query.status } : {}),
         ...(query.societyId ? { societyId: query.societyId } : {}),
+        ...(query.category ? { service: { category: query.category } } : {}),
+        ...(q
+          ? {
+              OR: [
+                { service: { name: containsInsensitive(q) } },
+                { society: { name: containsInsensitive(q) } },
+                { vendor: { name: containsInsensitive(q) } },
+              ],
+            }
+          : {}),
       },
       include: adminRoundSummaryInclude,
       orderBy: { createdAt: 'desc' },

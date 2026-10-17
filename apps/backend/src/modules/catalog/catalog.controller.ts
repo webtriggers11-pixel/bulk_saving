@@ -1,7 +1,8 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import type { ServiceDto } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
+import { CatalogQueryDto } from './catalog.dto';
 import { CatalogService } from './catalog.service';
 
 /**
@@ -15,7 +16,8 @@ export class CatalogController {
   constructor(private readonly catalog: CatalogService) {}
 
   @Get()
-  list(@CurrentAuth() ctx: AuthContext): Promise<ServiceDto[]> {
-    return this.catalog.listForSociety(ctx.societyId);
+  list(@CurrentAuth() ctx: AuthContext, @Query() query: CatalogQueryDto): Promise<ServiceDto[]> {
+    // The query can narrow the list; it can never name a society (ADR-0003).
+    return this.catalog.listForSociety(ctx.societyId, query);
   }
 }

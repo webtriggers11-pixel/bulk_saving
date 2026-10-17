@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { ServiceDto } from '@bulk/shared';
+import type { CatalogQuery, ServiceDto } from '@bulk/shared';
+import { containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -17,12 +18,20 @@ export class CatalogService {
    * joined query (`include`, no N+1). Ordered by category then name for a
    * stable, groupable list.
    */
-  async listForSociety(societyId: string): Promise<ServiceDto[]> {
+  async listForSociety(societyId: string, query: CatalogQuery = {}): Promise<ServiceDto[]> {
+    // FEAT-015 filters narrow WITHIN the society; `societyId` stays the caller's own.
+    const q = searchTerm(query.q);
     const offerings = await this.prisma.serviceOffering.findMany({
       where: {
         societyId,
         enabled: true,
-        service: { active: true },
+        service: {
+          active: true,
+          ...(query.category ? { category: query.category } : {}),
+          ...(q
+            ? { OR: [{ name: containsInsensitive(q) }, { description: containsInsensitive(q) }, { unitLabel: containsInsensitive(q) }] }
+            : {}),
+        },
       },
       include: { service: true },
       orderBy: [{ service: { category: 'asc' } }, { service: { name: 'asc' } }],

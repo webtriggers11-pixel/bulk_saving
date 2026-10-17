@@ -11,11 +11,15 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { SearchCategoryStatusQuery } from '../../common/list-filters';
 import {
   MAX_INDICATIVE_PRICE,
   MAX_UNIT_DESCRIPTION,
   MAX_UNIT_LABEL,
   SERVICE_CATEGORIES,
+  MAX_SEARCH,
+  type AdminServicesQuery,
+  type CatalogQuery,
   type CreateServiceBody,
   type ServiceCategory,
   type UpdateServiceBody,
@@ -136,4 +140,25 @@ export class UpsertOfferingDto implements UpsertOfferingBody {
   @Min(0)
   @Max(MAX_INDICATIVE_PRICE)
   indicativePrice?: number | null;
+}
+
+/** `GET /admin/services` query (FEAT-015, ADR-0026). */
+export class AdminServicesQueryDto extends SearchCategoryStatusQuery implements AdminServicesQuery {
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  offeredIn?: string;
+}
+
+/** `GET /catalog` query (FEAT-015). Society scope still comes only from the token. */
+export class CatalogQueryDto implements CatalogQuery {
+  @IsOptional()
+  @IsString()
+  @Length(0, MAX_SEARCH)
+  q?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  category?: string;
 }

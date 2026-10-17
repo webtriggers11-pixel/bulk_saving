@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import type { AdminServiceDto, AdminSocietyDto, ServiceOfferingDto } from '@bulk/shared';
-import { Badge } from '../../components/ui/badge';
+import type { ActiveFilter, AdminServiceDto, AdminServicesQuery, AdminSocietyDto, ServiceOfferingDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { DataRows, RowSurface } from '../../components/ui/data-rows';
@@ -9,7 +8,13 @@ import { Field } from '../../components/ui/field';
 import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
+import { FilterChips } from '../../components/ui/filter-chips';
+import { ResultSummary } from '../../components/ui/result-summary';
+import { SavedTick } from '../../components/ui/saved-tick';
+import { SearchField } from '../../components/ui/search-field';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
+import { Switch } from '../../components/ui/switch';
+import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage, formatRupees } from './adminFormat';
@@ -126,9 +131,14 @@ function ServiceFields({
   );
 }
 
-/** Add-service form. The slug follows the name until the admin edits it themselves. */
+/**
+ * Add-service form. The slug follows the name until the admin edits it themselves.
+ * Closed behind a button by default (FEAT-015): the list and its filters are what this
+ * page is mostly for, and seven empty fields above them pushed both off a phone screen.
+ */
 function AddServiceForm() {
   const create = useCreateService();
+  const [open, setOpen] = useState(false);
   const [values, setValues] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
   const [errors, setErrors] = useState<ServiceFormErrors>({});
   const [slugTouched, setSlugTouched] = useState(false);
@@ -161,13 +171,35 @@ function AddServiceForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Add service</CardTitle>
-        <CardDescription>
-          New services start active but offered nowhere — switch them on per society below.
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="Add service" noValidate>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <CardTitle>Add service</CardTitle>
+          <CardDescription>
+            New services start active but offered nowhere — switch them on per society below.
+          </CardDescription>
+        </div>
+        <div className="flex items-center gap-2">
+          <SavedTick trigger={create.isSuccess ? create.submittedAt : null} text="Added" />
+          <Button
+            variant={open ? 'secondary' : 'primary'}
+            size="sm"
+            aria-expanded={open}
+            aria-controls="add-service-form"
+            onClick={() => setOpen((was) => !was)}
+          >
+            <Icon name={open ? 'close' : 'plus'} size={16} strokeWidth={2.2} />
+            {open ? 'Close' : 'New service'}
+          </Button>
+        </div>
+      </div>
+      {open && (
+      <form
+        id="add-service-form"
+        onSubmit={handleSubmit}
+        className="animate-rise mt-5 flex flex-col gap-4"
+        aria-label="Add service"
+        noValidate
+      >
         <ServiceFields
           idPrefix="new-service"
           values={values}
@@ -181,6 +213,7 @@ function AddServiceForm() {
         {create.isPaused && <OfflineLine testId="service-create-offline" />}
         {create.isError && <ErrorLine error={create.error} />}
       </form>
+      )}
     </Card>
   );
 }
@@ -196,7 +229,9 @@ function OfferingControl({
   offering: ServiceOfferingDto | undefined;
 }) {
   const upsert = useUpsertOffering();
-  const enabled = offering?.enabled ?? false;
+  // Optimistic: the switch moves the moment it is tapped, and falls back to the stored
+  // value if the server refuses (the error line then says why).
+  const enabled = upsert.isPending ? (upsert.variables?.body.enabled ?? false) : (offering?.enabled ?? false);
   const [price, setPrice] = useState(offering?.indicativePrice != null ? String(offering.indicativePrice) : '');
   const [priceError, setPriceError] = useState<string | null>(null);
 
@@ -218,9 +253,18 @@ function OfferingControl({
     <div className="flex flex-col gap-2" data-testid="offering-control">
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-3">
             <span className="text-meta font-extrabold text-ink">{society.name}</span>
-            <Badge tone={enabled ? 'green' : 'slate'}>{enabled ? 'Offered' : 'Not offered'}</Badge>
+            <Switch
+              checked={enabled}
+              onChange={(next) => save(next)}
+              label={`Offer ${service.name} in ${society.name}`}
+              text={upsert.isPaused ? OFFLINE_WAITING_LABEL : enabled ? 'Offered' : 'Not offered'}
+              // An inactive service can be switched off here but not newly on: residents
+              // would never see it.
+              disabled={upsert.isPending || (!service.active && !enabled)}
+            />
+            <SavedTick trigger={upsert.isSuccess ? upsert.submittedAt : null} />
           </div>
           <p className="num mt-1 text-meta text-ink-muted">
             {offering?.indicativePrice != null
@@ -247,15 +291,6 @@ function OfferingControl({
           onClick={() => save(enabled)}
         >
           Save price
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          aria-label={`${enabled ? 'Stop offering' : 'Offer'} ${service.name} in ${society.name}`}
-          disabled={upsert.isPending || (!service.active && !enabled)}
-          onClick={() => save(!enabled)}
-        >
-          {upsert.isPaused ? OFFLINE_WAITING_LABEL : enabled ? 'Stop offering' : 'Offer'}
         </Button>
       </div>
       {upsert.isPaused && <OfflineLine testId="offering-offline" />}
@@ -295,9 +330,14 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
   }
 
   const offeredIn = service.offerings.filter((o) => o.enabled).length;
+  // Optimistic, as with the offering switch: moves on tap, reverts if refused.
+  const pendingActive = update.isPending ? update.variables?.body.active : undefined;
+  const active = pendingActive ?? service.active;
 
   return (
-    <li>
+    // `row-in`: a row new to this result set rises in; a row that stays keeps its node
+    // (keyed by id) and does not replay.
+    <li className="row-in">
       <RowSurface data-testid="service-row">
         {editing ? (
           <form onSubmit={handleSave} className="flex flex-col gap-4" aria-label={`Edit ${service.name}`} noValidate>
@@ -323,7 +363,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-body font-extrabold tracking-[-0.02em] text-ink">{service.name}</span>
-                  <Badge tone={service.active ? 'green' : 'slate'}>{service.active ? 'Active' : 'Inactive'}</Badge>
+                  <SavedTick trigger={update.isSuccess ? update.submittedAt : null} />
                 </div>
                 <p className="mt-1 text-meta text-ink-muted">
                   Priced per {service.unitLabel} · offered in {offeredIn} of {societies.length}{' '}
@@ -334,7 +374,14 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                 )}
                 <p className="mt-1.5 text-meta text-ink-soft">{service.description}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={active}
+                  onChange={(next) => update.mutate({ id: service.id, body: { active: next } })}
+                  label={`${service.name} active`}
+                  text={active ? 'Active' : 'Inactive'}
+                  disabled={update.isPending}
+                />
                 <Button
                   variant="secondary"
                   size="sm"
@@ -344,18 +391,9 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                 >
                   Edit
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  aria-label={`${service.active ? 'Deactivate' : 'Activate'} ${service.name}`}
-                  disabled={update.isPending}
-                  onClick={() => update.mutate({ id: service.id, body: { active: !service.active } })}
-                >
-                  {service.active ? 'Deactivate' : 'Activate'}
-                </Button>
               </div>
             </div>
-            {!service.active && (
+            {!active && (
               <p className="text-meta font-bold text-ink-muted">
                 Inactive — residents see it nowhere, whatever the society settings say.
               </p>
@@ -371,7 +409,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
               {showSocieties ? 'Hide societies' : 'Manage societies'}
             </Button>
             {showSocieties && (
-            <div id={`offerings-${service.id}`} className="flex flex-col gap-4">
+            <div id={`offerings-${service.id}`} className="animate-rise flex flex-col gap-4">
               {societies.map((society) => (
                 <OfferingControl
                   // Re-mount when the stored price changes, so the input shows the saved value.
@@ -392,22 +430,94 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
   );
 }
 
+/** The URL keys this page owns (ADR-0026). */
+const FILTER_KEYS = ['q', 'category', 'status', 'offeredIn'] as const;
+
+const CATEGORY_CHIPS = [{ value: '', label: 'All' }, ...SERVICE_CATEGORY_OPTIONS.map((c) => ({ value: c, label: c }))];
+const STATUS_CHIPS = [
+  { value: '', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
+/** The URL's status param, if it is one the server accepts. Anything else is ignored. */
+function toActiveFilter(value: string | undefined): ActiveFilter | undefined {
+  return value === 'active' || value === 'inactive' ? value : undefined;
+}
+
 /**
  * Super-admin catalog management (FEAT-014; was CHORE-006): every master service grouped
  * by its category, an add form, inline edit, activate/deactivate (services are never
  * deleted — rounds reference them), and per-society availability with an indicative price.
+ *
+ * FEAT-015: filtered on the server — search, category, status, "offered in" — with the
+ * filters in the URL. The last result stays on screen, dimmed, while the next one loads.
  */
 export function AdminServicesPage() {
-  const servicesQuery = useAdminServices();
+  const { filters, setFilters, clear, activeCount } = useUrlFilters(FILTER_KEYS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const query: AdminServicesQuery = {
+    q: filters.q,
+    category: filters.category,
+    status: toActiveFilter(filters.status),
+    offeredIn: filters.offeredIn,
+  };
+  const servicesQuery = useAdminServices(query);
   const societiesQuery = useAdminSocieties();
-  const { data, isLoading, refetch } = servicesQuery;
+  const { data, isLoading, isPlaceholderData, refetch } = servicesQuery;
   const societies = societiesQuery.data ?? [];
   // BUG-004: offline pauses the read instead of failing it.
   const failed = queryStalled(servicesQuery);
+  const offeredInName = societies.find((s) => s.id === filters.offeredIn)?.name;
 
   return (
     <AdminLayout title="Services" subtitle="What residents can pool, and in which societies">
       <AddServiceForm />
+
+      <Card>
+        <div className="flex flex-col gap-4" role="search" aria-label="Filter services">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <SearchField
+              label="Search services"
+              placeholder="Search by name, description or slug"
+              value={search}
+              onChange={setSearch}
+              maxLength={80}
+            />
+            <Select
+              aria-label="Offered in"
+              value={filters.offeredIn ?? ''}
+              onChange={(e) => setFilters({ offeredIn: e.target.value || undefined })}
+            >
+              <option value="">Offered anywhere or nowhere</option>
+              {societies.map((society) => (
+                <option key={society.id} value={society.id}>
+                  Offered in {society.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <FilterChips
+            label="Category"
+            options={CATEGORY_CHIPS}
+            value={filters.category ?? ''}
+            onChange={(category) => setFilters({ category: category || undefined })}
+          />
+          <FilterChips
+            label="Status"
+            options={STATUS_CHIPS}
+            value={toActiveFilter(filters.status) ?? ''}
+            onChange={(status) => setFilters({ status: status || undefined })}
+          />
+          <ResultSummary
+            count={data?.length}
+            noun={['service', 'services']}
+            activeCount={activeCount}
+            onClear={clear}
+            busy={isPlaceholderData}
+          />
+        </div>
+      </Card>
 
       {isLoading && (
         <Card>
@@ -439,7 +549,7 @@ export function AdminServicesPage() {
           </div>
         </Card>
       )}
-      {data && data.length === 0 && (
+      {data && data.length === 0 && activeCount === 0 && (
         <Card>
           <EmptyState
             icon="services"
@@ -449,22 +559,50 @@ export function AdminServicesPage() {
           />
         </Card>
       )}
-      {data &&
-        groupByCategory(data).map(([category, services]) => (
-          <Card key={category} data-testid="service-category">
-            <CardHeader>
-              <CardTitle>{category}</CardTitle>
-              <CardDescription>
-                {services.length} {services.length === 1 ? 'service' : 'services'}
-              </CardDescription>
-            </CardHeader>
-            <DataRows>
-              {services.map((service) => (
-                <ServiceRow key={service.id} service={service} societies={societies} />
-              ))}
-            </DataRows>
-          </Card>
-        ))}
+      {data && data.length === 0 && activeCount > 0 && (
+        <Card className="animate-rise">
+          <EmptyState
+            icon="search"
+            title="No services match"
+            description={describeFilters(filters, offeredInName)}
+            data-testid="services-no-match"
+            action={
+              <Button variant="secondary" onClick={clear}>
+                Clear filters
+              </Button>
+            }
+          />
+        </Card>
+      )}
+      <div className="results flex flex-col gap-4" aria-busy={isPlaceholderData}>
+        {data &&
+          groupByCategory(data).map(([category, services]) => (
+            <Card key={category} data-testid="service-category" className="row-in">
+              <CardHeader>
+                <CardTitle>{category}</CardTitle>
+                <CardDescription>
+                  {services.length} {services.length === 1 ? 'service' : 'services'}
+                </CardDescription>
+              </CardHeader>
+              <DataRows>
+                {services.map((service) => (
+                  <ServiceRow key={service.id} service={service} societies={societies} />
+                ))}
+              </DataRows>
+            </Card>
+          ))}
+      </div>
     </AdminLayout>
   );
+}
+
+/** "Nothing for “tank” in Vehicle, inactive, offered in Blue Waters." — the filters, in words. */
+function describeFilters(filters: Partial<Record<(typeof FILTER_KEYS)[number], string>>, offeredInName?: string): string {
+  const parts = [
+    filters.q ? `for “${filters.q}”` : null,
+    filters.category ? `in ${filters.category}` : null,
+    toActiveFilter(filters.status) ?? null,
+    filters.offeredIn ? `offered in ${offeredInName ?? 'that society'}` : null,
+  ].filter(Boolean);
+  return `Nothing ${parts.join(', ')}. Loosen a filter, or clear them all.`;
 }

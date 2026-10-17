@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
@@ -14,7 +15,7 @@ import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CatalogAdminService } from './catalog-admin.service';
-import { CreateServiceDto, UpdateServiceDto, UpsertOfferingDto } from './catalog.dto';
+import { AdminServicesQueryDto, CreateServiceDto, UpdateServiceDto, UpsertOfferingDto } from './catalog.dto';
 
 /**
  * Super-admin catalog management API (FEAT-002). Every route is SUPER_ADMIN-only
@@ -33,8 +34,8 @@ export class CatalogAdminController {
   }
 
   @Get('services')
-  listServices(): Promise<AdminServiceDto[]> {
-    return this.admin.listServices();
+  listServices(@Query() query: AdminServicesQueryDto): Promise<AdminServiceDto[]> {
+    return this.admin.listServices(query);
   }
 
   @Patch('services/:id')

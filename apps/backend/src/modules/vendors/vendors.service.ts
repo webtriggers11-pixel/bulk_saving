@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, Vendor } from '@prisma/client';
-import type { CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto } from '@bulk/shared';
+import type { AdminVendorsQuery, CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
+import { activeFrom, containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 import { groupStarsByVendor, summarise } from '../rounds/ratings.mapper';
 
@@ -24,9 +25,19 @@ export class VendorsService {
    * count ships with it, because an average of 5.0 from one rating is not the same
    * claim as 5.0 from fifty.
    */
-  async list(): Promise<VendorDto[]> {
+  async list(query: AdminVendorsQuery = {}): Promise<VendorDto[]> {
+    // FEAT-015 filters (ADR-0026). Category is matched case-insensitively and exactly:
+    // vendor categories are free text (not the closed service list), so "home care"
+    // and "Home Care" are the same trade here.
+    const q = searchTerm(query.q);
+    const active = activeFrom(query.status);
+    const where: Prisma.VendorWhereInput = {
+      ...(q ? { OR: [{ name: containsInsensitive(q) }, { phone: { contains: q } }, { notes: containsInsensitive(q) }] } : {}),
+      ...(query.category ? { category: { equals: query.category, mode: 'insensitive' } } : {}),
+      ...(active !== undefined ? { active } : {}),
+    };
     const [vendors, grouped] = await Promise.all([
-      this.prisma.vendor.findMany({ orderBy: [{ active: 'desc' }, { name: 'asc' }] }),
+      this.prisma.vendor.findMany({ where, orderBy: [{ active: 'desc' }, { name: 'asc' }] }),
       this.prisma.rating.findMany({
         where: { round: { vendorId: { not: null } } },
         select: { stars: true, round: { select: { vendorId: true } } },

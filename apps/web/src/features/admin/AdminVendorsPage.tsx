@@ -1,7 +1,13 @@
 import { useState, type FormEvent } from 'react';
-import type { VendorDto } from '@bulk/shared';
-import { Badge } from '../../components/ui/badge';
+import type { ActiveFilter, VendorDto } from '@bulk/shared';
+import { FilterChips } from '../../components/ui/filter-chips';
+import { ResultSummary } from '../../components/ui/result-summary';
+import { SavedTick } from '../../components/ui/saved-tick';
+import { SearchField } from '../../components/ui/search-field';
+import { Switch } from '../../components/ui/switch';
+import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { formatVendorRating } from '../rating/formatRating';
+import { SERVICE_CATEGORY_OPTIONS } from './serviceForm';
 import {
   OFFLINE_QUEUED_TEXT,
   OFFLINE_WAITING_LABEL,
@@ -150,8 +156,12 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
     );
   }
 
+  // Optimistic, as on the services page: the switch moves on tap and reverts if refused.
+  const pendingActive = update.isPending ? update.variables?.body.active : undefined;
+  const active = pendingActive ?? vendor.active;
+
   return (
-    <li>
+    <li className="row-in">
       <RowSurface data-testid="vendor-row">
       {editing ? (
         <form onSubmit={handleSave} className="flex flex-col gap-4" aria-label={`Edit ${vendor.name}`} noValidate>
@@ -170,7 +180,7 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-body font-extrabold tracking-[-0.02em] text-ink">{vendor.name}</span>
-              <Badge tone={vendor.active ? 'green' : 'slate'}>{vendor.active ? 'Active' : 'Inactive'}</Badge>
+              <SavedTick trigger={update.isSuccess ? update.submittedAt : null} />
             </div>
             <p className="num mt-1 text-meta text-ink-muted">
               {vendor.phone}
@@ -187,7 +197,14 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
             </p>
             {vendor.notes && <p className="mt-1.5 text-meta text-ink-soft">{vendor.notes}</p>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={active}
+              onChange={(next) => update.mutate({ id: vendor.id, body: { active: next } })}
+              label={`${vendor.name} active`}
+              text={active ? 'Active' : 'Inactive'}
+              disabled={update.isPending}
+            />
             <Button
               variant="secondary"
               size="sm"
@@ -196,15 +213,6 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
               onClick={startEdit}
             >
               Edit
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label={`${vendor.active ? 'Deactivate' : 'Activate'} ${vendor.name}`}
-              disabled={update.isPending}
-              onClick={() => update.mutate({ id: vendor.id, body: { active: !vendor.active } })}
-            >
-              {vendor.active ? 'Deactivate' : 'Activate'}
             </Button>
           </div>
         </div>
@@ -233,13 +241,27 @@ function VendorRow({ vendor }: { vendor: VendorDto }) {
   );
 }
 
+const VENDOR_FILTER_KEYS = ['q', 'category', 'status'] as const;
+// Vendor trades are free text, but in practice they are the service categories; a vendor
+// with another trade is still found by search.
+const TRADE_CHIPS = [{ value: '', label: 'All' }, ...SERVICE_CATEGORY_OPTIONS.map((c) => ({ value: c, label: c }))];
+const STATUS_CHIPS = [
+  { value: '', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
 /**
  * Super-admin vendor management (FEAT-005, ADR-0012): the global vendor list with an
  * add form, inline edit and activate/deactivate (vendors are never deleted).
  */
 export function AdminVendorsPage() {
-  const vendorsQuery = useVendors();
-  const { data, isLoading, refetch } = vendorsQuery;
+  const { filters, setFilters, clear, activeCount } = useUrlFilters(VENDOR_FILTER_KEYS);
+  const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }));
+  const status: ActiveFilter | undefined =
+    filters.status === 'active' || filters.status === 'inactive' ? filters.status : undefined;
+  const vendorsQuery = useVendors({ q: filters.q, category: filters.category, status });
+  const { data, isLoading, isPlaceholderData, refetch } = vendorsQuery;
   // BUG-004: offline pauses the read instead of failing it, so `isError` alone would
   // render an empty page with no explanation.
   const failed = queryStalled(vendorsQuery);
@@ -253,6 +275,35 @@ export function AdminVendorsPage() {
           <CardTitle>All vendors</CardTitle>
           <CardDescription>Only active vendors can be assigned to rounds.</CardDescription>
         </CardHeader>
+        {/* FEAT-015: filtered on the server, filters in the URL (ADR-0026). */}
+        <div className="mb-4 flex flex-col gap-3" role="search" aria-label="Filter vendors">
+          <SearchField
+            label="Search vendors"
+            placeholder="Search by name, phone or notes"
+            value={search}
+            onChange={setSearch}
+            maxLength={80}
+          />
+          <FilterChips
+            label="Trade"
+            options={TRADE_CHIPS}
+            value={filters.category ?? ''}
+            onChange={(category) => setFilters({ category: category || undefined })}
+          />
+          <FilterChips
+            label="Status"
+            options={STATUS_CHIPS}
+            value={status ?? ''}
+            onChange={(next) => setFilters({ status: next || undefined })}
+          />
+          <ResultSummary
+            count={data?.length}
+            noun={['vendor', 'vendors']}
+            activeCount={activeCount}
+            onClear={clear}
+            busy={isPlaceholderData}
+          />
+        </div>
         {isLoading && (
           <SkeletonScreen label="Loading vendors…" testId="vendors-skeleton" className="flex flex-col gap-2.5">
             {[0, 1, 2].map((row) => (
@@ -279,7 +330,20 @@ export function AdminVendorsPage() {
             </Button>
           </div>
         )}
-        {data && data.length === 0 && (
+        {data && data.length === 0 && activeCount > 0 && (
+          <EmptyState
+            icon="search"
+            title="No vendors match"
+            description="Loosen a filter, or clear them all."
+            data-testid="vendors-no-match"
+            action={
+              <Button variant="secondary" onClick={clear}>
+                Clear filters
+              </Button>
+            }
+          />
+        )}
+        {data && data.length === 0 && activeCount === 0 && (
           <EmptyState
             icon="users"
             title="No vendors yet"
@@ -288,11 +352,13 @@ export function AdminVendorsPage() {
           />
         )}
         {data && data.length > 0 && (
+          <div className="results" aria-busy={isPlaceholderData}>
           <DataRows>
             {data.map((vendor) => (
               <VendorRow key={vendor.id} vendor={vendor} />
             ))}
           </DataRows>
+          </div>
         )}
       </Card>
     </AdminLayout>

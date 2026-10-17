@@ -1,0 +1,50 @@
+import { cn } from '../../lib/utils';
+
+interface SwitchProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  /** The accessible name — say what is being switched, e.g. "Water Tank Cleaning active". */
+  label: string;
+  disabled?: boolean;
+  /** Shown beside the track, e.g. "Active" / "Inactive". Purely visual; `label` is the name. */
+  text?: string;
+  className?: string;
+}
+
+/**
+ * An on/off switch (FEAT-015) — `role="switch"`, so a screen reader says "on"/"off"
+ * rather than "pressed". Space and Enter toggle it, as a native button does.
+ *
+ * The knob overshoots slightly on its way across and squashes under the finger
+ * (`.switch`, theme.css). It reflects `checked` immediately; the caller decides
+ * whether that is optimistic or waits for the server.
+ */
+export function Switch({ checked, onChange, label, disabled, text, className }: SwitchProps) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        'switch group inline-flex min-h-touch items-center gap-2.5 rounded-full text-meta font-bold text-ink-muted',
+        'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'switch-track relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1',
+          'group-focus-visible:shadow-focus',
+          checked ? 'bg-brand shadow-glow' : 'bg-shade/20',
+        )}
+      >
+        <span className="switch-knob block h-5 w-5 rounded-full bg-white shadow-field" />
+      </span>
+      {text && <span className={checked ? 'text-ink' : undefined}>{text}</span>}
+    </button>
+  );
+}

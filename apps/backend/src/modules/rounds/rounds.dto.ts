@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Length,
   Max,
   MaxLength,
   Min,
@@ -23,7 +24,7 @@ import type {
   RoundTierDto,
   SetPaymentBody,
 } from '@bulk/shared';
-import { MAX_RATING_COMMENT, RoundStatus } from '@bulk/shared';
+import { MAX_RATING_COMMENT, MAX_SEARCH, RoundStatus } from '@bulk/shared';
 
 /**
  * One tier in a `POST /admin/rounds` payload. Per-field validation only
@@ -83,6 +84,17 @@ export class AdminRoundsQueryDto implements AdminRoundsQuery {
   @IsString()
   @IsNotEmpty()
   societyId?: string;
+
+  // FEAT-015 (ADR-0026): search over service, society and vendor name; exact category.
+  @IsOptional()
+  @IsString()
+  @Length(0, MAX_SEARCH)
+  q?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  category?: string;
 }
 
 /**

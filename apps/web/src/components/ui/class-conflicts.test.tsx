@@ -19,6 +19,10 @@ import { Icon, StarGlyph } from './icon';
 import { Notice } from './notice';
 import { PageHeader } from './page-header';
 import { Select } from './select';
+import { FilterChips } from './filter-chips';
+import { SearchField } from './search-field';
+import { Switch } from './switch';
+import { ResultSummary } from './result-summary';
 
 /**
  * BUG-007 — a primitive's base class and a caller's `className` silently fight.
@@ -138,6 +142,24 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ['DataRow', <DataRow key="dr" title="t" columns={<DataCell label="l" value="v" />} />],
   ['CardHeader', <CardHeader key="ch">x</CardHeader>],
   ['StarGlyph', <StarGlyph key="sg" filled />],
+  // FEAT-015 filtering primitives. FilterChips renders a chosen and an unchosen chip
+  // here, so both of its branches are scanned.
+  ['SearchField', <SearchField key="sf" value="x" onChange={() => {}} label="Search" />],
+  [
+    'FilterChips',
+    <FilterChips
+      key="fc"
+      label="Category"
+      value=""
+      onChange={() => {}}
+      options={[
+        { value: '', label: 'All' },
+        { value: 'a', label: 'A' },
+      ]}
+    />,
+  ],
+  ['Switch', <Switch key="sw" checked={false} onChange={() => {}} label="Active" text="Inactive" />],
+  ['ResultSummary', <ResultSummary key="rsum" count={2} noun={['row', 'rows']} activeCount={1} onClear={() => {}} />],
 ];
 
 /**
@@ -149,6 +171,7 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
 const NO_CLASSNAME: Record<string, string> = {
   AmbientGround: 'decorative, fixed-position; takes only an id',
   Toast: 'rendered by the toast host, never written by a caller with classes',
+  SavedTick: 'a fixed confirmation chip; placement is its parent\'s job',
 };
 
 /**
@@ -163,6 +186,7 @@ const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link', 'da
 const BUTTON_SIZES = ['md', 'sm', 'icon'] as const;
 const INPUT_SIZES = ['default', 'numeric', 'lg', 'xl', 'code'] as const;
 const INPUT_EMPHASES = ['normal', 'primary'] as const;
+const INPUT_INSETS = ['default', 'icons'] as const;
 
 const CARD_SURFACES = ['glass', 'solid', 'tint', 'accent'] as const;
 const CARD_PADDING = ['none', 'tight', 'snug', 'default', 'roomy'] as const;
@@ -268,13 +292,22 @@ const PROP_MATRIX: Array<[string, ReactElement]> = [
     ),
   ),
   ...INPUT_SIZES.flatMap((textSize) =>
-    INPUT_EMPHASES.map(
-      (emphasis) =>
-        [
-          `Input textSize=${textSize} emphasis=${emphasis}`,
-          <Input key={`${textSize}-${emphasis}`} textSize={textSize} emphasis={emphasis} />,
-        ] as [string, ReactElement],
+    INPUT_EMPHASES.flatMap((emphasis) =>
+      INPUT_INSETS.map(
+        (inset) =>
+          [
+            `Input textSize=${textSize} emphasis=${emphasis} inset=${inset}`,
+            <Input key={`${textSize}-${emphasis}-${inset}`} textSize={textSize} emphasis={emphasis} inset={inset} />,
+          ] as [string, ReactElement],
+      ),
     ),
+  ),
+  ...[true, false].map(
+    (checked) =>
+      [
+        `Switch checked=${checked}`,
+        <Switch key={`sw-${checked}`} checked={checked} onChange={() => {}} label="x" text="x" />,
+      ] as [string, ReactElement],
   ),
 ];
 

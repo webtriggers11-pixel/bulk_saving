@@ -514,6 +514,103 @@ button:hover .nudge {
  * AC5: one switch turns the whole motion layer off. Everything above is
  * decoration; nothing here carries meaning that is lost when it stops.
  */
+/* ---- filtering (FEAT-015, ADR-0026) -------------------------------------
+   Every effect below is a named class so the reduced-motion block underneath
+   collapses it with the rest. None is decorative-only: each one answers "did my
+   tap land?" or "what just changed?". */
+
+/* A filter chip: springs down under the finger, pops when it becomes the choice. */
+@keyframes chip-select {
+  0% { transform: scale(0.92); }
+  55% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.chip {
+  transition:
+    background-color var(--dur-focus) var(--ease-out-soft),
+    color var(--dur-focus) var(--ease-out-soft),
+    box-shadow var(--dur-focus) var(--ease-out-soft),
+    transform var(--dur-hover) var(--ease-out-soft);
+}
+.chip:active {
+  transform: scale(0.94);
+  transition-duration: var(--dur-press);
+}
+.chip[aria-checked='true'] {
+  animation: chip-select 380ms cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+
+/* A switch: the knob overshoots slightly on its way across, and squashes on press. */
+.switch-track {
+  transition:
+    background-color 280ms var(--ease-out-soft),
+    box-shadow 280ms var(--ease-out-soft);
+}
+.switch-knob {
+  transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.switch[aria-checked='true'] .switch-knob {
+  transform: translateX(20px);
+}
+.switch:active .switch-knob {
+  transform: scale(0.86);
+  transition-duration: var(--dur-press);
+}
+.switch[aria-checked='true']:active .switch-knob {
+  transform: translateX(20px) scale(0.86);
+}
+
+/* "Saved": pops in, holds long enough to read, fades. Mount it to play it. */
+@keyframes saved-flash {
+  0% { opacity: 0; transform: scale(0.6); }
+  16% { opacity: 1; transform: scale(1.08); }
+  28% { transform: scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+.animate-saved {
+  animation: saved-flash 1800ms var(--ease-out-soft) both;
+}
+
+/* A number that changed: the new value ticks up into place. Keyed by the value. */
+@keyframes tick-in {
+  from { opacity: 0; transform: translateY(45%); }
+  to { opacity: 1; transform: none; }
+}
+.animate-tick {
+  display: inline-block;
+  animation: tick-in 320ms var(--ease-entrance) both;
+}
+
+/* A row that arrives with a new result set. Rows that stay keep their DOM node and
+   do not replay — only what is new moves. Shorter than `rise`: a filter answer
+   should feel immediate. */
+.row-in {
+  animation: rise 460ms var(--ease-entrance) both;
+}
+
+/* The previous results, held on screen while the next set loads (no flash to a
+   skeleton between keystrokes). */
+.results {
+  transition: opacity 240ms var(--ease-out-soft), filter 240ms var(--ease-out-soft);
+}
+.results[aria-busy='true'] {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+
+/* A horizontally scrolling chip rail that does not draw a scrollbar on touch. */
+.chip-rail {
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.chip-rail::-webkit-scrollbar {
+  display: none;
+}
+.chip-rail > * {
+  scroll-snap-align: start;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

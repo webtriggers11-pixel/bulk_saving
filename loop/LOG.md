@@ -737,3 +737,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **V3: two back-to-back gate runs, exit 0 both, identical — backend 351/351, web 325/325, 1300 class tokens.**
 - FEAT-014 CLOSED. CHORE-006 closed by it.
 - By: agent (autonomous) + code-reviewer subagent (V2)
+
+## 2026-10-17 — FEAT-015 — OPENED: server-side filters everywhere, URL state, motion
+- Owner: "server side filters and all with best UI/UX modern, micro-interactions and animations". Scoped to the four lists (admin services, vendors, rounds; resident catalog). Decision ADR-0026: validated query DTOs + `ILIKE` search; filter state in the URL with `replace`; previous results held while the next load; motion as named CSS classes in the existing FEAT-011 layer, no animation library (would sit outside the reduced-motion guard).
+- By: agent (autonomous)

@@ -47,13 +47,24 @@ const INPUT_EMPHASIS = {
   primary: 'border-brand/45 shadow-ring',
 } as const;
 
+/**
+ * Horizontal padding. `icons` leaves room for a leading glyph and a trailing control
+ * (SearchField's magnifier and clear button, FEAT-015). A prop, not a caller's `pl-11`:
+ * that would fight `px-[15px]` for the same edges, which is BUG-007 exactly.
+ */
+const INPUT_INSET = {
+  default: 'px-[15px]',
+  icons: 'pl-11 pr-11',
+} as const;
+
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   textSize?: keyof typeof INPUT_TEXT;
   emphasis?: keyof typeof INPUT_EMPHASIS;
+  inset?: keyof typeof INPUT_INSET;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input({ textSize = 'default', emphasis = 'normal', className, ...props }, ref) {
+  function Input({ textSize = 'default', emphasis = 'normal', inset = 'default', className, ...props }, ref) {
     return (
       <input
         ref={ref}
@@ -62,7 +73,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           // Height, weight and the shadow all belong to a prop rather than to the base:
           // each was a property the base set AND a caller tried to override, which is a
           // property neither of them actually decides (V2 P2-7, P2-D).
-          'px-[15px] tracking-[-0.01em] text-ink t',
+          INPUT_INSET[inset],
+          'tracking-[-0.01em] text-ink t',
           INPUT_TEXT[textSize],
           INPUT_EMPHASIS[emphasis],
           'placeholder:font-medium placeholder:text-ink-soft',
