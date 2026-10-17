@@ -45,6 +45,8 @@ function tabbable(root: HTMLElement): HTMLElement[] {
  * — a page that never scrolls again (V2 P2-8). Counted instead.
  */
 let locks = 0;
+/** Open sheets, newest last — only the top one answers Escape and Tab. */
+const stack: object[] = [];
 let unlockedOverflow = '';
 function lockPage(): () => void {
   if (locks === 0) {
@@ -125,11 +127,15 @@ export function Sheet({ open, onClose, title, description, children, footer, ret
     const first = panel.current ? tabbable(panel.current)[0] : undefined;
     (first ?? panel.current)?.focus();
     const unlock = lockPage();
+    const self = {};
+    stack.push(self);
 
     // Escape and the Tab trap listen on the DOCUMENT, not the panel: when the focused
     // control becomes disabled (a save in flight), focus drops to <body> and a panel
     // listener never hears another key (V2 P2-4).
     function onKeyDown(event: KeyboardEvent) {
+      // Stacked sheets: one Escape closes one sheet, the top one (V2 round 2).
+      if (stack[stack.length - 1] !== self || event.defaultPrevented) return;
       if (event.key === 'Escape') {
         event.stopPropagation();
         onCloseRef.current();
@@ -159,6 +165,7 @@ export function Sheet({ open, onClose, title, description, children, footer, ret
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      stack.splice(stack.indexOf(self), 1);
       unlock();
       const preferred = returnFocusRef.current?.();
       const target = preferred?.isConnected ? preferred : returnTo.current;

@@ -272,6 +272,8 @@ describe('RateRound (on the My Requests card)', () => {
 
     fireEvent.keyDown(document.body, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    // …and the card still says it is queued (V2 round 2).
+    expect(screen.getByTestId('rating-offline')).toBeInTheDocument();
     act(() => {
       onlineManager.setOnline(true);
     });

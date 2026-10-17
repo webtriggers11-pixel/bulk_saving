@@ -877,3 +877,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - New tests: 8 (sheet ×5, rating offline-close, pledge queued-after-close, theme-color pin). Mutations: trap filter removed → fails; rating close-guard restored → fails; `stroke-white` → AC3 fails; wrong night theme-color → fails.
 - V1: gate exit 0 — backend 396/396, web 428/428, 1606 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-18 — FEAT-016 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 3 mutations killed): PASS, all 12 round-1 findings verified resolved, StrictMode lock/focus checked. Three P2s, fixed: a queued pledge later refused now shows on the card; a first rating queued offline (or refused) shows on the card; only the TOP sheet answers Escape/Tab (stack). +3 tests, each mutation-killed.
+- DESIGN-SYSTEM.md: day/night section, `paper`/`line`/`edge`/`on-fill` tokens, white-only-on-accent rule, sheet/reveal/pill motion, `Sheet` (always closable), `SchemeToggle`, collapsible `PageHeader`. tasks.md written.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 430/430 (58 files), 1606 class tokens. No flakes.
+- FEAT-016 → done.
+- By: agent (autonomous)

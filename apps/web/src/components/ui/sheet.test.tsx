@@ -251,5 +251,22 @@ describe('Sheet', () => {
       });
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Change' }));
     });
+
+    it('one Escape closes only the top sheet when two are stacked', () => {
+      function Two() {
+        const [a, setA] = useState(true);
+        const [b, setB] = useState(true);
+        return (
+          <>
+            <Sheet open={a} onClose={() => setA(false)} title="Below">a</Sheet>
+            <Sheet open={b} onClose={() => setB(false)} title="Above">b</Sheet>
+          </>
+        );
+      }
+      render(<Two />);
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+      expect(screen.queryByRole('dialog', { name: 'Above' })).toBeNull();
+      expect(screen.getByRole('dialog', { name: 'Below' })).toBeInTheDocument();
+    });
   });
 });

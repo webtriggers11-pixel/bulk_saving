@@ -176,5 +176,19 @@ describe('RoundsPage', () => {
       expect(screen.getByTestId('pledge-paused')).toBeInTheDocument();
       onlineManager.setOnline(true);
     });
+
+    it('a queued pledge the server later refuses says so on the card (V2 round 2)', async () => {
+      fetchRoundsMock.mockResolvedValue([openRound]);
+      joinRoundMock.mockRejectedValue(new Error('round closed'));
+      renderPage();
+      fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+      onlineManager.setOnline(false);
+      fireEvent.click(screen.getByTestId('join-round_1'));
+      await screen.findByTestId('pledge-paused');
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      onlineManager.setOnline(true);
+      expect(await screen.findByText(/Couldn.t update your pledge/)).toBeInTheDocument();
+    });
   });
 });

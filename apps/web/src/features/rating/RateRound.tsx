@@ -170,6 +170,20 @@ export function RateRound({ round }: { round: MyRoundDto }) {
           </Button>
         </div>
       )}
+      {/* A first rating queued offline, or refused later, says so on the card once the
+          sheet is closed — the prompt alone would read as if nothing happened (V2 round 2). */}
+      {!saved && !editing && queuedOffline && (
+        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+          <Icon name="offline" size={16} strokeWidth={2} />
+          {OFFLINE_QUEUED_TEXT}
+        </p>
+      )}
+      {!saved && !editing && rateError && (
+        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+          <Icon name="alert" size={16} strokeWidth={2} />
+          {ratingErrorMessage(rateError)}
+        </p>
+      )}
       <Sheet
         open={editing}
         // Always closable. A save paused offline keeps `busy` true until the network

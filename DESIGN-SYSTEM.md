@@ -36,6 +36,21 @@ miss a token.
 State hues (error red, delivered green, offline amber, booked blue, the rating star)
 deliberately **do not** move with the palette. They are meanings, not decoration.
 
+### Day and night (FEAT-016, ADR-0028)
+
+The scheme is a **second, orthogonal attribute**: `data-scheme="light|dark"`. Every
+palette has a night — a charcoal tinted with that palette, never `#000` — and the same
+token names; a test fails if a night is missing one, or if any ink drops under 4.5:1
+on the ground or on `paper`, or if white on the brand fill does.
+
+- The person picks **Light, Dark or Match phone** plus a palette in the Appearance
+  sheet (Profile); `SchemeToggle` is the quick switch (Home, Profile, admin header).
+  Both are remembered per device by `lib/appearance.ts`.
+- `index.html` applies the stored choice — and the status-bar `theme-color` — before
+  first paint. Its colour table is pinned to the `--ground` tokens by a test.
+- Switching grows the new scheme as a circle from the control (View Transitions + a
+  clip-path). Instant under reduced motion or where View Transitions are missing.
+
 ## Colour tokens
 
 Channels are stored as space-separated RGB (`--brand: 15 118 110`) so one variable
@@ -47,7 +62,16 @@ serves `bg-brand` and `bg-brand/20` alike.
 | `--ink`, `--ink-muted`, `--ink-soft` | `text-ink`, `text-ink-muted`, `text-ink-soft` | the three text weights |
 | `--ground`, `--ground-top` | `bg-ground` | the app ground (set on `html`) |
 | `--mesh-1/2/3` | `bg-mesh-1` … | the three ambient washes behind the glass |
-| `--shadow-rgb` | `shade` (`bg-shade/12`, every `shadow-*`) | every shadow and hairline, tinted per palette |
+| `--shadow-rgb` | `shade` (every `shadow-*`) | shadows only — black at night, so never a hairline |
+| `--line` | `border-line/10`, `bg-line/20`, `stroke-line/15` | hairlines, dividers, tracks: the shadow tint by day, white at night |
+| `--paper` | `bg-paper/60`, `border-paper/85`, … | what light surfaces are made of: white by day, the palette's night surface at night |
+| `--edge-strong/--edge/--edge-soft`, `--sheen` | (full colours, used in `theme.css` and the `shadow-*` scale) | glass highlights and the button sheen — night needs a different alpha, not just a channel |
+| `--on-fill` | `text-on-fill` | text on the accent fill |
+
+**`white` is reserved for accent fills** (primary button, lead stat, home hero,
+monogram, switch knob, palette tick). `design-system.test.tsx` counts every white
+utility per allowlisted file — a new one anywhere is a decision the test makes you
+write down.
 | `--state-*`, `--star` | `text-danger-ink`, `text-success-ink`, `text-amber-ink`, `text-info-ink`, `text-star` | meanings |
 
 ## Surfaces — the bento rhythm
@@ -99,6 +123,11 @@ ADR-0021). Money and counts always take `.num` (tabular figures).
 | Progress shimmer / skeleton sweep | 2.6s / 1.7s loops (`bar-fill`, `skeleton`) |
 | Live pulse | 2.4–2.6s (`animate-pulse-ring`) |
 | Ambient drift | 19–27s (`animate-drift-a/b/c`) |
+| Sheet in / out | 460ms rise (`sheet-in`) / 240ms sink from wherever it is (`sheet-out`); centred pop on `md` |
+| Sheet settle | 300ms spring home after a short drag (`sheet-settle`) |
+| Scheme reveal | 520ms circle from the control (`lib/appearance.ts`) |
+| Tab pill | 420ms slide with a slight overshoot (`tab-pill`) |
+| Compact title bar | 220ms in (`compact-bar`) |
 
 **Everything collapses under `prefers-reduced-motion: reduce`** — one media query in
 `theme.css`, and a test forbids inline `animation` styles that would escape it.
@@ -136,6 +165,9 @@ rather than by the test (V2 P1-2).
 | `Monogram` | initials on the brand gradient, with the halo. Derives initials in one place. |
 | `DataRows` / `DataRow` / `DataCell` / `RowSurface` | a dense list of records; columns from `md`, stacked below. Not a table — see the exception in ADR-0022. |
 | `AmbientGround` | the fixed, inert ground: three drifting washes plus grain. |
+| `Sheet` | the "do one thing" surface: bottom sheet on a phone, centred panel on `md`. Dialog semantics, focus trap (tabbable only) and restore (`returnFocus` when the opener goes away), Escape/backdrop/drag to dismiss. **Always closable** — keep the draft in the caller, never block `onClose` on a pending save. |
+| `SchemeToggle` | the sun/moon quick switch; reveals from its own centre. |
+| `PageHeader collapsible` | the large title shrinks into a blurred compact bar once scrolled past (title only — the action stays where it was). |
 
 Two rules keep them honest:
 

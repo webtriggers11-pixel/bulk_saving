@@ -81,6 +81,7 @@ function JoinControl({ round }: { round: RoundDto }) {
   const update = useUpdatePledge();
   const leave = useLeaveRound();
   const paused = anyPaused(join, update, leave);
+  const failed = join.isError || update.isError || leave.isError;
 
   function openSheet() {
     // A failure from an earlier attempt should not greet the next one.
@@ -110,9 +111,11 @@ function JoinControl({ round }: { round: RoundDto }) {
           {joined ? 'Change' : 'Join'}
         </Button>
       </div>
-      {paused && !open && (
+      {/* What happened to a write after the sheet was closed — queued offline, or refused
+          once it reached the server (V2 round 2). Inside the sheet, the sheet says it. */}
+      {(paused || failed) && !open && (
         <div className="mt-3">
-          <PledgeNotices paused failed={false} />
+          <PledgeNotices paused={paused} failed={failed} />
         </div>
       )}
       <PledgeSheet round={round} open={open} onClose={() => setOpen(false)} mutations={{ join, update, leave }} />
