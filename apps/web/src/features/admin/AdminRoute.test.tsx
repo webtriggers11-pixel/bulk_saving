@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '../auth/auth.store';
 import { resident } from './admin.fixtures';
 import { AdminRoute } from './AdminRoute';
+import { signOutAfterTest } from '../../test/session';
 
 function renderAtAdmin() {
   return render(
@@ -36,7 +37,7 @@ function signInAs(role: 'RESIDENT' | 'SUPER_ADMIN') {
 
 describe('AdminRoute', () => {
   afterEach(() => {
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   // FEAT-012 (AC9): this used to land on the resident door, which asks for an invite

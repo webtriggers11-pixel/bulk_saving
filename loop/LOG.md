@@ -807,3 +807,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Failing guard first: `familiesOf` gained `letter-spacing` (`-?tracking-*`) and `line-height` (`leading-*`). It flagged exactly the three predicted sites — the invite code and both OTP fields passing `tracking-*` against `Input`'s base `tracking-[-0.01em]`.
 - Fixed BUG-007's way: a closed `tracking` prop on `Input` (`default | invite | code`); the callers pass the prop, not a class. The prop matrix renders all 5×2×2×3 Input combinations. font-weight and box-shadow were already families.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-013 — the web suite is silent (≈100 act() warnings → 0)
+- Root cause was wider than ProfilePage: with `globals: true`, Testing Library's auto-cleanup is a FILE-level afterEach, and Vitest runs a describe block's own afterEach first — so the eleven `afterEach(() => logout())` blocks fired while screens were still mounted and re-rendered AppShell / AdminRoute / ProtectedRoute / ProfilePage outside act. New `signOutAfterTest()` (test/session.ts) unmounts first, then clears the session — removing the update rather than hushing it.
+- Remainder was ProfilePage's own: window events (`beforeinstallprompt`, `appinstalled`, `offline`) dispatched outside act, and the palette test rendering three copies without unmounting so each store reset re-rendered the others. Both fixed.
+- Result: 382/382, **0 act warnings, 0 stderr blocks** in the web run.
+- By: agent (autonomous)

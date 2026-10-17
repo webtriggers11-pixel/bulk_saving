@@ -1,11 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfilePage } from './ProfilePage';
 import { resetInstallPrompt } from '../shell/useInstallPrompt';
 import { useAuthStore } from '../auth/auth.store';
-import { signIn } from '../../test/session';
+import { signIn, signOutAfterTest } from '../../test/session';
 
 const navigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -31,7 +31,10 @@ function renderProfile() {
 function fireBeforeInstallPrompt(prompt = vi.fn().mockResolvedValue(undefined)) {
   const event = new Event('beforeinstallprompt') as Event & { prompt: () => Promise<void> };
   event.prompt = prompt;
-  window.dispatchEvent(event);
+  // The hook's listener sets state on a mounted component — inside act (CHORE-013).
+  act(() => {
+    window.dispatchEvent(event);
+  });
   return prompt;
 }
 
@@ -48,7 +51,7 @@ describe('ProfilePage', () => {
   });
 
   afterEach(() => {
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it('shows the session identity from the store — no request needed, so it works offline', () => {
@@ -124,7 +127,9 @@ describe('ProfilePage', () => {
     fireBeforeInstallPrompt();
     expect(await screen.findByRole('button', { name: 'Install app' })).toBeInTheDocument();
 
-    window.dispatchEvent(new Event('appinstalled'));
+    act(() => {
+      window.dispatchEvent(new Event('appinstalled'));
+    });
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Install app' })).not.toBeInTheDocument());
   });
@@ -134,7 +139,9 @@ describe('ProfilePage', () => {
     expect(screen.getByTestId('connection-state')).toHaveTextContent('Connected');
 
     Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
-    window.dispatchEvent(new Event('offline'));
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
 
     await waitFor(() => expect(screen.getByTestId('connection-state')).toHaveTextContent(/Offline/i));
     Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });

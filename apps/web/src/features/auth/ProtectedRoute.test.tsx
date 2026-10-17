@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { ResidentDto } from '@bulk/shared';
 import { AnonymousRoute, ProtectedRoute } from './ProtectedRoute';
 import { useAuthStore } from './auth.store';
+import { signOutAfterTest } from '../../test/session';
 
 function person(role: ResidentDto['role']): ResidentDto {
   return {
@@ -64,7 +65,7 @@ function renderAt(path: string) {
 
 describe('AnonymousRoute / ProtectedRoute', () => {
   afterEach(() => {
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it('shows each door to a signed-out visitor', () => {

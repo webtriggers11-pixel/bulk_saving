@@ -6,6 +6,7 @@ import type { MeResponse, Role } from '@bulk/shared';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
 import { HomePage } from './HomePage';
+import { signOutAfterTest } from '../../test/session';
 
 vi.mock('../auth/auth.api', () => ({
   fetchMe: vi.fn(),
@@ -55,7 +56,7 @@ describe('HomePage admin link', () => {
   });
 
   afterEach(() => {
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it('shows the Admin dashboard button to a super-admin', async () => {

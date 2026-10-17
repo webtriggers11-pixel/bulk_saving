@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App';
 import { useAuthStore } from '../auth/auth.store';
-import { signIn } from '../../test/session';
+import { signIn, signOutAfterTest } from '../../test/session';
 
 /**
  * FEAT-008 AC1 + AC2, asserted through real routing rather than by rendering
@@ -41,7 +41,7 @@ describe('AppShell route coverage', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it.each(['/', '/services', '/rounds', '/my-requests', '/profile'])('shows the tab bar on the resident route %s', (path) => {

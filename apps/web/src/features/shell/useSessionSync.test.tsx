@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSessionSync } from './useSessionSync';
 import { useAuthStore } from '../auth/auth.store';
 import * as authApi from '../auth/auth.api';
+import { signOutAfterTest } from '../../test/session';
 
 const resident = {
   id: 'res-1',
@@ -33,7 +34,7 @@ function makeWrapper() {
 describe('useSessionSync', () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it('fills in the society the sign-in response never returned', async () => {

@@ -120,15 +120,20 @@ describe('AC3 — a palette swap cannot change a layout', () => {
     );
   }
 
+  /** Render, read, unmount — a still-mounted copy would re-render when the next one
+   * resets the store, outside act() (CHORE-013). */
+  function markupUnder(theme: string): string {
+    document.documentElement.dataset.theme = theme;
+    const view = renderProfile();
+    const html = view.container.innerHTML;
+    view.unmount();
+    return html;
+  }
+
   it('renders byte-identical markup under every palette', () => {
-    document.documentElement.dataset.theme = 'teal';
-    const teal = renderProfile().container.innerHTML;
-
-    document.documentElement.dataset.theme = 'indigo';
-    const indigo = renderProfile().container.innerHTML;
-
-    document.documentElement.dataset.theme = 'ember';
-    const ember = renderProfile().container.innerHTML;
+    const teal = markupUnder('teal');
+    const indigo = markupUnder('indigo');
+    const ember = markupUnder('ember');
 
     // If a component ever branches on the theme, this is where it shows up: the
     // palette is CSS, so the tree it paints must not know about it.

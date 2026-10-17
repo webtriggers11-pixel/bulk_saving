@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResidentDto } from '@bulk/shared';
 import App from './App';
 import { useAuthStore } from './features/auth/auth.store';
+import { signOutAfterTest } from './test/session';
 
 /**
  * BUG-011 through the REAL route table (V2 round 2). Each admin page renders its own
@@ -60,7 +61,7 @@ describe('BUG-011 — a page that throws in its own body, on the real routes', (
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    useAuthStore.getState().logout();
+    signOutAfterTest();
   });
 
   it('admin: the nav survives, and leads somewhere that works', () => {
