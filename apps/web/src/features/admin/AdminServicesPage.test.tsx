@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import type { AdminServiceDto } from '@bulk/shared';
+import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
 import { society } from './admin.fixtures';
@@ -300,6 +300,25 @@ describe('AdminServicesPage', () => {
     await waitFor(() =>
       expect(upsertOfferingMock).toHaveBeenCalledWith(society.id, tank.id, { enabled: false, indicativePrice: 799 }),
     );
+  });
+
+  it('a price typed while an earlier save is in flight stays unsaved — a later refresh does not wipe it (CHORE-020 V2 P2-b)', async () => {
+    fetchServicesMock.mockResolvedValue([tank]);
+    let land: (value: ServiceOfferingDto) => void = () => {};
+    upsertOfferingMock.mockReturnValue(new Promise((r) => (land = r)));
+    renderPage();
+
+    const [green] = await openSocieties();
+    const box = within(green).getByLabelText(/^Price per unit/);
+    fireEvent.change(box, { target: { value: '600' } });
+    fireEvent.click(within(green).getByRole('button', { name: `Save price for Water Tank Cleaning in ${society.name}` }));
+    // While "600" is saving, the admin types on.
+    fireEvent.change(box, { target: { value: '700' } });
+
+    fetchServicesMock.mockResolvedValue([{ ...tank, offerings: [{ ...tank.offerings[0], indicativePrice: 600 }] }]);
+    await act(async () => land({ ...tank.offerings[0], indicativePrice: 600 }));
+    await waitFor(() => expect(within(green).getByText('From ₹600 / tank')).toBeInTheDocument());
+    expect(box).toHaveValue('700');
   });
 
   it('refuses a price that is not whole rupees, and sends nothing', async () => {

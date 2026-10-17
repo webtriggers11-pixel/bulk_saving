@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import type { ActiveFilter, AdminServiceDto, AdminServicesQuery, AdminSocietyDto, ServiceOfferingDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -242,6 +242,10 @@ function OfferingControl({
   // re-mounted the control on every price change and threw that text away.
   const [dirty, setDirty] = useState(false);
   const [seen, setSeen] = useState(stored);
+  // What is in the box NOW, read when a save lands: text typed while it was in flight
+  // is still unsaved, and must stay protected (CHORE-020 V2 P2-b).
+  const latestPrice = useRef(price);
+  latestPrice.current = price;
   if (stored !== seen) {
     setSeen(stored);
     if (!dirty) {
@@ -256,13 +260,20 @@ function OfferingControl({
       return;
     }
     setPriceError(null);
+    const submitted = price;
     upsert.mutate(
       {
         societyId: society.id,
         serviceId: service.id,
         body: { enabled: nextEnabled, indicativePrice: parsed },
       },
-      { onSuccess: () => setDirty(false) },
+      {
+        onSuccess: () => {
+          if (latestPrice.current === submitted) {
+            setDirty(false);
+          }
+        },
+      },
     );
   }
 

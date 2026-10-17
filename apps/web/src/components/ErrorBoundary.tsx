@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Icon } from './ui/icon';
 
@@ -86,5 +87,19 @@ export function CrashScreen({ onRetry }: { onRetry: () => void }) {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-[22px]">
       <CrashCard onRetry={onRetry} />
     </main>
+  );
+}
+
+/**
+ * The app-wide last line of defence, keyed by path so the back button — or any
+ * navigation — recovers from it, not only "Try again" or a reload (V2 round 2).
+ * Must sit inside the router.
+ */
+export function RootErrorBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <ErrorBoundary resetKey={pathname} fallback={(reset) => <CrashScreen onRetry={reset} />}>
+      {children}
+    </ErrorBoundary>
   );
 }

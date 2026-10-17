@@ -772,3 +772,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - 3 leftover `svc-*` services from FEAT-014's V2 deleted on the owner's instruction.
 - V1: gate exit 0 — backend 366/366, web 373/373, 1409 class tokens. Catalog = 23.
 - By: agent (autonomous) + code-reviewer subagent (FEAT-015 V2)
+
+## 2026-10-17 — BUG-011 V2 round 2: FAIL (P1) → fixed · CHORE-020 P2s fixed · CHORE-021 triaged
+- **V2 round 2: FEAT-015 fixes all confirmed by mutation; BUG-011 FAIL.** Every admin page renders its OWN `AdminLayout`, so the page body (hooks, `groupByCategory`, `describeFilters`) runs before the layout's boundary exists. Reviewer proved it with a probe: the crash fell through to the top-level screen and the admin nav was gone. My resetKey test had nested `<Routes>` inside one layout — a shape the real app never has, so it could not see this.
+- Fixed: the boundary moved to `AdminRoute`, around the whole page, keyed by path, with a fallback that renders `AdminLayout` so the nav is always there. Root boundary now `RootErrorBoundary`, keyed by path, so the back button recovers too. New `App.crash.test.tsx` renders the REAL route table with a page that throws in its body: failed first (reproduced), passes now, fails again with the route boundary removed.
+- CHORE-020 P2s: (a) leak check scoped to a per-run slug prefix, not a clock comparison — no false failure when someone else creates a service; (b) a price typed while an earlier save is in flight stays dirty (mutation-proved); (c) a save waits for its list refresh at most 3 s (`settleWithin`), so going offline after a successful write does not leave the switch "saving".
+- **The gate caught a bug in (c):** `promise.finally()` re-throws, so a failed refresh became an unhandled rejection — vitest reported it and exited 1 with every test green. Now `then(done, done)`.
+- **CHORE-021 (P2):** one gate run in four segfaulted inside V8's mark-compact GC (`ClearStaleLeftTrimmedPointerVisitor`) on Node v24.6.0 — engine, not code. Upgrading Node is the owner's call.
+- V1: gate exit 0 — backend 366/366, web 379/379. Catalog 23.
+- By: agent (autonomous) + code-reviewer subagent (V2 round 2)

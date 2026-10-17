@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { CrashScreen, ErrorBoundary } from './components/ErrorBoundary';
+import { RootErrorBoundary } from './components/ErrorBoundary';
 import { queryClient } from './lib/query-client';
 import './index.css';
 // Side effect: attach the beforeinstallprompt capture at startup, not at first
@@ -18,9 +18,9 @@ if (rootElement) {
         <BrowserRouter>
           {/* Last line of defence (BUG-011): screens have their own boundaries, so this
               only catches a crash in the router or a provider. */}
-          <ErrorBoundary fallback={(reset) => <CrashScreen onRetry={reset} />}>
+          <RootErrorBoundary>
             <App />
-          </ErrorBoundary>
+          </RootErrorBoundary>
         </BrowserRouter>
       </QueryClientProvider>
     </StrictMode>,

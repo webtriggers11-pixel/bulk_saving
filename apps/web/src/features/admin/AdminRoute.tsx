@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { CrashCard, ErrorBoundary } from '../../components/ErrorBoundary';
 import { useAuthStore } from '../auth/auth.store';
+import { AdminLayout } from './AdminLayout';
 
 /**
  * Renders children only for an authenticated SUPER_ADMIN. Unauthenticated users go
@@ -13,11 +15,27 @@ import { useAuthStore } from '../auth/auth.store';
 export function AdminRoute({ children }: { children: ReactNode }) {
   const status = useAuthStore((state) => state.status);
   const role = useAuthStore((state) => state.resident?.role);
+  const { pathname } = useLocation();
   if (status !== 'authenticated') {
     return <Navigate to="/admin/login" replace />;
   }
   if (role !== 'SUPER_ADMIN') {
     return <Navigate to="/" replace />;
   }
-  return <>{children}</>;
+  // BUG-011 (V2 round 2): every admin page renders its OWN AdminLayout, so a page that
+  // throws in its body — a hook, a grouping helper — throws before the layout's boundary
+  // exists. This one wraps the whole page, and its fallback brings the nav back, so the
+  // admin can always leave. Keyed by path: moving to another page clears it.
+  return (
+    <ErrorBoundary
+      resetKey={pathname}
+      fallback={(reset) => (
+        <AdminLayout title="Admin">
+          <CrashCard onRetry={reset} />
+        </AdminLayout>
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
 }

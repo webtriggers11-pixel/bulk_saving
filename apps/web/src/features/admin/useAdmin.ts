@@ -223,8 +223,9 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
       // Round summaries/details embed the vendor's name + phone.
       void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
-      // Returned, so the optimistic switch holds until the fresh list lands (V2 P1-2).
-      return queryClient.invalidateQueries({ queryKey: adminKeys.vendors });
+      // Returned, so the optimistic switch holds until the fresh list lands (V2 P1-2) —
+      // but never longer than REFRESH_WAIT_MS (CHORE-020 V2 P2-c).
+      return settleWithin(queryClient.invalidateQueries({ queryKey: adminKeys.vendors }), REFRESH_WAIT_MS);
     },
   });
 }
@@ -234,6 +235,28 @@ export function useUpdateVendor(): UseMutationResult<VendorDto, Error, UpdateVen
  * "Back to app" must not see a stale one). Round views — admin and resident, and the
  * dashboard's demand table — embed the service's name and unit labels, so they refetch too.
  */
+/**
+ * Wait for `promise`, but no longer than `ms`. A save's onSuccess waits for the refreshed
+ * list so an optimistic switch does not flicker — but if the device drops offline after
+ * the write landed, that refetch pauses, and the switch would stay "saving" until the
+ * network came back for a write that already succeeded (CHORE-020 V2 P2-c).
+ */
+export function settleWithin(promise: Promise<unknown>, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    const done = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    // `then(done, done)`, not `finally`: finally passes a rejection on, and a failed
+    // refresh became an unhandled rejection (caught by the gate's own run).
+    promise.then(done, done);
+  });
+}
+
+/** How long a save waits for its list to refresh before letting go (see settleWithin). */
+const REFRESH_WAIT_MS = 3_000;
+
 function invalidateCatalog(queryClient: QueryClient): Promise<void> {
   // The list a switch sits on is awaited, and returned from onSuccess: the mutation then
   // stays pending — and an optimistic switch keeps its new position — until the fresh
@@ -246,7 +269,7 @@ function invalidateCatalog(queryClient: QueryClient): Promise<void> {
   void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
   void queryClient.invalidateQueries({ queryKey: ['admin', 'round'] });
-  return queryClient.invalidateQueries({ queryKey: adminKeys.services });
+  return settleWithin(queryClient.invalidateQueries({ queryKey: adminKeys.services }), REFRESH_WAIT_MS);
 }
 
 /** POST /admin/services (FEAT-014). */

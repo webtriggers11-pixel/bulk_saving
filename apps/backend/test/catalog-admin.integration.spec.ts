@@ -24,9 +24,11 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
   let residentToken: string;
   const createdServiceIds: string[] = [];
 
-  // CHORE-020: the suite must leave the shared dev catalog as it found it. Anything
-  // created after this instant and still present after cleanup is a leak.
-  const startedAt = new Date();
+  // CHORE-020: the suite must leave the shared dev catalog as it found it. Every slug
+  // it issues carries this run's prefix, so the check sees only this run's rows — not
+  // a service an admin or another process creates meanwhile, and not via a clock
+  // comparison between the host and the database container (CHORE-020 V2 P2-a).
+  const run = `svc-${randomInviteCode().toLowerCase()}`;
 
   beforeAll(async () => {
     app = await createTestApp(new CapturingChannel());
@@ -52,7 +54,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       where: { OR: [{ id: { in: createdServiceIds } }, { slug: { in: issuedSlugs } }] },
     });
     const leaked = await prisma.service.findMany({
-      where: { createdAt: { gte: startedAt } },
+      where: { slug: { startsWith: `${run}-` } },
       select: { slug: true, name: true },
     });
     await prisma.society.delete({ where: { id: society.id } });
@@ -67,7 +69,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
   // services in the shared dev catalog (FEAT-014's browser pass found 34).
   const issuedSlugs: string[] = [];
   const uniqueSlug = (): string => {
-    const slug = `svc-${randomInviteCode().toLowerCase()}`;
+    const slug = `${run}-${randomInviteCode().toLowerCase()}`;
     issuedSlugs.push(slug);
     return slug;
   };
