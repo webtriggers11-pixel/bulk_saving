@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           anything wider than a phone their text started far left of the content
           they are about — and on the same 22px gutter as the cards, not a 16px one
           that left them 6px wider than everything they float above (CHORE-009). */}
-      <div className="sticky top-0 z-20 mx-auto flex max-w-md flex-col gap-2 px-[22px] pt-3">
+      <div className="sticky top-0 z-20 mx-auto flex max-w-md flex-col gap-2 px-[22px] pt-[max(12px,env(safe-area-inset-top))]">
         <UpdatePrompt />
         <OfflineBanner />
       </div>

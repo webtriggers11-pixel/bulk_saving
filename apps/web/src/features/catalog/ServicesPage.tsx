@@ -170,6 +170,7 @@ export function ServicesPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
       <PageHeader
+        collapsible
         title="Services"
         subtitle="Available in your society"
         action={

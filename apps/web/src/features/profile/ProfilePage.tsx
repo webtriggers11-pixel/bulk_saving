@@ -9,6 +9,10 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
 import { Monogram } from '../../components/ui/monogram';
 import { PageHeader } from '../../components/ui/page-header';
+import { SchemeToggle } from '../../components/ui/scheme-toggle';
+import { useState } from 'react';
+import { useAppearance } from '../../lib/appearance';
+import { AppearanceSheet, describeAppearance } from '../appearance/AppearanceSheet';
 
 /** Human label for a role enum — the resident should not read SUPER_ADMIN. */
 const ROLE_LABEL: Record<string, string> = {
@@ -76,10 +80,12 @@ export function ProfilePage() {
   }
 
   const name = resident?.name ?? 'Resident';
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const { preference, palette } = useAppearance();
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <PageHeader title="Profile" />
+      <PageHeader title="Profile" action={<SchemeToggle />} collapsible />
 
       <div className="stagger grid grid-cols-2 gap-3.5">
         <Card padding="none" className="col-span-2 overflow-hidden p-6 text-center">
@@ -148,6 +154,26 @@ export function ProfilePage() {
             </div>
           </div>
         </Card>
+
+        {/* FEAT-016: how the app looks on this phone — opens the Appearance sheet. */}
+        <button
+          type="button"
+          onClick={() => setAppearanceOpen(true)}
+          aria-haspopup="dialog"
+          className="surface-solid card-hover press col-span-2 flex min-h-touch items-center gap-4 rounded-card p-[18px] text-left t focus-visible:shadow-focus focus-visible:outline-none"
+        >
+          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+            <Icon name="palette" size={20} strokeWidth={1.8} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-body font-extrabold text-ink">Appearance</span>
+            <span className="mt-0.5 block text-meta text-ink-muted" data-testid="appearance-summary">
+              {describeAppearance(preference, palette)}
+            </span>
+          </span>
+          <Icon name="forward" size={18} strokeWidth={2} className="nudge text-ink-soft" />
+        </button>
+        <AppearanceSheet open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
 
         <Button variant="secondary" className="col-span-2 w-full" onClick={handleLogout}>
           <Icon name="logout" size={18} strokeWidth={2} />

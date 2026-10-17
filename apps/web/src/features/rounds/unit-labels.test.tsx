@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -79,7 +79,9 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
     vi.mocked(fetchRounds).mockResolvedValue([base]);
     renderWith(<RoundsPage />);
 
-    expect(await screen.findByLabelText('Rooms')).toBeInTheDocument();
+    // FEAT-016: the control lives in the pledge sheet.
+    fireEvent.click(await screen.findByTestId('pledge-open-round_paint'));
+    expect(screen.getByLabelText('Rooms')).toBeInTheDocument();
     expect(screen.queryByLabelText('Units')).not.toBeInTheDocument();
   });
 

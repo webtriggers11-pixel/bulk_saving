@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/empty-state';
 import { PageHeader } from '../../components/ui/page-header';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Sheet } from '../../components/ui/sheet';
 import { formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
@@ -67,110 +68,171 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
 }
 
 /**
- * The join / update / leave control for one round. Instantiates its own mutation
- * hooks so pending + error state stay scoped to this card. When the caller has not
- * joined (`myUnits === 0`) it shows a units input + Join; once joined it shows the
- * pledged units with −/+ update and a Leave button.
+ * The pledge control for one round (FEAT-016): what the resident has pledged, and ONE
+ * button that opens the pledge sheet — "Join" or "Change". The sheet is where units are
+ * chosen and a price is previewed; nothing is sent until its one action is pressed.
  */
 function JoinControl({ round }: { round: RoundDto }) {
-  const [units, setUnits] = useState<number>(MIN_UNITS);
+  const [open, setOpen] = useState(false);
+  const joined = round.myUnits > 0;
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        {joined ? (
+          <p className="min-w-0 flex-1 text-meta font-bold text-ink-muted" data-testid={`my-units-${round.id}`}>
+            You&apos;ve pledged{' '}
+            <span className="num font-extrabold text-brand-ink">{formatUnits(round.myUnits, round.service)}</span>
+          </p>
+        ) : (
+          <p className="min-w-0 flex-1 text-meta text-ink-muted">
+            Pledge the {unitLabelPluralFor(round.service)} you need. You pay only if it goes ahead.
+          </p>
+        )}
+        <Button
+          variant={joined ? 'secondary' : 'primary'}
+          size="sm"
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+          data-testid={`pledge-open-${round.id}`}
+        >
+          {joined ? 'Change' : 'Join'}
+        </Button>
+      </div>
+      <PledgeSheet round={round} open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+/**
+ * The pledge sheet (FEAT-016): a big stepper, what one unit includes, and the price —
+ * today's and the next tier's — for the number being chosen. Adjusting is free; the one
+ * action at the bottom commits it, and the sheet closes when the server agrees.
+ */
+function PledgeSheet({ round, open, onClose }: { round: RoundDto; open: boolean; onClose: () => void }) {
+  const joined = round.myUnits > 0;
+  const [draft, setDraft] = useState<number>(joined ? round.myUnits : MIN_UNITS);
+  const [seenOpen, setSeenOpen] = useState(open);
+  // Each opening starts from what is pledged now, not from an abandoned draft.
+  if (open !== seenOpen) {
+    setSeenOpen(open);
+    if (open) setDraft(joined ? round.myUnits : MIN_UNITS);
+  }
   const join = useJoinRound();
   const update = useUpdatePledge();
   const leave = useLeaveRound();
-
   const busy = join.isPending || update.isPending || leave.isPending;
   const failed = join.isError || update.isError || leave.isError;
-  // A paused (offline) write is not a failure — it resumes on reconnect. Rule and
-  // copy both come from lib/offline.ts so they cannot drift from the admin
-  // controls that learned the same lesson in BUG-004 (CHORE-005).
+  // A paused (offline) write is not a failure — it resumes on reconnect (CHORE-005).
   const paused = anyPaused(join, update, leave);
+  const plural = unitLabelPluralFor(round.service);
+  const units = clampUnits(draft);
+  const done = { onSuccess: onClose };
 
-  if (round.myUnits === 0) {
-    return (
-      <div className="field flex flex-col gap-2.5">
-        <div className="flex items-end gap-2.5">
-          <div className="w-[98px]">
-            <Label htmlFor={`units-${round.id}`}>
-              {/* FEAT-010: the service's own word, capitalised for a form label. */}
-              {capitalise(unitLabelPluralFor(round.service))}
-            </Label>
-            <Input textSize="numeric"
-              id={`units-${round.id}`}
-              type="number"
-              inputMode="numeric"
-              min={MIN_UNITS}
-              max={MAX_UNITS}
-              value={units}
-              onChange={(e) => setUnits(clampUnits(Number(e.target.value)))}
-              data-testid={`units-input-${round.id}`}
-              className="num text-center"
-            />
-          </div>
-          <Button
-            className="flex-1"
-            disabled={busy}
-            onClick={() => join.mutate({ id: round.id, units: clampUnits(units) })}
-            data-testid={`join-${round.id}`}
-          >
-            {join.isPending ? 'Joining…' : 'Join'}
-          </Button>
-        </div>
-        <PledgeNotices paused={paused} failed={failed} />
-      </div>
-    );
-  }
-
-  const decrement = () => update.mutate({ id: round.id, units: clampUnits(round.myUnits - 1) });
-  const increment = () => update.mutate({ id: round.id, units: clampUnits(round.myUnits + 1) });
+  const commit = joined
+    ? () => update.mutate({ id: round.id, units }, done)
+    : () => join.mutate({ id: round.id, units }, done);
+  const unchanged = joined && units === round.myUnits;
+  const cheaper = round.nextTier && round.nextTier.price < round.currentPrice ? round.nextTier : undefined;
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-meta font-bold text-ink-muted" data-testid={`my-units-${round.id}`}>
-        You&apos;ve pledged{' '}
-        <span className="num font-extrabold text-brand-ink">
-          {formatUnits(round.myUnits, round.service)}
-        </span>
-      </p>
-      <div className="flex items-center gap-2.5">
-        {/* The stepper reads as one control: a tray holding −, the count, and +. */}
-        <div className="surface-inset flex items-center gap-1 rounded-inset p-1">
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label={`Decrease ${unitLabelPluralFor(round.service)}`}
-            disabled={busy || round.myUnits <= MIN_UNITS}
-            onClick={decrement}
-            data-testid={`decrement-${round.id}`}
-          >
-            <Icon name="minus" size={18} strokeWidth={2.3} />
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={joined ? 'Your pledge' : `Join ${round.service.name}`}
+      description={round.service.unitDescription?.trim() || undefined}
+      footer={
+        <div className="flex flex-col gap-2.5">
+          <PledgeNotices paused={paused} failed={failed} />
+          <Button className="w-full" disabled={busy || unchanged} onClick={commit} data-testid={joined ? `update-${round.id}` : `join-${round.id}`}>
+            {join.isPending || update.isPending
+              ? 'Saving…'
+              : joined
+                ? `Update to ${formatUnits(units, round.service)}`
+                : `Join with ${formatUnits(units, round.service)}`}
           </Button>
-          <span className="num min-w-[30px] text-center text-[18px] font-extrabold text-ink">
-            {round.myUnits}
-          </span>
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label={`Increase ${unitLabelPluralFor(round.service)}`}
-            disabled={busy || round.myUnits >= MAX_UNITS}
-            onClick={increment}
-            data-testid={`increment-${round.id}`}
-          >
-            <Icon name="plus" size={18} strokeWidth={2.3} />
-          </Button>
+          {joined && (
+            <Button
+              variant="ghost"
+              className="w-full text-danger-ink"
+              disabled={busy}
+              onClick={() => leave.mutate(round.id, done)}
+              data-testid={`leave-${round.id}`}
+            >
+              {leave.isPending ? 'Leaving…' : 'Leave this round'}
+            </Button>
+          )}
         </div>
-        <Button
-          variant="danger"
-          size="sm"
-          className="ml-auto"
-          disabled={busy}
-          onClick={() => leave.mutate(round.id)}
-          data-testid={`leave-${round.id}`}
-        >
-          {leave.isPending ? 'Leaving…' : 'Leave'}
-        </Button>
+      }
+    >
+      <div className="flex flex-col items-center gap-5">
+        <div className="field flex flex-col items-center gap-2">
+          <Label htmlFor={`units-${round.id}`}>
+            {/* FEAT-010: the service's own word, capitalised for a form label. */}
+            {capitalise(plural)}
+          </Label>
+          {/* The stepper reads as one control: a tray holding −, the count, and +. */}
+          <div className="surface-inset flex items-center gap-2 rounded-tile p-1.5">
+            <Button
+              variant="secondary"
+              size="icon"
+              aria-label={`Decrease ${plural}`}
+              disabled={busy || units <= MIN_UNITS}
+              onClick={() => setDraft(clampUnits(units - 1))}
+              data-testid={`decrement-${round.id}`}
+            >
+              <Icon name="minus" size={20} strokeWidth={2.3} />
+            </Button>
+            <div className="w-[88px]">
+              <Input
+                textSize="xl"
+                id={`units-${round.id}`}
+                type="number"
+                inputMode="numeric"
+                min={MIN_UNITS}
+                max={MAX_UNITS}
+                value={draft}
+                onChange={(e) => setDraft(Number(e.target.value))}
+                onBlur={() => setDraft(units)}
+                data-testid={`units-input-${round.id}`}
+                className="num text-center"
+              />
+            </div>
+            <Button
+              variant="secondary"
+              size="icon"
+              aria-label={`Increase ${plural}`}
+              disabled={busy || units >= MAX_UNITS}
+              onClick={() => setDraft(clampUnits(units + 1))}
+              data-testid={`increment-${round.id}`}
+            >
+              <Icon name="plus" size={20} strokeWidth={2.3} />
+            </Button>
+          </div>
+        </div>
+
+        {/* What it comes to — the number a resident actually decides on. */}
+        <dl className="grid w-full grid-cols-2 gap-2.5" data-testid={`pledge-preview-${round.id}`}>
+          <div className="surface-inset rounded-inset px-3.5 py-3">
+            <dt className="term-label">At today&apos;s price</dt>
+            <dd key={units} className="num animate-tick mt-1 text-title font-extrabold text-ink">
+              {formatRupees(round.currentPrice * units)}
+            </dd>
+            <dd className="text-micro text-ink-muted">
+              {formatRupees(round.currentPrice)} / {unitLabelFor(round.service)}
+            </dd>
+          </div>
+          <div className="surface-tint rounded-inset px-3.5 py-3">
+            <dt className="term-label">{cheaper ? `At ${formatUnits(cheaper.threshold, round.service)}` : 'Best price'}</dt>
+            <dd className="num mt-1 text-title font-extrabold text-brand-ink">
+              {formatRupees((cheaper?.price ?? round.currentPrice) * units)}
+            </dd>
+            <dd className="text-micro text-ink-muted">
+              {cheaper ? 'if the round gets there' : 'already unlocked'}
+            </dd>
+          </div>
+        </dl>
       </div>
-      <PledgeNotices paused={paused} failed={failed} />
-    </div>
+    </Sheet>
   );
 }
 
@@ -330,6 +392,7 @@ export function RoundsPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
       <PageHeader
+        collapsible
         title="Group buys"
         subtitle="Open rounds in your society"
         action={

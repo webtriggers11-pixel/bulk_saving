@@ -48,4 +48,11 @@ describe('BottomNav', () => {
       expect(link.className).toContain('min-w-11');
     }
   });
+
+  it('slides ONE pill to the active tab (FEAT-016)', () => {
+    renderAt('/my-requests');
+    const pill = screen.getByTestId('tab-pill');
+    expect(pill.style.transform).toBe('translateX(calc(2 * (100% + 4px)))');
+    expect(pill).toHaveAttribute('aria-hidden', 'true');
+  });
 });

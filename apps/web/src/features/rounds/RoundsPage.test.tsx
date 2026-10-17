@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoundDto } from '@bulk/shared';
 import { RoundsPage } from './RoundsPage';
-import { fetchRounds, joinRound } from './rounds.api';
+import { fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./rounds.api', () => ({
@@ -16,6 +16,8 @@ vi.mock('./rounds.api', () => ({
 
 const fetchRoundsMock = vi.mocked(fetchRounds);
 const joinRoundMock = vi.mocked(joinRound);
+const updatePledgeMock = vi.mocked(updatePledge);
+const leaveRoundMock = vi.mocked(leaveRound);
 
 const openRound: RoundDto = {
   id: 'round_1',
@@ -84,7 +86,9 @@ describe('RoundsPage', () => {
     joinRoundMock.mockResolvedValue({ ...openRound, myUnits: 3, unitsCount: 9 });
     renderPage();
 
-    await waitFor(() => expect(screen.getByTestId('join-round_1')).toBeInTheDocument());
+    // FEAT-016: the card's Join opens the pledge sheet; the sheet commits.
+    fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+    expect(screen.getByRole('dialog', { name: 'Join AC Servicing' })).toBeInTheDocument();
 
     // Choose 3 units, then join.
     fireEvent.change(screen.getByTestId('units-input-round_1'), { target: { value: '3' } });
@@ -103,5 +107,60 @@ describe('RoundsPage', () => {
     await waitFor(() => expect(screen.getByTestId('rounds-empty')).toBeInTheDocument());
     expect(screen.getByText(/No open rounds in your society yet/i)).toBeInTheDocument();
     expect(screen.queryByTestId('round-card')).not.toBeInTheDocument();
+  });
+
+  describe('the pledge sheet (FEAT-016)', () => {
+    it('stepping costs nothing — nothing is sent until the one action is pressed', async () => {
+      fetchRoundsMock.mockResolvedValue([openRound]);
+      renderPage();
+      fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+      fireEvent.click(screen.getByTestId('increment-round_1'));
+      fireEvent.click(screen.getByTestId('increment-round_1'));
+      expect(joinRoundMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('join-round_1')).toHaveTextContent('Join with 3 AC units');
+    });
+
+    it('previews what the chosen number costs — today, and at the next, cheaper tier', async () => {
+      fetchRoundsMock.mockResolvedValue([{ ...openRound, currentPrice: 900, nextTier: { threshold: 10, price: 700 } }]);
+      renderPage();
+      fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+      fireEvent.change(screen.getByTestId('units-input-round_1'), { target: { value: '2' } });
+      const preview = screen.getByTestId('pledge-preview-round_1');
+      expect(preview).toHaveTextContent('₹1,800'); // 2 × ₹900
+      expect(preview).toHaveTextContent('₹1,400'); // 2 × ₹700
+      expect(preview).toHaveTextContent('At 10 AC units');
+    });
+
+    it('a pledged resident changes it from the same sheet, and cannot "update" to the same number', async () => {
+      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      updatePledgeMock.mockResolvedValue({ ...openRound, myUnits: 3 });
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
+      expect(screen.getByTestId('update-round_1')).toBeDisabled();
+      fireEvent.click(screen.getByTestId('increment-round_1'));
+      fireEvent.click(screen.getByTestId('update-round_1'));
+      await waitFor(() => expect(updatePledgeMock).toHaveBeenCalledWith('round_1', 3));
+    });
+
+    it('leaving is in the sheet, and the sheet closes once the server agrees', async () => {
+      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      leaveRoundMock.mockResolvedValue(undefined as never);
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
+      fireEvent.click(screen.getByTestId('leave-round_1'));
+      await waitFor(() => expect(leaveRoundMock).toHaveBeenCalledWith('round_1'));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('each opening starts from what is pledged now — an abandoned draft does not come back', async () => {
+      fetchRoundsMock.mockResolvedValue([openRound]);
+      renderPage();
+      fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
+      fireEvent.click(screen.getByTestId('increment-round_1'));
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('pledge-open-round_1'));
+      expect(screen.getByTestId('units-input-round_1')).toHaveValue(1);
+    });
   });
 });

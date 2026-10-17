@@ -130,7 +130,9 @@ describe('a pledge submitted while offline', () => {
       </QueryClientProvider>,
     );
 
-    const joinButton = await screen.findByRole('button', { name: 'Join' });
+    // FEAT-016: Join opens the pledge sheet; the sheet's action is what sends.
+    fireEvent.click(await screen.findByRole('button', { name: 'Join' }));
+    const joinButton = screen.getByTestId('join-round_1');
 
     Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
     onlineManager.setOnline(false);

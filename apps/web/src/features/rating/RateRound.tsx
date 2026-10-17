@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Sheet } from '../../components/ui/sheet';
 import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
@@ -53,6 +54,7 @@ export function RateRound({ round }: { round: MyRoundDto }) {
    * clears it again.
    */
   const saved = round.myRating ?? (remove.isSuccess ? null : (rate.data ?? null));
+  // FEAT-016: the form lives in a sheet; `editing` is whether that sheet is open.
   const [editing, setEditing] = useState(false);
   const [stars, setStars] = useState<StarValue | null>(saved ? asStarValue(saved.stars) : null);
   const [comment, setComment] = useState(saved?.comment ?? '');
@@ -69,8 +71,6 @@ export function RateRound({ round }: { round: MyRoundDto }) {
    */
   const queuedOffline = anyPaused(rate, remove);
 
-  const open = editing || !saved;
-
   function submit(event: FormEvent) {
     event.preventDefault();
     if (stars === null) {
@@ -80,139 +80,149 @@ export function RateRound({ round }: { round: MyRoundDto }) {
     rate.mutate(
       { roundId: round.id, stars, ...(trimmed.length > 0 ? { comment: trimmed } : {}) },
       {
-        // Only leave edit mode once the SERVER has accepted it (ADR-0018: no
-        // optimistic write). On failure the form stays open with the text intact.
+        // Only close the sheet once the SERVER has accepted it (ADR-0018: no
+        // optimistic write). On failure the sheet stays open with the text intact.
         onSuccess: () => setEditing(false),
       },
     );
   }
 
-  if (!open) {
-    return (
-      <div className="mt-4 border-t border-line/10 pt-4" data-testid="rating-saved">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="term-label">Your rating</p>
-            {/* `my-rating` is FEAT-008's existing test contract for a saved
-                rating — kept so its MyRequestsPage test stays meaningful. */}
-            <StarRating
-              value={asStarValue(saved.stars)}
-              label="Your rating"
-              idPrefix={`saved-${round.id}`}
-              testId="my-rating"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setStars(asStarValue(saved.stars));
-                setComment(saved.comment ?? '');
-                setEditing(true);
-              }}
-            >
-              Change
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() =>
-                // Clear the local draft too (V2 P1-4): without this the form
-                // reopens with the stars and comment the resident just deleted
-                // still filled in, one tap away from re-creating them.
-                remove.mutate(round.id, {
-                  onSuccess: () => {
-                    setStars(null);
-                    setComment('');
-                    setEditing(false);
-                    rate.reset();
-                  },
-                })
-              }
-            >
-              {remove.isPending ? 'Removing…' : 'Remove'}
-            </Button>
-          </div>
-        </div>
-        {saved.comment && (
-          <p className="surface-inset mt-3 rounded-inset px-3.5 py-3 text-caption italic text-ink-muted">
-            “{saved.comment}”
-          </p>
-        )}
-        {queuedOffline && (
-          <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
-            <Icon name="offline" size={16} strokeWidth={2} />
-            {OFFLINE_QUEUED_TEXT}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
-            <Icon name="alert" size={16} strokeWidth={2} />
-            {ratingErrorMessage(error)}
-          </p>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={submit} className="field mt-4 border-t border-line/10 pt-4" noValidate>
-      <p className="text-[14px] font-extrabold text-ink">
-        {saved ? 'Change your rating' : 'How did it go?'}
-      </p>
-      <StarRating
-        value={stars}
-        onChange={setStars}
-        disabled={busy}
-        label={`Rate ${round.service.name}`}
-        idPrefix={round.id}
-      />
-
-      <Label htmlFor={`comment-${round.id}`} className="mt-2">
-        Comment (optional)
-      </Label>
-      <textarea
-        id={`comment-${round.id}`}
-        value={comment}
-        maxLength={MAX_COMMENT}
-        rows={2}
-        disabled={busy}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Anything the next resident should know?"
-        className="mt-1 w-full rounded-control border border-paper/70 paint-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
-      />
-
-      {queuedOffline && (
-        <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
-          <Icon name="offline" size={16} strokeWidth={2} />
-          {OFFLINE_QUEUED_TEXT}
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
-          <Icon name="alert" size={16} strokeWidth={2} />
-          {ratingErrorMessage(error)}
-        </p>
-      )}
-
-      <div className="mt-4 flex gap-2.5">
-        <Button type="submit" disabled={busy || stars === null}>
-          {queuedOffline
-            ? OFFLINE_WAITING_LABEL
-            : rate.isPending
-              ? 'Saving…'
-              : saved
-                ? 'Save changes'
-                : 'Submit rating'}
-        </Button>
-        {saved && (
-          <Button variant="ghost" type="button" disabled={busy} onClick={() => setEditing(false)}>
-            Cancel
+    <>
+      {saved ? (
+        <div className="mt-4 border-t border-line/10 pt-4" data-testid="rating-saved">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="term-label">Your rating</p>
+              {/* `my-rating` is FEAT-008's existing test contract for a saved
+                  rating — kept so its MyRequestsPage test stays meaningful. */}
+              <StarRating
+                value={asStarValue(saved.stars)}
+                label="Your rating"
+                idPrefix={`saved-${round.id}`}
+                testId="my-rating"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setStars(asStarValue(saved.stars));
+                  setComment(saved.comment ?? '');
+                  setEditing(true);
+                }}
+              >
+                Change
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  // Clear the local draft too (V2 P1-4): without this the form
+                  // reopens with the stars and comment the resident just deleted
+                  // still filled in, one tap away from re-creating them.
+                  remove.mutate(round.id, {
+                    onSuccess: () => {
+                      setStars(null);
+                      setComment('');
+                      setEditing(false);
+                      rate.reset();
+                    },
+                  })
+                }
+              >
+                {remove.isPending ? 'Removing…' : 'Remove'}
+              </Button>
+            </div>
+          </div>
+          {saved.comment && (
+            <p className="surface-inset mt-3 rounded-inset px-3.5 py-3 text-caption italic text-ink-muted">
+              “{saved.comment}”
+            </p>
+          )}
+          {queuedOffline && (
+            <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+              <Icon name="offline" size={16} strokeWidth={2} />
+              {OFFLINE_QUEUED_TEXT}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+              <Icon name="alert" size={16} strokeWidth={2} />
+              {ratingErrorMessage(error)}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line/10 pt-4" data-testid="rating-prompt">
+          <p className="text-meta font-bold text-ink-muted">How did it go? Your rating helps the next resident.</p>
+          <Button size="sm" aria-haspopup="dialog" onClick={() => setEditing(true)}>
+            Rate this job
           </Button>
-        )}
-      </div>
-    </form>
+        </div>
+      )}
+      <Sheet
+        open={editing}
+        onClose={() => {
+          if (!busy) setEditing(false);
+        }}
+        title={saved ? 'Change your rating' : 'How did it go?'}
+        description={round.service.name}
+      >
+        <form onSubmit={submit} className="field" noValidate>
+          <StarRating
+            value={stars}
+            onChange={setStars}
+            disabled={busy}
+            label={`Rate ${round.service.name}`}
+            idPrefix={round.id}
+          />
+
+          <Label htmlFor={`comment-${round.id}`} className="mt-2">
+            Comment (optional)
+          </Label>
+          <textarea
+            id={`comment-${round.id}`}
+            value={comment}
+            maxLength={MAX_COMMENT}
+            rows={2}
+            disabled={busy}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Anything the next resident should know?"
+            className="mt-1 w-full rounded-control border border-paper/70 paint-glass px-3.5 py-3 text-caption font-medium text-ink shadow-field placeholder:text-ink-soft focus:border-brand/60 focus:shadow-ring focus:outline-none disabled:opacity-60"
+          />
+
+          {queuedOffline && (
+            <p role="status" data-testid="rating-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">
+              <Icon name="offline" size={16} strokeWidth={2} />
+              {OFFLINE_QUEUED_TEXT}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+              <Icon name="alert" size={16} strokeWidth={2} />
+              {ratingErrorMessage(error)}
+            </p>
+          )}
+
+          <div className="mt-4 flex gap-2.5">
+            <Button type="submit" disabled={busy || stars === null}>
+              {queuedOffline
+                ? OFFLINE_WAITING_LABEL
+                : rate.isPending
+                  ? 'Saving…'
+                  : saved
+                    ? 'Save changes'
+                    : 'Submit rating'}
+            </Button>
+            <Button variant="ghost" type="button" disabled={busy} onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Sheet>
+    </>
   );
 }

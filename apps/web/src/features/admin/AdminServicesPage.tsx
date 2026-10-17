@@ -8,6 +8,7 @@ import { Field } from '../../components/ui/field';
 import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
+import { Sheet } from '../../components/ui/sheet';
 import { FilterChips } from '../../components/ui/filter-chips';
 import { ResultSummary } from '../../components/ui/result-summary';
 import { SavedTick } from '../../components/ui/saved-tick';
@@ -167,6 +168,8 @@ function AddServiceForm() {
       onSuccess: () => {
         setValues(EMPTY_SERVICE_FORM);
         setSlugTouched(false);
+        // FEAT-016: done — the sheet closes, and the card's "Added" tick says so.
+        setOpen(false);
       },
     });
   }
@@ -182,23 +185,25 @@ function AddServiceForm() {
         </div>
         <div className="flex items-center gap-2">
           <SavedTick trigger={create.isSuccess ? create.submittedAt : null} text="Added" />
-          <Button
-            variant={open ? 'secondary' : 'primary'}
-            size="sm"
-            aria-expanded={open}
-            aria-controls="add-service-form"
-            onClick={() => setOpen((was) => !was)}
-          >
-            <Icon name={open ? 'close' : 'plus'} size={16} strokeWidth={2.2} />
-            {open ? 'Close' : 'New service'}
+          <Button size="sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+            <Icon name="plus" size={16} strokeWidth={2.2} />
+            New service
           </Button>
         </div>
       </div>
-      {open && (
+      {/* FEAT-016: the form is a sheet — bottom sheet on a phone, centred on a laptop. */}
+      <Sheet
+        open={open}
+        onClose={() => {
+          if (!create.isPending) setOpen(false);
+        }}
+        title="New service"
+        description="It starts active but offered nowhere — switch it on per society afterwards."
+      >
       <form
         id="add-service-form"
         onSubmit={handleSubmit}
-        className="animate-rise mt-5 flex flex-col gap-4"
+        className="flex flex-col gap-4"
         aria-label="Add service"
         noValidate
       >
@@ -215,7 +220,7 @@ function AddServiceForm() {
         {create.isPaused && <OfflineLine testId="service-create-offline" />}
         {create.isError && <ErrorLine error={create.error} />}
       </form>
-      )}
+      </Sheet>
     </Card>
   );
 }

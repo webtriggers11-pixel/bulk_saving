@@ -348,6 +348,7 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
     'components/ui/switch.tsx', // the knob is white in both schemes, like iOS
     'features/home/HomePage.tsx', // the hero card is the accent surface
     'features/admin/AdminLayout.tsx', // the brand mark
+    'features/appearance/AppearanceSheet.tsx', // the tick on a palette swatch (a brand fill)
   ];
 
   it('uses white utilities only in the accent-fill files', () => {

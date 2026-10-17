@@ -55,6 +55,11 @@ function renderPage() {
   );
 }
 
+/** FEAT-016: the rating form lives in a sheet, opened from the card. */
+async function openRating() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Rate this job' }));
+}
+
 describe('RateRound (on the My Requests card)', () => {
   afterEach(() => {
     onlineManager.setOnline(true);
@@ -65,6 +70,7 @@ describe('RateRound (on the My Requests card)', () => {
     it.each(['DELIVERED', 'RATED'] as RoundStatus[])('offers rating on %s', async (status) => {
       fetchMyRoundsMock.mockResolvedValue([round({ status })]);
       renderPage();
+    await openRating();
       expect(await screen.findByRole('radiogroup', { name: 'Rate AC Servicing' })).toBeInTheDocument();
     });
 
@@ -85,6 +91,7 @@ describe('RateRound (on the My Requests card)', () => {
       fetchMyRoundsMock.mockResolvedValue([round()]);
       rateRoundMock.mockResolvedValue({ ...savedRating, stars: 5, comment: 'Great job.' });
       renderPage();
+    await openRating();
 
       fireEvent.click(await screen.findByRole('radio', { name: '5 stars' }));
       fireEvent.change(screen.getByLabelText('Comment (optional)'), {
@@ -101,6 +108,7 @@ describe('RateRound (on the My Requests card)', () => {
       fetchMyRoundsMock.mockResolvedValue([round()]);
       rateRoundMock.mockResolvedValue({ ...savedRating, stars: 3, comment: null });
       renderPage();
+    await openRating();
 
       fireEvent.click(await screen.findByRole('radio', { name: '3 stars' }));
       fireEvent.change(screen.getByLabelText('Comment (optional)'), { target: { value: '   ' } });
@@ -112,6 +120,7 @@ describe('RateRound (on the My Requests card)', () => {
     it('cannot be submitted without a score', async () => {
       fetchMyRoundsMock.mockResolvedValue([round()]);
       renderPage();
+    await openRating();
 
       const submit = await screen.findByRole('button', { name: 'Submit rating' });
       expect(submit).toBeDisabled();
@@ -125,6 +134,7 @@ describe('RateRound (on the My Requests card)', () => {
       let resolve: ((value: RatingDto) => void) | undefined;
       rateRoundMock.mockImplementation(() => new Promise<RatingDto>((r) => (resolve = r)));
       renderPage();
+    await openRating();
 
       fireEvent.click(await screen.findByRole('radio', { name: '4 stars' }));
       fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
@@ -146,6 +156,7 @@ describe('RateRound (on the My Requests card)', () => {
       fetchMyRoundsMock.mockResolvedValue([round()]);
       rateRoundMock.mockRejectedValue(new ApiError('ROUND_NOT_DELIVERED', 'not delivered', 409));
       renderPage();
+    await openRating();
 
       fireEvent.click(await screen.findByRole('radio', { name: '2 stars' }));
       fireEvent.change(screen.getByLabelText('Comment (optional)'), {
@@ -228,6 +239,7 @@ describe('RateRound (on the My Requests card)', () => {
     // driven through onlineManager, or the hole is invisible (FEAT-008 V2 finding).
     fetchMyRoundsMock.mockResolvedValue([round()]);
     renderPage();
+    await openRating();
     fireEvent.click(await screen.findByRole('radio', { name: '4 stars' }));
 
     act(() => {
@@ -254,6 +266,7 @@ describe('RateRound (on the My Requests card)', () => {
     fetchMyRoundsMock.mockResolvedValue([round()]); // always reports unrated
     rateRoundMock.mockResolvedValue({ ...savedRating, stars: 5, comment: null });
     renderPage();
+    await openRating();
 
     fireEvent.click(await screen.findByRole('radio', { name: '5 stars' }));
     fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
@@ -273,8 +286,9 @@ describe('RateRound (on the My Requests card)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
 
-    // Back to the unrated prompt, with nothing carried over.
-    await waitFor(() => expect(screen.getByRole('radiogroup')).toBeInTheDocument());
+    // Back to the unrated prompt, and opening it shows nothing carried over.
+    await openRating();
+    expect(screen.getByRole('radiogroup')).toBeInTheDocument();
     expect(screen.getByLabelText('Comment (optional)')).toHaveValue('');
     expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Submit rating' })).toBeDisabled();
@@ -287,6 +301,7 @@ describe('RateRound (on the My Requests card)', () => {
     fetchMyRoundsMock.mockResolvedValue([round()]);
     rateRoundMock.mockRejectedValue(new ApiError('NOT_A_PARTICIPANT', 'nope', 403));
     renderPage();
+    await openRating();
 
     fireEvent.click(await screen.findByRole('radio', { name: '3 stars' }));
     fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
@@ -297,6 +312,7 @@ describe('RateRound (on the My Requests card)', () => {
   it('caps the comment at the same length as the API', async () => {
     fetchMyRoundsMock.mockResolvedValue([round()]);
     renderPage();
+    await openRating();
     expect(await screen.findByLabelText('Comment (optional)')).toHaveAttribute('maxlength', '500');
   });
 });

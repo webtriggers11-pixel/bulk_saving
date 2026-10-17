@@ -159,8 +159,9 @@ describe('AdminServicesPage', () => {
       unitLabel: 'bag',
       unitLabelPlural: 'bags',
     });
-    // The form resets once the server accepts it.
-    await waitFor(() => expect(within(form).getByLabelText(/^Name/)).toHaveValue(''));
+    // FEAT-016: the sheet closes once the server accepts it, and the card says so.
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'New service' })).not.toBeInTheDocument());
+    expect(screen.getByText('Added')).toBeInTheDocument();
   });
 
   it('stops following the name once the admin edits the slug themselves', async () => {

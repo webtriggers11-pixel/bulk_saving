@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { CrashCard, ErrorBoundary } from '../../components/ErrorBoundary';
+import { SchemeToggle } from '../../components/ui/scheme-toggle';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { PageHeader } from '../../components/ui/page-header';
@@ -72,6 +73,8 @@ export function AdminLayout({
               </NavLink>
             ))}
           </nav>
+          {/* FEAT-016: the night switch, same gesture as the resident app. */}
+          <SchemeToggle className="ml-auto sm:ml-0" />
         </div>
       </header>
 

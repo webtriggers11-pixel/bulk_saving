@@ -23,6 +23,7 @@ import { FilterChips } from './filter-chips';
 import { SearchField } from './search-field';
 import { Switch } from './switch';
 import { ResultSummary } from './result-summary';
+import { SchemeToggle } from './scheme-toggle';
 
 /**
  * BUG-007 — a primitive's base class and a caller's `className` silently fight.
@@ -165,6 +166,7 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ],
   ['Switch', <Switch key="sw" checked={false} onChange={() => {}} label="Active" text="Inactive" />],
   ['ResultSummary', <ResultSummary key="rsum" count={2} noun={['row', 'rows']} activeCount={1} onClear={() => {}} />],
+  ['SchemeToggle', <SchemeToggle key="st" />],
 ];
 
 /**

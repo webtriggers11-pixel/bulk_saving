@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
 import { Button } from '../../components/ui/button';
+import { SchemeToggle } from '../../components/ui/scheme-toggle';
 import { Icon } from '../../components/ui/icon';
 import { QueryErrorState } from '../../components/QueryState';
 import { queryStalled } from '../../lib/offline';
@@ -39,9 +40,13 @@ export function HomePage() {
           </span>
           <h1 className="text-headline font-extrabold text-ink">Bulk&nbsp;Saving</h1>
         </div>
-        <Button variant="secondary" size="icon" aria-label="Log out" onClick={handleLogout}>
-          <Icon name="logout" size={19} strokeWidth={2} />
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* FEAT-016: the night switch — the new scheme grows from this button. */}
+          <SchemeToggle />
+          <Button variant="secondary" size="icon" aria-label="Log out" onClick={handleLogout}>
+            <Icon name="logout" size={19} strokeWidth={2} />
+          </Button>
+        </div>
       </header>
 
       {isLoading && <HomeSkeleton />}

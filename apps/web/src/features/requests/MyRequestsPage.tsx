@@ -180,7 +180,7 @@ export function MyRequestsPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
-      <PageHeader title="My Requests" subtitle="Rounds you have joined" />
+      <PageHeader title="My Requests" subtitle="Rounds you have joined" collapsible />
 
       {isLoading && <RequestsSkeleton />}
 
