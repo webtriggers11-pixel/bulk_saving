@@ -1,6 +1,6 @@
 # CHORE-019 — the demo seed mirrors scheduler constants by hand; the base seed has no guard
 
-**Status:** triaged · **Priority:** P3 · **Opened:** 2026-10-17 · **Found by:** CHORE-018 V2 round 2
+**Status:** done (closed 2026-10-17) · **Priority:** P3 · **Opened:** 2026-10-17 · **Found by:** CHORE-018 V2 round 2
 
 1. `prisma/seed-demo.ts` copies the close/reminder queue names, job names, the `reminder-`
    id, attempts, backoff and the 24h lead from `src/modules/rounds/round-*.scheduler.ts`

@@ -1,6 +1,6 @@
 # CHORE-013 — act() warnings in the web suite hide the next real one
 
-**Status:** triaged · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** V2 round 2 of CHORE-009
+**Status:** done (closed 2026-10-17) · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** V2 round 2 of CHORE-009
 
 Every `pnpm --filter web test` run prints repeated
 `An update to ProfilePage inside a test was not wrapped in act(...)`. Pre-existing, unrelated

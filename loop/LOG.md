@@ -848,3 +848,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **A vacuous test, caught before it shipped:** the new tenant-isolation test PASSED against the vulnerable code — the helper's code requests hit the per-phone request ceiling, later guesses landed on a dead code (EXPIRED, free), so the budget never filled. Helper now clears the ceiling too; the test then failed against the old code, passes against the new, and fails again under the mutation that re-shares the key.
 - V1: gate exit 0 — backend 396/396, web 382/382.
 - By: agent (autonomous) + code-reviewer subagent (V2 round 2)
+
+## 2026-10-17 — V3 (on Node 24.22.0, three runs) · BUG-010, CHORE-010/011/012/013/015/016/017/019/021 CLOSED · CHORE-022 triaged
+- **V2 round 3: PASS** on the per-door budget (cross-tenant probe re-run: society B spent, society A unaffected; Lua semantics checked case by case against the original verify; race test proven meaningful by a stricter mutation — round 2's split check with the new keys → `Expected 20, Received 24`). Two P2s: the ~30%/year sustained-attack residual against admins (→ **CHORE-022**, owner's call: 8-digit admin codes recommended) and Redis Cluster CROSSSLOT (noted in ADR-0027; no cluster planned).
+- **V3 doubled as CHORE-021's verification:** three back-to-back gate runs on Node v24.22.0 — exit 0 all three, identical: backend 396/396, web 382/382. No segfault. `.nvmrc` pins 24.22.0; machine default left at 24.6.0 for the owner.
+- Closed: BUG-010, CHORE-010, CHORE-011, CHORE-012, CHORE-013, CHORE-015, CHORE-016, CHORE-017, CHORE-019, CHORE-021. Open: CHORE-022 (owner decision).
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)

@@ -35,27 +35,27 @@
 | CHORE-009 | Design-parity pass — every screen vs its artboard, in a browser | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/CHORE-009-design-parity-pass/ | ADR-0021, ADR-0022 |
 | BUG-008 | A server hiccup signs the resident out (network error treated as a rejected refresh) | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/BUG-008-network-error-logs-you-out/ | — |
 | BUG-009 | Profile showed "—" for society: the sign-in response carries none and the store never learned | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/BUG-009-profile-shows-no-society/ | ADR-0015 |
-| BUG-010 | A resident sees `currentPrice` on a delivered round, not the negotiated `finalPrice` (needs backend) | in-review | P1 | 2026-09-19 | — | loop/work/BUG-010-delivered-round-shows-wrong-price/ | — |
-| CHORE-010 | "Unlocks ₹900 at 4 flats" when ₹900 is already the price — nextTier reads as an unlock that changes nothing | in-review | P3 | 2026-09-19 | — | loop/work/CHORE-010-next-tier-reads-as-no-change/ | — |
-| CHORE-011 | Dev catalog is full of E2E leftovers ("E2E Service 011682", ₹999/unit) — clean before any demo | in-review | P3 | 2026-09-19 | — | loop/work/CHORE-011-dev-catalog-e2e-leftovers/ | — |
-| CHORE-012 | The BUG-007 class-conflict scan does not police letter-spacing (two Input callers exposed) | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-012-letter-spacing-not-policed/ | ADR-0022 |
-| CHORE-013 | act() warnings in the web suite hide the next real one | in-review | P3 | 2026-09-19 | — | loop/work/CHORE-013-act-warnings-in-profile-tests/ | — |
+| BUG-010 | A resident sees `currentPrice` on a delivered round, not the negotiated `finalPrice` (needs backend) | done | P1 | 2026-09-19 | 2026-10-17 | loop/work/BUG-010-delivered-round-shows-wrong-price/ | — |
+| CHORE-010 | "Unlocks ₹900 at 4 flats" when ₹900 is already the price — nextTier reads as an unlock that changes nothing | done | P3 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-010-next-tier-reads-as-no-change/ | — |
+| CHORE-011 | Dev catalog is full of E2E leftovers ("E2E Service 011682", ₹999/unit) — clean before any demo | done | P3 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-011-dev-catalog-e2e-leftovers/ | — |
+| CHORE-012 | The BUG-007 class-conflict scan does not police letter-spacing (two Input callers exposed) | done | P2 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-012-letter-spacing-not-policed/ | ADR-0022 |
+| CHORE-013 | act() warnings in the web suite hide the next real one | done | P3 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-013-act-warnings-in-profile-tests/ | — |
 | BUG-001 | Round mutations 500 when queued > 5s behind the row lock (Prisma tx timeout) | done | P1 | 2026-09-17 | 2026-09-17 | loop/work/BUG-001-round-tx-timeout-under-lock-wait/ | ADR-0004 |
 | BUG-002 | Web tests time out under CPU contention (parallel workspaces, tight timeouts) | done | P2 | 2026-09-17 | 2026-09-17 | loop/work/BUG-002-web-tests-timeout-under-load/ | — |
 | BUG-003 | API sends no CORS headers — every browser call from the web PWA is blocked | done | P1 | 2026-09-17 | 2026-09-18 | loop/work/BUG-003-backend-cors-not-enabled/ | ADR-0014 |
 | FEAT-012 | Admin sign-in is its own page, and asks only for a phone number | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0023 |
 | FEAT-013 | One OTP, then signed in for good — sessions no longer expire | done | P1 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-013-lifetime-sessions/ | ADR-0024 |
 | CHORE-014 | Input boxes read as gaps — a white border on a white sheet | done | P2 | 2026-09-19 | 2026-09-19 | loop/work/FEAT-012-admin-sign-in-by-phone/ | ADR-0022 |
-| CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
-| CHORE-016 | An admin's sign-in can be denied by six unauthenticated OTP requests | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-016-admin-otp-denial/ | ADR-0023, ADR-0027 |
-| CHORE-017 | The OTP send still runs in the request process — the root cause behind three rounds of leaks | in-review | P2 | 2026-09-19 | — | loop/work/CHORE-017-otp-send-on-the-queue/ | ADR-0023, ADR-0013, ADR-0027 |
+| CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | done | P2 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
+| CHORE-016 | An admin's sign-in can be denied by six unauthenticated OTP requests | done | P2 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-016-admin-otp-denial/ | ADR-0023, ADR-0027 |
+| CHORE-017 | The OTP send still runs in the request process — the root cause behind three rounds of leaks | done | P2 | 2026-09-19 | 2026-10-17 | loop/work/CHORE-017-otp-send-on-the-queue/ | ADR-0023, ADR-0013, ADR-0027 |
 | CHORE-018 | Demo seed — residents, vendors, and a round in every lifecycle state | done | P2 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-018-demo-seed/ | ADR-0010, ADR-0012 |
-| CHORE-019 | Demo seed mirrors scheduler constants by hand; base seed has no local-DB guard | in-review | P3 | 2026-10-17 | — | loop/work/CHORE-019-demo-seed-drift/ | — |
+| CHORE-019 | Demo seed mirrors scheduler constants by hand; base seed has no local-DB guard | done | P3 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-019-demo-seed-drift/ | — |
 | FEAT-014 | Admin services page, closed category list, wider catalog, bulk-staples pilot | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-014-admin-services-and-categories/ | ADR-0009, ADR-0019, ADR-0025 |
 | CHORE-020 | FEAT-014 review leftovers: offline notice hides with panel, price input remount, leak guard untested | done | P3 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-020-services-page-followups/ | — |
 | FEAT-015 | Server-side filters on every list; URL filter state; modern filtering UI with micro-interactions | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-015-server-filters-and-motion/ | ADR-0021, ADR-0022, ADR-0026 |
 | BUG-011 | One component that throws blanks the whole app — there is no error boundary | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/BUG-011-no-error-boundary/ | — |
-| CHORE-021 | Node v24.6.0 segfaults inside V8's GC during the backend suite (1 run in 4) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-021-node-v8-gc-segfault/ | — |
+| CHORE-021 | Node v24.6.0 segfaults inside V8's GC during the backend suite (1 run in 4) | done | P2 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-021-node-v8-gc-segfault/ | — |
 | CHORE-022 | An admin's sign-in rests on a 6-digit code reachable through two doors (~30%/yr sustained-attack residual) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-022-admin-otp-strength/ | ADR-0027 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →

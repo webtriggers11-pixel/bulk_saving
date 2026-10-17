@@ -1,6 +1,6 @@
 # BUG-010 — A resident is shown the wrong price for a delivered round
 
-**Status:** triaged · **Priority:** P1 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
+**Status:** done (closed 2026-10-17) · **Priority:** P1 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
 
 ## Symptom
 

@@ -1,6 +1,6 @@
 # CHORE-011 — the dev catalog is full of E2E leftovers
 
-**Status:** triaged · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
+**Status:** done (closed 2026-10-17) · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
 
 The Services screen in the dev database lists eight "E2E Service 011682"-style rows at
 ₹999/unit, created by past runs of `scripts/e2e-smoke.mjs`, alongside the five real seeded

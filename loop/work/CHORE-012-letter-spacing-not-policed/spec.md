@@ -1,6 +1,6 @@
 # CHORE-012 — the BUG-007 scan does not police letter-spacing, and two fields are exposed
 
-**Status:** triaged · **Priority:** P2 · **Opened:** 2026-09-19 · **Found by:** V2 round 2 of CHORE-009
+**Status:** done (closed 2026-10-17) · **Priority:** P2 · **Opened:** 2026-09-19 · **Found by:** V2 round 2 of CHORE-009
 
 `class-conflicts.test.tsx` classifies padding, margin, gap, radius, display and font-size.
 There is **no letter-spacing family**, so a `tracking-*` on a primitive's base is unpoliced —

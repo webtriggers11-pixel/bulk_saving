@@ -1,6 +1,6 @@
 # CHORE-010 — "Unlocks ₹900 at 4 flats" when ₹900 is already the price
 
-**Status:** triaged · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
+**Status:** done (closed 2026-10-17) · **Priority:** P3 · **Opened:** 2026-09-19 · **Found by:** CHORE-009's browser pass
 
 `nextTier` is the first tier not yet *reached*, so on a round nobody has joined, the first
 tier is "next" — and its price is the price already being shown. The card then reads
