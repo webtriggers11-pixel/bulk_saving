@@ -398,7 +398,14 @@ async function scheduleJobs(
     const existing = await job.queue.getJob(job.id);
     if (existing) {
       if (!replace && PENDING.includes(await existing.getState())) continue;
-      await existing.remove();
+      try {
+        await existing.remove();
+      } catch {
+        // Locked mid-processing by a running worker. Leave it rather than abort the
+        // seed half-way; restarting the backend lets the reconciler re-ensure it.
+        console.warn(`  WARN could not replace job ${job.id} (in progress) — restart the backend`);
+        continue;
+      }
     }
     // Close jobs clamp to 0 (a past deadline closes now); a reminder whose instant has
     // passed is not sent at all — RoundReminderScheduler.delayFor's rule.
@@ -437,7 +444,7 @@ function assertLocalDatabase(): void {
   } catch {
     // Unparseable: treated as not-local.
   }
-  if (!['localhost', '127.0.0.1', '::1'].includes(host) && process.env.ALLOW_DEMO_SEED !== '1') {
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(host) && process.env.ALLOW_DEMO_SEED !== '1') {
     throw new Error(
       `seed-demo only runs against a local database (DATABASE_URL host is "${host || 'unset'}"). ` +
         'Set ALLOW_DEMO_SEED=1 to override — it promotes +919999900209 to SUPER_ADMIN.',

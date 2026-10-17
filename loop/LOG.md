@@ -698,3 +698,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Environment: the global `pnpm` shim (~/Library/pnpm) points at a missing install; ran everything via `corepack pnpm` (11.10.0). Machine issue, not repo.
 - V1: gate exit 0 — backend 345/345, web 293/293, 1201 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-018 — V2 FAIL → fixed → V2 PASS, V3 identical twice, CLOSED
+- **V2 round 1: FAIL (P1).** Re-seeding deleted and recreated the demo rounds but not their BullMQ close jobs. The app's schedulers deliberately keep a pending job as-is, so the reconciler never corrected it, and `closeRound` does not check the deadline. A re-seed days later would have closed a fresh OPEN round immediately, as EXPIRED. The reviewer reproduced the skew against the live :3000 backend. Reverse case: a seed while the app runs left new rounds with no close job until a restart.
+- Fixed: the seed removes close+reminder jobs for every demo id (stale and current) before reset and enqueues fresh ones with the schedulers' ids and options; for the base AC round, which it does not own, it only fills a missing job. Also from V2 P2s: CLOSING_SOON history backfilled where the app would have sent it, ROUND_JOINED for base-round participants, and the guard now refuses any non-localhost DATABASE_URL unless ALLOW_DEMO_SEED=1 (it promotes a phone to SUPER_ADMIN; NODE_ENV alone was not enough). `.env` is now loaded via `--env-file-if-exists`, without which REDIS_PORT never reached the script.
+- **V2 round 2: PASS.** Verified close jobs track the new deadline to 1ms, reminders at deadline−24h, base AC jobs untouched, guard refuses. Two P2s folded in (a job locked mid-processing now warns instead of aborting the seed half-way; `[::1]` is how URL reports IPv6 loopback). Two deferred to **CHORE-019**: hand-mirrored scheduler constants with no test tying them to src, and the base seed having no guard.
+- **V3: two back-to-back gate runs, exit 0 both, identical — backend 345/345, web 293/293, 1201 class tokens.**
+- CHORE-018 CLOSED.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

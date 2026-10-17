@@ -3,7 +3,18 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Last session
+## Latest session (2026-10-17)
+
+- **Goal:** owner asked to check the codebase and seed data to test with.
+- **Result:** CHORE-018 closed. `pnpm --filter backend seed:demo` resets a demo with a round in
+  every state. Sign in as **Asha Rao +919999900101 / GREEN001** (one round per state) or
+  **Kabir +919999900108** (empty states). Admins: +919999900001, +919999900209. OTPs are in
+  the API log (`[DEV ONLY] OTP for …`); `devCode` no longer exists.
+- Dev DB had been recreated empty — migrations re-applied. Global `pnpm` shim is broken on this
+  machine; `corepack pnpm` works. Another backend instance holds :3000.
+- New: CHORE-019 (P3). BUG-010 now reproduces straight from the seed (delivered AC card: ₹700 vs ₹680).
+
+## Previous session
 
 - **Date:** 2026-09-19
 - **Goal:** Redesign the whole product on the approved design, then make it *properly

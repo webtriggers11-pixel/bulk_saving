@@ -1,6 +1,6 @@
 # CHORE-018 — a demo seed that exercises every screen
 
-**Status:** in-progress · **Priority:** P2 · **Opened:** 2026-10-17 · **Asked by:** owner ("seed some data to test")
+**Status:** done · **Priority:** P2 · **Opened:** 2026-10-17 · **Closed:** 2026-10-17 · **Asked by:** owner ("seed some data to test")
 
 ## Why
 
