@@ -819,3 +819,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `@@index([phone])` + migration `20261017153046_resident_phone_index` — one additive `CREATE INDEX`, applied to the dev DB. Production applies it via `prisma migrate deploy`; Resident is small, so the brief write lock of a non-concurrent CREATE INDEX is not a concern at this size (revisit if it ever is).
 - Decision recorded: CLAUDE.md asks for owner approval before migrations; the owner's "fix" on a list that named this item is that approval.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-019 — demo seed constants tied to src; guard runs first
+- `prisma/seed-demo.constants.ts` holds the queue names / job names / attempts / lead / job-id / backoff / retention the seed uses; the schedulers now export their backoff and retention too. `src/modules/rounds/seed-job-constants.spec.ts` imports both sides and fails on drift (mutation: renaming the reminder id prefix fails it).
+- `prisma/seed-guard.ts` runs FIRST in `seed:demo` — `DATABASE_URL=…db.example.com` now stops the chain before the base seed writes anything (verified: "Seed complete" never prints, exit 1). The base seed alone stays unguarded, because DEPLOY.md §4 runs it against production on purpose. A normal `seed:demo` still resets the demo (13 → 13 rounds; catalog 23).
+- By: agent (autonomous)

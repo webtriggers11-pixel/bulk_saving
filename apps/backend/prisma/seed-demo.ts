@@ -19,17 +19,18 @@
  */
 import { NotificationType, PrismaClient, Role, RoundStatus } from '@prisma/client';
 import { Queue } from 'bullmq';
+import { SEED_JOBS } from './seed-demo.constants';
+import { assertLocalDatabase } from './seed-guard';
 
 const prisma = new PrismaClient();
 
-// Mirrors src/modules/rounds/round-closing.scheduler.ts and round-reminder.scheduler.ts
-// (this script compiles outside src/, so it cannot import them). Keep in step.
-const ROUND_CLOSING_QUEUE = 'round-closing';
-const ROUND_CLOSING_JOB = 'close-round';
-const ROUND_REMINDER_QUEUE = 'round-reminder';
-const ROUND_REMINDER_JOB = 'remind-round';
-const REMINDER_LEAD_MS = 24 * 60 * 60 * 1000;
-const reminderJobId = (roundId: string): string => `reminder-${roundId}`;
+// Queue names and job options shared with src/'s schedulers — see seed-demo.constants.ts.
+const ROUND_CLOSING_QUEUE = SEED_JOBS.closing.queue;
+const ROUND_CLOSING_JOB = SEED_JOBS.closing.job;
+const ROUND_REMINDER_QUEUE = SEED_JOBS.reminder.queue;
+const ROUND_REMINDER_JOB = SEED_JOBS.reminder.job;
+const REMINDER_LEAD_MS = SEED_JOBS.reminder.leadMs;
+const reminderJobId = SEED_JOBS.reminder.jobId;
 const PENDING = ['delayed', 'waiting', 'active', 'prioritized'];
 
 const HOUR = 60 * 60 * 1000;
@@ -429,8 +430,8 @@ async function scheduleJobs(
   replace: boolean,
 ): Promise<void> {
   const jobs = [
-    { queue: queues.closing, name: ROUND_CLOSING_JOB, id: roundId, attempts: 6, delay: deadline.getTime() - Date.now() },
-    { queue: queues.reminder, name: ROUND_REMINDER_JOB, id: reminderJobId(roundId), attempts: 3, delay: deadline.getTime() - REMINDER_LEAD_MS - Date.now() },
+    { queue: queues.closing, name: ROUND_CLOSING_JOB, id: roundId, attempts: SEED_JOBS.closing.attempts, delay: deadline.getTime() - Date.now() },
+    { queue: queues.reminder, name: ROUND_REMINDER_JOB, id: reminderJobId(roundId), attempts: SEED_JOBS.reminder.attempts, delay: deadline.getTime() - REMINDER_LEAD_MS - Date.now() },
   ];
   for (const job of jobs) {
     const existing = await job.queue.getJob(job.id);
@@ -455,9 +456,9 @@ async function scheduleJobs(
         jobId: job.id,
         delay: Math.max(0, job.delay),
         attempts: job.attempts,
-        backoff: { type: 'exponential', delay: 1_000 },
+        backoff: SEED_JOBS.backoff,
         removeOnComplete: true,
-        removeOnFail: { age: 24 * 60 * 60 },
+        removeOnFail: SEED_JOBS.removeOnFail,
       },
     );
   }
@@ -471,24 +472,6 @@ async function removeJobs(queues: { closing: Queue; reminder: Queue }, roundId: 
   }
 }
 
-function assertLocalDatabase(): void {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('seed-demo refuses to run with NODE_ENV=production.');
-  }
-  const url = process.env.DATABASE_URL ?? '';
-  let host = '';
-  try {
-    host = new URL(url).hostname;
-  } catch {
-    // Unparseable: treated as not-local.
-  }
-  if (!['localhost', '127.0.0.1', '[::1]'].includes(host) && process.env.ALLOW_DEMO_SEED !== '1') {
-    throw new Error(
-      `seed-demo only runs against a local database (DATABASE_URL host is "${host || 'unset'}"). ` +
-        'Set ALLOW_DEMO_SEED=1 to override — it promotes +919999900209 to SUPER_ADMIN.',
-    );
-  }
-}
 
 const NOTIFICATION_BODY: Record<NotificationType, (service: string) => string> = {
   ROUND_JOINED: (s) => `You joined the ${s} group-buy.`,

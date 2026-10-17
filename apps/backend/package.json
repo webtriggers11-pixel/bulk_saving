@@ -12,7 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "seed": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js",
-    "seed:demo": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js && node --env-file-if-exists=.env prisma/dist/seed-demo.js"
+    "seed:demo": "tsc -p prisma/tsconfig.seed.json && node --env-file-if-exists=.env prisma/dist/seed-guard.js && node prisma/dist/seed.js && node --env-file-if-exists=.env prisma/dist/seed-demo.js"
   },
   "dependencies": {
     "@bulk/shared": "workspace:*",

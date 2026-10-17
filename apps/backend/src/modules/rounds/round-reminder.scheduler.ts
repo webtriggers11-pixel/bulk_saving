@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { ROUND_JOB_BACKOFF, ROUND_JOB_REMOVE_ON_FAIL } from './round-closing.scheduler';
 
 /** BullMQ queue for the "closing soon" reminder (FEAT-006, ADR-0013). */
 export const ROUND_REMINDER_QUEUE = 'round-reminder';
@@ -84,9 +85,9 @@ export class RoundReminderScheduler {
         jobId,
         delay,
         attempts: ROUND_REMINDER_ATTEMPTS,
-        backoff: { type: 'exponential', delay: 1_000 },
+        backoff: ROUND_JOB_BACKOFF,
         removeOnComplete: true,
-        removeOnFail: { age: 24 * 60 * 60 },
+        removeOnFail: ROUND_JOB_REMOVE_ON_FAIL,
       },
     );
     return true;

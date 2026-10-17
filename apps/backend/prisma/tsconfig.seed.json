@@ -9,6 +9,6 @@
     "sourceMap": false,
     "skipLibCheck": true
   },
-  "include": ["seed.ts", "seed-demo.ts"],
+  "include": ["seed.ts", "seed-demo.ts", "seed-demo.constants.ts", "seed-guard.ts"],
   "exclude": []
 }

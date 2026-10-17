@@ -16,6 +16,10 @@ export interface RoundClosingJobData {
 /** Close-job retries: a transient DB error at the deadline must not strand a round OPEN. */
 export const ROUND_CLOSING_ATTEMPTS = 6;
 
+/** Retry backoff and failed-job retention shared by the close and reminder jobs. */
+export const ROUND_JOB_BACKOFF = { type: 'exponential', delay: 1_000 } as const;
+export const ROUND_JOB_REMOVE_ON_FAIL = { age: 24 * 60 * 60 } as const;
+
 /**
  * Schedules (and unschedules) the deadline-driven close of a round via a BullMQ
  * delayed job. One delayed job per round, `jobId = round id`, so scheduling is
@@ -57,9 +61,9 @@ export class RoundClosingScheduler {
         jobId: roundId,
         delay,
         attempts: ROUND_CLOSING_ATTEMPTS,
-        backoff: { type: 'exponential', delay: 1_000 },
+        backoff: ROUND_JOB_BACKOFF,
         removeOnComplete: true,
-        removeOnFail: { age: 24 * 60 * 60 },
+        removeOnFail: ROUND_JOB_REMOVE_ON_FAIL,
       },
     );
   }
