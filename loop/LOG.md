@@ -840,3 +840,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `.nvmrc` the reviewer saw is CHORE-021's (mine).
 - V1: gate exit 0 — backend 394/394, web 382/382.
 - By: agent (autonomous) + code-reviewer subagent (V2)
+
+## 2026-10-17 — CHORE-016/017 V2 round 2: FAIL (P1) → fixed — my cross-door budget crossed the tenant line
+- **P1, mine:** sharing the phone's guess budget across scopes meant anyone holding ANY society's invite code could, from two addresses (a dual-stack laptop), spend 20 wrong guesses through their own society and lock that phone out of EVERY door in EVERY society for an hour, renewable. Reviewer reproduced it end to end. The fix for one P1 created a worse one.
+- Fixed: guess budgets are per DOOR — `otp:verify-fail:<scope>:<phone>[:<client>]`. A society's guesses can only lock that society's account for that phone. Cost, stated in ADR-0027: an administrator has two doors, so ≤ 40 guesses/hour (≈30%/year if sustained from many addresses) — better than the pre-ADR 50/hour, not the last word; longer codes or a second factor for admins is the real answer.
+- Check and count moved into the same Lua script as the code check (`BUDGETED_VERIFY_LUA`): the reviewer had 20 concurrent guesses at 19/20 leave the counter at 24.
+- **A vacuous test, caught before it shipped:** the new tenant-isolation test PASSED against the vulnerable code — the helper's code requests hit the per-phone request ceiling, later guesses landed on a dead code (EXPIRED, free), so the budget never filled. Helper now clears the ceiling too; the test then failed against the old code, passes against the new, and fails again under the mutation that re-shares the key.
+- V1: gate exit 0 — backend 396/396, web 382/382.
+- By: agent (autonomous) + code-reviewer subagent (V2 round 2)

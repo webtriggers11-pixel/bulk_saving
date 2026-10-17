@@ -71,12 +71,15 @@ export const OTP_RESEND_HOURLY_MAX = 5; // max 5 / hour, per (phone, client)
  */
 export const OTP_RESEND_PHONE_HOURLY_MAX = 10;
 /**
- * Wrong codes per hour (ADR-0027, V2 P1). The request ceiling above is per SCOPE, and an
- * administrator's number is reachable through both doors — so guesses are budgeted per
- * phone ACROSS scopes: 10 per (phone, client) — two codes' worth of OTP_MAX_ATTEMPTS, so a
- * person who fat-fingers one code can still request another and try again, and one
- * machine cannot lock the owner out; 20 per phone, which caps a multi-client guesser at
- * 20 tries an hour at any account.
+ * Wrong codes per hour, per DOOR (scope) — ADR-0027. 10 per (scope, phone, client): two
+ * codes' worth of OTP_MAX_ATTEMPTS, so a person who fat-fingers one code can request
+ * another and try again, and one address cannot lock the owner out; 20 per (scope, phone),
+ * which caps a multi-address guesser.
+ *
+ * Per door on purpose. The first version shared the phone budget across scopes (an
+ * administrator is reachable through two doors), and that let anyone holding ANY invite
+ * code lock any phone out of every door in every society (V2 round 2, P1). Per door, a
+ * society's guesses can only ever lock that society's account for that phone.
  */
 export const OTP_VERIFY_FAIL_CLIENT_MAX = 10;
 export const OTP_VERIFY_FAIL_PHONE_MAX = 20;
@@ -131,32 +134,47 @@ end
 return n`;
 
 /**
- * Atomic verify: checks the stored hash, enforces the attempt cap, increments
- * on a miss, and consumes/locks the OTP — all in one round-trip so concurrent
- * verifies cannot slip extra guesses past the cap. Returns a status string.
- *   KEYS[1] = otp key · ARGV[1] = provided code hash · ARGV[2] = max attempts
+ * Budgeted verify (ADR-0027): the budget check, the code check and the counting of a
+ * wrong guess in ONE script, so concurrent guesses cannot slip past the cap between a
+ * check and its increment (they did: 20 parallel guesses at 19/20 left the counter at 24 —
+ * V2 round 2, P2). The code check is the original atomic verify (ADR-0007): the stored
+ * hash, the attempt cap, consume on success, lock on the last miss.
+ *   KEYS[1] otp key · KEYS[2] client fail key · KEYS[3] phone fail key
+ *   ARGV[1] code hash · ARGV[2] max attempts · ARGV[3] client max · ARGV[4] phone max · ARGV[5] window s
  */
-const VERIFY_LUA = `
+const BUDGETED_VERIFY_LUA = `
+if tonumber(redis.call('GET', KEYS[2]) or '0') >= tonumber(ARGV[3])
+  or tonumber(redis.call('GET', KEYS[3]) or '0') >= tonumber(ARGV[4]) then
+  return 'LOCKED'
+end
 local codeHash = redis.call('HGET', KEYS[1], 'codeHash')
 if not codeHash then
   return 'EXPIRED'
 end
 local max = tonumber(ARGV[2])
 local attempts = tonumber(redis.call('HGET', KEYS[1], 'attempts') or '0')
+local result
 if attempts >= max then
   redis.call('DEL', KEYS[1])
-  return 'LOCKED'
-end
-if codeHash == ARGV[1] then
+  result = 'LOCKED'
+elseif codeHash == ARGV[1] then
   redis.call('DEL', KEYS[1])
   return 'OK'
+else
+  local n = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
+  if n >= max then
+    redis.call('DEL', KEYS[1])
+    result = 'LOCKED'
+  else
+    result = 'INVALID'
+  end
 end
-local n = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
-if n >= max then
-  redis.call('DEL', KEYS[1])
-  return 'LOCKED'
+for i = 2, 3 do
+  if redis.call('INCR', KEYS[i]) == 1 then
+    redis.call('EXPIRE', KEYS[i], ARGV[5])
+  end
 end
-return 'INVALID'`;
+return result`;
 
 /**
  * Generates, stores, and verifies phone OTPs entirely in Redis (ADR-0007).
@@ -195,13 +213,13 @@ export class OtpService {
     return `otp:resend:ceiling:${scopeId}:${phone}`;
   }
 
-  // Not scoped: a phone's failed guesses are counted across both doors (ADR-0027).
-  private verifyFailClientKey(phone: string, client: string): string {
-    return `otp:verify-fail:${phone}:${client}`;
+  // Per door (scope) — never shared across scopes; see OTP_VERIFY_FAIL_* (ADR-0027).
+  private verifyFailClientKey(scopeId: string, phone: string, client: string): string {
+    return `otp:verify-fail:${scopeId}:${phone}:${client}`;
   }
 
-  private verifyFailPhoneKey(phone: string): string {
-    return `otp:verify-fail:${phone}`;
+  private verifyFailPhoneKey(scopeId: string, phone: string): string {
+    return `otp:verify-fail:${scopeId}:${phone}`;
   }
 
   // No hardcoded fallback — the OTP hashing secret comes from validated env only.
@@ -327,30 +345,21 @@ export class OtpService {
   ): Promise<OtpVerifyResult> {
     // ADR-0027: a spent guess budget refuses BEFORE the code is looked at — a correct
     // code included, or it would not be a cap. The answer is LOCKED either way, and the
-    // budgets are the same for every caller, so this says nothing about who owns the phone.
+    // budgets are the same for every caller, so this says nothing about who owns the
+    // phone. A wrong guess spends both budgets; a right one, or a verify with no code
+    // outstanding (nothing to guess against), spends nothing. All in one atomic script.
     const client = ipBucket(options.clientIp);
-    const clientKey = this.verifyFailClientKey(phone, client);
-    const phoneKey = this.verifyFailPhoneKey(phone);
-    const [clientFails, phoneFails] = await this.redis.mget(clientKey, phoneKey);
-    if (Number(clientFails ?? 0) >= OTP_VERIFY_FAIL_CLIENT_MAX || Number(phoneFails ?? 0) >= OTP_VERIFY_FAIL_PHONE_MAX) {
-      return 'LOCKED';
-    }
-
-    const status = (await this.redis.eval(
-      VERIFY_LUA,
-      1,
+    return (await this.redis.eval(
+      BUDGETED_VERIFY_LUA,
+      3,
       this.otpKey(scopeId, phone),
+      this.verifyFailClientKey(scopeId, phone, client),
+      this.verifyFailPhoneKey(scopeId, phone),
       this.hash(code),
       String(OTP_MAX_ATTEMPTS),
+      String(OTP_VERIFY_FAIL_CLIENT_MAX),
+      String(OTP_VERIFY_FAIL_PHONE_MAX),
+      String(OTP_RESEND_HOUR_SECONDS),
     )) as OtpVerifyResult;
-
-    // A wrong guess spends both budgets. A right one, or a verify with no code
-    // outstanding (nothing to guess against), spends nothing.
-    if (status === 'INVALID' || status === 'LOCKED') {
-      for (const key of [clientKey, phoneKey]) {
-        await this.redis.eval(RESEND_HOURLY_LUA, 1, key, String(OTP_RESEND_HOUR_SECONDS));
-      }
-    }
-    return status;
   }
 }

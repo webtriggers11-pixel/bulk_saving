@@ -71,18 +71,26 @@ ADR-0023's four review rounds.
   claim is "a single address cannot"; **a determined attacker with two or more addresses
   can still spend the per-phone ceiling (10 requests) and deny for an hour.** That is the
   price of capping SMS cost and guesses; per-address limits are no defence against a botnet.
-- **Brute force (corrected in V2).** The first version of this ADR said a multi-IP attacker
-  got 50 guesses/hour per phone. Wrong: the request ceiling is per SCOPE, and an
-  administrator's number is reachable through both doors (the admin door, and the resident
-  door with their society's invite code, which any resident knows) — ~100 guesses/hour at a
-  SUPER_ADMIN. Fixed by a **failed-guess budget per phone ACROSS scopes**: 10 per
-  (phone, client) — two codes' worth, so a person who fat-fingers one code can still try
-  another — and **20 per phone per hour**. A spent budget refuses even a correct code
-  (`LOCKED`), or it would not be a cap. Odds against a 6-digit code: 20 guesses/hour ≈
-  2×10⁻⁵ per hour, ≈1.4% per month, ≈16% per year **if sustained for a year from many
-  addresses** — far better than the ~58%/year the first version allowed, and better than
-  the pre-ADR design (2 scopes × 25/hour), but not nothing. Longer codes, or a second factor
-  for administrators, are the real answer if that ever matters (revisit trigger).
+- **Brute force (corrected twice in review).** The first version said 50 guesses/hour; the
+  request ceiling is per scope and an administrator's number is reachable through two doors
+  (the admin door, and the resident door with their society's invite code). The second
+  version answered with a guess budget shared ACROSS scopes — which let anyone holding ANY
+  society's invite code, from two addresses, lock any phone out of every door in every
+  society for an hour (V2 round 2, P1: a tenant boundary crossed for availability). So the
+  guess budget is **per door**: 10 per (scope, phone, client) — two codes' worth, so a
+  fat-fingered code is not an hour's lockout — and **20 per (scope, phone) per hour**,
+  checked and counted in the same atomic script as the code itself (concurrent guesses
+  overshot a split check). A spent budget refuses even a correct code (`LOCKED`).
+  - An ordinary account (one door): ≤ 20 guesses/hour ≈ 2×10⁻⁵/hour, ≈ 1.4%/month, ≈ 16%/year
+    *if sustained for a year from many addresses*.
+  - An **administrator** (two doors): ≤ 40/hour ≈ 2.9%/month, ≈ 30%/year sustained. Better
+    than the pre-ADR design (2 doors × 25 = 50/hour), not good enough to be the last word:
+    longer codes or a second factor for administrators is the real answer (revisit trigger).
+  - Fixed windows: the counters reset an hour after their first hit, so a burst straddling
+    a reset can land up to twice the hourly figure; the long-run rate is as stated.
+  - Denial through guesses needs the door's own scope: for a society door, that society's
+    invite code; for the admin door, nothing — but 20 guesses from ≥ 2 addresses lock only
+    the admin door, leaving the society door, and vice versa.
 - The admin door's request path is now identical for every caller in every phase. The
   worker still shares the process (and event loop) with the API in v1; running workers as
   a separate process removes that last residual and needs no code change. The worker's

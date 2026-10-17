@@ -156,21 +156,27 @@ describe('OtpService (integration, needs Redis)', () => {
   });
 
   /**
-   * ADR-0027 V2 P1: the request ceiling is per scope, and an admin's number is reachable
-   * through BOTH doors — so a multi-IP guesser got ~100 guesses an hour at a SUPER_ADMIN.
-   * Failed guesses now spend a budget per (phone, client) and per phone, across scopes.
+   * ADR-0027: failed guesses spend a budget per (scope, phone, client) and per
+   * (scope, phone). Per DOOR, deliberately: a cross-door budget let any tenant lock any
+   * phone out of every door (V2 round 2, P1).
    */
-  describe('failed guesses spend a budget across both doors (ADR-0027)', () => {
+  describe('failed guesses spend a budget, per door (ADR-0027)', () => {
     const at = (clientIp: string) => ({ clientIp });
     const wrong = (code: string) => (code === '000000' ? '111111' : '000000');
 
     /**
      * One wrong guess against a fresh code, from `ip` — the per-code lock never trips.
-     * The REQUEST budgets for that client are cleared first: this suite is about guess
-     * budgets, and needs more codes per client than the request budget hands out.
+     * The REQUEST budgets are cleared first — per client AND the per-phone ceiling: this
+     * suite is about guess budgets and needs more codes than requests hand out. (Without
+     * the ceiling cleared, later guesses hit a dead code, answer EXPIRED, cost nothing,
+     * and a test of the cap passes against code that has no cap.)
      */
     async function guessWrong(scope: string, phone: string, ip: string) {
-      await redis.del(`otp:resend:interval:${scope}:${phone}:${ip}`, `otp:resend:hourly:${scope}:${phone}:${ip}`);
+      await redis.del(
+        `otp:resend:interval:${scope}:${phone}:${ip}`,
+        `otp:resend:hourly:${scope}:${phone}:${ip}`,
+        `otp:resend:ceiling:${scope}:${phone}`,
+      );
       await service.request(scope, phone, at(ip));
       return service.verify(scope, phone, wrong(channel.lastCode as string), at(ip));
     }
@@ -194,18 +200,50 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(await service.verify(societyId, phone, channel.lastCode as string, at('203.0.113.9'))).toBe('OK');
     });
 
-    it('caps a phone across clients AND across doors — the admin door and a society door share it', async () => {
+    it('caps a phone per door across clients — rotating addresses does not buy unlimited guesses', async () => {
       const phone = uniquePhone();
       let spent = 0;
       for (let client = 1; spent < OTP_VERIFY_FAIL_PHONE_MAX; client += 1) {
         for (let n = 0; n < OTP_VERIFY_FAIL_CLIENT_MAX && spent < OTP_VERIFY_FAIL_PHONE_MAX; n += 1) {
-          // Alternate the scope: guesses through either door count against the same phone.
-          await guessWrong(spent % 2 === 0 ? societyId : 'admin-door', phone, `192.0.2.${client}`);
+          await guessWrong('admin-door', phone, `192.0.2.${client}`);
           spent += 1;
         }
       }
+      await redis.del(`otp:resend:ceiling:admin-door:${phone}`);
       await service.request('admin-door', phone, at('203.0.113.50'));
       expect(await service.verify('admin-door', phone, channel.lastCode as string, at('203.0.113.50'))).toBe('LOCKED');
+    });
+
+    it('a tenant cannot lock a phone out of ANOTHER door — guesses through one society stay in it (V2 round 2, P1)', async () => {
+      // The first version shared the phone budget across scopes, so anyone with ANY
+      // invite code and two addresses could lock any phone out of every door — across
+      // societies. Spend the whole budget through an attacker's own society:
+      const phone = uniquePhone();
+      const attackers = `soc_${randomBytes(4).toString('hex')}`;
+      let spent = 0;
+      for (let client = 1; spent < OTP_VERIFY_FAIL_PHONE_MAX; client += 1) {
+        for (let n = 0; n < OTP_VERIFY_FAIL_CLIENT_MAX && spent < OTP_VERIFY_FAIL_PHONE_MAX; n += 1) {
+          await guessWrong(attackers, phone, `192.0.2.${client}`);
+          spent += 1;
+        }
+      }
+      // The owner, in their own society and at the admin door, is untouched.
+      await service.request(societyId, phone, at('203.0.113.50'));
+      expect(await service.verify(societyId, phone, channel.lastCode as string, at('203.0.113.50'))).toBe('OK');
+      await service.request('admin-door', phone, at('203.0.113.50'));
+      expect(await service.verify('admin-door', phone, channel.lastCode as string, at('203.0.113.50'))).toBe('OK');
+    });
+
+    it('concurrent wrong guesses cannot overshoot the cap — check and count are one atomic step (V2 round 2, P2)', async () => {
+      const phone = uniquePhone();
+      const scope = `race_${randomBytes(4).toString('hex')}`;
+      await redis.set(`otp:verify-fail:${scope}:${phone}`, String(OTP_VERIFY_FAIL_PHONE_MAX - 1), 'EX', 3600);
+      await service.request(scope, phone, at('198.51.100.7'));
+      const code = channel.lastCode as string;
+      await Promise.all(
+        Array.from({ length: 20 }, (_, n) => service.verify(scope, phone, wrong(code), at(`192.0.2.${n + 1}`))),
+      );
+      expect(Number(await redis.get(`otp:verify-fail:${scope}:${phone}`))).toBe(OTP_VERIFY_FAIL_PHONE_MAX);
     });
 
     it('a correct code costs nothing, and neither does verifying with no code outstanding', async () => {
@@ -213,7 +251,7 @@ describe('OtpService (integration, needs Redis)', () => {
       await service.request(societyId, phone, at('198.51.100.7'));
       expect(await service.verify(societyId, phone, channel.lastCode as string, at('198.51.100.7'))).toBe('OK');
       expect(await service.verify(societyId, phone, '123456', at('198.51.100.7'))).toBe('EXPIRED');
-      expect(await redis.get(`otp:verify-fail:${phone}`)).toBeNull();
+      expect(await redis.get(`otp:verify-fail:${societyId}:${phone}`)).toBeNull();
     });
   });
 
