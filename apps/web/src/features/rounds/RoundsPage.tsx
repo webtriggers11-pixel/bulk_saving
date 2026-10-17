@@ -186,13 +186,20 @@ function TierLine({ round }: { round: RoundDto }) {
       </span>
     );
   }
+  // CHORE-010: below the first threshold, `nextTier` is the FIRST tier, whose price is the
+  // price already shown — "Unlocks ₹900" promised a saving that was not one. What that
+  // tier actually means is the round's go/no-go line: a round closes as met only if it
+  // reaches the lowest threshold (ADR-0011). So say that.
+  const goesAhead = round.nextTier.price >= round.currentPrice;
   return (
     <p
       className="flex items-center gap-2 text-meta font-extrabold text-brand-ink"
       data-testid={`next-tier-${round.id}`}
     >
-      <Icon name="trend" size={15} strokeWidth={2.1} />
-      Unlocks {formatRupees(round.nextTier.price)} at {formatUnits(round.nextTier.threshold, round.service)}
+      <Icon name={goesAhead ? 'users' : 'trend'} size={15} strokeWidth={2.1} />
+      {goesAhead
+        ? `Goes ahead at ${formatUnits(round.nextTier.threshold, round.service)}`
+        : `Unlocks ${formatRupees(round.nextTier.price)} at ${formatUnits(round.nextTier.threshold, round.service)}`}
     </p>
   );
 }

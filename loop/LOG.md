@@ -792,3 +792,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Failing tests first: `rounds.mapper.spec.ts` (resident DTO of a DELIVERED round negotiated at ₹680 must carry `finalPrice: 680`; an OPEN one `null`) and My Requests (card must say ₹680 labelled final). Both failed — the DTO had no field.
 - Fix: `RoundDto.finalPrice: number | null` (required, so every fixture had to say which it is — six web fixtures updated); mapper copies `round.finalPrice`. My Requests shows "Final price per X" and a "You owe" fact (units × final price) once a price exists, the tier price before. API-level assertion added to the `/rounds/mine` integration test.
 - By: agent (autonomous)
+
+## 2026-10-17 — CHORE-010 — decided and fixed
+- Decision (recorded here, autonomous per owner's standing instruction; reversible copy): the first tier is the round's go/no-go line — a round closes CLOSED_MET only at the lowest threshold (ADR-0011) — so when `nextTier.price >= currentPrice` the card says "Goes ahead at N units" instead of "Unlocks ₹X". The SMS templates already treated it this way (`round-notifications.service.ts` quotes no price below the first threshold), so the card was the only place that lied. Failing test first; passes.
+- By: agent (autonomous)

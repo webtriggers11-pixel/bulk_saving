@@ -53,6 +53,17 @@ describe('RoundsPage', () => {
     vi.restoreAllMocks();
   });
 
+  it('below the first tier, says the round GOES AHEAD there — not that it "unlocks" the price already shown (CHORE-010)', async () => {
+    fetchRoundsMock.mockResolvedValue([
+      { ...openRound, unitsCount: 2, currentPrice: 900, nextTier: { threshold: 5, price: 900 } },
+    ]);
+    renderPage();
+
+    const line = await screen.findByTestId('next-tier-round_1');
+    expect(line).toHaveTextContent('Goes ahead at 5 AC units');
+    expect(line).not.toHaveTextContent('Unlocks');
+  });
+
   it('renders a round with service name, current price, unit count and the next-tier hint', async () => {
     fetchRoundsMock.mockResolvedValue([openRound]);
     renderPage();
