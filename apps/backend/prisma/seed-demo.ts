@@ -1,0 +1,544 @@
+/**
+ * CHORE-018 demo seed — residents, vendors, and a round in EVERY lifecycle state, so
+ * each screen (resident and admin) has something real to draw. Layered on top of the
+ * base seed (`seed.ts`), which must run first; `pnpm --filter backend seed:demo` does both.
+ *
+ * Re-running RESETS the demo: every round whose id starts with `demo_` is deleted
+ * (cascading its participants, ratings and notifications) and recreated as written
+ * here. Residents are upserted and never deleted. Dev only — refuses NODE_ENV=production.
+ *
+ * The rows obey the same rules RoundsService enforces (ADR-0010, ADR-0011, ADR-0012):
+ * `unitsCount` is the sum of participant units, CLOSED_MET/EXPIRED follows the lowest
+ * threshold, assigned rounds carry a vendor + finalPrice, RATED has ratings and
+ * DELIVERED has none. Notifications are seeded SENT so the outbox never dispatches them.
+ */
+import { NotificationType, PrismaClient, Role, RoundStatus } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+const now = Date.now();
+const at = (offsetMs: number): Date => new Date(now + offsetMs);
+
+const DEMO_PREFIX = 'demo_';
+
+interface ResidentSeed {
+  key: string;
+  society: 'GREEN001' | 'BLUE0002';
+  phone: string;
+  name: string;
+  role?: Role;
+}
+
+const RESIDENTS: ResidentSeed[] = [
+  // The primary demo resident: holds a round in every state.
+  { key: 'asha', society: 'GREEN001', phone: '+919999900101', name: 'Asha Rao' },
+  { key: 'vikram', society: 'GREEN001', phone: '+919999900102', name: 'Vikram Mehta' },
+  { key: 'neha', society: 'GREEN001', phone: '+919999900103', name: 'Neha Kulkarni' },
+  { key: 'rahul', society: 'GREEN001', phone: '+919999900104', name: 'Rahul Desai' },
+  { key: 'priya', society: 'GREEN001', phone: '+919999900105', name: 'Priya Iyer' },
+  { key: 'arjun', society: 'GREEN001', phone: '+919999900106', name: 'Arjun Nair' },
+  { key: 'meera', society: 'GREEN001', phone: '+919999900107', name: 'Meera Joshi' },
+  // No rounds at all — for the empty states.
+  { key: 'kabir', society: 'GREEN001', phone: '+919999900108', name: 'Kabir Shah' },
+  { key: 'farah', society: 'BLUE0002', phone: '+919999900201', name: 'Farah Khan' },
+  { key: 'rohan', society: 'BLUE0002', phone: '+919999900202', name: 'Rohan Pillai' },
+  { key: 'ananya', society: 'BLUE0002', phone: '+919999900203', name: 'Ananya Sen' },
+  { key: 'dev', society: 'BLUE0002', phone: '+919999900204', name: 'Dev Malhotra' },
+  // A second admin, so a browser pass need not burn the main admin's OTP quota (5/hour).
+  { key: 'ops', society: 'BLUE0002', phone: '+919999900209', name: 'Ops Admin', role: 'SUPER_ADMIN' },
+];
+
+const VENDORS = [
+  { id: 'demo_vendor_coolbreeze', name: 'CoolBreeze AC Services', phone: '+919888800001', category: 'Appliances', notes: 'Prefers weekday mornings. 2 technicians.' },
+  { id: 'demo_vendor_shieldpro', name: 'ShieldPro Pest Control', phone: '+919888800002', category: 'Home Care', notes: 'Odourless gel treatment available.' },
+  { id: 'demo_vendor_sparkle', name: 'SparkleHome Cleaning', phone: '+919888800003', category: 'Home Care', notes: null },
+  { id: 'demo_vendor_colourcraft', name: 'ColourCraft Painters', phone: '+919888800004', category: 'Renovation', notes: 'Asian Paints certified.' },
+  { id: 'demo_vendor_oldtown', name: 'OldTown Pest Co.', phone: '+919888800005', category: 'Home Care', notes: 'Deactivated after missed visits.', active: false },
+];
+
+interface ParticipantSeed {
+  resident: string;
+  units: number;
+  paid?: boolean;
+}
+
+interface RatingSeed {
+  resident: string;
+  stars: number;
+  comment?: string;
+}
+
+interface RoundSeed {
+  id: string;
+  society: 'GREEN001' | 'BLUE0002';
+  service: string;
+  status: RoundStatus;
+  createdAt: Date;
+  deadline: Date;
+  tiers: { threshold: number; price: number }[];
+  participants: ParticipantSeed[];
+  vendor?: string;
+  finalPrice?: number;
+  assignedAt?: Date;
+  deliveredAt?: Date;
+  ratings?: RatingSeed[];
+}
+
+const ROUNDS: RoundSeed[] = [
+  // ---- GREEN001 -------------------------------------------------------------
+  {
+    id: 'demo_g_pest_open',
+    society: 'GREEN001',
+    service: 'pest-control',
+    status: 'OPEN',
+    createdAt: at(-1 * DAY),
+    deadline: at(4 * DAY),
+    tiers: [
+      { threshold: 5, price: 850 },
+      { threshold: 10, price: 750 },
+      { threshold: 20, price: 650 },
+    ],
+    // Below the first threshold: nothing unlocked yet.
+    participants: [
+      { resident: 'vikram', units: 1 },
+      { resident: 'meera', units: 1 },
+    ],
+  },
+  {
+    id: 'demo_g_bath_open',
+    society: 'GREEN001',
+    service: 'bathroom-wash',
+    status: 'OPEN',
+    createdAt: at(-4 * DAY),
+    // Closing soon, and one unit short of the second tier.
+    deadline: at(3 * HOUR),
+    tiers: [
+      { threshold: 6, price: 550 },
+      { threshold: 10, price: 480 },
+    ],
+    participants: [
+      { resident: 'asha', units: 2 },
+      { resident: 'priya', units: 3 },
+      { resident: 'arjun', units: 2 },
+      { resident: 'neha', units: 2 },
+    ],
+  },
+  {
+    id: 'demo_g_deep_met',
+    society: 'GREEN001',
+    service: 'deep-cleaning',
+    status: 'CLOSED_MET',
+    createdAt: at(-8 * DAY),
+    deadline: at(-1 * DAY),
+    tiers: [
+      { threshold: 4, price: 2200 },
+      { threshold: 8, price: 1950 },
+    ],
+    // Awaiting a vendor — the admin's "assign" action.
+    participants: [
+      { resident: 'vikram', units: 1 },
+      { resident: 'neha', units: 1 },
+      { resident: 'rahul', units: 1 },
+      { resident: 'priya', units: 1 },
+      { resident: 'meera', units: 1 },
+    ],
+  },
+  {
+    id: 'demo_g_paint_expired',
+    society: 'GREEN001',
+    service: 'painting',
+    status: 'CLOSED_EXPIRED',
+    createdAt: at(-10 * DAY),
+    deadline: at(-3 * DAY),
+    tiers: [
+      { threshold: 6, price: 3000 },
+      { threshold: 12, price: 2700 },
+    ],
+    participants: [
+      { resident: 'asha', units: 2 },
+      { resident: 'arjun', units: 1 },
+    ],
+  },
+  {
+    id: 'demo_g_pest_assigned',
+    society: 'GREEN001',
+    service: 'pest-control',
+    status: 'ASSIGNED',
+    createdAt: at(-13 * DAY),
+    deadline: at(-6 * DAY),
+    tiers: [
+      { threshold: 5, price: 850 },
+      { threshold: 10, price: 750 },
+    ],
+    vendor: 'demo_vendor_shieldpro',
+    finalPrice: 800,
+    assignedAt: at(-5 * DAY),
+    // Half the money is in — the admin's payment toggles.
+    participants: [
+      { resident: 'asha', units: 1 },
+      { resident: 'vikram', units: 1, paid: true },
+      { resident: 'neha', units: 1, paid: true },
+      { resident: 'rahul', units: 1 },
+      { resident: 'priya', units: 1, paid: true },
+      { resident: 'arjun', units: 1 },
+    ],
+  },
+  {
+    id: 'demo_g_ac_delivered',
+    society: 'GREEN001',
+    service: 'ac-servicing',
+    status: 'DELIVERED',
+    createdAt: at(-27 * DAY),
+    deadline: at(-20 * DAY),
+    tiers: [
+      { threshold: 5, price: 900 },
+      { threshold: 10, price: 700 },
+    ],
+    vendor: 'demo_vendor_coolbreeze',
+    // Negotiated below the ₹700 tier — BUG-010 shows on this card.
+    finalPrice: 680,
+    assignedAt: at(-18 * DAY),
+    deliveredAt: at(-2 * DAY),
+    // No ratings: Asha can rate it from My Requests.
+    participants: [
+      { resident: 'asha', units: 3 },
+      { resident: 'vikram', units: 2, paid: true },
+      { resident: 'neha', units: 2, paid: true },
+      { resident: 'rahul', units: 2, paid: true },
+      { resident: 'meera', units: 2, paid: true },
+    ],
+  },
+  {
+    id: 'demo_g_deep_rated',
+    society: 'GREEN001',
+    service: 'deep-cleaning',
+    status: 'RATED',
+    createdAt: at(-47 * DAY),
+    deadline: at(-40 * DAY),
+    tiers: [
+      { threshold: 4, price: 2200 },
+      { threshold: 8, price: 1950 },
+    ],
+    vendor: 'demo_vendor_sparkle',
+    finalPrice: 2100,
+    assignedAt: at(-38 * DAY),
+    deliveredAt: at(-30 * DAY),
+    participants: [
+      { resident: 'asha', units: 1, paid: true },
+      { resident: 'priya', units: 1, paid: true },
+      { resident: 'arjun', units: 1, paid: true },
+      { resident: 'meera', units: 1, paid: true },
+      { resident: 'vikram', units: 1, paid: true },
+      { resident: 'neha', units: 1, paid: true },
+      { resident: 'rahul', units: 1, paid: true },
+    ],
+    ratings: [
+      { resident: 'asha', stars: 5, comment: 'Spotless kitchen, they even did the chimney filter.' },
+      { resident: 'priya', stars: 4, comment: 'Good job, arrived an hour late.' },
+      { resident: 'arjun', stars: 5 },
+      { resident: 'meera', stars: 3, comment: 'Missed the balcony windows.' },
+    ],
+  },
+  {
+    id: 'demo_g_bath_cancelled',
+    society: 'GREEN001',
+    service: 'bathroom-wash',
+    status: 'CANCELLED',
+    createdAt: at(-17 * DAY),
+    deadline: at(-10 * DAY),
+    tiers: [{ threshold: 6, price: 550 }],
+    participants: [
+      { resident: 'asha', units: 1 },
+      { resident: 'rahul', units: 1 },
+    ],
+  },
+  // ---- BLUE0002 -------------------------------------------------------------
+  {
+    id: 'demo_b_paint_open',
+    society: 'BLUE0002',
+    service: 'painting',
+    status: 'OPEN',
+    createdAt: at(-2 * DAY),
+    deadline: at(6 * DAY),
+    tiers: [
+      { threshold: 6, price: 3100 },
+      { threshold: 12, price: 2800 },
+    ],
+    participants: [
+      { resident: 'farah', units: 3 },
+      { resident: 'rohan', units: 2 },
+    ],
+  },
+  {
+    id: 'demo_b_ac_open',
+    society: 'BLUE0002',
+    service: 'ac-servicing',
+    status: 'OPEN',
+    createdAt: at(-3 * DAY),
+    deadline: at(2 * DAY),
+    tiers: [
+      { threshold: 5, price: 920 },
+      { threshold: 10, price: 720 },
+    ],
+    participants: [
+      { resident: 'ananya', units: 1 },
+      { resident: 'dev', units: 2 },
+      { resident: 'farah', units: 1 },
+    ],
+  },
+  {
+    id: 'demo_b_bath_rated',
+    society: 'BLUE0002',
+    service: 'bathroom-wash',
+    status: 'RATED',
+    createdAt: at(-32 * DAY),
+    deadline: at(-25 * DAY),
+    tiers: [
+      { threshold: 6, price: 550 },
+      { threshold: 10, price: 480 },
+    ],
+    vendor: 'demo_vendor_sparkle',
+    finalPrice: 520,
+    assignedAt: at(-23 * DAY),
+    deliveredAt: at(-15 * DAY),
+    participants: [
+      { resident: 'farah', units: 2, paid: true },
+      { resident: 'rohan', units: 2, paid: true },
+      { resident: 'ananya', units: 1, paid: true },
+      { resident: 'dev', units: 1 },
+    ],
+    ratings: [
+      { resident: 'farah', stars: 4, comment: 'Tiles look new again.' },
+      { resident: 'rohan', stars: 5 },
+    ],
+  },
+];
+
+/** Participants added to the base seed's OPEN AC round in GREEN001 (6 units: tier 5 met, 10 next). */
+const BASE_AC_ROUND_PARTICIPANTS: ParticipantSeed[] = [
+  { resident: 'asha', units: 2 },
+  { resident: 'vikram', units: 1 },
+  { resident: 'neha', units: 2 },
+  { resident: 'rahul', units: 1 },
+];
+
+/** The lifecycle notifications a round in `status` has already sent to each participant. */
+function sentNotifications(r: RoundSeed): { type: NotificationType; sentAt: Date }[] {
+  const closed = r.deadline;
+  switch (r.status) {
+    case 'CLOSED_MET':
+      return [{ type: 'ROUND_CLOSED_MET', sentAt: closed }];
+    case 'CLOSED_EXPIRED':
+      return [{ type: 'ROUND_CLOSED_EXPIRED', sentAt: closed }];
+    case 'CANCELLED':
+      return [{ type: 'ROUND_CANCELLED', sentAt: closed }];
+    case 'ASSIGNED':
+      return [
+        { type: 'ROUND_CLOSED_MET', sentAt: closed },
+        { type: 'ROUND_ASSIGNED', sentAt: r.assignedAt! },
+      ];
+    case 'DELIVERED':
+    case 'RATED':
+      return [
+        { type: 'ROUND_CLOSED_MET', sentAt: closed },
+        { type: 'ROUND_ASSIGNED', sentAt: r.assignedAt! },
+        { type: 'ROUND_DELIVERED', sentAt: r.deliveredAt! },
+      ];
+    default:
+      return [];
+  }
+}
+
+const NOTIFICATION_BODY: Record<NotificationType, (service: string) => string> = {
+  ROUND_JOINED: (s) => `You joined the ${s} group-buy.`,
+  ROUND_CLOSING_SOON: (s) => `The ${s} group-buy closes soon.`,
+  ROUND_CLOSED_MET: (s) => `The ${s} group-buy reached its target. A vendor will be assigned shortly.`,
+  ROUND_CLOSED_EXPIRED: (s) => `The ${s} group-buy closed without reaching its target. You will not be charged.`,
+  ROUND_ASSIGNED: (s) => `A vendor has been assigned for your ${s} booking.`,
+  ROUND_DELIVERED: (s) => `Your ${s} service is marked delivered. Tell us how it went.`,
+  ROUND_CANCELLED: (s) => `The ${s} group-buy was cancelled. You will not be charged.`,
+};
+
+function checkRound(r: RoundSeed, unitsCount: number): void {
+  const lowest = Math.min(...r.tiers.map((t) => t.threshold));
+  const met = unitsCount >= lowest;
+  if (r.status === 'CLOSED_EXPIRED' && met) throw new Error(`${r.id}: expired but ${unitsCount} >= ${lowest}`);
+  if (['CLOSED_MET', 'ASSIGNED', 'DELIVERED', 'RATED'].includes(r.status) && !met) {
+    throw new Error(`${r.id}: ${r.status} but ${unitsCount} < ${lowest}`);
+  }
+  const assigned = ['ASSIGNED', 'DELIVERED', 'RATED'].includes(r.status);
+  if (assigned !== Boolean(r.vendor && r.finalPrice && r.assignedAt)) throw new Error(`${r.id}: vendor fields vs ${r.status}`);
+  if (['DELIVERED', 'RATED'].includes(r.status) !== Boolean(r.deliveredAt)) throw new Error(`${r.id}: deliveredAt vs ${r.status}`);
+  if ((r.status === 'RATED') !== Boolean(r.ratings?.length)) throw new Error(`${r.id}: ratings vs ${r.status}`);
+  if (!assigned && r.participants.some((p) => p.paid)) throw new Error(`${r.id}: payment before a final price`);
+  if (r.status === 'OPEN' && r.deadline.getTime() <= now) throw new Error(`${r.id}: OPEN with a past deadline`);
+}
+
+async function main(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('seed-demo refuses to run with NODE_ENV=production.');
+  }
+
+  const societies = await prisma.society.findMany({ where: { inviteCode: { in: ['GREEN001', 'BLUE0002'] } } });
+  const societyId = new Map(societies.map((s) => [s.inviteCode, s.id]));
+  if (societyId.size !== 2) throw new Error('Base seed missing — run `pnpm --filter backend seed` first.');
+
+  const services = await prisma.service.findMany();
+  const serviceBySlug = new Map(services.map((s) => [s.slug, s]));
+
+  // Residents (upsert; never deleted).
+  const residentId = new Map<string, string>();
+  for (const r of RESIDENTS) {
+    const sid = societyId.get(r.society)!;
+    const row = await prisma.resident.upsert({
+      where: { societyId_phone: { societyId: sid, phone: r.phone } },
+      create: { societyId: sid, phone: r.phone, name: r.name, role: r.role ?? 'RESIDENT', verifiedAt: at(-60 * DAY) },
+      update: { name: r.name, role: r.role ?? 'RESIDENT' },
+    });
+    residentId.set(r.key, row.id);
+  }
+
+  for (const v of VENDORS) {
+    const data = { name: v.name, phone: v.phone, category: v.category, notes: v.notes, active: v.active ?? true };
+    await prisma.vendor.upsert({ where: { id: v.id }, create: { id: v.id, ...data }, update: data });
+  }
+
+  // Reset: drop every demo round (cascades participants, ratings, notifications).
+  const { count: removed } = await prisma.round.deleteMany({ where: { id: { startsWith: DEMO_PREFIX } } });
+
+  const created: string[] = [];
+  const skipped: string[] = [];
+  for (const r of ROUNDS) {
+    const sid = societyId.get(r.society)!;
+    const service = serviceBySlug.get(r.service);
+    if (!service) throw new Error(`${r.id}: unknown service ${r.service}`);
+    const unitsCount = r.participants.reduce((sum, p) => sum + p.units, 0);
+    checkRound(r, unitsCount);
+
+    if (r.status === 'OPEN') {
+      // The partial unique index allows one OPEN round per (society, service).
+      const holder = await prisma.round.findFirst({ where: { societyId: sid, serviceId: service.id, status: 'OPEN' } });
+      if (holder) {
+        skipped.push(`${r.id} (an OPEN ${r.service} round already exists in ${r.society}: ${holder.id})`);
+        continue;
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.round.create({
+        data: {
+          id: r.id,
+          societyId: sid,
+          serviceId: service.id,
+          status: r.status,
+          unitsCount,
+          deadline: r.deadline,
+          createdAt: r.createdAt,
+          vendorId: r.vendor ?? null,
+          finalPrice: r.finalPrice ?? null,
+          assignedAt: r.assignedAt ?? null,
+          deliveredAt: r.deliveredAt ?? null,
+          tiers: { create: r.tiers },
+        },
+      });
+      for (const p of r.participants) {
+        const rid = residentId.get(p.resident)!;
+        const participant = await tx.roundParticipant.create({
+          data: {
+            id: `${r.id}_p_${p.resident}`,
+            roundId: r.id,
+            residentId: rid,
+            units: p.units,
+            createdAt: r.createdAt,
+            paymentCollectedAt: p.paid ? (r.deliveredAt ?? r.assignedAt ?? null) : null,
+          },
+        });
+        await tx.notification.create({
+          data: {
+            residentId: rid,
+            roundId: r.id,
+            type: 'ROUND_JOINED',
+            status: 'SENT',
+            body: NOTIFICATION_BODY.ROUND_JOINED(service.name),
+            dedupeKey: `ROUND_JOINED:${participant.id}`,
+            attempts: 1,
+            sentAt: r.createdAt,
+            createdAt: r.createdAt,
+          },
+        });
+        for (const n of sentNotifications(r)) {
+          await tx.notification.create({
+            data: {
+              residentId: rid,
+              roundId: r.id,
+              type: n.type,
+              status: 'SENT',
+              body: NOTIFICATION_BODY[n.type](service.name),
+              dedupeKey: `${n.type}:${r.id}:${rid}`,
+              attempts: 1,
+              sentAt: n.sentAt,
+              createdAt: n.sentAt,
+            },
+          });
+        }
+      }
+      for (const rating of r.ratings ?? []) {
+        if (!r.participants.some((p) => p.resident === rating.resident)) {
+          throw new Error(`${r.id}: ${rating.resident} rated without participating`);
+        }
+        await tx.rating.create({
+          data: {
+            roundId: r.id,
+            residentId: residentId.get(rating.resident)!,
+            stars: rating.stars,
+            comment: rating.comment ?? null,
+            createdAt: at(-((now - r.deliveredAt!.getTime()) / 2)),
+          },
+        });
+      }
+    });
+    created.push(`${r.society} ${r.status.padEnd(14)} ${r.service.padEnd(14)} ${unitsCount} units  (${r.id})`);
+  }
+
+  // Give the base seed's OPEN AC round in GREEN001 some participants. Upserted, then
+  // unitsCount recomputed from ALL its participants — anyone who joined via the app counts.
+  const ac = serviceBySlug.get('ac-servicing')!;
+  const baseAc = await prisma.round.findFirst({
+    where: { societyId: societyId.get('GREEN001')!, serviceId: ac.id, status: 'OPEN', id: { not: { startsWith: DEMO_PREFIX } } },
+  });
+  if (baseAc) {
+    await prisma.$transaction(async (tx) => {
+      for (const p of BASE_AC_ROUND_PARTICIPANTS) {
+        const rid = residentId.get(p.resident)!;
+        await tx.roundParticipant.upsert({
+          where: { roundId_residentId: { roundId: baseAc.id, residentId: rid } },
+          create: { roundId: baseAc.id, residentId: rid, units: p.units },
+          update: { units: p.units },
+        });
+      }
+      const { _sum } = await tx.roundParticipant.aggregate({ where: { roundId: baseAc.id }, _sum: { units: true } });
+      await tx.round.update({ where: { id: baseAc.id }, data: { unitsCount: _sum.units ?? 0 } });
+    });
+  }
+
+  console.log('Demo seed complete:');
+  console.log(`  Residents: ${RESIDENTS.length} (demo resident: Asha Rao +919999900101 in GREEN001; empty-state: Kabir Shah +919999900108)`);
+  console.log('  Admins: +919999900001 (GREEN001), +919999900209 (BLUE0002)');
+  console.log(`  Vendors: ${VENDORS.length} (1 deactivated)`);
+  console.log(`  Demo rounds removed and recreated: ${removed} -> ${created.length}`);
+  for (const line of created) console.log(`    ${line}`);
+  for (const line of skipped) console.log(`  SKIPPED ${line}`);
+  console.log(`  Base AC round in GREEN001: ${baseAc ? `${BASE_AC_ROUND_PARTICIPANTS.length} participants added` : 'not found (run the base seed)'}`);
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (err) => {
+    console.error(err);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

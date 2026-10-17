@@ -11,7 +11,8 @@
     "test": "jest --runInBand",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "seed": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js"
+    "seed": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js",
+    "seed:demo": "tsc -p prisma/tsconfig.seed.json && node prisma/dist/seed.js && node prisma/dist/seed-demo.js"
   },
   "dependencies": {
     "@bulk/shared": "workspace:*",

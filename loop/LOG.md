@@ -683,3 +683,18 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **V3: two back-to-back gate runs, exit 0 both, identical — backend 345/25, web 293/46, 1201 class tokens.** No flaky test.
 - **FEAT-012, FEAT-013 and CHORE-014 CLOSED.** Four review rounds, five mechanisms of one leak, and the lesson worth keeping: every fix was correct and every one of them stopped at the edge of what I had thought to look at. Status, then rate-limit state, then stored state, then timing, then a throw that never becomes a promise.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–4)
+
+## 2026-10-17 — CHORE-018 — OPENED: a demo seed that holds every round state
+- Owner asked to "check full codebase and seed some data to test". The base seed makes one empty OPEN round; every other state the screens draw had to be clicked through by hand. Triaged as CHORE (no product behaviour changes), P2.
+- Decision (no ADR — a dev-only script, no technical choice with alternatives worth recording): separate `seed-demo.ts` rather than growing `seed.ts`, because `scripts/e2e-smoke.mjs` asserts on the base seed's exact fixtures. Fixed `demo_` ids + delete-and-recreate so a re-run resets the demo.
+- Dev DB found empty (containers recreated, no migrations applied) — applying existing migrations is T1.
+- By: agent (autonomous)
+
+## 2026-10-17 — CHORE-018 — T1–T4: seeded, idempotent, read back through the API
+- T1: `prisma migrate deploy` — all 9 migrations applied to the empty dev DB.
+- T2: `prisma/seed-demo.ts` + `seed:demo`. 13 residents, 5 vendors (1 inactive), 11 `demo_` rounds + participants on the base AC round. The script checks each round against the RoundsService rules before writing it, and throws rather than seeding a state the service could not produce.
+- T3: ran twice — counts identical (2 soc / 14 res / 5 ven / 12 rnd / 46 part / 6 rat / 111 notif, 0 unsent). SQL: no round's unitsCount differs from its participants' sum; no assigned round without vendor/finalPrice; no RATED without ratings, no DELIVERED with one; no OPEN past deadline. All 7 statuses present.
+- T4: live API on :3100. Reconciler scheduled close jobs for 5 OPEN rounds. Asha's `/rounds/mine` returns 7 rounds, one per state; dashboard payments ₹25,140 collected / ₹4,960 outstanding — matches hand arithmetic. The DELIVERED AC card reports ₹700, not the ₹680 negotiated: BUG-010, now reproducible from a fresh seed.
+- Environment: the global `pnpm` shim (~/Library/pnpm) points at a missing install; ran everything via `corepack pnpm` (11.10.0). Machine issue, not repo.
+- V1: gate exit 0 — backend 345/345, web 293/293, 1201 class tokens.
+- By: agent (autonomous)

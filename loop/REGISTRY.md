@@ -49,6 +49,7 @@
 | CHORE-015 | Admin sign-in drives an unindexed scan on `phone` (unauthenticated); needs a migration | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-015-phone-lookup-unindexed/ | ADR-0023 |
 | CHORE-016 | An admin's sign-in can be denied by six unauthenticated OTP requests | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-016-admin-otp-denial/ | ADR-0023 |
 | CHORE-017 | The OTP send still runs in the request process — the root cause behind three rounds of leaks | triaged | P2 | 2026-09-19 | — | loop/work/CHORE-017-otp-send-on-the-queue/ | ADR-0023, ADR-0013 |
+| CHORE-018 | Demo seed — residents, vendors, and a round in every lifecycle state | in-progress | P2 | 2026-10-17 | — | loop/work/CHORE-018-demo-seed/ | ADR-0010, ADR-0012 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

@@ -9,6 +9,6 @@
     "sourceMap": false,
     "skipLibCheck": true
   },
-  "include": ["seed.ts"],
+  "include": ["seed.ts", "seed-demo.ts"],
   "exclude": []
 }
