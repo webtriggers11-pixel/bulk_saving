@@ -68,6 +68,8 @@ describe('BUG-011 — a page that throws in its own body, on the real routes', (
     renderAppAt('/admin/services');
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
     expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument();
+    // The fallback keeps the page's name, so the admin still knows where they are.
+    expect(screen.getByRole('heading', { name: 'Services' })).toBeInTheDocument();
     // The nav leads out — and the next page (its own layout, its own nav) is not stuck
     // on the crash.
     fireEvent.click(screen.getByRole('link', { name: 'Vendors' }));

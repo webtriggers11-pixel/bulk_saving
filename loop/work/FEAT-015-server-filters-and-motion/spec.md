@@ -1,6 +1,6 @@
 # FEAT-015 — Server-side filters on every list, and a modern, animated filtering UI
 
-**Status:** in-progress · **Priority:** P1 · **Opened:** 2026-10-17 · **Asked by:** owner
+**Status:** done · **Priority:** P1 · **Opened:** 2026-10-17 · **Closed:** 2026-10-17 · **Asked by:** owner
 ("We need server side filters and all with best UI/UX modern one microinteraction and
 animations also") · **Decisions:** ADR-0026
 

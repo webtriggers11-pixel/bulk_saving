@@ -781,3 +781,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **CHORE-021 (P2):** one gate run in four segfaulted inside V8's mark-compact GC (`ClearStaleLeftTrimmedPointerVisitor`) on Node v24.6.0 — engine, not code. Upgrading Node is the owner's call.
 - V1: gate exit 0 — backend 366/366, web 379/379. Catalog 23.
 - By: agent (autonomous) + code-reviewer subagent (V2 round 2)
+
+## 2026-10-17 — FEAT-015, BUG-011, CHORE-020 — V2 round 3 PASS, V3 identical twice, CLOSED
+- **V2 round 3: PASS.** Reviewer re-ran its probe on the real routes (crash card, nav survives, Vendors loads), mutation-proved the AdminRoute boundary, and checked a crash in AdminLayout ITSELF: the route fallback renders AdminLayout again, that throws, and React sends it to the root boundary once — no loop. CHORE-020 (a)(b)(c) each mutation-proved. One cosmetic P2 (fallback title always "Admin") fixed: the fallback names the crashed page.
+- **V3: two back-to-back gate runs, exit 0 both, identical — backend 366/366, web 379/379, 1409 class tokens.** Catalog 23 after both.
+- FEAT-015, BUG-011, CHORE-020 CLOSED.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)

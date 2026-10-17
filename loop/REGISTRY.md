@@ -52,9 +52,9 @@
 | CHORE-018 | Demo seed — residents, vendors, and a round in every lifecycle state | done | P2 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-018-demo-seed/ | ADR-0010, ADR-0012 |
 | CHORE-019 | Demo seed mirrors scheduler constants by hand; base seed has no local-DB guard | triaged | P3 | 2026-10-17 | — | loop/work/CHORE-019-demo-seed-drift/ | — |
 | FEAT-014 | Admin services page, closed category list, wider catalog, bulk-staples pilot | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-014-admin-services-and-categories/ | ADR-0009, ADR-0019, ADR-0025 |
-| CHORE-020 | FEAT-014 review leftovers: offline notice hides with panel, price input remount, leak guard untested | in-review | P3 | 2026-10-17 | — | loop/work/CHORE-020-services-page-followups/ | — |
-| FEAT-015 | Server-side filters on every list; URL filter state; modern filtering UI with micro-interactions | in-review | P1 | 2026-10-17 | — | loop/work/FEAT-015-server-filters-and-motion/ | ADR-0021, ADR-0022, ADR-0026 |
-| BUG-011 | One component that throws blanks the whole app — there is no error boundary | in-review | P1 | 2026-10-17 | — | loop/work/BUG-011-no-error-boundary/ | — |
+| CHORE-020 | FEAT-014 review leftovers: offline notice hides with panel, price input remount, leak guard untested | done | P3 | 2026-10-17 | 2026-10-17 | loop/work/CHORE-020-services-page-followups/ | — |
+| FEAT-015 | Server-side filters on every list; URL filter state; modern filtering UI with micro-interactions | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/FEAT-015-server-filters-and-motion/ | ADR-0021, ADR-0022, ADR-0026 |
+| BUG-011 | One component that throws blanks the whole app — there is no error boundary | done | P1 | 2026-10-17 | 2026-10-17 | loop/work/BUG-011-no-error-boundary/ | — |
 | CHORE-021 | Node v24.6.0 segfaults inside V8's GC during the backend suite (1 run in 4) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-021-node-v8-gc-segfault/ | — |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →

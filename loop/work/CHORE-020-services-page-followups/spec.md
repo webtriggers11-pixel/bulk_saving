@@ -1,6 +1,6 @@
 # CHORE-020 — FEAT-014 review leftovers
 
-**Status:** triaged · **Priority:** P3 · **Opened:** 2026-10-17 · **Found by:** FEAT-014 V2
+**Status:** done · **Priority:** P3 · **Opened:** 2026-10-17 · **Closed:** 2026-10-17 · **Found by:** FEAT-014 V2
 
 1. Hiding a service's society panel while an offer/price save is paused offline hides the
    "queued" notice with it; the mutation still runs on reconnect, but nothing says so.

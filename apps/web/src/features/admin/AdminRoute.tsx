@@ -12,6 +12,15 @@ import { AdminLayout } from './AdminLayout';
  * the role server-side (403). The role is compared as a literal because @bulk/shared
  * is CommonJS and only type imports survive the Vite bundle.
  */
+/** The crashed page's own name, so the fallback still says where the admin is. */
+function crashTitle(pathname: string): string {
+  if (pathname.startsWith('/admin/services')) return 'Services';
+  if (pathname.startsWith('/admin/vendors')) return 'Vendors';
+  if (pathname.startsWith('/admin/rounds/new')) return 'New round';
+  if (pathname.startsWith('/admin/rounds/')) return 'Round';
+  return 'Dashboard';
+}
+
 export function AdminRoute({ children }: { children: ReactNode }) {
   const status = useAuthStore((state) => state.status);
   const role = useAuthStore((state) => state.resident?.role);
@@ -30,7 +39,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     <ErrorBoundary
       resetKey={pathname}
       fallback={(reset) => (
-        <AdminLayout title="Admin">
+        <AdminLayout title={crashTitle(pathname)}>
           <CrashCard onRetry={reset} />
         </AdminLayout>
       )}

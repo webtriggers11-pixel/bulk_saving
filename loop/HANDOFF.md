@@ -5,14 +5,21 @@
 
 ## Latest session (2026-10-17)
 
-- **Goal:** owner asked to check the codebase and seed data to test with.
-- **Result:** CHORE-018 closed. `pnpm --filter backend seed:demo` resets a demo with a round in
-  every state. Sign in as **Asha Rao +919999900101 / GREEN001** (one round per state) or
-  **Kabir +919999900108** (empty states). Admins: +919999900001, +919999900209. OTPs are in
-  the API log (`[DEV ONLY] OTP for …`); `devCode` no longer exists.
-- Dev DB had been recreated empty — migrations re-applied. Global `pnpm` shim is broken on this
-  machine; `corepack pnpm` works. Another backend instance holds :3000.
-- New: CHORE-019 (P3). BUG-010 now reproduces straight from the seed (delivered AC card: ₹700 vs ₹680).
+- **Closed:** CHORE-018 (demo seed), FEAT-014 (admin Services page, closed category list,
+  23 services, Bulk Staples pilot — ADR-0025, BRIEF "Scope changes"), CHORE-006,
+  FEAT-015 (server-side filters on every list, filters in the URL, filtering primitives +
+  motion — ADR-0026), BUG-011 (error boundaries: per admin route, per resident shell, root),
+  CHORE-020. Every item: V2 by an independent reviewer (FEAT-014 1 round, FEAT-015 3 rounds),
+  V3 two identical gate runs. Final gate: backend 366/366, web 379/379.
+- **Demo:** `pnpm --filter backend seed:demo` resets it. Asha Rao +919999900101 / GREEN001
+  (a round in every state); Kabir +919999900108 (empty); admins +919999900001, +919999900209.
+  OTPs are in the API log (`[DEV ONLY] OTP for …`).
+- **Machine:** global `pnpm` shim broken — use `corepack pnpm`. Another backend holds :3000.
+  Node v24.6.0 segfaulted once in V8's GC (CHORE-021) — upgrading Node is the owner's call.
+- **Open, owner-facing:** BUG-010 (P1, delivered round shows tier price not finalPrice),
+  CHORE-021 (Node), CHORE-019 (seed constants drift), CHORE-010/011/012/013/015/016/017.
+- **Guards worth knowing:** the 44px touch-floor scan only sees explicit `h-`/`w-` on control
+  tags (chips/switch passed it at 28–36px); the CSS-class gate reads quoted words in comments.
 
 ## Previous session
 

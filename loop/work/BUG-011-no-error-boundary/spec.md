@@ -1,6 +1,6 @@
 # BUG-011 — One component that throws blanks the entire app
 
-**Status:** triaged · **Priority:** P1 · **Opened:** 2026-10-17 · **Found by:** FEAT-015 browser pass
+**Status:** done · **Priority:** P1 · **Opened:** 2026-10-17 · **Closed:** 2026-10-17 · **Found by:** FEAT-015 browser pass
 
 ## What happened
 
