@@ -1308,3 +1308,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-20 — FEAT-026 — OPENED: dev OTP toast
 - Owner: "in dev mode otp send in toast msg in top". ADR-0020 removed the code from the auth response deliberately; this keeps that: a `/dev/otp` route whose module is registered only under `OTP_DEV_LOG=true` outside production, read by a DEV-bundle-only path in the web, shown as a top toast with "Use it". ADR-0037 amends ADR-0020 §A.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-026 — T1–T2 built: the dev OTP as a top toast
+- ADR-0037 (amends ADR-0020 §A). Backend: `DevToolsModule` (`GET /dev/otp?phone=` → the stub channel's `dev:last-otp:<canonical phone>` or 404; 400 for garbage) imported by AppModule only via `devToolsImports(env)` — unit-tested for every env combination, since the decorator computes it once at import; integration: the module mounted → 200/404/400; the full app under the suite's `OTP_DEV_LOG=false` → the route does not exist. Auth responses untouched.
+- Web: `Toast` gains `placement` (`top` under the safe area) and an `action`; `useDevOtp` (behind `import.meta.env.DEV`, retries 0/0.4/0.8/1.6s for the admin door's queued send, silent on 404); `DevOtpToast` ("Dev only · Your code is 123456 · Use it" fills the field) on both doors. Tests: hook (DEV call + canonical phone, retry then give up, non-DEV never calls), toast placement, Onboarding page toast + Use it + 404 → nothing.
+- Alone: backend dev suites 3/3, web auth + toast 41/41, typecheck clean. Gate running.
+- By: agent (autonomous)
