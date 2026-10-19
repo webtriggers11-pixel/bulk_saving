@@ -1172,3 +1172,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P2-1: `FEATURES.md` (a product-features doc written outside this session at 22:20 IST, untracked) was swept into 378bd6d by `git add -A`. Not BUG-017 work; left in place (it is the owner's doc), attributed here. Lesson: `git add` by path from now on.
 - Taken: P3-1 issue is one Lua step (`ISSUE_LUA`: handle + index + clock together); P3-2 ADR-0034 admits dangling index members under an expiring policy; P3-3 test "never writes the pre-fix per-resident key again". P3-4 (second device minted via the service in the integration test, OTP 30s limit) accepted as documented.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-19 — BUG-017 + BUG-018 — V3; CLOSED
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 464/464, web 599/599, 3278 class tokens. No flakes (BUG-018's test included).
+- BUG-017 → done (per-device lifetime sessions, ADR-0034). BUG-018 → done (test-only).
+- By: agent (autonomous)

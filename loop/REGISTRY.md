@@ -81,9 +81,9 @@
 - **P1** — needed for the next release
 - **P2** — important, not urgent
 - **P3** — nice to have; revisit quarterly
-| BUG-017 | Signing in on a second device ends the first device's lifetime session — the rotation handle is one key per resident, not per session | in-progress | P1 | 2026-10-19 | — | loop/work/BUG-017-second-device-ends-first-session/ | ADR-0024 |
-| FEAT-023 | Home leads with Group buys: the accent surface carries live open-round counts and up to three rounds deep-linking into the pledge sheet | specced | P1 | 2026-10-19 | — | loop/work/FEAT-023-home-leads-with-group-buys/ | ADR-0021, ADR-0022 |
+| BUG-017 | Signing in on a second device ends the first device's lifetime session — the rotation handle is one key per resident, not per session | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/BUG-017-second-device-ends-first-session/ | ADR-0024 |
+| FEAT-023 | Home leads with Group buys: the accent surface carries live open-round counts and up to three rounds deep-linking into the pledge sheet | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-023-home-leads-with-group-buys/ | ADR-0021, ADR-0022 |
 | CHORE-024 | Profile: the "This app" card is cluttered; one clean settings list with one row shape | triaged | P2 | 2026-10-19 | — | loop/work/CHORE-024-profile-clean-up/ | ADR-0021 |
-| BUG-018 | Flaky: OTP "awaited dispatch" test races a fixed 50ms sleep against Redis under the full suite (1 in ~5 gate runs) | in-progress | P2 | 2026-10-19 | — | loop/work/BUG-018-flaky-otp-awaited-dispatch-test/ | — |
+| BUG-018 | Flaky: OTP "awaited dispatch" test races a fixed 50ms sleep against Redis under the full suite (1 in ~5 gate runs) | done | P2 | 2026-10-19 | 2026-10-19 | loop/work/BUG-018-flaky-otp-awaited-dispatch-test/ | — |
 | FEAT-024 | Confirm before destructive actions: log out, leave a round, delete a rating, withdraw an ask, admin cancel/deactivate — one confirm sheet | specced | P1 | 2026-10-19 | — | loop/work/FEAT-024-confirm-destructive-actions/ | ADR-0022 |
 | FEAT-025 | Server-side pagination on the list endpoints and the screens that read them | specced | P1 | 2026-10-19 | — | loop/work/FEAT-025-server-side-pagination/ | ADR-0005 |

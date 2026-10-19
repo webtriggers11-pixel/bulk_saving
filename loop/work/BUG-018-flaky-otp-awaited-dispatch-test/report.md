@@ -1,6 +1,6 @@
 # BUG-018 — flaky: "DOES wait for the provider when the dispatch is awaited" hangs to its 30s timeout under the full suite
 
-**Status:** triaged · **Priority:** P2 · **Opened:** 2026-10-19 · **Reporter:** agent (BUG-017 V1 gate run)
+**Status:** done · **Priority:** P2 · **Opened:** 2026-10-19 · **Reporter:** agent (BUG-017 V1 gate run)
 
 ## Observed vs expected
 - **Observed:** 1 failed / 462 passed in the full backend run (`jest --runInBand`); the same suite passes 24/24 alone. The test raced: `HangingChannel.finish()` released only a send that had already arrived, and under the full suite the request's Redis work exceeded the test's fixed 50ms wait, so the send arrived AFTER the release and never resolved.

@@ -1,6 +1,6 @@
 # BUG-017 — Signing in on a second device ends the first device's lifetime session
 
-**Status:** triaged · **Priority:** P1 · **Opened:** 2026-10-19 · **Reporter:** owner ("one time authenticate then lifetime login access; if they uninstall and install again then only again OTP")
+**Status:** done · **Priority:** P1 · **Opened:** 2026-10-19 · **Reporter:** owner ("one time authenticate then lifetime login access; if they uninstall and install again then only again OTP")
 
 ## Observed vs expected
 
@@ -24,7 +24,7 @@ ADR-0024 (lifetime sessions) — its revocation clause ("one key, one session, `
 ## Fix
 
 - **What:** per-session handles `refresh:<rid>:<sid>` + index `sessions:<rid>`; `sid` in the refresh token; rotation CAS per session, with a pre-fix token migrated onto its own session on first rotation (nobody re-OTPs); `POST /auth/sign-out` ends one session; `revokeAllSessions` is the kill switch; the web's two sign-out buttons share `useSignOut` (push release → server sign-out → forget, each bounded). ADR-0034 amends ADR-0024; DEPLOY.md revocation updated.
-- **Commit:** `fix(BUG-017): ...` (see LOG)
+- **Commits:** 378bd6d (fix), 0dcd90d (V2 follow-ups)
 - **Regression guard:** `auth.service.spec.ts` → per-device sessions (5 tests: second device, sign-out one, wrong resident/garbage, kill switch, legacy migration); `auth.integration.spec.ts` → "signs THIS device out and leaves the other one signed in"; web `useSignOut.test.tsx` (4) + ProfilePage/HomePage sign-out wiring.
 
 ## Lesson
