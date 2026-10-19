@@ -115,6 +115,9 @@ describe('Service asks (FEAT-022)', () => {
   });
 
   it('opening a round tells exactly the residents who asked, clears their asks, and stops new asks', async () => {
+    // The OTHER society offers the same service and has its own asker: a round opened here
+    // must neither tell them nor clear their ask (V2 P2-1).
+    await http().post(`/catalog/${service.id}/ask`).set(as('outsider')).expect(200);
     const rounds = app.get(RoundsAdminService);
     const round = await rounds.createRound(
       {
@@ -133,6 +136,8 @@ describe('Service asks (FEAT-022)', () => {
     expect(staged.map((n) => n.residentId).sort()).toEqual([alice.id, bob.id].sort());
     expect(staged[0].body).toMatch(/You asked, and it is open — a Water Tank Cleaning group buy/);
     expect(await prisma.serviceAsk.count({ where: { societyId: society.id, serviceId: service.id } })).toBe(0);
+    expect(await prisma.serviceAsk.count({ where: { residentId: outsider.id, serviceId: service.id } })).toBe(1);
+    expect(staged.map((n) => n.residentId)).not.toContain(outsider.id);
 
     // Delivered through the outbox like any other message.
     await waitFor(async () => sms.messagesTo(alice.phone).length, (n) => n >= 1);
@@ -142,5 +147,13 @@ describe('Service asks (FEAT-022)', () => {
     // While it is open, ask is the wrong verb: join it.
     const refused = await http().post(`/catalog/${service.id}/ask`).set(as('carol')).expect(409);
     expect(refused.body.error.code).toBe('ROUND_ALREADY_OPEN');
+
+    // The dashboard lists only what an admin can act on: this society's pair has a round
+    // open now, so it is gone; the other society's ask is still waiting there.
+    const dash = await http().get('/admin/dashboard').set(as('admin')).expect(200);
+    const pairs = (dash.body.data.asks as Array<{ service: { id: string }; society: { id: string } }>).filter(
+      (a) => a.service.id === service.id,
+    );
+    expect(pairs.map((a) => a.society.id)).toEqual([other.id]);
   });
 });

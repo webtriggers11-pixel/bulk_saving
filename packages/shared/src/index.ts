@@ -553,7 +553,6 @@ export interface AdminSocietyDemand {
   residentsJoined: number;
 }
 
-/** `GET /admin/dashboard`. */
 /** FEAT-022: one service residents of one society are asking for, most-asked first. */
 export interface AdminServiceAsk {
   society: { id: string; name: string };
@@ -563,6 +562,7 @@ export interface AdminServiceAsk {
   since: string;
 }
 
+/** `GET /admin/dashboard`. */
 export interface AdminDashboardDto {
   /** Count of rounds in every status (all 7 keys present, zeros included). */
   statusCounts: Record<RoundStatus, number>;

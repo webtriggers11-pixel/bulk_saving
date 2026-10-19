@@ -83,7 +83,7 @@ export class RoundNotificationsService {
   ): Promise<string[]> {
     const asks = await tx.serviceAsk.findMany({
       where: { societyId: round.societyId, serviceId: round.serviceId },
-      select: { residentId: true },
+      select: { id: true, residentId: true },
     });
     if (asks.length === 0) return [];
     const body = renderNotification({ type: NotificationType.SERVICE_ASK_OPENED, round: this.forMessage(round) });
@@ -97,7 +97,11 @@ export class RoundNotificationsService {
         body,
       })),
     );
-    await tx.serviceAsk.deleteMany({ where: { societyId: round.societyId, serviceId: round.serviceId } });
+    // Delete exactly the asks that were notified — not "every ask for this service": under
+    // READ COMMITTED an ask committed after the read would otherwise vanish unanswered
+    // (V2 P2-2). One that slips in that way stays, and the dashboard hides it while the
+    // round is open; it is answered by the next round.
+    await tx.serviceAsk.deleteMany({ where: { id: { in: asks.map((ask) => ask.id) } } });
     return ids;
   }
 

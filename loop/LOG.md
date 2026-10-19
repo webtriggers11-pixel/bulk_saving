@@ -1053,3 +1053,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Tests: integration (idempotent, per-society counts, withdraw, 404, dashboard, round-open notifies exactly the askers + clears + 409 after), template fixture; web 11 (lines per state, ask/withdraw/refresh, error, open round never asks, admin list + link, empty state, pre-fill).
 - V1: gate exit 0 — backend 456/456, web 574/574, 1750 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-014 — TRIAGED: intermittent 404 on existing routes in integration tests
+- Seen twice today, only inside full `verify.sh` runs, never in 6+ standalone backend runs: `POST /auth/admin/otp/verify` → 404 (first attributed to BUG-013's wrong-phone race — that race was real and is fixed, but the status was 404, which BUG-013 does not explain) and `POST /auth/otp/request` → 404 with a valid invite code (unknown invite answers 400; the global filter maps nothing else to 404 — so this is Nest's route-not-found). Unrelated to FEAT-021/022 code. Probe added (test helper logs method + path of every 404) so the next occurrence carries evidence. Hypotheses to test: the request reaching a different listener (ephemeral port vs. another local server), or a router not yet mounted.
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-022 — V2 round 1: PASS with findings → taken
+- V2 (independent; gate exit 0, 456/574; 3 of 4 mutations killed): no P0/P1. P2-1 cross-society leak path untested (mutation dropping `societyId` from `stageAskOpened` survived) → the other society's resident now asks first and must be neither notified nor cleared; **mutation re-run by me: killed.** P2-2 read-then-delete under READ COMMITTED could silently drop an ask committed mid-transaction → delete exactly the notified ids; the dashboard lists only actionable pairs (no open round, offering still enabled — also P3-2). P2-3 a 409 (round opened since load) left the card failing forever → on ROUND_ALREADY_OPEN refresh rounds + catalog and say so; test. P3: shared JSDoc moved; SW `safePath` refuses protocol-relative `//host`; P3-1 (per-asker `queue.add` in dispatch) noted, not changed — shared outbox code, fine at today's scale.
+- V1: gate exit 0 — backend 456/456, web 575/575, 1750 class tokens. BUG-014 probe silent apart from expected 404s.
+- By: agent (autonomous)

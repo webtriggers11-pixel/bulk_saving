@@ -6,6 +6,7 @@ import type { ServiceDto } from '@bulk/shared';
 import { ServicesPage } from './ServicesPage';
 import { askForService, fetchCatalog, withdrawAsk } from './catalog.api';
 import { fetchRounds } from '../rounds/rounds.api';
+import { ApiError } from '../../lib/api';
 
 /**
  * FEAT-022 (ADR-0033) — "Ask for this service" on a catalog card with no open round.
@@ -83,6 +84,30 @@ describe('Ask for this service (FEAT-022)', () => {
     fireEvent.click(await screen.findByTestId('ask-tank'));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t send that');
     expect(screen.getByTestId('ask-tank')).not.toBeDisabled();
+  });
+
+  it('a round that opened since the page loaded: says so, and the card turns into booking (V2 P2-3)', async () => {
+    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 0, askedByMe: false })]);
+    vi.mocked(askForService).mockRejectedValue(new ApiError('ROUND_ALREADY_OPEN', 'open', 409));
+    vi.mocked(fetchRounds)
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([
+        {
+          id: 'round_tank',
+          service: { id: 'off', name: 'Water Tank Cleaning', slug: 'tank', category: 'Utilities', unitLabel: 'tank', unitLabelPlural: 'tanks', unitDescription: null },
+          status: 'OPEN',
+          unitsCount: 0,
+          currentPrice: 700,
+          deadline: '2099-01-01T00:00:00.000Z',
+          tiers: [{ threshold: 5, price: 700 }],
+          myUnits: 0,
+          finalPrice: null,
+        },
+      ]);
+    renderPage();
+    fireEvent.click(await screen.findByTestId('ask-tank'));
+    expect(await screen.findByTestId('book-tank')).toBeInTheDocument();
+    expect(screen.queryByTestId('ask-tank')).not.toBeInTheDocument();
   });
 
   it('a service WITH an open round offers booking, never asking', async () => {

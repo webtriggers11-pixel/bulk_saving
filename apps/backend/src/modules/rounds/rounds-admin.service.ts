@@ -280,13 +280,30 @@ export class RoundsAdminService {
    * for opening rounds, not a report.
    */
   private async askedFor(): Promise<AdminServiceAsk[]> {
-    const groups = await this.prisma.serviceAsk.groupBy({
+    const ranked = await this.prisma.serviceAsk.groupBy({
       by: ['societyId', 'serviceId'],
       _count: { _all: true },
       _min: { createdAt: true },
       orderBy: [{ _count: { residentId: 'desc' } }, { _min: { createdAt: 'asc' } }],
-      take: 20,
+      take: 100,
     });
+    if (ranked.length === 0) return [];
+    // Only actionable rows (V2 P2-2, P3-2): a pair with a round already open needs no new
+    // one, and a service no longer offered there cannot have one ("Open a round" → 400).
+    const [openRounds, offered] = await Promise.all([
+      this.prisma.round.findMany({
+        where: { status: RoundStatus.OPEN, OR: ranked.map((g) => ({ societyId: g.societyId, serviceId: g.serviceId })) },
+        select: { societyId: true, serviceId: true },
+      }),
+      this.prisma.serviceOffering.findMany({
+        where: { enabled: true, service: { active: true }, OR: ranked.map((g) => ({ societyId: g.societyId, serviceId: g.serviceId })) },
+        select: { societyId: true, serviceId: true },
+      }),
+    ]);
+    const key = (p: { societyId: string; serviceId: string }) => `${p.societyId}|${p.serviceId}`;
+    const open = new Set(openRounds.map(key));
+    const ok = new Set(offered.map(key));
+    const groups = ranked.filter((g) => ok.has(key(g)) && !open.has(key(g))).slice(0, 20);
     if (groups.length === 0) return [];
     const [societies, services] = await Promise.all([
       this.prisma.society.findMany({ where: { id: { in: groups.map((g) => g.societyId) } }, select: { id: true, name: true } }),

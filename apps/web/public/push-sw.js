@@ -11,7 +11,7 @@
   /** Only same-app paths are opened on tap — a payload can never send someone off-site.
    *  One query is allowed: `?join=<id>` (FEAT-022 — a notification that opens a round). */
   function safePath(url) {
-    return typeof url === 'string' && /^\/[A-Za-z0-9/_-]*(\?join=[A-Za-z0-9_-]+)?$/.test(url) ? url : '/';
+    return typeof url === 'string' && /^\/(?!\/)[A-Za-z0-9/_-]*(\?join=[A-Za-z0-9_-]+)?$/.test(url) ? url : '/';
   }
 
   function show(data) {

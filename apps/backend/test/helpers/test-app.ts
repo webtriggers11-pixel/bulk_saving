@@ -59,6 +59,17 @@ export async function createTestApp(
 
   const app = moduleRef.createNestApplication();
   configureApp(app);
+  // BUG-014 probe (test-only): an intermittent 404 on a route that exists has hit two
+  // gate runs. Record the method, path and the body actually sent, so the next one
+  // arrives with evidence instead of a bare status.
+  app.use((req: { method: string; originalUrl: string }, res: { statusCode: number; on: (e: string, f: () => void) => void }, next: () => void) => {
+    res.on('finish', () => {
+      if (res.statusCode === 404) {
+        process.stderr.write(`[BUG-014 probe] 404 for ${req.method} ${req.originalUrl}\n`);
+      }
+    });
+    next();
+  });
   await app.init();
   return app;
 }

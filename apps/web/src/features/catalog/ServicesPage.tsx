@@ -9,6 +9,7 @@ import { Card, CardDescription, CardEyebrow, CardTitle } from '../../components/
 import { EmptyState } from '../../components/ui/empty-state';
 import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
+import { ApiError } from '../../lib/api';
 import { formatIndicativePrice } from './formatPrice';
 import { useCatalog, useServiceAsk } from './useCatalog';
 import { FilterChips } from '../../components/ui/filter-chips';
@@ -140,7 +141,9 @@ function AskControl({ service, className }: { service: ServiceDto; className?: s
       </div>
       {ask.isError && (
         <p role="alert" className="text-micro font-bold text-danger-ink">
-          Couldn’t send that. Please try again.
+          {ask.error instanceof ApiError && ask.error.code === 'ROUND_ALREADY_OPEN'
+            ? 'A group buy for this just opened — refreshing so you can join it.'
+            : 'Couldn’t send that. Please try again.'}
         </p>
       )}
     </div>
