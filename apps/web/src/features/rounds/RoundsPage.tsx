@@ -12,13 +12,19 @@ import { PageHeader } from '../../components/ui/page-header';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Sheet } from '../../components/ui/sheet';
-import { formatCountdown } from './formatCountdown';
+import { formatClock, formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { useJoinRound, useLeaveRound, useRounds, useUpdatePledge } from './useRounds';
 import { TierRing } from './TierRing';
 import { useCountUp } from './useCountUp';
 import { RoundsSkeleton } from './RoundsSkeleton';
+import { PriceLadder } from './PriceLadder';
+import { RoundsSummary } from './RoundsSummary';
+import { InviteButton } from './InviteButton';
+import { Celebrate } from './Celebrate';
+import { useNow } from './useNow';
+import { reachedTiers } from './roundMath';
 
 /** Units a single resident may pledge (mirrors the backend MAX_UNITS_PER_RESIDENT guard). */
 const MIN_UNITS = 1;
@@ -72,7 +78,7 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
  * button that opens the pledge sheet — "Join" or "Change". The sheet is where units are
  * chosen and a price is previewed; nothing is sent until its one action is pressed.
  */
-function JoinControl({ round }: { round: RoundDto }) {
+function JoinControl({ round, onSaved }: { round: RoundDto; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const joined = round.myUnits > 0;
   // The writes live HERE, not in the sheet, so a pledge queued offline still says so on
@@ -110,6 +116,7 @@ function JoinControl({ round }: { round: RoundDto }) {
         >
           {joined ? 'Change' : 'Join'}
         </Button>
+        <InviteButton round={round} />
       </div>
       {/* What happened to a write after the sheet was closed — queued offline, or refused
           once it reached the server (V2 round 2). Inside the sheet, the sheet says it. */}
@@ -118,7 +125,13 @@ function JoinControl({ round }: { round: RoundDto }) {
           <PledgeNotices paused={paused} failed={failed} />
         </div>
       )}
-      <PledgeSheet round={round} open={open} onClose={() => setOpen(false)} mutations={{ join, update, leave }} />
+      <PledgeSheet
+        round={round}
+        open={open}
+        onClose={() => setOpen(false)}
+        onSaved={onSaved}
+        mutations={{ join, update, leave }}
+      />
     </>
   );
 }
@@ -132,11 +145,14 @@ function PledgeSheet({
   round,
   open,
   onClose,
+  onSaved,
   mutations: { join, update, leave },
 }: {
   round: RoundDto;
   open: boolean;
   onClose: () => void;
+  /** A join or a change the server accepted — the card celebrates it (FEAT-018). */
+  onSaved: () => void;
   mutations: {
     join: ReturnType<typeof useJoinRound>;
     update: ReturnType<typeof useUpdatePledge>;
@@ -158,10 +174,16 @@ function PledgeSheet({
   const plural = unitLabelPluralFor(round.service);
   const units = clampUnits(draft);
   const done = { onSuccess: onClose };
+  const saved = {
+    onSuccess: () => {
+      onClose();
+      onSaved();
+    },
+  };
 
   const commit = joined
-    ? () => update.mutate({ id: round.id, units }, done)
-    : () => join.mutate({ id: round.id, units }, done);
+    ? () => update.mutate({ id: round.id, units }, saved)
+    : () => join.mutate({ id: round.id, units }, saved);
   const unchanged = joined && units === round.myUnits;
   const cheaper = round.nextTier && round.nextTier.price < round.currentPrice ? round.nextTier : undefined;
 
@@ -328,11 +350,24 @@ function SparkBurst() {
 function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
   const progress = tierProgress(round);
   const liveCount = useCountUp(round.unitsCount);
-  const closing = formatCountdown(round.deadline);
   // "Closes in 6h" is a different kind of fact from "Closes in 4 days". Asked of the
   // deadline itself rather than by re-parsing the sentence just formatted from it.
   const remainingMs = new Date(round.deadline).getTime() - Date.now();
   const urgent = remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000;
+  // FEAT-018: the last day ticks, once a second; further out, no timer at all.
+  const now = useNow(urgent);
+  const closing = urgent ? formatClock(round.deadline, now) : formatCountdown(round.deadline);
+  const joined = round.myUnits > 0;
+
+  // FEAT-018: celebrate a saved pledge, and a tier reached while the card is on screen.
+  // Tracked during render (as PledgeSheet tracks `open`), not in an effect.
+  const reached = reachedTiers(round);
+  const [seenReached, setSeenReached] = useState(reached);
+  const [burst, setBurst] = useState(0);
+  if (reached !== seenReached) {
+    setSeenReached(reached);
+    if (reached > seenReached) setBurst((n) => n + 1);
+  }
 
   return (
     <Card padding="none"
@@ -351,10 +386,22 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
         <div className="min-w-0">
           <CardEyebrow>{round.service.category}</CardEyebrow>
           <CardTitle size="lg" className="mt-1.5">{round.service.name}</CardTitle>
+          {joined && (
+            <Badge
+              tone="green"
+              icon={<Icon name="check" size={13} strokeWidth={2.4} />}
+              className="mt-2"
+              data-testid={`joined-${round.id}`}
+            >
+              You&apos;re in
+            </Badge>
+          )}
         </div>
         <Badge
           tone={urgent ? 'amber' : 'slate'}
           icon={<Icon name="clock" size={13} strokeWidth={2.2} />}
+          className={urgent ? 'num' : undefined}
+          data-testid={`closing-${round.id}`}
         >
           {closing}
         </Badge>
@@ -377,7 +424,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
           </div>
         </div>
         {/* The live count lives inside its own progress: one fact, not two. */}
-        <div data-testid={`units-count-${round.id}`} className="shrink-0">
+        <div data-testid={`units-count-${round.id}`} className="relative shrink-0">
           <span className="sr-only-text">{formatUnits(round.unitsCount, round.service)} pledged</span>
           <TierRing
             label={`${round.service.name}: progress toward the next price`}
@@ -386,8 +433,11 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
             unitLabel={unitLabelPluralFor(round.service)}
             size={lead ? 108 : 92}
           />
+          <Celebrate burst={burst} />
         </div>
       </div>
+
+      <PriceLadder round={round} />
 
       {/* What one unit INCLUDES — the part that actually settles scope disputes
           (ADR-0019), shown where the resident decides whether to join. */}
@@ -401,7 +451,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
       )}
 
       <div className="mt-[17px] border-t border-line/10 pt-[17px]">
-        <JoinControl round={round} />
+        <JoinControl round={round} onSaved={() => setBurst((n) => n + 1)} />
       </div>
     </Card>
   );
@@ -448,6 +498,8 @@ export function RoundsPage() {
           data-testid="rounds-empty"
         />
       )}
+
+      {data && data.length > 0 && <RoundsSummary rounds={data} />}
 
       {data && data.length > 0 && (
         <section className="stagger flex flex-col gap-3.5" aria-label="Open rounds">

@@ -59,7 +59,7 @@
 | CHORE-022 | An admin's sign-in rests on a 6-digit code reachable through two doors (~30%/yr sustained-attack residual) | triaged | P2 | 2026-10-17 | — | loop/work/CHORE-022-admin-otp-strength/ | ADR-0027 |
 | FEAT-016 | Premium phone-app feel: dark mode with a Telegram-style switch, sheets, native chrome | done | P1 | 2026-10-18 | — | loop/work/FEAT-016-native-feel-dark-mode-sheets/ | ADR-0021, ADR-0022, ADR-0028 |
 | FEAT-017 | Vercel-style "Mono" look in day and night — flat hairline surfaces, Geist, tight radii | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-017-mono-look/ | ADR-0021, ADR-0028, ADR-0029 |
-| FEAT-018 | Group buys that feel alive: price ladder, live countdown, invite neighbours, celebrate | triaged | P1 | 2026-10-19 | — | loop/work/FEAT-018-rounds-that-feel-alive/ | ADR-0021, ADR-0022, ADR-0030 |
+| FEAT-018 | Group buys that feel alive: price ladder, live countdown, invite neighbours, celebrate | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-018-rounds-that-feel-alive/ | ADR-0021, ADR-0022, ADR-0030 |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →

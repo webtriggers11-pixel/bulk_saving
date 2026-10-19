@@ -28,3 +28,17 @@ export function formatCountdown(deadlineIso: string, now: Date = new Date()): st
   }
   return 'Closing soon';
 }
+
+/**
+ * The last day as a ticking clock (FEAT-018): "Closes in 05:42:09". Only meaningful under
+ * 24 hours — the caller decides when; past the deadline it reads "Closed" like the above.
+ */
+export function formatClock(deadlineIso: string, now: number = Date.now()): string {
+  const remainingMs = new Date(deadlineIso).getTime() - now;
+  if (Number.isNaN(remainingMs) || remainingMs <= 0) {
+    return 'Closed';
+  }
+  const total = Math.floor(remainingMs / 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `Closes in ${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+}

@@ -56,7 +56,7 @@ export function TierRing({ percent, value, unitLabel, label, size = 108 }: TierR
           strokeDasharray={CIRCUMFERENCE.toFixed(2)}
           strokeDashoffset={offset.toFixed(2)}
           transform="rotate(-90 40 40)"
-          className="transition-[stroke-dashoffset] duration-500 ease-entrance drop-shadow-[0_4px_9px_rgb(var(--brand)/0.5)]"
+          className="ring-arc transition-[stroke-dashoffset] duration-500 ease-entrance drop-shadow-[0_4px_9px_rgb(var(--brand)/0.5)]"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

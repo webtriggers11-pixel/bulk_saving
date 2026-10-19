@@ -923,3 +923,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs (FEAT-018's in-progress files stashed aside), both exit 0 and identical — backend 396/396, web 444/444, 1607 class tokens. No flakes.
 - FEAT-017 → done.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — FEAT-018 — T1–T5 built
+- `roundMath.ts` (tiers sorted, reached, units to next, evenly-spaced ladder fill, best saving, "N more <word>"); `PriceLadder` (track + dots decorative, an ordered list that says reached/next, "3 more AC units and everyone pays ₹700" / "…goes ahead"); `RoundsSummary` (Open · You're in · Could save — a dash, not ₹0); `InviteButton` (Web Share → clipboard → toast; text names service and price only); `Celebrate` (16 CSS confetti pieces, deterministic, none under reduced motion — in JS and in the stylesheet); `useNow` + `formatClock` (HH:MM:SS under 24h only, interval cleared on unmount); "You're in" badge; ring glow off under Mono (`.ring-arc`). `Fact` gained `size="large"` (plain). Icon `share`.
+- The BUG-007 class-conflict guard caught padding passed into `Fact` → spacing moved to the `<dl>`.
+- V1: gate exit 0 — backend 396/396, web 471/471 (+27), 1613 class tokens.
+- By: agent (autonomous)

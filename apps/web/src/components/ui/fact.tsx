@@ -13,6 +13,8 @@ interface FactProps {
    * the admin round detail ended up one step out of sync with the resident cards.
    */
   variant?: 'tile' | 'row' | 'plain';
+  /** `plain` only: `large` sets the value as a headline figure (FEAT-018 summary strip). */
+  size?: 'normal' | 'large';
   /**
    * The id goes on the VALUE, not the wrapper, because that is what a screen's
    * contract points at ("my-units" is the number, not the tile). Named `testId`
@@ -31,7 +33,7 @@ const TERM = 'term-label';
  * Renders `<dt>/<dd>`, so the CALLER must place it inside a `<dl>` — every current
  * one does, and a bare pair outside a list is invalid markup.
  */
-export function Fact({ term, value, children, variant = 'tile', testId, className }: FactProps) {
+export function Fact({ term, value, children, variant = 'tile', size = 'normal', testId, className }: FactProps) {
   const rendered = value ?? children;
   if (variant === 'row') {
     return (
@@ -53,7 +55,10 @@ export function Fact({ term, value, children, variant = 'tile', testId, classNam
     return (
       <div className={cn('min-w-0', className)}>
         <dt className={TERM}>{term}</dt>
-        <dd className="num mt-1 text-body font-extrabold text-ink" data-testid={testId}>
+        <dd
+          className={cn('num mt-1 font-extrabold text-ink', size === 'large' ? 'text-title' : 'text-body')}
+          data-testid={testId}
+        >
           {rendered}
         </dd>
       </div>
