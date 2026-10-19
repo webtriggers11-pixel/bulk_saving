@@ -7,4 +7,4 @@
 - [x] T5 Browser pass, day + night, phone width (AC7)
 - [x] T6 DESIGN-SYSTEM.md
 - [x] T7 V2 round 1 FAIL → 2×P1, 1×P2, 4×P3 fixed
-- [ ] T8 V3 two back-to-back gate runs
+- [x] T8 V2 round 2 PASS (P3 regex anchored); V3 two back-to-back gate runs identical (396/444)

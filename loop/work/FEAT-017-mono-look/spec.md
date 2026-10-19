@@ -1,6 +1,6 @@
 # FEAT-017 — A Vercel-style "Mono" look, in day and night
 
-**Status:** specced · **Priority:** P1 · **Owner:** Vivek (requested) / agent · **Opened:** 2026-10-19
+**Status:** done · **Priority:** P1 · **Owner:** Vivek (requested) / agent · **Opened:** 2026-10-19
 
 ## Problem / Why
 
@@ -22,23 +22,23 @@ built so a new look is CSS, not a component rewrite — this item uses it that w
 
 ## Acceptance criteria (testable — this IS the definition of done)
 
-- [ ] AC1 — `data-theme="mono"` is a fourth palette: day and night blocks declaring the same
+- [x] AC1 — `data-theme="mono"` is a fourth palette: day and night blocks declaring the same
       token names as the others; every ink ≥ 4.5:1 on its ground and paper, by day and by
       night; the fill text (`--on-fill`) ≥ 4.5:1 on `--brand` and `--brand-deep`.
-- [ ] AC2 — geometry and type are tokens: radii (`--radius-*`) and the sans family
+- [x] AC2 — geometry and type are tokens: radii (`--radius-*`) and the sans family
       (`--font-sans`) are CSS variables; the three existing palettes keep today's values
       exactly; Mono uses 6/8/8/10/12/16px radii, Geist, and Geist Mono for the micro-labels.
-- [ ] AC3 — Mono surfaces are flat: paper with a 1px hairline, no backdrop blur on cards, no
+- [x] AC3 — Mono surfaces are flat: paper with a 1px hairline, no backdrop blur on cards, no
       mesh washes or ambient drift, a faint fading grid on the ground; hover darkens the
       hairline instead of lifting; no specular sweep, sheen or halo; primary button is the
       ink colour (black by day, near-white by night) with a light shadow.
-- [ ] AC4 — text and marks on an accent fill use `on-fill`, never literal `white`, so a
+- [x] AC4 — text and marks on an accent fill use `on-fill`, never literal `white`, so a
       light fill at night carries dark text. The white allowlist shrinks to the switch knob and the swatch tick (always on a day fill).
-- [ ] AC5 — Mono is the default for a device with no stored palette (pre-paint script and
+- [x] AC5 — Mono is the default for a device with no stored palette (pre-paint script and
       `lib/appearance.ts` agree); unknown stored values fall back to Mono; Appearance lists
       it first as "Mono"; the status-bar colour table covers it.
-- [ ] AC6 — markup is byte-identical under all four palettes (the look stays CSS).
-- [ ] AC7 — browser pass: resident Home/Profile and admin dashboard, Mono day and night, at
+- [x] AC6 — markup is byte-identical under all four palettes (the look stays CSS).
+- [x] AC7 — browser pass: resident Home/Profile and admin dashboard, Mono day and night, at
       phone width; no console errors.
 
 ## Out of scope (explicit, prevents gold-plating)

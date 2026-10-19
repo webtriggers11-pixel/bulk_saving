@@ -419,7 +419,7 @@ describe('FEAT-017 — Mono keeps every focus ring and the switch knob (V2 P1-1,
   it('every focus box-shadow utility in a component has a Mono rule that outranks the overrides', () => {
     const used = new Set<string>();
     for (const file of appSources()) {
-      for (const [m] of readFileSync(file, 'utf8').matchAll(/\b(?:group-)?focus(?:-visible)?:shadow-[a-z]+/g)) {
+      for (const [m] of readFileSync(file, 'utf8').matchAll(/(?<![a-z-])(?:group-)?focus(?:-visible)?:shadow-[a-z]+/g)) {
         used.add(m);
       }
     }

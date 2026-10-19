@@ -913,3 +913,13 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
   - P3: progress shimmer hidden under Mono; day accent contrast test reads `--on-fill`; swatch flattening noted in ADR-0029 (§7); focus ring strength (with P1-1).
 - V1: gate exit 0 — backend 396/396, web 444/444.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-018 — TRIAGED: group buys that feel alive
+- Owner (mid-FEAT-017): "use modern components for user-facing to make it eye-catching … /rounds … more creative". Scoped to the rounds screen: summary strip, a price ladder built from the tiers every round already carries, invite-neighbours (Web Share → clipboard), a "you're in" mark, a CSS celebration on join/tier-advance, a live countdown under 24h, and the tier-ring drop-shadow artifact seen in the FEAT-017 browser pass. Frontend only. Starts after FEAT-017 closes.
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-017 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 396/444; 4 mutations killed): PASS. Verified the focus rules beat every Mono override and nothing else, Switch/SearchField group-focus, knob ~16:1, primary shadow. Two P3s: the focus-coverage regex also matched inside `peer-focus-visible:` → anchored (taken); knob test is source-regex not contrast (noted, not taken).
+- V3: two back-to-back gate runs (FEAT-018's in-progress files stashed aside), both exit 0 and identical — backend 396/396, web 444/444, 1607 class tokens. No flakes.
+- FEAT-017 → done.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
