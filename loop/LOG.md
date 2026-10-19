@@ -1193,3 +1193,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The install card (tinted feature card: breathing icon, how-to paragraph, filled button and a "Connected" pill on one line) becomes a settings row like Appearance and Notifications: `SettingsRow` (icon · title · one line · trailing control; a button when the row is itself a target). Install: "Install app" row with a small button when installable; "Installed" row when standalone; the iOS how-to as the row's line otherwise (`install-hint` / `installed-note` ids kept). The connection state moves under the identity badge as a quiet dot + word (`connection-state` kept). Icon boxes share one class (44px).
 - V1: gate exit 0 — backend 464/464, web 604/604, 3284 class tokens. Profile/style/primitive suites 229/229.
 - By: agent (autonomous)
+
+## 2026-10-19 — CHORE-024 — browser pass
+- Preview :5175 /profile: hero (monogram · Signed in as · name · Resident badge · "● Connected"), Phone + Society tiles, then one list — Install app (line + small filled button), Appearance (line + arrow), Notifications (line + switch) — all one row shape, then Log out. Nothing competes inside a row any more.
+- By: agent (autonomous)
