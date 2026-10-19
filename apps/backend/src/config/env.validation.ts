@@ -1,5 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, MinLength, validateSync } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
 
 /** Minimum length for any signing/hashing secret. */
 const SECRET_MIN_LENGTH = 16;
@@ -90,6 +90,37 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsIn(['development', 'test', 'production'])
   NODE_ENV?: string;
+
+  /**
+   * Web push identity (FEAT-020, ADR-0032). All three or none: without them push is
+   * switched off (subscribing answers PUSH_DISABLED). Required in production.
+   * Generate with `npx web-push generate-vapid-keys`; SUBJECT is a `mailto:` or https URL.
+   */
+  @IsOptional()
+  @IsString()
+  VAPID_PUBLIC_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  VAPID_PRIVATE_KEY?: string;
+
+  @IsOptional()
+  @Matches(/^(mailto:|https:\/\/)/, { message: 'VAPID_SUBJECT must be a mailto: or https:// URL.' })
+  VAPID_SUBJECT?: string;
+
+  /** Push worker tuning (ADR-0032): parallel sends per process, and a cross-worker ceiling. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  PUSH_CONCURRENCY?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  PUSH_RATE_PER_SECOND?: number;
 }
 
 /**
@@ -147,6 +178,11 @@ export function assertProductionSafe(env: EnvironmentVariables): void {
     problems.push(
       'CORS_ORIGINS must list the exact browser origins allowed to call this API (unset means no browser can use it)',
     );
+  }
+  // FEAT-020 (ADR-0032): residents opt in to push expecting it to work; a missing key is
+  // silent (every subscribe answers PUSH_DISABLED), so production refuses to boot without it.
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !env.VAPID_SUBJECT) {
+    problems.push('VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT must all be set — web push needs them');
   }
   if (env.OTP_DEV_LOG === 'true') {
     problems.push('OTP_DEV_LOG must not be enabled in production — it exposes one-time passcodes');

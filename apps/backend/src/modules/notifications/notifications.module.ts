@@ -5,6 +5,7 @@ import { NotificationDispatchReconciler } from './notification-dispatch.reconcil
 import { NOTIFICATION_CHANNEL } from './notification-channel';
 import { NOTIFICATIONS_QUEUE, NotificationsService } from './notifications.service';
 import { StubSmsChannel } from './stub-sms.channel';
+import { PushModule } from '../push/push.module';
 
 /**
  * Binds the active {@link NotificationChannel} implementation (v1 = stub SMS;
@@ -16,7 +17,8 @@ import { StubSmsChannel } from './stub-sms.channel';
  * the rounds domain, which imports this module.
  */
 @Module({
-  imports: [BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE })],
+  // FEAT-020: dispatching a notification also fans it out to the resident's push devices.
+  imports: [BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }), PushModule],
   providers: [
     { provide: NOTIFICATION_CHANNEL, useClass: StubSmsChannel },
     NotificationsService,

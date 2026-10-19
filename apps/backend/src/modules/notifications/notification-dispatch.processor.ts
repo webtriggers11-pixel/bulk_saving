@@ -8,6 +8,7 @@ import {
   type NotificationJobData,
   NotificationsService,
 } from './notifications.service';
+import { PushService } from '../push/push.service';
 
 /** What the processor reports back: whether it actually sent, and why not if it did not. */
 export interface NotificationSendResult {
@@ -35,6 +36,7 @@ export class NotificationDispatchProcessor extends WorkerHost {
   constructor(
     private readonly notifications: NotificationsService,
     @Inject(NOTIFICATION_CHANNEL) private readonly channel: NotificationChannel,
+    private readonly push: PushService,
   ) {
     super();
   }
@@ -57,6 +59,11 @@ export class NotificationDispatchProcessor extends WorkerHost {
       // Already SENT (a duplicate job) or FAILED — never send twice.
       return { sent: false, reason: 'already-terminal' };
     }
+
+    // FEAT-020 (ADR-0032): queue the push for each of the resident's devices FIRST, so a
+    // failing SMS provider cannot hold push back. Idempotent on (notification, device):
+    // when this job retries after an SMS failure, nothing is queued twice.
+    await this.push.fanOut(notification);
 
     try {
       await this.channel.send(notification.resident.phone, notification.body);

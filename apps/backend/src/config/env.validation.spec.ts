@@ -11,6 +11,9 @@ function env(overrides: Partial<EnvironmentVariables> = {}): EnvironmentVariable
     OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
     NODE_ENV: 'production',
     CORS_ORIGINS: 'https://app.example.com',
+    VAPID_PUBLIC_KEY: 'BPublicKeyForTests',
+    VAPID_PRIVATE_KEY: 'privateKeyForTests',
+    VAPID_SUBJECT: 'mailto:ops@example.com',
     ...overrides,
   } as EnvironmentVariables;
 }
@@ -23,6 +26,13 @@ describe('assertProductionSafe', () => {
   it('accepts a safe production config', () => {
     expect(() => assertProductionSafe(env())).not.toThrow();
   });
+
+  it.each(['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'] as const)(
+    'refuses production without %s — push would silently refuse every subscriber (FEAT-020)',
+    (key) => {
+      expect(() => assertProductionSafe(env({ [key]: undefined }))).toThrow(/VAPID/);
+    },
+  );
 
   it('does nothing outside production, so local dev is unaffected', () => {
     expect(() =>

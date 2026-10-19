@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/bootstrap';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../../src/modules/notifications/notification-channel';
+import { PUSH_SENDER, type PushSender, type PushTarget } from '../../src/modules/push/push-sender';
 
 /**
  * A notification channel that records what was "delivered" — the ONLY test hook
@@ -42,16 +43,41 @@ export class CapturingChannel implements NotificationChannel {
  * overriding the SMS channel with a capturing fake so tests can recover the OTP
  * WITHOUT it ever appearing in an API response.
  */
-export async function createTestApp(channel: CapturingChannel): Promise<INestApplication> {
+export async function createTestApp(
+  channel: CapturingChannel,
+  pushSender: PushSender = new CapturingPushSender(),
+): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(NOTIFICATION_CHANNEL)
     .useValue(channel)
+    .overrideProvider(PUSH_SENDER)
+    .useValue(pushSender)
     .compile();
 
   const app = moduleRef.createNestApplication();
   configureApp(app);
   await app.init();
   return app;
+}
+
+/**
+ * FEAT-020: a push sender that records what it would have sent. Enabled, so the push
+ * pipeline runs end to end; `failWith` makes the next sends throw (e.g. a PushGoneError).
+ */
+export class CapturingPushSender implements PushSender {
+  readonly enabled = true;
+  readonly publicKey = 'BTestVapidPublicKey';
+  public sent: Array<{ endpoint: string; payload: Record<string, unknown> }> = [];
+  public failWith: Error | null = null;
+
+  async send(target: PushTarget, payload: string): Promise<void> {
+    if (this.failWith) throw this.failWith;
+    this.sent.push({ endpoint: target.endpoint, payload: JSON.parse(payload) });
+  }
+
+  to(endpoint: string): Array<Record<string, unknown>> {
+    return this.sent.filter((s) => s.endpoint === endpoint).map((s) => s.payload);
+  }
 }
 
 /** Random 8-char uppercase alphanumeric invite code (matches the spec format). */

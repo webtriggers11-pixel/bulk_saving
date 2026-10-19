@@ -23,6 +23,7 @@ import { useCountUp } from './useCountUp';
 import { RoundsSkeleton } from './RoundsSkeleton';
 import { PriceLadder } from './PriceLadder';
 import { RoundsSummary } from './RoundsSummary';
+import { PushPrompt } from '../push/PushPrompt';
 import { InviteButton } from './InviteButton';
 import { Celebrate } from './Celebrate';
 import { useDeadlineClock } from './useDeadlineClock';
@@ -548,6 +549,9 @@ export function RoundsPage() {
       )}
 
       {data && data.length > 0 && <RoundsSummary rounds={data} />}
+
+      {/* FEAT-020: the one contextual ask for notifications, once something is joined. */}
+      {data && <PushPrompt joinedAny={data.some((round) => round.myUnits > 0)} />}
 
       {data && data.length > 0 && (
         <section className="stagger flex flex-col gap-3.5" aria-label="Open rounds">

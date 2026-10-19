@@ -989,3 +989,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 533/533, 1648 class tokens. No flakes.
 - FEAT-019 → done.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — FEAT-020 — T1–T6 built: web push on the outbox
+- ADR-0032. Dependency `web-push` 3.6.7 (+ types); additive migration `PushSubscription` (applied to the dev DB); env VAPID_* (dev keys generated into the gitignored apps/backend/.env; required in production by `assertProductionSafe`), PUSH_CONCURRENCY / PUSH_RATE_PER_SECOND.
+- Backend: `PushModule` (sender behind an interface, `push-send` queue, worker with concurrency + cross-worker limiter, 404/410 → delete, 3 final failures in a row → prune) and `PushApiModule` (routes; split out because Auth → Notifications → Push → Auth would cycle). The outbox dispatch worker fans out per device FIRST, then sends SMS. Per-event titles/links/tags; payload carries the device accent → per-accent icon. SSRF allowlist on endpoints (FCM / Mozilla / Apple / WNS, https, no port/credentials).
+- **Found by the integration test:** BullMQ refuses custom job ids containing `:` — fan-out threw, failing the whole outbox job and blocking the SMS too (only reachable once a resident HAS a device, so no prior test could see it) → id `<notification>_<device>`; the delivery test now also asserts the SMS still arrives.
+- Frontend: `public/push-sw.js` via `workbox.importScripts` (push → showNotification with accent icon/badge/tag; click → focus+navigate or open; off-site URLs fall back to `/`); per-accent icon PNGs + badge; `lib/push.ts`; Profile → Notifications switch; one-time prompt on /rounds after a first join; accent re-sync on colour change.
+- Gates caught on the way: `Uint8Array<ArrayBuffer>` (TS 5.9) for the VAPID key; BUG-007 guard (a text size passed into Button).
+- V1: gate exit 0 — backend 443/443 (+47), web 547/547 (+14), 1703 class tokens.
+- By: agent (autonomous)

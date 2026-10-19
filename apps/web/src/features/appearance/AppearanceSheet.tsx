@@ -11,6 +11,7 @@ import {
   type Palette,
   type SchemePreference,
 } from '../../lib/appearance';
+import { syncPushAccent } from '../../lib/push';
 import { cn } from '../../lib/utils';
 
 const SCHEME_OPTIONS = [
@@ -47,6 +48,8 @@ export function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () 
   function choosePalette(next: Palette) {
     const el = swatches.current[next];
     setPalette(next, el ? originOf(el) : undefined);
+    // FEAT-020: pushes to this phone arrive in the colour it uses.
+    void syncPushAccent(next);
   }
 
   // A radio group: arrows move and choose, as in FilterChips.

@@ -75,6 +75,7 @@ model Resident {
   roundParticipations RoundParticipant[]
   notifications       Notification[]
   ratings             Rating[]
+  pushSubscriptions   PushSubscription[]
 
   @@unique([societyId, phone])
   // CHORE-015: the admin door (unauthenticated) looks residents up by phone ALONE; the
@@ -235,6 +236,29 @@ model Notification {
 
   @@index([status, createdAt])
   @@index([residentId, createdAt])
+}
+
+// Web push (FEAT-020, ADR-0032). One row per browser/device a resident turned
+// notifications on for. `endpoint` is the push service URL and is globally unique;
+// `p256dh`/`auth` are that device's public encryption keys (not secrets of ours, but
+// never logged in full). `accent` is the colour the device chose (FEAT-019), so a push
+// can be styled to match. Rows are pruned when the push service says the device is gone.
+model PushSubscription {
+  id                  String    @id @default(cuid())
+  residentId          String
+  resident            Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  societyId           String
+  endpoint            String    @unique
+  p256dh              String
+  auth                String
+  accent              String    @default("mono")
+  userAgent           String?
+  consecutiveFailures Int       @default(0)
+  lastSuccessAt       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([residentId])
 }
 
 // Post-service rating (FEAT-007, ADR-0017). One row per (round, resident): the

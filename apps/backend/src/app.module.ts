@@ -11,6 +11,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ResidentsModule } from './modules/residents/residents.module';
 import { RoundsModule } from './modules/rounds/rounds.module';
+import { PushApiModule } from './modules/push/push-api.module';
 import { SocietiesModule } from './modules/societies/societies.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -52,6 +53,7 @@ import { RedisModule } from './redis/redis.module';
     CatalogModule,
     VendorsModule,
     RoundsModule,
+    PushApiModule,
   ],
 })
 export class AppModule {}

@@ -13,6 +13,7 @@ import { SchemeToggle } from '../../components/ui/scheme-toggle';
 import { useState } from 'react';
 import { useAppearance } from '../../lib/appearance';
 import { AppearanceSheet, describeAppearance } from '../appearance/AppearanceSheet';
+import { NotificationsRow } from '../push/NotificationsRow';
 
 /** Human label for a role enum — the resident should not read SUPER_ADMIN. */
 const ROLE_LABEL: Record<string, string> = {
@@ -174,6 +175,9 @@ export function ProfilePage() {
           <Icon name="forward" size={18} strokeWidth={2} className="nudge text-ink-soft" />
         </button>
         <AppearanceSheet open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
+
+        {/* FEAT-020: web push for this phone. */}
+        <NotificationsRow />
 
         <Button variant="secondary" className="col-span-2 w-full" onClick={handleLogout}>
           <Icon name="logout" size={18} strokeWidth={2} />

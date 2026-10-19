@@ -32,6 +32,8 @@ export const ErrorCode = {
   // Ratings (FEAT-007)
   NOT_A_PARTICIPANT: 'NOT_A_PARTICIPANT',
   ROUND_NOT_DELIVERED: 'ROUND_NOT_DELIVERED',
+  // Web push (FEAT-020)
+  PUSH_DISABLED: 'PUSH_DISABLED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

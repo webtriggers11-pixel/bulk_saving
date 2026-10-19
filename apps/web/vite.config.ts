@@ -8,7 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'push-sw.js', 'push/*.png'],
+      // FEAT-020 (ADR-0032): the push + notificationclick handlers, loaded into the
+      // generated worker. Caching strategy unchanged (ADR-0015).
+      workbox: { importScripts: ['push-sw.js'] },
       manifest: {
         name: 'Bulk Saving',
         short_name: 'BulkSaving',

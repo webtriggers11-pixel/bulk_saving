@@ -557,3 +557,41 @@ export interface AdminDashboardDto {
    */
   ratings: RatingSummary;
 }
+
+/* ---------------------------------------------------------------------------
+ * Web push (FEAT-020, ADR-0032)
+ * ------------------------------------------------------------------------- */
+
+/** The colour pairs a device can choose (FEAT-019). A push is styled to the device's. */
+export const ACCENTS = ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon'] as const;
+export type Accent = (typeof ACCENTS)[number];
+
+/** `POST /push/subscriptions` — what `PushSubscription.toJSON()` gives, plus the accent. */
+export interface PushSubscribeBody {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  accent: Accent;
+}
+
+/** `DELETE /push/subscriptions` — the device to forget. */
+export interface PushUnsubscribeBody {
+  endpoint: string;
+}
+
+/** `GET /push/vapid-public-key` — null when push is not configured on this server. */
+export interface PushConfigDto {
+  publicKey: string | null;
+}
+
+/** What the service worker receives in a push event (JSON). Never personal data. */
+export interface PushPayload {
+  title: string;
+  body: string;
+  /** Path inside the app to open on tap, e.g. `/rounds`. */
+  url: string;
+  /** Collapses repeats: one visible notification per round. */
+  tag: string;
+  accent: Accent;
+  icon: string;
+  badge: string;
+}
