@@ -1290,3 +1290,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - By: agent (autonomous) + code-reviewer subagent
 - Gate run 1 on the round-2 fixes died with `Segmentation fault: 11` two suites into the backend tests — CHORE-021's Node 24 GC crash, not a failure. Rerunning.
 - V1 run 2: gate exit 0 — backend 500/500 (+12: pagination source guard and unit cases, normaliser edge cases, the shared-budget case), web 634/634, 3280 class tokens.
+
+## 2026-10-20 — FEAT-025 round 3 PASS · BUG-019 round 2 PASS → P3s taken
+- One gate (worktree at 2706e17; exit 0, 500/634, 3280 tokens).
+- **FEAT-025: PASS.** The source guard catches a dropped `{ id }` in rounds.service AND in catalog-admin (nested include order after it). P3 noted, not taken: the guard is positional and depth-blind (an `orderBy` placed after `...pageArgs(`, or an include rewritten as an array order, would fool it) — no current file has either shape; a bracket-walking version is the fix if one ever appears.
+- **BUG-019: PASS.** Dev-server proof on :5199 — the import now comes from `/node_modules/.vite/deps/@bulk_shared.js` with CJS interop. Normaliser probes: no wrongly accepted input; foreign numbers without `+` and Indian landlines are refused by design. The shared-budget test discriminates (a different second spelling → 200, the same person's → 429).
+- P3s taken: a hint under the phone field ("Use your 10-digit mobile number, or +country code and number." — `PHONE_HINT`, also the server-refusal message) with `aria-describedby`, shown only once something implausible is typed; `+91 (0) 98765 43210` (the business-card form) accepted — trunk 0 after 91 dropped; tests for the gating + hint (both pages), the `VALIDATION_ERROR` message, and the admin canonical display. Auth suites 29/29, normaliser 25/25.
+- Closing double gate running on main.
+- By: agent (autonomous) + code-reviewer subagent
