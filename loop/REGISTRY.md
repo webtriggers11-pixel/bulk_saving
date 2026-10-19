@@ -88,3 +88,4 @@
 | FEAT-024 | Confirm before destructive actions: log out, leave a round, delete a rating, withdraw an ask, admin cancel/deactivate — one confirm sheet | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-024-confirm-destructive-actions/ | ADR-0022 |
 | FEAT-025 | Server-side pagination on the list endpoints and the screens that read them | done | P1 | 2026-10-19 | 2026-10-20 | loop/work/FEAT-025-server-side-pagination/ | ADR-0005 |
 | BUG-019 | Phone stored exactly as typed — `9999900201` and `+919999900201` become two residents (no canonical form) | done | P2 | 2026-10-19 | 2026-10-20 | loop/work/BUG-019-phone-not-normalised/ | ADR-0007, ADR-0036 |
+| FEAT-026 | Dev mode: the OTP arrives as a toast at the top (dev-only route + dev-only bundle path; amends ADR-0020) | in-progress | P2 | 2026-10-20 | — | loop/work/FEAT-026-dev-otp-toast/ | ADR-0020, ADR-0037 |

@@ -1304,3 +1304,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-025 → done (keyset pages on every list, explicit "Show more", ADR-0035). BUG-019 → done (one canonical phone, ADR-0036).
 - Session total: FEAT-020, BUG-017, BUG-018, FEAT-023, CHORE-024, FEAT-024, FEAT-025, BUG-019 closed; ADR-0034/0035/0036 written. Open: BUG-014, CHORE-022, CHORE-023, CHORE-010/011/012/013 (unchanged).
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-026 — OPENED: dev OTP toast
+- Owner: "in dev mode otp send in toast msg in top". ADR-0020 removed the code from the auth response deliberately; this keeps that: a `/dev/otp` route whose module is registered only under `OTP_DEV_LOG=true` outside production, read by a DEV-bundle-only path in the web, shown as a top toast with "Use it". ADR-0037 amends ADR-0020 §A.
+- By: agent (autonomous)
