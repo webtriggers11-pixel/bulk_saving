@@ -1130,3 +1130,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 595/595, 3278 class tokens.
 - BUG-012 → done. The "no apostrophes in .tsx comments" workaround in HANDOFF is retired.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-020 — T7 real-browser end-to-end PASS; CLOSED
+- Production preview on :5175 (built 19:27 IST, newer than the last source change). Chrome had already granted notification permission for localhost:5175; the generated SW with `push-sw.js` was active.
+- Signed in as +919999900201 (Blue Waters) through the real onboarding flow (OTP read from the dev Redis stash). Profile → Notifications switch ON → `PushSubscription` row (accent mono, Chrome 155 UA). Left and re-joined the RO Water Purifier round from the UI → `Notification` ROUND_JOINED created 16:52:33.501, `pushQueuedAt` .525, SMS SENT .544, device `lastSuccessAt` .821 — a real push through FCM in ~300ms; the SW displayed "You're in ✓ / BulkSaving: You're in — 1 purifier of RO Water Purifier Service. The round closes 30 Oct, 10:13 pm…" with icon-mono.png, badge.png, tag `round:<id>`, data.url `/rounds` (`registration.getNotifications()`). push-send queue: 4 completed, 0 failed.
+- Appearance → Ocean → the stored accent moved mono → ocean (AC4 re-sync) without a new OTP or re-subscribe.
+- Seen on the way (not FEAT-020): the onboarding phone field sends the number exactly as typed — `9999900201` and `+919999900201` are two different residents. Triage candidate, noted in HANDOFF.
+- FEAT-020 → done. All AC1–AC8 met; V2 round 3 PASS and V3 (449/551, 1703 tokens) stand from the previous entry.
+- By: agent (autonomous)
