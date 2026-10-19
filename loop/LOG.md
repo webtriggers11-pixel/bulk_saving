@@ -1062,3 +1062,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (independent; gate exit 0, 456/574; 3 of 4 mutations killed): no P0/P1. P2-1 cross-society leak path untested (mutation dropping `societyId` from `stageAskOpened` survived) → the other society's resident now asks first and must be neither notified nor cleared; **mutation re-run by me: killed.** P2-2 read-then-delete under READ COMMITTED could silently drop an ask committed mid-transaction → delete exactly the notified ids; the dashboard lists only actionable pairs (no open round, offering still enabled — also P3-2). P2-3 a 409 (round opened since load) left the card failing forever → on ROUND_ALREADY_OPEN refresh rounds + catalog and say so; test. P3: shared JSDoc moved; SW `safePath` refuses protocol-relative `//host`; P3-1 (per-asker `queue.add` in dispatch) noted, not changed — shared outbox code, fine at today's scale.
 - V1: gate exit 0 — backend 456/456, web 575/575, 1750 class tokens. BUG-014 probe silent apart from expected 404s.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-022 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 456/575; askedFor OR-pair logic checked): PASS, one P2 — the two new dashboard filters were untested (both mutations survived) → tests: an ask raced in after the round opened is not listed; an ask for a withdrawn offering is not listed. **Both mutations re-run by me: killed.** P3 (top-100 then filter) documented in code.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 575/575, 1750 class tokens; BUG-014 probe printed the same 22 expected-404 lines both times (no flake).
+- FEAT-022 → done. Browser pass NOT done: the owner's :3000 API is still on code from 3:03 PM (nest --watch stopped restarting after the schema change; touching a file did not help) — the ask route answers 404 there. Needs the owner to restart it.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

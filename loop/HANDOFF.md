@@ -16,6 +16,12 @@
 - **Also closed:** FEAT-021 (service cards show their open round and book it in one tap via
   `/rounds?join=<id>`), BUG-013 (admin-auth test waited for ANY phone's OTP). Follow-up worth asking the
   owner: "Ask for this service" when no round is open (needs an API).
+- **Also closed:** FEAT-022 ("Ask for this service": demand on cards, admin to-do list, an opened round
+  notifies the askers by SMS + push deep link; migration `ServiceAsk` + SERVICE_ASK_OPENED). Browser pass
+  waits on the owner restarting the :3000 API (its watch mode is stuck on 3:03 PM code).
+- **Triaged:** BUG-014 — intermittent route-level 404 in backend integration tests, only inside full
+  verify.sh runs (2 of ~15 today). A test-only probe in `test/helpers/test-app.ts` logs every 404 (expected
+  ones included, ~22 per run); look for one on a route that exists.
 - **Triaged:** BUG-012 — `scripts/check-css-classes.mjs` pairs quotes across a whole file, so an
   apostrophe in a comment hides (or reveals) class lists; it bit three times this session (token count
   moved 1615→1570, 1642→1623, 1703→2008 with no class change). Until fixed: no apostrophes in comments

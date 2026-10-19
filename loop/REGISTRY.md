@@ -65,7 +65,7 @@
 | BUG-012 | check-css-classes pairs quotes across a whole file — an apostrophe in a comment silently hides class lists from the gate | triaged | P2 | 2026-10-19 | — | (folder at start) | ADR-0021 |
 | FEAT-021 | From a service to booking it in one tap: open-round status on service cards, deep link that opens the pledge sheet | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-021-services-to-booking/ | ADR-0010 |
 | BUG-013 | admin-auth integration test reads the latest OTP to ANY phone — leftover queued admin-door jobs from earlier suites hand it the wrong code (flaky, ~1 in 10 full runs) | done | P2 | 2026-10-19 | 2026-10-19 | (fix in test helpers; see LOG) | ADR-0027 |
-| FEAT-022 | "Ask for this service": residents ask, admin sees demand, an opened round notifies the askers | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-022-ask-for-this-service/ | ADR-0033 |
+| FEAT-022 | "Ask for this service": residents ask, admin sees demand, an opened round notifies the askers | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-022-ask-for-this-service/ | ADR-0033 |
 | BUG-014 | Intermittent route-level 404 in backend integration tests under verify.sh (auth OTP request, admin OTP verify) — ~2 in 12 gate runs | triaged | P2 | 2026-10-19 | — | (probe in test/helpers/test-app.ts) | — |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
