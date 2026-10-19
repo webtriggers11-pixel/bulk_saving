@@ -110,9 +110,17 @@ export interface AuthResult extends AuthTokens {
   resident: ResidentDto;
 }
 
-/** `POST /auth/refresh` body. */
+/** `POST /auth/refresh` body — and `POST /auth/sign-out`'s, which names the session to end. */
 export interface RefreshBody {
   refreshToken: string;
+}
+
+/**
+ * `POST /auth/sign-out` payload (BUG-017, ADR-0034). `signedOut` is false only when the
+ * token could not be read or belongs to someone else; an already-ended session is true.
+ */
+export interface SignOutResponse {
+  signedOut: boolean;
 }
 
 /** `GET /me` success payload. */

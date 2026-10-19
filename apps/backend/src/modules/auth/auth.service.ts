@@ -15,34 +15,49 @@ export interface AccessTokenPayload {
   role: Role;
 }
 
-/** Claims carried by a refresh token — `jti` is the rotation handle. */
+/**
+ * Claims carried by a refresh token — `jti` is the rotation handle, `sid` the session
+ * (one per device sign-in, ADR-0034). A token with no `sid` was issued before BUG-017
+ * and is still honoured: its first rotation moves it onto a session of its own.
+ */
 export interface RefreshTokenPayload {
   sub: string;
   jti: string;
+  sid?: string;
 }
 
 /**
- * Rotation is a compare-and-set on the stored id. `ARGV[3]` is the new handle's
- * lifetime in seconds, where `0` means "no expiry" (FEAT-013) — and `SET` without
- * `KEEPTTL` clears any TTL the key already carried, so a session cannot inherit an
- * expiry from a token issued under an older policy.
+ * Rotation is a compare-and-set on the stored id. KEYS[1] is the handle the token
+ * presents (its own session's, or the pre-BUG-017 per-resident key), KEYS[2] the handle
+ * the NEW token will carry — the same key, except when a legacy token is being moved
+ * onto a session of its own — and KEYS[3] the resident's session index. `ARGV[3]` is the
+ * new handle's lifetime in seconds, where `0` means "no expiry" (FEAT-013) — and `SET`
+ * without `KEEPTTL` clears any TTL the key already carried, so a session cannot inherit
+ * an expiry from a token issued under an older policy. The index follows the same clock.
  */
 const ROTATE_LUA = `
 if redis.call('get', KEYS[1]) ~= ARGV[1] then
   return 0
 end
+if KEYS[1] ~= KEYS[2] then
+  redis.call('del', KEYS[1])
+end
+redis.call('sadd', KEYS[3], ARGV[4])
 if tonumber(ARGV[3]) > 0 then
-  redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3])
+  redis.call('set', KEYS[2], ARGV[2], 'EX', ARGV[3])
+  redis.call('expire', KEYS[3], ARGV[3])
 else
-  redis.call('set', KEYS[1], ARGV[2])
+  redis.call('set', KEYS[2], ARGV[2])
+  redis.call('persist', KEYS[3])
 end
 return 1`;
 
 /**
  * Issues and verifies JWTs (ADR-0007). Access tokens are short-lived and carry
  * the tenant/role claims; refresh tokens do not expire by default (ADR-0024),
- * are rotated on every use, and their current id is tracked in Redis so a
- * reused/old token is rejected — and so a session can still be revoked.
+ * are rotated on every use, and their current id is tracked in Redis — one handle
+ * per SESSION, i.e. per device sign-in (ADR-0034) — so a reused/old token is
+ * rejected, and so one device, or every device, can still be signed out.
  */
 @Injectable()
 export class AuthService {
@@ -75,8 +90,10 @@ export class AuthService {
    * Refresh lifetime in seconds, or `null` for "never expires" — the default (ADR-0024).
    *
    * This is the ONLY clock that could end a session, and by default there isn't one:
-   * revocation is `DEL refresh:<residentId>`, which takes effect within one access-token
-   * lifetime. That is why {@link accessTtlSeconds} staying short is load-bearing now.
+   * revocation is {@link revokeSession} / {@link revokeAllSessions} (or deleting the
+   * `refresh:<residentId>:<sid>` keys by hand), which takes effect within one
+   * access-token lifetime. That is why {@link accessTtlSeconds} staying short is
+   * load-bearing now.
    */
   private get refreshTtlSeconds(): number | null {
     const raw = process.env.JWT_REFRESH_TTL_SECONDS;
@@ -91,20 +108,76 @@ export class AuthService {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 15 * 60;
   }
 
-  private refreshKey(residentId: string): string {
+  /** The pre-BUG-017 handle: one per resident. Only ever READ now, to migrate from. */
+  private legacyRefreshKey(residentId: string): string {
     return `refresh:${residentId}`;
   }
 
-  /** Mint a fresh access + refresh pair and record the refresh id as current. */
+  /** One handle per session (ADR-0034). */
+  private refreshKey(residentId: string, sid: string): string {
+    return `refresh:${residentId}:${sid}`;
+  }
+
+  /** The set of a resident's live session ids — what "sign out everywhere" walks. */
+  private sessionsKey(residentId: string): string {
+    return `sessions:${residentId}`;
+  }
+
+  /**
+   * Mint a fresh access + refresh pair for a NEW session and record its refresh id as
+   * current. Every sign-in is its own session: a second device never touches the first
+   * (BUG-017).
+   */
   async issueTokens(resident: Resident): Promise<AuthTokens> {
+    const sid = randomUUID();
     const jti = randomUUID();
-    const tokens = await this.signPair(resident.id, resident.societyId, resident.role as Role, jti);
-    const key = this.refreshKey(resident.id);
+    const tokens = await this.signPair(resident.id, resident.societyId, resident.role as Role, jti, sid);
+    const key = this.refreshKey(resident.id, sid);
+    const index = this.sessionsKey(resident.id);
     const ttl = this.refreshTtlSeconds;
     // A plain SET (no KEEPTTL) so re-issuing under the lifetime policy drops any
-    // expiry an earlier policy left on the key.
+    // expiry an earlier policy left on the key. The index follows the same clock.
     await (ttl === null ? this.redis.set(key, jti) : this.redis.set(key, jti, 'EX', ttl));
+    await this.redis.sadd(index, sid);
+    await (ttl === null ? this.redis.persist(index) : this.redis.expire(index, ttl));
     return tokens;
+  }
+
+  /**
+   * End ONE session — the device that presents this refresh token (sign-out). The
+   * token is verified for its signature and its subject only; a token that was already
+   * rotated or revoked still names the right session, and ending it again is harmless.
+   * Returns false when the token cannot be read at all.
+   */
+  async revokeSession(residentId: string, refreshToken: string): Promise<boolean> {
+    let payload: RefreshTokenPayload;
+    try {
+      payload = await this.jwt.verifyAsync<RefreshTokenPayload>(refreshToken, {
+        secret: this.refreshSecret,
+        algorithms: ['HS256'],
+        // A sign-out must work for an expiring token that has just expired, too.
+        ignoreExpiration: true,
+      });
+    } catch {
+      return false;
+    }
+    if (payload.sub !== residentId) return false;
+    const key = payload.sid ? this.refreshKey(residentId, payload.sid) : this.legacyRefreshKey(residentId);
+    await this.redis.del(key);
+    if (payload.sid) await this.redis.srem(this.sessionsKey(residentId), payload.sid);
+    return true;
+  }
+
+  /** End EVERY session of a resident — the kill switch for a lost or shared device. */
+  async revokeAllSessions(residentId: string): Promise<number> {
+    const index = this.sessionsKey(residentId);
+    const sids = await this.redis.smembers(index);
+    const keys = [
+      ...sids.map((sid) => this.refreshKey(residentId, sid)),
+      this.legacyRefreshKey(residentId),
+      index,
+    ];
+    return this.redis.del(...keys);
   }
 
   private async signPair(
@@ -112,6 +185,7 @@ export class AuthService {
     societyId: string,
     role: Role,
     jti: string,
+    sid: string,
   ): Promise<AuthTokens> {
     const accessToken = await this.jwt.signAsync(
       { sub: residentId, societyId, role } satisfies AccessTokenPayload,
@@ -119,7 +193,7 @@ export class AuthService {
     );
     const refreshTtl = this.refreshTtlSeconds;
     const refreshToken = await this.jwt.signAsync(
-      { sub: residentId, jti } satisfies RefreshTokenPayload,
+      { sub: residentId, jti, sid } satisfies RefreshTokenPayload,
       {
         secret: this.refreshSecret,
         algorithm: 'HS256',
@@ -176,17 +250,27 @@ export class AuthService {
     }
 
     const newJti = randomUUID();
+    // A token from before BUG-017 carries no session: this rotation gives it one, and
+    // the Lua moves the handle from the per-resident key to the per-session key in the
+    // same step, so nobody is asked for another OTP by the fix (ADR-0034).
+    const sid = payload.sid ?? randomUUID();
+    const currentKey = payload.sid
+      ? this.refreshKey(resident.id, payload.sid)
+      : this.legacyRefreshKey(resident.id);
     // Atomic compare-and-set: only rotate if the presented id is still current. The
     // lifetime is applied HERE too, not only at issue — a lifetime token guarded by a
     // handle that quietly re-acquired a 30-day TTL on first use is a session that dies
     // while every signature says it cannot (ADR-0024, option 3).
     const rotated = (await this.redis.eval(
       ROTATE_LUA,
-      1,
-      this.refreshKey(resident.id),
+      3,
+      currentKey,
+      this.refreshKey(resident.id, sid),
+      this.sessionsKey(resident.id),
       payload.jti,
       newJti,
       String(this.refreshTtlSeconds ?? 0),
+      sid,
     )) as number;
 
     if (rotated !== 1) {
@@ -196,6 +280,6 @@ export class AuthService {
       });
     }
 
-    return this.signPair(resident.id, resident.societyId, resident.role as Role, newJti);
+    return this.signPair(resident.id, resident.societyId, resident.role as Role, newJti, sid);
   }
 }

@@ -1145,3 +1145,14 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - **CHORE-024 (P2)** — owner's screenshot: the Profile "Add to your home screen" card (filled button + "Connected" pill on one line) and "overall I want a clean one". One settings list, one row shape; test ids kept.
 - Order: BUG-017 → FEAT-023 → CHORE-024.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-017 — fixed (per-device sessions, ADR-0034); V1 found BUG-018
+- Failing test first: "a second device's sign-in does not end the first device's session" → TOKEN_REVOKED on the first device's refresh (exactly the diagnosis). Fix: `sid` in the refresh token; handle `refresh:<rid>:<sid>` + index `sessions:<rid>`; rotation CAS per session, with a pre-fix token migrated onto its own session in the same Lua step (nobody re-OTPs); `POST /auth/sign-out` (guarded) ends one session; `revokeAllSessions` is the kill switch. Web: Home and Profile share `useSignOut` — push release → server sign-out → forget, each bounded to 3s. ADR-0034 amends ADR-0024; DEPLOY.md revocation procedure updated.
+- Tests: auth.service.spec +5 (second device, sign-out one, wrong resident/garbage, kill switch, legacy migration), auth.integration +1 (sign THIS device out, other stays; unauthenticated sign-out 401), web `useSignOut.test` +4, Profile/Home sign-out wiring. Auth suites alone: 14/14, 6/6; web alone 599/599.
+- V1 gate run 1: backend 462/463 — the one failure is `otp.service.spec` "DOES wait for the provider when the dispatch is awaited", a 30s timeout; passes 24/24 alone → flaky → **BUG-018** (test-only: a fixed 50ms sleep raced the request's Redis work; `HangingChannel.called` + a remembered release). Re-running the gate.
+- Environment: the global `pnpm` shim at ~/Library/pnpm/bin is broken (its target is gone, exit 126); `corepack pnpm` 11.10.0 works. The gate is run with a one-line wrapper on PATH from the scratchpad; nothing on the machine was changed.
+- By: agent (autonomous)
+
+## 2026-10-19 — TRIAGE — FEAT-024 confirmations, FEAT-025 server-side pagination
+- Owner: "some actions need confirmation like logout, delete, leave etc; also use server side pagination". FEAT-024: one confirm sheet (Sheet primitive, ADR-0022) in front of every destructive action — resident: log out, leave a round, delete a rating, withdraw an ask; admin: cancel a round, deactivate a vendor. FEAT-025: specced after reading the list endpoints (next entry).
+- By: agent (autonomous)

@@ -299,19 +299,34 @@ describe('OtpService (integration, needs Redis)', () => {
 describe('OtpService dispatch modes (ADR-0023, ADR-0027)', () => {
   let redis: RedisService;
 
-  /** A provider that accepts the send and never comes back. */
+  /**
+   * A provider that accepts the send and never comes back — until `finish()`. BUG-018:
+   * `finish()` used to release only a send that had ALREADY arrived; under the full
+   * suite the request's Redis work could take longer than the test's 50ms wait, so the
+   * send arrived after the release and hung the test to its 30s timeout. Now a release
+   * is remembered, and `called` lets a test wait for the send instead of guessing.
+   */
   class HangingChannel implements NotificationChannel {
     public calls = 0;
     private release: (() => void) | null = null;
+    private released = false;
+    private firstCall: () => void = () => undefined;
+    /** Resolves once the provider has been asked to send. */
+    readonly called = new Promise<void>((resolve) => {
+      this.firstCall = resolve;
+    });
     async sendOtp(): Promise<void> {
       this.calls += 1;
+      this.firstCall();
+      if (this.released) return;
       return new Promise<void>((resolve) => {
         this.release = resolve;
       });
     }
     async send(): Promise<void> {}
-    /** Let the pending send finish so the test does not leak a dangling promise. */
+    /** Let the pending (or the next) send finish so the test does not leak a dangling promise. */
     finish(): void {
+      this.released = true;
       this.release?.();
     }
   }
@@ -373,9 +388,11 @@ describe('OtpService dispatch modes (ADR-0023, ADR-0027)', () => {
       settled = true;
     });
 
-    // Give the event loop every chance to settle it; it must not, because the
-    // provider has not returned. This is the mirror that proves the test above
-    // is measuring the dispatch mode and not something incidental.
+    // Wait for the send to be IN the provider's hands (not a fixed delay — BUG-018), then
+    // give the event loop every chance to settle it; it must not, because the provider
+    // has not returned. This is the mirror that proves the test above is measuring the
+    // dispatch mode and not something incidental.
+    await channel.called;
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(settled).toBe(false);
 

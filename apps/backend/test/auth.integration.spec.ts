@@ -3,6 +3,7 @@ import request from 'supertest';
 import type { Society } from '@prisma/client';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { ErrorCode } from '../src/common/error-codes';
+import { AuthService } from '../src/modules/auth/auth.service';
 import {
   CapturingChannel,
   createTestApp,
@@ -83,6 +84,47 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       .send({ refreshToken })
       .expect(401);
     expect(reuse.body.error.code).toBe(ErrorCode.TOKEN_REVOKED);
+  });
+
+  /**
+   * BUG-017 / ADR-0034: a sign-in is a session of its own, and sign-out ends only the
+   * session that asks. Two devices = two verifies with the same phone.
+   */
+  it('signs THIS device out and leaves the other one signed in', async () => {
+    const phone = randomPhone();
+    await request(app.getHttpServer())
+      .post('/auth/otp/request')
+      .send({ inviteCode: society.inviteCode, phone })
+      .expect(200);
+    const verified = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
+      .expect(200);
+    const first = verified.body.data as { accessToken: string; refreshToken: string; resident: { id: string } };
+    // The second device: what a second verify does, minus the OTP (one per 30s per phone).
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: first.resident.id } });
+    const second = await app.get(AuthService).issueTokens(resident);
+
+    // Without the fix, the second verify had already ended the first session here.
+    await request(app.getHttpServer()).post('/auth/refresh').send({ refreshToken: first.refreshToken }).expect(200);
+
+    // Sign the second device out — guarded, so a stranger cannot end sessions by token.
+    await request(app.getHttpServer())
+      .post('/auth/sign-out')
+      .send({ refreshToken: second.refreshToken })
+      .expect(401);
+    const out = await request(app.getHttpServer())
+      .post('/auth/sign-out')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .send({ refreshToken: second.refreshToken })
+      .expect(200);
+    expect(out.body).toEqual({ success: true, data: { signedOut: true } });
+
+    const dead = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: second.refreshToken })
+      .expect(401);
+    expect(dead.body.error.code).toBe(ErrorCode.TOKEN_REVOKED);
   });
 
   it('rejects an unknown invite code and sends no OTP', async () => {

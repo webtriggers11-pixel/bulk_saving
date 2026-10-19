@@ -54,17 +54,18 @@ container exits with the offending variable named.
 expire** (ADR-0024): one OTP per device, forever. Set a positive number of seconds to
 restore an expiring session.
 
-Because there is no clock, **revoking a session is a manual act**:
+Every sign-in is its own session (ADR-0034): `refresh:<residentId>:<sid>` per device, indexed
+in `sessions:<residentId>`. A resident's own sign-out ends their one session. Because there is
+no clock, **ending every session of a resident is a manual act**:
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec redis \
-  redis-cli DEL "refresh:<residentId>"
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec redis sh -c \
+  'redis-cli --scan --pattern "refresh:<residentId>:*" | xargs -r redis-cli DEL; redis-cli DEL "sessions:<residentId>" "refresh:<residentId>"'
 ```
 
-That ends exactly one session, and takes effect within one `JWT_ACCESS_TTL_SECONDS`
-(900s by default) — which is why that value stays small. There is no sign-out-everywhere
-screen yet; for a lost or shared **admin** device this command is the whole recovery
-procedure.
+That ends every device, and takes effect within one `JWT_ACCESS_TTL_SECONDS` (900s by
+default) — which is why that value stays small. There is no sign-out-everywhere screen yet;
+for a lost or shared **admin** device this command is the whole recovery procedure.
 
 `TRUST_PROXY` **must be set when the API sits behind a reverse proxy** (Caddy, nginx, a
 platform load balancer): the number of proxies in front of it (`1` for one), or their

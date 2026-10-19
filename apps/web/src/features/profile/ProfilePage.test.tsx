@@ -8,6 +8,8 @@ import { useAuthStore } from '../auth/auth.store';
 import { signIn, signOutAfterTest } from '../../test/session';
 
 const navigate = vi.fn();
+const endSession = vi.fn().mockResolvedValue({ signedOut: true });
+vi.mock('../auth/auth.api', () => ({ endSession: (...args: unknown[]) => endSession(...args) }));
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return { ...actual, useNavigate: () => navigate };
@@ -81,6 +83,8 @@ describe('ProfilePage', () => {
     // FEAT-020: sign-out first releases this phone from push (bounded), then clears.
     await waitFor(() => expect(useAuthStore.getState().status).toBe('unauthenticated'));
     expect(useAuthStore.getState().accessToken).toBeNull();
+    // BUG-017: the server is told to end THIS device's session, with the token it held.
+    expect(endSession).toHaveBeenCalledWith({ refreshToken: 'test-refresh-token' });
     // ADR-0015: the next resident on this phone must not see these rounds.
     expect(client.getQueryData(['rounds'])).toBeUndefined();
     expect(navigate).toHaveBeenCalledWith('/onboard', { replace: true });

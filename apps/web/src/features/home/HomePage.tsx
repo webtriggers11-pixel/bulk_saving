@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
-import { releasePushOnSignOut } from '../../lib/push';
+import { useSignOut } from '../auth/useSignOut';
 import { Button } from '../../components/ui/button';
 import { SchemeToggle } from '../../components/ui/scheme-toggle';
 import { Icon } from '../../components/ui/icon';
@@ -14,8 +14,7 @@ import { HomeSkeleton } from './HomeSkeleton';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const logout = useAuthStore((state) => state.logout);
+  const signOut = useSignOut();
   // Same source as AdminRoute (the session's resident) so the link and the guard agree.
   const isSuperAdmin = useAuthStore((state) => state.resident?.role === 'SUPER_ADMIN');
 
@@ -25,15 +24,6 @@ export function HomePage() {
   });
   const { data, isLoading, refetch } = meQuery;
   const failed = queryStalled(meQuery);
-
-  async function handleLogout() {
-    // FEAT-020: stop this phone receiving notifications meant for the person signing out —
-    // while the token still works to tell the server.
-    await releasePushOnSignOut({ server: true });
-    logout();
-    queryClient.clear();
-    navigate('/onboard', { replace: true });
-  }
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
@@ -47,7 +37,7 @@ export function HomePage() {
         <div className="flex items-center gap-2">
           {/* FEAT-016: the night switch — the new scheme grows from this button. */}
           <SchemeToggle />
-          <Button variant="secondary" size="icon" aria-label="Log out" onClick={handleLogout}>
+          <Button variant="secondary" size="icon" aria-label="Log out" onClick={() => void signOut()}>
             <Icon name="logout" size={19} strokeWidth={2} />
           </Button>
         </div>

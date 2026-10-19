@@ -17,6 +17,7 @@ import type {
   AuthTokens,
   MeResponse,
   OtpRequestResponse,
+  SignOutResponse,
 } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { ResidentsService } from '../residents/residents.service';
@@ -183,6 +184,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshDto): Promise<AuthTokens> {
     return this.auth.refresh(dto.refreshToken);
+  }
+
+  /**
+   * Sign THIS device out (BUG-017, ADR-0034): ends the session the presented refresh
+   * token belongs to, and no other. Sessions have no clock (ADR-0024), so without this a
+   * sign-out left a handle that would honour the dropped token forever.
+   */
+  @Post('auth/sign-out')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AccessTokenGuard)
+  async signOut(@CurrentAuth() ctx: AuthContext, @Body() dto: RefreshDto): Promise<SignOutResponse> {
+    const signedOut = await this.auth.revokeSession(ctx.residentId, dto.refreshToken);
+    return { signedOut };
   }
 
   @Get('me')

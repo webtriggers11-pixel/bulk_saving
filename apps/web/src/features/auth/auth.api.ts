@@ -6,6 +6,8 @@ import type {
   OtpRequestBody,
   OtpRequestResponse,
   OtpVerifyBody,
+  RefreshBody,
+  SignOutResponse,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 
@@ -46,6 +48,11 @@ export function verifyAdminOtp(body: AdminOtpVerifyBody): Promise<AuthResult> {
     body,
     auth: false,
   });
+}
+
+/** POST /auth/sign-out — ends this device's session on the server (BUG-017). */
+export function endSession(body: RefreshBody): Promise<SignOutResponse> {
+  return apiRequest<SignOutResponse>('/auth/sign-out', { method: 'POST', body });
 }
 
 /** GET /me — the caller's own profile + society, scoped by the token. */

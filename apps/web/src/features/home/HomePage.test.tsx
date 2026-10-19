@@ -12,6 +12,7 @@ vi.mock('../auth/auth.api', () => ({
   fetchMe: vi.fn(),
   requestOtp: vi.fn(),
   verifyOtp: vi.fn(),
+  endSession: vi.fn().mockResolvedValue({ signedOut: true }),
 }));
 
 const fetchMeMock = vi.mocked(fetchMe);

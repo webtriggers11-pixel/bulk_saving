@@ -1,7 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../auth/auth.store';
-import { releasePushOnSignOut } from '../../lib/push';
+import { useSignOut } from '../auth/useSignOut';
 import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
 import { useOnlineStatus } from '../../lib/useOnlineStatus';
 import { Button } from '../../components/ui/button';
@@ -63,28 +61,15 @@ function Tile({
  * badge, then the facts as tiles. Same fields, same source, same offline promise.
  */
 export function ProfilePage() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const resident = useAuthStore((state) => state.resident);
   const society = useAuthStore((state) => state.society);
-  const logout = useAuthStore((state) => state.logout);
+  const signOut = useSignOut();
   const { canInstall, promptInstall } = useInstallPrompt();
   const online = useOnlineStatus();
   // Already running from the home screen: there is nothing to install, and the
   // hint would tell an Android user to go find a menu item they already used
   // (V2 P2-6).
   const installed = isStandalone();
-
-  async function handleLogout() {
-    // FEAT-020: stop this phone receiving notifications meant for the person signing out —
-    // while the token still works to tell the server.
-    await releasePushOnSignOut({ server: true });
-    logout();
-    // Clear cached server data too: the next resident on this phone must not
-    // see the previous one's rounds (ADR-0015).
-    queryClient.clear();
-    navigate('/onboard', { replace: true });
-  }
 
   const name = resident?.name ?? 'Resident';
   const [appearanceOpen, setAppearanceOpen] = useState(false);
@@ -185,7 +170,7 @@ export function ProfilePage() {
         {/* FEAT-020: web push for this phone. */}
         <NotificationsRow />
 
-        <Button variant="secondary" className="col-span-2 w-full" onClick={handleLogout}>
+        <Button variant="secondary" className="col-span-2 w-full" onClick={() => void signOut()}>
           <Icon name="logout" size={18} strokeWidth={2} />
           Log out
         </Button>
