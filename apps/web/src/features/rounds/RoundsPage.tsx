@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
@@ -96,6 +96,12 @@ function JoinControl({
   startOpen?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
+  // A request that arrives while this card is already on screen opens it too (V2 r2 P3).
+  const [seenStartOpen, setSeenStartOpen] = useState(startOpen);
+  if (startOpen !== seenStartOpen) {
+    setSeenStartOpen(startOpen);
+    if (startOpen) setOpen(true);
+  }
   const joined = round.myUnits > 0;
   // The writes live HERE, not in the sheet, so a pledge queued offline still says so on
   // the card after the sheet is closed (V2 P2-3).
@@ -538,15 +544,17 @@ export function RoundsPage() {
   const joinParam = searchParams.get('join');
   const [requested, setRequested] = useState(joinParam);
   if (joinParam && joinParam !== requested) setRequested(joinParam);
-  // Scroll ONCE per request: `data` gets a new reference on every poll, focus refetch and
-  // pledge, and re-scrolling then dragged a resident back from wherever they had moved to
-  // (V2 P1).
+  // Scroll ONCE per navigation that carries `join` — not per render: `data` gets a new
+  // reference on every poll, focus refetch and pledge, and re-scrolling dragged a resident
+  // back from wherever they had moved to (V2 P1). Keyed on the navigation, so asking for
+  // the same round again still scrolls and still clears the param (V2 r2 P3).
+  const location = useLocation();
   const handled = useRef<string | null>(null);
   useEffect(() => {
-    if (!requested || !data || handled.current === requested) return;
-    handled.current = requested;
+    if (!joinParam || !data || handled.current === location.key) return;
+    handled.current = location.key;
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
-    document.getElementById(`round-${requested}`)?.scrollIntoView?.({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+    document.getElementById(`round-${joinParam}`)?.scrollIntoView?.({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
     setSearchParams(
       (params) => {
         const next = new URLSearchParams(params);
@@ -555,7 +563,7 @@ export function RoundsPage() {
       },
       { replace: true },
     );
-  }, [requested, data, setSearchParams]);
+  }, [joinParam, data, setSearchParams, location.key]);
   const requestedGone = Boolean(requested && data && !data.some((round) => round.id === requested));
 
   return (

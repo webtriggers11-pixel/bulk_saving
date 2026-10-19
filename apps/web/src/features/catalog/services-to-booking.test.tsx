@@ -170,9 +170,22 @@ describe('the arrival scroll (V2 P1, P2)', () => {
     vi.mocked(fetchRounds).mockResolvedValue([acRound, other]);
     renderApp('/rounds?join=round_ac');
     await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
+    // Close the first sheet, then ask for another round from inside the page.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     act(() => go('/rounds?join=round_two'));
     await waitFor(() => expect(scroll).toHaveBeenCalledTimes(2));
     expect(document.getElementById('round-round_two')?.className).toMatch(/\bround-requested\b/);
+    expect(await screen.findByRole('dialog', { name: 'Join Deep Clean' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent(/^\/rounds$/));
+  });
+
+  it('asking for the same round again scrolls again and clears the param (V2 r2 P3)', async () => {
+    renderApp('/rounds?join=round_ac');
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent(/^\/rounds$/));
+    act(() => go('/rounds?join=round_ac'));
+    await waitFor(() => expect(scroll).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent(/^\/rounds$/));
   });
 });
 
