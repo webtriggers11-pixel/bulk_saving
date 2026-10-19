@@ -138,7 +138,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         {/* BUG-015: a grid that wraps — three facts in one row pushed the card 12px past a
             360px screen and squeezed "Final price per flat" to 45px. */}
         <dl
-          className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2.5 [&>*:last-child:nth-child(odd)]:col-span-full"
+          className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2.5"
           data-testid="my-facts"
         >
           <Fact term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
@@ -150,7 +150,10 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
             testId="my-price"
           />
           {round.finalPrice !== null && (
-            <Fact term="You owe" value={formatRupees(round.finalPrice * round.myUnits)} testId="my-total" />
+            // The odd third fact takes the whole row rather than sitting at half width. On the
+            // Fact itself, not as an `&>*` variant on the grid: the class gate cannot read
+            // those, so a typo there would pass unseen (BUG-015 V2 r2 P3).
+            <Fact term="You owe" value={formatRupees(round.finalPrice * round.myUnits)} testId="my-total" className="col-span-full" />
           )}
         </dl>
 
