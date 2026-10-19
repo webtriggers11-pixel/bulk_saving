@@ -117,6 +117,14 @@ describe('AuthService (integration, needs Redis)', () => {
       await expect(service.refresh(laptopAgain.refreshToken)).resolves.toBeDefined();
     });
 
+    it('never writes the pre-fix per-resident key again (ADR-0034: read, never written)', async () => {
+      await service.issueTokens(resident);
+      const rotated = await service.refresh((await service.issueTokens(resident)).refreshToken);
+      expect(typeof rotated.accessToken).toBe('string');
+      expect(await redis.exists(`refresh:${resident.id}`)).toBe(0);
+      expect(await redis.smembers(`sessions:${resident.id}`)).toHaveLength(2);
+    });
+
     it("signing out ends this device's session and no other", async () => {
       const phone = await service.issueTokens(resident);
       const laptop = await service.issueTokens(resident);

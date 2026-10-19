@@ -50,6 +50,10 @@ first time; the audit's "reuse does not revoke" note is unchanged in scope but n
 cannot revoke the WRONG device.
 Bad, kept from ADR-0024 and now multiplied: every session is permanent until someone acts, and
 there is still no screen for "end every session of this resident" — a `redis-cli` procedure.
+Under an EXPIRING policy the index's clock is refreshed by any session's rotation, so the sid of
+a session that expired on its own stays in `sessions:<rid>` as a dangling member until every
+session is gone (V2 P3-2); harmless — the kill switch DELs keys that may not exist — and
+admitted here rather than hidden. Issue is one Lua step like rotation (V2 P3-1).
 
 ## Revisit trigger
 ADR-0024's triggers stand. Add: when the first "sign out everywhere" request arrives from a

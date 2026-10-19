@@ -35,6 +35,22 @@ export interface RefreshTokenPayload {
  * without `KEEPTTL` clears any TTL the key already carried, so a session cannot inherit
  * an expiry from a token issued under an older policy. The index follows the same clock.
  */
+/**
+ * Issuing a session is one step too (V2 P3-1): the handle, its index entry and the
+ * index's clock land together, so a crash — or a concurrent kill switch — between them
+ * cannot leave a live handle the index does not know about.
+ */
+const ISSUE_LUA = `
+redis.call('sadd', KEYS[2], ARGV[2])
+if tonumber(ARGV[3]) > 0 then
+  redis.call('set', KEYS[1], ARGV[1], 'EX', ARGV[3])
+  redis.call('expire', KEYS[2], ARGV[3])
+else
+  redis.call('set', KEYS[1], ARGV[1])
+  redis.call('persist', KEYS[2])
+end
+return 1`;
+
 const ROTATE_LUA = `
 if redis.call('get', KEYS[1]) ~= ARGV[1] then
   return 0
@@ -132,14 +148,17 @@ export class AuthService {
     const sid = randomUUID();
     const jti = randomUUID();
     const tokens = await this.signPair(resident.id, resident.societyId, resident.role as Role, jti, sid);
-    const key = this.refreshKey(resident.id, sid);
-    const index = this.sessionsKey(resident.id);
-    const ttl = this.refreshTtlSeconds;
     // A plain SET (no KEEPTTL) so re-issuing under the lifetime policy drops any
     // expiry an earlier policy left on the key. The index follows the same clock.
-    await (ttl === null ? this.redis.set(key, jti) : this.redis.set(key, jti, 'EX', ttl));
-    await this.redis.sadd(index, sid);
-    await (ttl === null ? this.redis.persist(index) : this.redis.expire(index, ttl));
+    await this.redis.eval(
+      ISSUE_LUA,
+      2,
+      this.refreshKey(resident.id, sid),
+      this.sessionsKey(resident.id),
+      jti,
+      sid,
+      String(this.refreshTtlSeconds ?? 0),
+    );
     return tokens;
   }
 

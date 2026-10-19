@@ -1166,3 +1166,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-025: keyset pagination, one envelope `{ items, nextCursor, total }`, `limit` 1–50 default 20, on /rounds, /rounds/mine, /catalog, /admin/rounds (retires the silent 200 cap), /admin/services, /admin/vendors; web moves to `useInfiniteQuery` + an explicit "Show more". ADR-0035 at T1.
 - Order after BUG-017's V2/V3: FEAT-023 → CHORE-024 → FEAT-024 → FEAT-025.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-017 — V2 PASS → P2/P3s taken
+- V2 (independent; gate exit 0, 463/599, 3278 tokens; 4 mutations: 3 killed, 1 survived → P3-3): PASS.
+- P2-1: `FEATURES.md` (a product-features doc written outside this session at 22:20 IST, untracked) was swept into 378bd6d by `git add -A`. Not BUG-017 work; left in place (it is the owner's doc), attributed here. Lesson: `git add` by path from now on.
+- Taken: P3-1 issue is one Lua step (`ISSUE_LUA`: handle + index + clock together); P3-2 ADR-0034 admits dangling index members under an expiring policy; P3-3 test "never writes the pre-fix per-resident key again". P3-4 (second device minted via the service in the integration test, OTP 30s limit) accepted as documented.
+- By: agent (autonomous) + code-reviewer subagent
