@@ -22,7 +22,7 @@ export function NotificationsRow() {
   const usable = state === 'on' || state === 'off';
   return (
     <div className="surface-solid col-span-2 flex min-h-touch items-center gap-4 rounded-card p-[18px]" data-testid="notifications-row">
-      <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
         <Icon name="bell" size={20} strokeWidth={1.8} />
       </span>
       <span className="min-w-0 flex-1">

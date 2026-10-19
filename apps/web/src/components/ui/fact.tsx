@@ -66,9 +66,11 @@ export function Fact({ term, value, children, variant = 'tile', size = 'normal',
   }
 
   return (
-    <div className={cn('surface-inset min-w-0 flex-1 rounded-inset px-3.5 py-3', className)}>
+    // BUG-016: a flex column with the value pushed to the bottom, so tiles side by side
+    // line their values up even when one label wraps onto two lines.
+    <div className={cn('surface-inset min-w-0 flex-1 rounded-inset flex flex-col px-3.5 py-3', className)}>
       <dt className={TERM}>{term}</dt>
-      <dd className="num mt-1.5 text-[15.5px] font-extrabold text-ink" data-testid={testId}>
+      <dd className="num mt-auto pt-1.5 text-[15.5px] font-extrabold text-ink" data-testid={testId}>
         {rendered}
       </dd>
     </div>

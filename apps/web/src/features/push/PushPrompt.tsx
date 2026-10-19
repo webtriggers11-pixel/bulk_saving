@@ -34,7 +34,7 @@ export function PushPrompt({ joinedAny }: { joinedAny: boolean }) {
   }
 
   return (
-    <Card surface="tint" interactive={false} padding="tight" className="flex items-center gap-3.5" data-testid="push-prompt">
+    <Card surface="tint" interactive={false} padding="none" className="flex items-center gap-3.5 p-[18px]" data-testid="push-prompt">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
         <Icon name="bell" size={20} strokeWidth={1.8} />
       </span>

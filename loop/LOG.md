@@ -1087,3 +1087,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 582/582, 1758 class tokens.
 - BUG-015 → done.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — BUG-016 — platform consistency and alignment at phone width (owner: "make it consistent overall")
+- Deeper browser audit at 360/390 (overlap between text boxes, clipped text, sub-44px taps, overflow past screen/card, last card under the tab bar) plus card-metric collection and screenshots of every screen — the screenshots found what measurements cannot:
+  - **Values misaligned in tiles side by side** when one label wraps ("PRICE PER GEYSER" vs "YOUR PLEDGE"; "AWAITING DELIVERY" vs "EXPIRED"): `Fact` tile and `StatCard` are flex columns with the value pushed to the bottom.
+  - **Tiles with differently-sized content** (Home: Your society / Group buys; Profile: Phone / Society) bottom-aligned, so labels and titles drifted: top-aligned under the icon, one eyebrow each, one icon-box style.
+  - **2-up service tiles cramped at 360** (≈150px: two-line prices, status squeezed to 75px): below 400px a tile lays out as a row (same shape as ServiceRow) and spans the row; ≥400px it is a tile with its status footer at the bottom.
+  - Open-round status was dot | text | arrow columns → one wrapping text run; countdown + arrow kept together (an orphan arrow showed in the screenshot; `Icon` is display:block so `whitespace-nowrap` alone did not hold — inline-flex wrapper).
+  - **Card padding** varied 16/17/18/19/22/24px with no rule → resident cards: 22px lead, 18px everything else (skeletons too). **Icon boxes** 42/44/46/52 → 44px for rows and tiles, 52px only on lead cards.
+  - **Admin nav** wrapped to three rows (~300px before content) → one scrolling row on phones, wrapping from `sm`.
+- Guards: `styles/phone-layout.test.ts` now also pins the padding rule, the icon-box rule, top-aligned tiles and bottom-aligned values; primitives signature for StatCard updated.
+- Result: resident ×5 at 360 dark+light and 390 light (3 screens), admin ×5 at 360 dark+light — deep audit clean; screenshots of Services, My Requests, Home, Profile, admin dashboard re-checked.
+- By: agent (autonomous)

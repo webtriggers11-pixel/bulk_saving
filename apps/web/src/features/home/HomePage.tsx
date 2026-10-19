@@ -83,7 +83,7 @@ export function HomePage() {
 
           <Card padding="none"
             surface="accent"
-            className="sheen col-span-2 flex items-center gap-4 overflow-hidden p-6"
+            className="sheen col-span-2 flex items-center gap-4 overflow-hidden p-[22px]"
           >
             <span
               aria-hidden="true"
@@ -115,11 +115,13 @@ export function HomePage() {
             </div>
           </Card>
 
-          <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[19px]">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift">
+          <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[18px]">
+            {/* BUG-016: the two tiles share one shape — same icon box, an eyebrow each, content
+                top-aligned under the icon — so their titles sit on the same line. */}
+            <span className="flex h-11 w-11 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
               <Icon name="building" size={22} strokeWidth={1.8} />
             </span>
-            <CardEyebrow className="mt-auto pt-4">Your society</CardEyebrow>
+            <CardEyebrow className="mt-4">Your society</CardEyebrow>
             <CardTitle size="md" className="mt-2 leading-[1.12]" data-testid="society-name">
               {data.society.name}
             </CardTitle>
@@ -128,17 +130,19 @@ export function HomePage() {
             </p>
           </Card>
 
-          <Card padding="none" className="flex min-h-[168px] flex-col p-[19px]">
-            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+          <Card padding="none" className="flex min-h-[168px] flex-col p-[18px]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
               <Icon name="users" size={22} strokeWidth={1.8} />
             </span>
             <button
               type="button"
               aria-label="Group buys"
               onClick={() => navigate('/rounds')}
-              className="mt-auto min-h-touch rounded-chip pt-4 text-left t press focus-visible:outline-none focus-visible:shadow-focus"
+              className="mt-4 min-h-touch rounded-chip text-left t press focus-visible:outline-none focus-visible:shadow-focus"
             >
-              <span className="block text-title font-extrabold tracking-[-0.038em] text-ink">
+              {/* A span, not CardEyebrow: that renders a <p>, which is not allowed in a button. */}
+              <span className="block text-eyebrow uppercase text-brand-ink">Join in</span>
+              <span className="mt-2 block text-title font-extrabold tracking-[-0.038em] text-ink">
                 Group buys
               </span>
               <span className="mt-1.5 flex items-center gap-1.5 text-meta font-semibold text-ink-muted">
@@ -152,8 +156,8 @@ export function HomePage() {
             // Solid, not glass: a super-admin would otherwise carry a fourth
             // blurred surface on this screen (V2 round 2, P2-3).
             // BUG-015: wraps on a phone — the button beside the title squeezed it to 62px.
-            <Card padding="none" surface="solid" className="col-span-2 flex flex-wrap items-center gap-4 p-[19px]" data-testid="admin-entry">
-              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
+            <Card padding="none" surface="solid" className="col-span-2 flex flex-wrap items-center gap-4 p-[18px]" data-testid="admin-entry">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
                 <Icon name="check" size={22} strokeWidth={1.9} />
               </span>
               <div className="min-w-0 flex-[1_1_9rem]">

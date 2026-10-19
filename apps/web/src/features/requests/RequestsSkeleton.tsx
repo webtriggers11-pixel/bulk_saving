@@ -10,7 +10,7 @@ export function RequestsSkeleton() {
             <Skeleton className="h-3 w-3" delay={row === 0 ? 0 : 1} />
             <span className="mt-1.5 w-0.5 flex-1 rounded-full bg-line/10" />
           </div>
-          <div className={`${row === 0 ? 'surface-glass' : 'surface-solid'} min-w-0 flex-1 rounded-card p-[19px]`}>
+          <div className={`${row === 0 ? 'surface-glass' : 'surface-solid'} min-w-0 flex-1 rounded-card p-[18px]`}>
             <div className="flex items-start justify-between gap-3">
               <Skeleton className="h-4 w-1/2" />
               <Skeleton radius="full" className="h-6 w-20" delay={1} />

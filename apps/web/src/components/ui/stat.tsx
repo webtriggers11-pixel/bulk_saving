@@ -80,7 +80,9 @@ export function StatCard({
           <Icon name={icon} size={21} strokeWidth={1.8} />
         </span>
       )}
-      <div className="min-w-0">
+      {/* BUG-016: label at the top, number pushed to the bottom — tiles in one row line
+          their numbers up even when a label ("Awaiting delivery") wraps to two lines. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <p
           className={cn(
             'text-eyebrow uppercase',
@@ -91,7 +93,7 @@ export function StatCard({
         </p>
         <p
           className={cn(
-            'num mt-1.5 text-[26px] font-extrabold leading-none tracking-[-0.045em]',
+            'num mt-auto pt-1.5 text-[26px] font-extrabold leading-none tracking-[-0.045em]',
             lead ? 'text-on-fill' : 'text-ink',
           )}
         >

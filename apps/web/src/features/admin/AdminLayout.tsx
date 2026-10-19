@@ -53,7 +53,12 @@ export function AdminLayout({
               Bulk Saving <span className="text-brand-ink">Admin</span>
             </span>
           </span>
-          <nav aria-label="Admin" className="order-3 flex w-full flex-wrap items-center gap-1 sm:order-2 sm:w-auto">
+          {/* BUG-016: one scrolling row on a phone (it wrapped to three rows and took ~300px
+              before any content); wraps normally from `sm` up. */}
+          <nav
+            aria-label="Admin"
+            className="chip-rail order-3 -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 sm:order-2 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0"
+          >
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -61,7 +66,7 @@ export function AdminLayout({
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'group t press flex min-h-11 items-center gap-2 rounded-control border px-3.5 text-meta font-bold no-underline',
+                    'group t press flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border px-3.5 text-meta font-bold no-underline',
                     isActive && item.to !== '/'
                       ? 'border-paper/70 bg-gradient-to-br from-brand-light/35 to-brand/15 text-brand-ink shadow-lift'
                       : 'border-transparent text-ink-muted hover:bg-paper/60',

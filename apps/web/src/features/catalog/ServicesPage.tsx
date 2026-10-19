@@ -87,12 +87,16 @@ function RoundStatus({
       ? `You’re in with ${formatUnits(round.myUnits, round.service)}`
       : `Group buy open · ${formatUnits(round.unitsCount, round.service)} in`;
   return (
-    <p className={cn('flex items-center gap-2 text-meta font-bold text-brand-ink', className)} data-testid="service-round">
-      <span aria-hidden="true" className="animate-pulse-ring h-2 w-2 shrink-0 rounded-full bg-brand" />
-      <span className="min-w-0 flex-1">
-        {lead} · {formatRupees(round.currentPrice)} now · {formatCountdown(round.deadline)}
+    // One run of text that wraps across the full width (BUG-016): as dot | text | arrow
+    // columns, the text got what was left between them — 75px on a phone tile.
+    <p className={cn('text-meta font-bold text-brand-ink', className)} data-testid="service-round">
+      <span aria-hidden="true" className="animate-pulse-ring mr-2 inline-block h-2 w-2 rounded-full bg-brand align-middle" />
+      {lead} · {formatRupees(round.currentPrice)} now ·{' '}
+      {/* The countdown and the arrow break as one piece — never an arrow alone on a line. */}
+      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+        {formatCountdown(round.deadline)}
+        <Icon name="forward" size={15} strokeWidth={2.2} className="nudge" />
       </span>
-      <Icon name="forward" size={16} strokeWidth={2.2} className="nudge shrink-0" />
     </p>
   );
 }
@@ -190,23 +194,32 @@ function ServiceHero({ service, round }: { service: ServiceDto; round?: RoundDto
   );
 }
 
-/** A square tile — two of these sit beside each other under the hero. */
+/**
+ * A square tile — two of these sit beside each other under the hero. Below 400px wide a
+ * tile is only ~150px, so it lays out as a row instead (BUG-016): glyph beside the text,
+ * the same shape as `ServiceRow`, and the list reads as one consistent column on a phone.
+ */
 function ServiceTile({ service, round }: { service: ServiceDto; round?: RoundDto | null }) {
   return (
-    <Card padding="none" surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
-      <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
-        <ServiceGlyph service={service} size={22} />
-      </span>
-      <CardEyebrow className="mt-3.5">{service.category}</CardEyebrow>
-      <h3 className="mt-1.5 text-[16px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
-      <p className="mt-1.5 line-clamp-2 text-micro text-ink-muted">{service.description}</p>
-      <PriceLine service={service} className="mt-auto pt-3 text-[15px]" />
-      {service.unitDescription?.trim() && (
-        <p className="mt-1.5 text-[10.5px] leading-snug text-ink-soft" data-testid="service-unit-scope">
-          {service.unitDescription}
-        </p>
-      )}
-      <RoundStatus service={service} round={round} className="mt-2.5" />
+    <Card padding="none" surface="solid" className="flex h-full flex-col p-[18px]" data-testid="service-card">
+      <div className="mb-3.5 flex items-start gap-3.5 min-[400px]:flex-col min-[400px]:gap-0">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
+          <ServiceGlyph service={service} size={22} />
+        </span>
+        <div className="min-w-0 flex-1 min-[400px]:mt-3.5">
+          <CardEyebrow>{service.category}</CardEyebrow>
+          <h3 className="mt-1 text-[16px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
+          <p className="mt-1 line-clamp-2 text-micro text-ink-muted">{service.description}</p>
+          {service.unitDescription?.trim() && (
+            <p className="mt-1.5 text-[10.5px] leading-snug text-ink-soft" data-testid="service-unit-scope">
+              {service.unitDescription}
+            </p>
+          )}
+          <PriceLine service={service} className="mt-2 text-[15px]" />
+        </div>
+      </div>
+      {/* At the bottom of every tile, so two tiles side by side line their footers up. */}
+      <RoundStatus service={service} round={round} className="mt-auto border-t border-line/10 pt-3.5" />
     </Card>
   );
 }
@@ -216,12 +229,12 @@ function ServiceRow({ service, round }: { service: ServiceDto; round?: RoundDto 
   return (
     <Card padding="none"
       surface="solid"
-      className="col-span-2 flex flex-col p-[17px]"
+      className="col-span-2 flex flex-col p-[18px]"
       data-testid="service-card"
     >
       <div className="flex items-center gap-3.5">
-        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
-          <ServiceGlyph service={service} size={25} />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
+          <ServiceGlyph service={service} size={22} />
         </span>
         <div className="min-w-0 flex-1">
           <CardEyebrow>{service.category}</CardEyebrow>
@@ -358,7 +371,11 @@ export function ServicesPage() {
                   <ServiceRow service={service} round={round} />
                 );
               return (
-                <li key={service.id} className={index === 1 || index === 2 ? '' : 'col-span-2'}>
+                <li
+                  key={service.id}
+                  // BUG-016: tiles go full width below 400px (see ServiceTile).
+                  className={index === 1 || index === 2 ? 'col-span-2 min-[400px]:col-span-1' : 'col-span-2'}
+                >
                   {/* FEAT-021: a bookable service is one tap from its pledge sheet. */}
                   {round ? (
                     <Link

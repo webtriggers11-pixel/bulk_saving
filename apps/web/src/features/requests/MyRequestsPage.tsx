@@ -119,7 +119,7 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
         // it, or a resident in eight open rounds scrolls eight blurred layers
         // (V2 round 2, P2-3).
         surface={lead ? 'glass' : 'solid'}
-        className="min-w-0 flex-1 p-[19px]"
+        className="min-w-0 flex-1 p-[18px]"
         data-testid={`my-round-${round.id}`}
       >
         <div className="flex items-start justify-between gap-3">

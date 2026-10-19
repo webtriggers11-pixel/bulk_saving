@@ -193,7 +193,8 @@ describe('AC2 — a shape is owned by one file', () => {
     // brand mark in the Home header legitimately paints with the same gradient.
     ['the monogram', 'components/ui/monogram.tsx', /animate-halo halo-sweep absolute -inset-1\/2/],
     ['the ambient ground', 'components/ui/ambient-ground.tsx', /animate-drift-a absolute/],
-    ['the stat card', 'components/ui/stat.tsx', /num mt-1\.5 text-\[26px\]/],
+    // BUG-016: the number is pushed to the bottom (`mt-auto pt-1.5`) so tiles line up.
+    ['the stat card', 'components/ui/stat.tsx', /num mt-auto pt-1\.5 text-\[26px\]/],
     ['the row surface', 'components/ui/data-rows.tsx', /surface-solid card-hover t flex flex-col gap-3 rounded-tile p-4/],
     ['the row list', 'components/ui/data-rows.tsx', /stagger flex flex-col gap-2\.5/],
     ['the field error', 'components/ui/field.tsx', /mt-2 flex items-center gap-2 text-meta font-bold text-danger-ink/],
