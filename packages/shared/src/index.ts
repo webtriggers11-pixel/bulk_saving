@@ -648,3 +648,43 @@ export interface PushPayload {
   icon: string;
   badge: string;
 }
+
+/* ---------------------------------------------------------------------------
+ * Phone numbers (BUG-019, ADR-0036). Defined HERE, not re-exported from a sibling file:
+ * this package builds to CommonJS, and a `export { x } from './y'` becomes a getter that
+ * Rollup (the web build) cannot see as a named export.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * One canonical phone form (BUG-019). India is the default country: a resident types
+ * `98765 43210`, `098765-43210`, `+91 98765 43210` or `91 9876543210` and they are all the
+ * same person — `+919876543210`. Anything else that is already international (`+…`) is
+ * kept as digits behind its `+`; `00` is the international prefix too.
+ *
+ * Returns null when what is left is not a plausible number (7–15 digits), so callers can
+ * refuse it rather than store rubbish. Used by the API before rate limiting, OTP storage
+ * and the resident upsert — and by the web, so the number shown back is the one stored.
+ */
+// A `const`, not a `function`: tsc hoists a function export to the top of the CommonJS file
+// as a bare `exports.x = x`, which Rollup's CommonJS detection misses; a const lands in the
+// `exports.a = exports.b = void 0` chain like every other runtime export here.
+export const normalisePhone = (raw: string): string | null => {
+  const trimmed = raw.replace(/[\s().-]/g, '');
+  let plus = false;
+  let digits = trimmed;
+  if (digits.startsWith('+')) {
+    plus = true;
+    digits = digits.slice(1);
+  } else if (digits.startsWith('00')) {
+    plus = true;
+    digits = digits.slice(2);
+  }
+  if (!/^\d+$/.test(digits)) return null;
+  if (!plus) {
+    if (digits.length === 10) digits = `91${digits}`;
+    else if (digits.length === 11 && digits.startsWith('0')) digits = `91${digits.slice(1)}`;
+    else if (!(digits.length === 12 && digits.startsWith('91'))) return null;
+  }
+  if (digits.length < 7 || digits.length > 15) return null;
+  return `+${digits}`;
+};

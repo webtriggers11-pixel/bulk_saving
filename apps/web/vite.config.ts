@@ -4,6 +4,12 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // BUG-019: the web now imports a RUNTIME value from @bulk/shared (`normalisePhone`), not
+  // only types. The package builds to CommonJS and resolves through the workspace symlink
+  // to packages/shared/dist — outside node_modules, which is all Vite's CommonJS
+  // conversion covers by default — so without this its named exports are invisible to the
+  // production build ("normalisePhone is not exported by …/dist/index.js").
+  build: { commonjsOptions: { include: [/node_modules/, /packages\/shared/] } },
   plugins: [
     react(),
     VitePWA({

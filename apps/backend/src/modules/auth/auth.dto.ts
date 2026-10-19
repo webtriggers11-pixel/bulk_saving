@@ -8,7 +8,9 @@ import type {
 } from '@bulk/shared';
 
 const INVITE_CODE = /^[A-Z0-9]{8}$/;
-const PHONE = /^\+?[0-9]{7,15}$/;
+// BUG-019: formatting (spaces, dashes, brackets) is allowed in; `normalisePhone` in the
+// controller is the real check and the only thing that decides what is stored.
+const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
 const OTP_CODE = /^\d{6}$/;
 
 export class OtpRequestDto implements OtpRequestBody {

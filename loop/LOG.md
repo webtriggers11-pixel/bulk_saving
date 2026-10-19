@@ -1261,3 +1261,5 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `normalisePhone` lives in `@bulk/shared` (one function for API and web); the web sends and shows the canonical form. ADR-0036.
 - Gate queued behind the running V2 (one gate at a time).
 - By: agent (autonomous)
+- V1 run 1 failed the WEB BUILD: `normalisePhone is not exported by packages/shared/dist/index.js`. The web had only ever imported TYPES from `@bulk/shared`; the package builds to CommonJS and resolves through the workspace symlink to `packages/shared/dist` — outside `node_modules`, which is all Vite's CommonJS conversion covers by default — so its runtime exports were invisible to Rollup. Fix: `build.commonjsOptions.include` adds `/packages\/shared/` (vite.config.ts); the function is defined in `index.ts` as a `const` beside the other runtime exports. Web bundle builds; gate rerunning.
+- V1 run 2: gate exit 0 — backend 486/486 (+16: the normaliser unit cases and the integration case), web 631/631, 3280 class tokens.

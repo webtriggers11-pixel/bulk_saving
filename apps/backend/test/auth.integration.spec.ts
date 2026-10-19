@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { Society } from '@prisma/client';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RedisService } from '../src/redis/redis.service';
 import { ErrorCode } from '../src/common/error-codes';
 import { AuthService } from '../src/modules/auth/auth.service';
 import {
@@ -125,6 +126,28 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       .send({ refreshToken: second.refreshToken })
       .expect(401);
     expect(dead.body.error.code).toBe(ErrorCode.TOKEN_REVOKED);
+  });
+
+  /** BUG-019: however the number is typed, it is ONE resident. */
+  it('normalises the phone: 9999900201 and +919999900201 are the same resident', async () => {
+    const digits = randomPhone().replace(/^\+91/, '');
+    const forms = [digits, `+91${digits}`, `0${digits}`, `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`];
+    const ids = new Set<string>();
+    for (const phone of forms) {
+      await request(app.getHttpServer()).post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone }).expect(200);
+      const res = await request(app.getHttpServer())
+        .post('/auth/otp/verify')
+        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
+        .expect(200);
+      ids.add(res.body.data.resident.id);
+      expect(res.body.data.resident.phone).toBe(`+91${digits}`);
+      // The resend throttle is per canonical phone now: wait it out between forms.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await app.get(RedisService).del(...(await app.get(RedisService).keys(`otp:*${digits}*`)).concat(['__none__']));
+    }
+    expect(ids.size).toBe(1);
+    const stored = await prisma.resident.findMany({ where: { societyId: society.id, phone: { contains: digits } } });
+    expect(stored).toHaveLength(1);
   });
 
   it('rejects an unknown invite code and sends no OTP', async () => {

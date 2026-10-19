@@ -20,6 +20,7 @@ import type {
   SignOutResponse,
 } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
+import { normalisePhone } from '@bulk/shared';
 import { ResidentsService } from '../residents/residents.service';
 import { toResidentDto } from '../residents/residents.mapper';
 import { SocietiesService } from '../societies/societies.service';
@@ -34,6 +35,18 @@ import {
   RefreshDto,
 } from './auth.dto';
 import { ADMIN_OTP_SCOPE, OtpService } from './otp.service';
+
+/**
+ * BUG-019: one canonical phone form before anything keys on it — the rate limiter, the OTP
+ * stash and the resident row. `9999900201` and `+919999900201` are one person.
+ */
+function phoneOf(dto: { phone: string }): string {
+  const phone = normalisePhone(dto.phone);
+  if (!phone) {
+    throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'phone must be a valid phone number.' });
+  }
+  return phone;
+}
 
 @Controller()
 export class AuthController {
@@ -56,7 +69,7 @@ export class AuthController {
       });
     }
     // societyId is derived from the invite code, never from the request body.
-    const outcome = await this.otp.request(society.id, dto.phone, { clientIp });
+    const outcome = await this.otp.request(society.id, phoneOf(dto), { clientIp });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
         { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
@@ -80,7 +93,7 @@ export class AuthController {
       });
     }
 
-    const result = await this.otp.verify(society.id, dto.phone, dto.code, { clientIp });
+    const result = await this.otp.verify(society.id, phoneOf(dto), dto.code, { clientIp });
     if (result === 'INVALID') {
       throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
     }
@@ -98,7 +111,7 @@ export class AuthController {
     }
 
     // societyId bound from the invite code — never trusted from the body (ADR-0003).
-    const resident = await this.residents.upsertVerified(society.id, dto.phone, dto.name);
+    const resident = await this.residents.upsertVerified(society.id, phoneOf(dto), dto.name);
     const tokens = await this.auth.issueTokens(resident);
     return { ...tokens, resident: toResidentDto(resident) };
   }
@@ -124,7 +137,7 @@ export class AuthController {
     //  - CHORE-017 (ADR-0027): this request no longer asks whether the number is an
     //    administrator AT ALL. It queues the code for everyone; the worker asks, after
     //    the response has gone. Nothing role-dependent is left on the request path.
-    const outcome = await this.otp.request(ADMIN_OTP_SCOPE, dto.phone, {
+    const outcome = await this.otp.request(ADMIN_OTP_SCOPE, phoneOf(dto), {
       dispatch: 'queued',
       clientIp,
     });
@@ -144,7 +157,7 @@ export class AuthController {
     // Looking the row up first — which is what this did before — meant an unknown
     // number got OTP_INVALID while a registered one got OTP_EXPIRED, so a single
     // unauthenticated request revealed whether a phone was in the product (V2 P1-2).
-    const result = await this.otp.verify(ADMIN_OTP_SCOPE, dto.phone, dto.code, { clientIp });
+    const result = await this.otp.verify(ADMIN_OTP_SCOPE, phoneOf(dto), dto.code, { clientIp });
     if (result === 'INVALID') {
       throw new BadRequestException({ code: ErrorCode.OTP_INVALID, message: 'Incorrect code.' });
     }
@@ -166,7 +179,7 @@ export class AuthController {
     // this line without being an admin means holding a code that was generated but
     // never sent anywhere, so nothing is disclosed to someone who does not already
     // control the number.
-    const admin = await this.residents.findAdminByPhone(dto.phone);
+    const admin = await this.residents.findAdminByPhone(phoneOf(dto));
     if (!admin) {
       throw new ForbiddenException({
         code: ErrorCode.NOT_AN_ADMIN,

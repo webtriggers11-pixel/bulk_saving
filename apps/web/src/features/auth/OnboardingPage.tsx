@@ -1,3 +1,4 @@
+import { normalisePhone } from '@bulk/shared';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -27,13 +28,14 @@ export function OnboardingPage() {
   const [code, setCode] = useState('');
 
   const requestMutation = useMutation({
-    mutationFn: () => requestOtp({ inviteCode, phone }),
+    // BUG-019: the canonical form, so the number shown back is the one the server keeps.
+    mutationFn: () => requestOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim() }),
     onSuccess: () => setStep('otp'),
   });
 
   const verifyMutation = useMutation({
     mutationFn: () =>
-      verifyOtp({ inviteCode, phone, code, name: name.trim() ? name.trim() : undefined }),
+      verifyOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim(), code, name: name.trim() ? name.trim() : undefined }),
     onSuccess: (result) => {
       login({
         accessToken: result.accessToken,
@@ -189,7 +191,7 @@ export function OnboardingPage() {
           <form onSubmit={submitOtp} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">Enter the code</h2>
             <p className="mb-6 mt-2 text-caption text-ink-muted">
-              Sent by SMS to <span className="num font-bold text-ink">{phone}</span>.
+              Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
             <Label htmlFor="code">6-digit code</Label>
             <Input

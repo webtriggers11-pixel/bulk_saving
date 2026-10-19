@@ -1,3 +1,4 @@
+import { normalisePhone } from '@bulk/shared';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -30,12 +31,12 @@ export function AdminLoginPage() {
   const [code, setCode] = useState('');
 
   const requestMutation = useMutation({
-    mutationFn: () => requestAdminOtp({ phone: phone.trim() }),
+    mutationFn: () => requestAdminOtp({ phone: normalisePhone(phone) ?? phone.trim() }),
     onSuccess: () => setStep('code'),
   });
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyAdminOtp({ phone: phone.trim(), code }),
+    mutationFn: () => verifyAdminOtp({ phone: normalisePhone(phone) ?? phone.trim(), code }),
     onSuccess: (result) => {
       login({
         accessToken: result.accessToken,
