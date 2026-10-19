@@ -21,6 +21,7 @@ describe('isKnownPushEndpoint', () => {
     ['credentials in the URL', 'https://user:pass@fcm.googleapis.com/x'],
     ['a non-default port', 'https://fcm.googleapis.com:8443/x'],
     ['not a URL', 'fcm.googleapis.com/x'],
+    ['a parser-confusing host', 'https://;x.push.apple.com/'],
   ])('refuses %s', (_why, endpoint) => {
     expect(isKnownPushEndpoint(endpoint)).toBe(false);
   });

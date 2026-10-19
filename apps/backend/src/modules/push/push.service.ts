@@ -105,12 +105,14 @@ export class PushService {
       data: { pushQueuedAt: new Date() },
     });
     if (claimed === 0) return 0;
-    const devices = await this.prisma.pushSubscription.findMany({
-      where: { residentId: notification.residentId },
-      select: { id: true },
-    });
-    if (devices.length === 0) return 0;
+    let devices: Array<{ id: string }>;
     try {
+      // Inside the try: if reading the devices fails, the claim is released too (V2 r2 P2).
+      devices = await this.prisma.pushSubscription.findMany({
+        where: { residentId: notification.residentId },
+        select: { id: true },
+      });
+      if (devices.length === 0) return 0;
       await this.queue.addBulk(
       devices.map((device) => ({
         name: 'send',

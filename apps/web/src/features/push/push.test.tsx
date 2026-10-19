@@ -118,13 +118,18 @@ describe('lib/push', () => {
     expect(api).not.toHaveBeenCalled();
   });
 
-  it('signing out never waits more than a moment on push', async () => {
+  it('signing out never waits on a server that does not answer (3s cap) (V2 r2 P1)', async () => {
     vi.useFakeTimers();
     installPush({ permission: 'granted', subscribed: true });
-    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { ready: new Promise(() => {}) } });
-    const done = releasePushOnSignOut({ server: true });
-    await vi.advanceTimersByTimeAsync(4_100);
-    await expect(done).resolves.toBeUndefined();
+    // The worker is ready at once; it is the DELETE that hangs — a dead network, and
+    // apiRequest has no timeout of its own. Only the cap ends the wait.
+    api.mockReturnValue(new Promise(() => {}));
+    let finished = false;
+    void releasePushOnSignOut({ server: true }).then(() => (finished = true));
+    await vi.advanceTimersByTimeAsync(2_900);
+    expect(finished).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(finished).toBe(true);
     vi.useRealTimers();
   });
 

@@ -154,13 +154,19 @@ describe('Web push (FEAT-020)', () => {
     expect(push.to(e)).toHaveLength(1);
   });
 
-  it('a push fan-out fault never holds the SMS back (V2 P2)', async () => {
+  it('a push fan-out fault never holds the SMS back — not even for one retry (V2 P2)', async () => {
     const service = app.get(PushService);
-    const spy = jest.spyOn(service, 'fanOut').mockRejectedValueOnce(new Error('redis hiccup'));
-    await notify(alice.id);
-    await waitFor(() => sms.messagesTo(alice.phone).length, (n) => n >= 1);
-    expect(sms.messagesTo(alice.phone)).toContain('Your round is going ahead.');
+    // EVERY fan-out fails: if the fault escaped, the dispatch job would fail on each attempt
+    // and the row would end FAILED with no SMS — a retry cannot paper over it (V2 r2 P1).
+    const spy = jest.spyOn(service, 'fanOut').mockRejectedValue(new Error('redis hiccup'));
+    const id = await notify(alice.id);
+    const row = await waitFor(
+      () => prisma.notification.findUniqueOrThrow({ where: { id } }),
+      (r) => r.status !== 'PENDING',
+    );
     spy.mockRestore();
+    expect(row).toMatchObject({ status: 'SENT', attempts: 1 });
+    expect(sms.messagesTo(alice.phone)).toContain('Your round is going ahead.');
   });
 
   it('stores the endpoint normalised — the URL validated is the URL sent to (V2 P3)', async () => {

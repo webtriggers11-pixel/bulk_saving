@@ -51,6 +51,12 @@ job ids must not contain `:` (found by the integration test, not the docs).
     null) — job ids dedupe only while completed jobs are still in Redis, and a dispatch retried
     in an SMS outage or re-run by the reconciler would otherwise push again (V2 P1). Fan-out
     faults are logged and never block the SMS (V2 P2).
+    The guarantee is therefore **at most once per notification**: the claim is released if
+    reading devices or queueing fails, but a process crash between the claim and the queue
+    write drops that one push (the SMS still goes). Chosen over at-least-once because a
+    duplicate re-alerts the person (`renotify`), and a lost push is covered by SMS.
+    A forced sign-out (refresh token expired) also drops push on that device; the resident
+    turns it on again after signing back in (V2 r2).
 12. **Endpoints are stored normalised** (WHATWG `href`) and re-checked against the allowlist at
     send time, so the URL validated is the URL called, whatever another parser would make of
     the raw string (V2 P3).

@@ -56,6 +56,10 @@ export function isKnownPushEndpoint(endpoint: string): boolean {
     return false;
   }
   const host = url.hostname.toLowerCase();
+  // Plain DNS characters only: `https://;x.push.apple.com/` parses here with a hostname the
+  // older parser inside web-push reads as EMPTY (→ localhost). Refuse anything it could
+  // disagree about (V2 r2 P3).
+  if (!/^[a-z0-9.-]+$/.test(host)) return false;
   return PUSH_SERVICE_HOSTS.some((known) => (known.startsWith('.') ? host.endsWith(known) : host === known));
 }
 

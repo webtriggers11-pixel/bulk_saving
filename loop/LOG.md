@@ -1007,3 +1007,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - BUG-012 again, the other direction: an apostrophe in a new comment RAISED the token count 1703 → 2008 (pairing shifted); reworded → 1703.
 - V1: gate exit 0 — backend 448/448, web 551/551, 1703 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-020 — V2 round 2 FAIL (vacuous tests) → fixed
+- V2 round 2 (gate exit 0, 448/551): the fixes were right, but two new tests passed with their fix removed — M-B (no try/catch: `mockRejectedValueOnce` let a BullMQ retry deliver the SMS anyway) and M-C (no 3s cap: the test hung `serviceWorker.ready`, which the 4s registration timeout already ends). Rewritten: fan-out fails EVERY time and the row must end SENT with attempts 1; the DELETE hangs with the worker ready, and sign-out must finish between 2.9s and 3.1s. **Both mutations re-run by me: killed** (M-B 1 failed, M-C 4 failed); files restored from backups.
+- P2 claim could stick if reading devices threw → findMany moved inside the try; ADR-0032 §11 now states the guarantee is AT MOST ONCE (a crash between claim and queue drops that push; SMS still goes) and that a forced sign-out drops push on the device. P3: hostnames must be plain DNS characters (`https://;x.push.apple.com/` parsed differently by web-push's parser); cap timer cleared.
+- V1: gate exit 0 — backend 449/449, web 551/551, 1703 class tokens.
+- By: agent (autonomous)

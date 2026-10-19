@@ -101,7 +101,12 @@ export async function releasePushOnSignOut({ server }: { server: boolean }): Pro
       // Offline, or the session already gone: the 410 path cleans the server row up.
     }
   })();
-  await Promise.race([work, new Promise((resolve) => window.setTimeout(resolve, 3_000))]);
+  let timer = 0;
+  try {
+    await Promise.race([work, new Promise((resolve) => (timer = window.setTimeout(resolve, 3_000)))]);
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 /** Unsubscribe this device everywhere: the browser first, then the server. */
