@@ -48,10 +48,13 @@ describe('ConfirmSheet (FEAT-024)', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it('while the action runs both buttons wait and the confirm says so', () => {
-    renderSheet({ busy: true });
+  it('while the action runs the confirm waits and says so — but backing out is always possible', () => {
+    const { onClose } = renderSheet({ busy: true });
     expect(screen.getByRole('button', { name: 'Leaving…' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Keep my pledge' })).toBeDisabled();
+    const keep = screen.getByRole('button', { name: 'Keep my pledge' });
+    expect(keep).toBeEnabled();
+    fireEvent.click(keep);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('a failed action is said inside the sheet, which stays open', () => {

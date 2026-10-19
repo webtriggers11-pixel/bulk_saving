@@ -214,7 +214,7 @@ function AssignForm({
 
 /**
  * Status-driven actions: Close (OPEN), Assign (CLOSED_MET), Deliver (ASSIGNED) and
- * Cancel with an inline two-step confirm (any pre-DELIVERED, non-terminal status).
+ * Cancel asks first through the shared ConfirmSheet (any pre-DELIVERED, non-terminal status).
  */
 function RoundActions({ round }: { round: AdminRoundDetailDto }) {
   const close = useCloseRound(round.id);
@@ -262,9 +262,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
         {/* FEAT-024: the same confirmation the resident gets — one sheet, not a hand-rolled box. */}
         <ConfirmSheet
           open={confirmingCancel}
-          onClose={() => {
-            if (!cancel.isPending) setConfirmingCancel(false);
-          }}
+          onClose={() => setConfirmingCancel(false)}
           title="Cancel this round?"
           consequence="Residents' pledges will no longer be fulfilled. This cannot be undone."
           confirmLabel="Yes, cancel round"

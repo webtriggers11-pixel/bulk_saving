@@ -60,7 +60,9 @@ export function ConfirmSheet({
           <Button variant="danger" className="w-full" disabled={busy} onClick={onConfirm} data-testid="confirm-yes">
             {busy ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </Button>
-          <Button variant="ghost" className="w-full" disabled={busy} onClick={onClose} data-testid="confirm-keep">
+          {/* Never disabled: the Sheet contract is "always closable" — the action, if running,
+              keeps running (offline it is paused, and the caller's card says so). */}
+          <Button variant="ghost" className="w-full" onClick={onClose} data-testid="confirm-keep">
             {keepLabel}
           </Button>
         </div>

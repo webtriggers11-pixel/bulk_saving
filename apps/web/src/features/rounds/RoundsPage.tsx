@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { Badge } from '../../components/ui/badge';
 import { QueryErrorState } from '../../components/QueryState';
-import { OFFLINE_QUEUED_TEXT, anyPaused, hasRows, queryStalled } from '../../lib/offline';
+import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused, hasRows, queryStalled } from '../../lib/offline';
 import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
 import { EmptyState } from '../../components/ui/empty-state';
 import { PageHeader } from '../../components/ui/page-header';
@@ -244,13 +244,13 @@ function PledgeSheet({
           )}
           <ConfirmSheet
             open={confirmLeave}
-            onClose={() => {
-              if (!leave.isPending) setConfirmLeave(false);
-            }}
+            // Always closable (V2 P1): offline, a paused mutation stays pending for as long as the
+            // connection is gone; the sheet must not hold the person with it.
+            onClose={() => setConfirmLeave(false)}
             title="Leave this round?"
             consequence={`Your pledge of ${formatUnits(round.myUnits, round.service)} is withdrawn, and the price for everyone may change.`}
             confirmLabel="Yes, leave"
-            pendingLabel="Leaving…"
+            pendingLabel={leave.isPaused ? OFFLINE_WAITING_LABEL : 'Leaving…'}
             keepLabel="Keep my pledge"
             busy={leave.isPending}
             error={leave.isError ? 'Could not leave just now. Please try again.' : null}

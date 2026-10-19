@@ -13,14 +13,20 @@ export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
   const signOut = useSignOut();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function confirm() {
     setBusy(true);
+    setError(null);
     try {
       await signOut();
+      setAsking(false);
+    } catch {
+      // Both steps inside signOut are capped and swallow their own errors; this is the
+      // belt for anything else — the sheet stays open and says so (AC1).
+      setError('Could not log out just now. Please try again.');
     } finally {
       setBusy(false);
-      setAsking(false);
     }
   }
 
@@ -47,6 +53,7 @@ export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
         pendingLabel="Logging out…"
         keepLabel="Stay signed in"
         busy={busy}
+        error={error}
         onConfirm={() => void confirm()}
         data-testid="sign-out-confirm"
       />

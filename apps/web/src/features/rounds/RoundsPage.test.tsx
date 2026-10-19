@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { onlineManager } from '@tanstack/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -153,6 +153,42 @@ describe('RoundsPage', () => {
       fireEvent.click(screen.getByTestId('confirm-yes'));
       await waitFor(() => expect(leaveRoundMock).toHaveBeenCalledWith('round_1'));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('leaving asks first; backing out runs nothing and keeps the pledge sheet open (FEAT-024)', async () => {
+      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
+      fireEvent.click(screen.getByTestId('leave-round_1'));
+      expect(screen.getByRole('dialog', { name: 'Leave this round?' })).toBeInTheDocument();
+      expect(leaveRoundMock).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByTestId('confirm-keep'));
+      expect(screen.queryByRole('dialog', { name: 'Leave this round?' })).not.toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Your pledge' })).toBeInTheDocument();
+      expect(leaveRoundMock).not.toHaveBeenCalled();
+    });
+
+    it('offline, a confirmed leave says it is waiting — and can still be backed out of (V2 P1)', async () => {
+      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      leaveRoundMock.mockResolvedValue(undefined as never);
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
+      fireEvent.click(screen.getByTestId('leave-round_1'));
+      act(() => {
+        onlineManager.setOnline(false);
+      });
+      try {
+        fireEvent.click(screen.getByTestId('confirm-yes'));
+        expect(await screen.findByRole('button', { name: 'Waiting for a connection…' })).toBeDisabled();
+        expect(leaveRoundMock).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByTestId('confirm-keep'));
+        expect(screen.queryByRole('dialog', { name: 'Leave this round?' })).not.toBeInTheDocument();
+      } finally {
+        act(() => {
+          onlineManager.setOnline(true);
+        });
+      }
     });
 
     it('each opening starts from what is pledged now — an abandoned draft does not come back', async () => {

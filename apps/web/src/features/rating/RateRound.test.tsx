@@ -211,6 +211,38 @@ describe('RateRound (on the My Requests card)', () => {
       expect(rateRoundMock).not.toHaveBeenCalled();
     });
 
+    it('removing asks first; backing out runs nothing (FEAT-024)', async () => {
+      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+      expect(screen.getByRole('dialog', { name: 'Remove your rating?' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Keep my rating' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(removeRatingMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('my-rating')).toHaveTextContent('4 / 5');
+    });
+
+    it('offline, a confirmed removal says it is waiting and can still be backed out of (V2 P1)', async () => {
+      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      removeRatingMock.mockResolvedValue(undefined);
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+      act(() => {
+        onlineManager.setOnline(false);
+      });
+      try {
+        fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
+        expect(await screen.findByRole('button', { name: 'Waiting for a connection…' })).toBeDisabled();
+        expect(removeRatingMock).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'Keep my rating' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      } finally {
+        act(() => {
+          onlineManager.setOnline(true);
+        });
+      }
+    });
+
     it('withdraws the rating on Remove', async () => {
       fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
       removeRatingMock.mockResolvedValue(undefined);

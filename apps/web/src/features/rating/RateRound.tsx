@@ -140,13 +140,11 @@ export function RateRound({ round }: { round: MyRoundDto }) {
           </div>
           <ConfirmSheet
             open={confirmRemove}
-            onClose={() => {
-              if (!remove.isPending) setConfirmRemove(false);
-            }}
+            onClose={() => setConfirmRemove(false)}
             title="Remove your rating?"
             consequence="The vendor's average will no longer include it. You can rate this job again later."
             confirmLabel="Yes, remove"
-            pendingLabel="Removing…"
+            pendingLabel={remove.isPaused ? OFFLINE_WAITING_LABEL : 'Removing…'}
             keepLabel="Keep my rating"
             busy={remove.isPending}
             error={removeError ? ratingErrorMessage(removeError) : null}
