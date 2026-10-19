@@ -1255,3 +1255,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Affected suites 92/92 alone; gate run queued; V2 round 3 to follow.
 - By: agent (autonomous) + code-reviewer subagent
 - V1 (round-2 fixes): gate exit 0 — backend 470/470, web 631/631 (+3), 3280 class tokens.
+
+## 2026-10-19 — BUG-019 — failing test → fixed (ADR-0036)
+- Failing test first: `auth.integration.spec` "normalises the phone" — four spellings of one number → one resident. Red without the fix (`Received: "9866668176"`), then a 400 for the spaced form (the DTO regex refused it before the normaliser could run) → the DTO now admits formatting characters and `phoneOf` is the check. Green with the fix: auth + admin-auth + otp-budget 23/23; `normalisePhone` unit 15/15; web auth suites 24/24.
+- `normalisePhone` lives in `@bulk/shared` (one function for API and web); the web sends and shows the canonical form. ADR-0036.
+- Gate queued behind the running V2 (one gate at a time).
+- By: agent (autonomous)

@@ -87,4 +87,4 @@
 | BUG-018 | Flaky: OTP "awaited dispatch" test races a fixed 50ms sleep against Redis under the full suite (1 in ~5 gate runs) | done | P2 | 2026-10-19 | 2026-10-19 | loop/work/BUG-018-flaky-otp-awaited-dispatch-test/ | — |
 | FEAT-024 | Confirm before destructive actions: log out, leave a round, delete a rating, withdraw an ask, admin cancel/deactivate — one confirm sheet | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-024-confirm-destructive-actions/ | ADR-0022 |
 | FEAT-025 | Server-side pagination on the list endpoints and the screens that read them | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-025-server-side-pagination/ | ADR-0005 |
-| BUG-019 | Phone stored exactly as typed — `9999900201` and `+919999900201` become two residents (no canonical form) | triaged | P2 | 2026-10-19 | — | loop/work/BUG-019-phone-not-normalised/ | ADR-0007 |
+| BUG-019 | Phone stored exactly as typed — `9999900201` and `+919999900201` become two residents (no canonical form) | in-progress | P2 | 2026-10-19 | — | loop/work/BUG-019-phone-not-normalised/ | ADR-0007, ADR-0036 |
