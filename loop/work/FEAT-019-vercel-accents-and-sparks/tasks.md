@@ -7,4 +7,4 @@
 - [x] T5 Browser pass (AC7)
 - [x] T6 ADR-0031, DESIGN-SYSTEM.md
 - [x] T7 V2 round 1 PASS-with-findings → 2×P2 + 8×P3 taken
-- [ ] T8 V2 round 2 · V3
+- [x] T8 V2 round 2 PASS (1×P2 + 2×P3 taken); V3 two identical runs (396/533, 1648 tokens)

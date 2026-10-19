@@ -57,7 +57,9 @@ const TONES: Record<ButtonTone, Record<AccentVariant, string> | Record<string, n
   default: {},
   onAccent: {
     secondary: 'paint-glass text-brand-ink border border-on-fill/50 shadow-control sweep ripple',
-    ghost: 'border border-on-fill/35 bg-on-fill/15 text-on-fill hover:bg-on-fill/25',
+    // No on-fill wash under the text: lightening the fill took white text under 4.5:1 on
+    // five accents (FEAT-019 V2 r2 P2). The hover darkens instead.
+    ghost: 'border border-on-fill/35 text-on-fill hover:bg-shade/15',
   },
 };
 

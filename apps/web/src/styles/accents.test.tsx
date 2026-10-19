@@ -185,3 +185,60 @@ describe('micro-interactions (AC5, AC6)', () => {
     }
   });
 });
+
+describe('FEAT-019 V2 round 2', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it.each(PALETTES)(
+    '%s: the on-accent ghost button (update banner) keeps 4.5:1 at rest and on hover, day and night',
+    (accent) => {
+      const source = readFileSync(join(process.cwd(), 'src/components/ui/button.tsx'), 'utf8');
+      const ghost = /onAccent: \{[\s\S]*?ghost: '([^']+)'/.exec(source)?.[1] ?? '';
+      expect(ghost, 'no wash that LIGHTENS the fill under the text').not.toMatch(/bg-on-fill/);
+      expect(ghost).toContain('hover:bg-shade/15');
+      const rule = css.slice(css.indexOf("html[data-look='vercel'] .surface-accent {"));
+      const glow = Number(/rgb\(var\(--brand-2\) \/ ([\d.]+)\)/.exec(rule)?.[1]);
+      const over = (a: RGB, b: RGB, t: number): RGB => a.map((v, i) => v * (1 - t) + b[i] * t) as RGB;
+      for (const [fills, onFill] of [
+        [block(`[data-accent='${accent}'] {`), DAY['--on-fill']],
+        [block(`html[data-scheme='dark'][data-accent='${accent}'] {`), NIGHT['--on-fill']],
+      ] as const) {
+        // The banner button sits in the top-right corner, under the partner glow.
+        const rest = over(fills['--brand'], fills['--brand-2'], glow);
+        const hover = over(rest, [0, 0, 0], 0.15);
+        expect(ratio(onFill, rest), 'rest').toBeGreaterThanOrEqual(4.5);
+        expect(ratio(onFill, hover), 'hover').toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
+
+  it.each([
+    ['toString', 'mono'],
+    ['constructor', 'mono'],
+    ['teal', 'lagoon'],
+    ['ocean', 'ocean'],
+  ])('the real pre-paint script maps a stored %s to %s', (stored, accent) => {
+    const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
+    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? '';
+    expect(script).toContain('data-accent');
+    localStorage.setItem('bulk:palette', stored);
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    new Function(script)();
+    expect(document.documentElement.getAttribute('data-accent')).toBe(accent);
+    expect(document.documentElement.getAttribute('data-look')).toBe('vercel');
+  });
+
+  it('a button unmounted mid-burst leaves no timer behind', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { unmount } = render(<Button>Join</Button>);
+    fireEvent.pointerDown(screen.getByRole('button'), { clientX: 5, clientY: 5 });
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});

@@ -983,3 +983,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - BUG-012 bit again mid-fix: two new comments with apostrophes dropped the token count 1642 → 1623; reworded → 1648.
 - V1: gate exit 0 — backend 396/396, web 521/521, 1648 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-019 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 396/521; contrasts recomputed — corner ≥5.15 day / ≥7.2 night, fill text ≥5.15, swatch tick ≥7.75; 4 of 6 mutations killed): PASS with one P2 — the on-accent ghost button (update banner "Reload") put a 15–25% on-fill wash under its white text: 3.25–4.38 on five accents → wash removed, hover darkens with `shade`; test computes rest + hover over the corner glow per accent, day and night. P3s: the pre-paint `hasOwnProperty` guard and the spark-timer cleanup were untested → the REAL inline script is now executed in a test (toString/constructor/teal/ocean), and unmount-mid-burst asserts zero timers. Both mutations now killed (verified).
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 533/533, 1648 class tokens. No flakes.
+- FEAT-019 → done.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
