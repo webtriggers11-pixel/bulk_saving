@@ -1197,3 +1197,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — CHORE-024 — browser pass
 - Preview :5175 /profile: hero (monogram · Signed in as · name · Resident badge · "● Connected"), Phone + Society tiles, then one list — Install app (line + small filled button), Appearance (line + arrow), Notifications (line + switch) — all one row shape, then Log out. Nothing competes inside a row any more.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-023 — V2 PASS → P3s taken
+- V2 (independent, in a detached worktree; gate exit 0, 464/604, 3338 tokens; 2 mutations killed): PASS, no P1/P2.
+- Taken: P3-1 the lead reads `queryStalled` so an offline cold start says "Could not check just now" instead of the good-news line; P3-2 tests for a failed refetch with cached rows, the loading line, and offline cold start; P3-3 phone-layout guard pins `truncate` + `whitespace-nowrap` on the row. P3-4 (copy: "See group buys" when ≤3) accepted as deliberate — AC3 satisfied by "See all N group buys" when there are more.
+- By: agent (autonomous) + code-reviewer subagent

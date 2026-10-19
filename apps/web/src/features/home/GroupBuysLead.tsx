@@ -3,6 +3,7 @@ import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Icon } from '../../components/ui/icon';
+import { queryStalled } from '../../lib/offline';
 import { unitLabelFor } from '../../lib/units';
 import { formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
@@ -26,7 +27,10 @@ function soonest(rounds: RoundDto[]): RoundDto[] {
  */
 export function GroupBuysLead() {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useRounds();
+  const query = useRounds();
+  const { data, isLoading } = query;
+  // Offline pauses the read instead of failing it (CHORE-005): "stalled" covers both.
+  const stalled = queryStalled(query);
   const rounds = data ?? [];
   const open = rounds.length;
   const joined = rounds.filter((round) => round.myUnits > 0).length;
@@ -60,7 +64,7 @@ export function GroupBuysLead() {
           <p className="mt-1.5 text-meta font-semibold text-on-fill" data-testid="group-buys-line">
             {isLoading
               ? 'Checking what is open…'
-              : isError && !known
+              : stalled && !known
                 ? 'Could not check just now — open the tab to retry.'
                 : empty
                   ? 'Ask for a service and we will open a round for it.'

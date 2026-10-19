@@ -101,6 +101,12 @@ describe('BUG-016 V2 — the pieces a phone layout depends on', () => {
     expect(tile.match(/min-\[400px\]:min-h-\[2lh\]/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 
+  it('a Home group-buy row truncates its name and never wraps its price (FEAT-023)', () => {
+    const lead = src('home/GroupBuysLead.tsx');
+    expect(lead).toMatch(/block truncate text-body font-extrabold/);
+    expect(lead).toMatch(/num shrink-0 whitespace-nowrap/);
+  });
+
   it('the countdown and its arrow break as one piece', () => {
     expect(src('catalog/ServicesPage.tsx')).toMatch(/<span className="inline-flex items-center gap-1 whitespace-nowrap">\s*\{formatCountdown/);
   });

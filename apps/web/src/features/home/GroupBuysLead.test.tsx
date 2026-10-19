@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { onlineManager } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -40,8 +41,9 @@ function round(id: string, name: string, daysLeft: number, myUnits = 0, unitLabe
   };
 }
 
-function renderLead() {
+function renderLead(seed?: RoundDto[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  if (seed) client.setQueryData(['rounds'], seed);
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
@@ -107,6 +109,32 @@ describe('GroupBuysLead (FEAT-023)', () => {
     expect(screen.queryByTestId('group-buys-rows')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Ask for a service/ }));
     expect(navigate).toHaveBeenCalledWith('/services');
+  });
+
+  it('keeps the rows it already has when a refetch fails, and says nothing alarming', async () => {
+    fetchRoundsMock.mockRejectedValue(new Error('down'));
+    renderLead([round('pest', 'Pest Control', 3, 1)]);
+    expect(await screen.findByText('1 open in your society')).toBeInTheDocument();
+    expect(screen.getByTestId('group-buys-row-pest')).toBeInTheDocument();
+    expect(screen.queryByText(/Could not check just now/)).not.toBeInTheDocument();
+  });
+
+  it('says it is checking while the first page loads, and the way in is already there', () => {
+    fetchRoundsMock.mockImplementation(() => new Promise(() => undefined));
+    renderLead();
+    expect(screen.getByTestId('group-buys-line')).toHaveTextContent('Checking what is open…');
+    expect(screen.getByRole('button', { name: /See group buys/ })).toBeInTheDocument();
+  });
+
+  it('offline on a cold start reads as "could not check", not as good news (V2 P3)', async () => {
+    onlineManager.setOnline(false);
+    try {
+      fetchRoundsMock.mockResolvedValue([]);
+      renderLead();
+      expect(await screen.findByText(/Could not check just now/)).toBeInTheDocument();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it('never blanks Home when the rounds query fails — the way in stays', async () => {
