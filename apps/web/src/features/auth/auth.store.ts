@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { queryClient } from '../../lib/query-client';
 import { provideSession } from '../../lib/session-port';
+import { releasePushOnSignOut } from '../../lib/push';
 import type { AuthTokens, ResidentDto, SocietyDto } from '@bulk/shared';
 
 /**
@@ -132,5 +133,8 @@ provideSession({
     // this phone can be served the previous one's data (ADR-0015, V2 P1-2). The two
     // explicit logouts already do this; this is the path that could not reach it.
     queryClient.clear();
+    // FEAT-020: no token left to tell the server; drop the browser side, and the server
+    // row goes on its next push (410).
+    void releasePushOnSignOut({ server: false });
   },
 });

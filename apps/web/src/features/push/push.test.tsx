@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiRequest } from '../../lib/api';
-import { disablePush, enablePush, keyBytes, readPushState, syncPushAccent } from '../../lib/push';
+import { disablePush, enablePush, keyBytes, readPushState, releasePushOnSignOut, syncPushAccent } from '../../lib/push';
 
 /**
  * FEAT-020 (ADR-0032) — web push on the device: the lib, the service-worker handlers,
@@ -92,6 +92,42 @@ describe('lib/push', () => {
     expect(api).toHaveBeenCalledWith('/push/subscriptions', expect.objectContaining({ body: expect.objectContaining({ accent: 'aurora' }) }));
   });
 
+  it('replaces a subscription made under an old server key instead of re-posting it (V2 P2)', async () => {
+    const env = installPush({ permission: 'granted', subscribed: true });
+    const stale = env.current()!;
+    Object.assign(stale, { options: { applicationServerKey: new Uint8Array([9, 9, 9]).buffer } });
+    api.mockResolvedValueOnce({ publicKey: 'AQID' }).mockResolvedValueOnce({ subscribed: true });
+    expect(await enablePush('mono')).toBe('on');
+    expect(stale.unsubscribe).toHaveBeenCalled();
+    expect(env.subscribe).toHaveBeenCalledWith({ userVisibleOnly: true, applicationServerKey: new Uint8Array([1, 2, 3]) });
+  });
+
+  it('signing out drops this phone from push — and tells the server while it still can (V2 P2)', async () => {
+    const env = installPush({ permission: 'granted', subscribed: true });
+    const sub = env.current()!;
+    api.mockResolvedValueOnce({ subscribed: false });
+    await releasePushOnSignOut({ server: true });
+    expect(sub.unsubscribe).toHaveBeenCalled();
+    expect(api).toHaveBeenCalledWith('/push/subscriptions', { method: 'DELETE', body: { endpoint: ENDPOINT } });
+  });
+
+  it('a forced sign-out (no token) drops only the browser side, and never throws', async () => {
+    const env = installPush({ permission: 'granted', subscribed: true });
+    env.current()!.unsubscribe.mockRejectedValueOnce(new Error('gone'));
+    await expect(releasePushOnSignOut({ server: false })).resolves.toBeUndefined();
+    expect(api).not.toHaveBeenCalled();
+  });
+
+  it('signing out never waits more than a moment on push', async () => {
+    vi.useFakeTimers();
+    installPush({ permission: 'granted', subscribed: true });
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { ready: new Promise(() => {}) } });
+    const done = releasePushOnSignOut({ server: true });
+    await vi.advanceTimersByTimeAsync(4_100);
+    await expect(done).resolves.toBeUndefined();
+    vi.useRealTimers();
+  });
+
   it('decodes a base64url VAPID key to bytes', () => {
     expect(keyBytes('-_8')).toEqual(new Uint8Array([251, 255]));
   });
@@ -155,6 +191,14 @@ describe('push-sw.js (the service-worker handlers)', () => {
     await Promise.all(waits);
     expect(focused.focus).toHaveBeenCalled();
     expect(focused.navigate).toHaveBeenCalledWith('/my-requests');
+
+    // `navigate` rejects for a window the worker does not control: open one instead (V2 P3).
+    focused.navigate.mockRejectedValueOnce(new TypeError('not controlled'));
+    scope.clients.openWindow.mockClear();
+    waits = [];
+    listeners.notificationclick({ notification: { close, data: { url: '/rounds' } }, waitUntil: (p: Promise<unknown>) => waits.push(p) });
+    await Promise.all(waits);
+    expect(scope.clients.openWindow).toHaveBeenCalledWith('/rounds');
   });
 });
 

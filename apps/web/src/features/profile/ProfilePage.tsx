@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../auth/auth.store';
+import { releasePushOnSignOut } from '../../lib/push';
 import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
 import { useOnlineStatus } from '../../lib/useOnlineStatus';
 import { Button } from '../../components/ui/button';
@@ -72,7 +73,10 @@ export function ProfilePage() {
   // (V2 P2-6).
   const installed = isStandalone();
 
-  function handleLogout() {
+  async function handleLogout() {
+    // FEAT-020: stop this phone receiving notifications meant for the person signing out —
+    // while the token still works to tell the server.
+    await releasePushOnSignOut({ server: true });
     logout();
     // Clear cached server data too: the next resident on this phone must not
     // see the previous one's rounds (ADR-0015).

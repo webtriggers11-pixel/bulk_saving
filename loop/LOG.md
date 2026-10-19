@@ -998,3 +998,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Gates caught on the way: `Uint8Array<ArrayBuffer>` (TS 5.9) for the VAPID key; BUG-007 guard (a text size passed into Button).
 - V1: gate exit 0 — backend 443/443 (+47), web 547/547 (+14), 1703 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-020 — V2 round 1 FAIL → fixed (1×P1, 3×P2, 5×P3)
+- V2 (independent; gate exit 0, 443/547; confirmed push queue inherits `bull-test`; SSRF fuzzed 300k URLs vs web-push's legacy parser — no live bypass; 2 mutations killed) returned FAIL:
+  - P1 "never twice" rested on BullMQ job ids, which vanish when completed jobs are evicted (count 1,000): a dispatch retried through an SMS outage, or re-run by the reconciler, would push again (up to 5×, each re-alerting via `renotify`) → second additive migration `Notification.pushQueuedAt`, claimed with `updateMany where null` (released if queueing fails); age-based job retention as belt. Test: evict the completed job, fan out again → nothing queued, nothing re-sent.
+  - P2 a fan-out fault threw past the SMS → caught and logged; SMS always continues (test: fanOut rejects → SMS still arrives). P2 sign-out left the phone subscribed (shared-phone privacy) → `releasePushOnSignOut` on both explicit sign-outs (browser + server, bounded 3s) and the forced one (browser only; 410 prunes the row). P2 a subscription under a rotated VAPID key was re-posted forever → compared and replaced.
+  - P3: endpoints stored normalised (WHATWG href) and re-checked at send time (latent parser difference with web-push's `url.parse`); SW falls back to openWindow when `navigate` rejects; VAPID env format validated (a `__GENERATE__` placeholder now fails with a clear message, not a web-push crash); unused `setAccent` removed; endpoint-claim DoS accepted and written into ADR-0032 (§14).
+- BUG-012 again, the other direction: an apostrophe in a new comment RAISED the token count 1703 → 2008 (pairing shifted); reworded → 1703.
+- V1: gate exit 0 — backend 448/448, web 551/551, 1703 class tokens.
+- By: agent (autonomous)

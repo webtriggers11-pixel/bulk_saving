@@ -61,9 +61,16 @@ export class NotificationDispatchProcessor extends WorkerHost {
     }
 
     // FEAT-020 (ADR-0032): queue the push for each of the resident's devices FIRST, so a
-    // failing SMS provider cannot hold push back. Idempotent on (notification, device):
-    // when this job retries after an SMS failure, nothing is queued twice.
-    await this.push.fanOut(notification);
+    // failing SMS provider cannot hold push back — and never let push hold SMS back either:
+    // a fan-out fault is logged and the SMS still goes (V2 P2). `fanOut` claims the row once,
+    // so a retry of this job after an SMS failure does not push twice.
+    try {
+      await this.push.fanOut(notification);
+    } catch (err) {
+      this.logger.warn(
+        `Push fan-out for ${notificationId} failed; SMS continues: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
 
     try {
       await this.channel.send(notification.resident.phone, notification.body);

@@ -144,6 +144,30 @@ describe('Web push (FEAT-020)', () => {
     await waitFor(() => push.to(e).length, (n) => n >= 1);
     await new Promise((r) => setTimeout(r, 500));
     expect(push.to(e)).toHaveLength(1);
+
+    // V2 P1: the completed job is evicted (a burst of 1,000+ others would do it) and the
+    // dispatch retries during an SMS outage — the row claim still stops a second push.
+    await (await queue.getJob(pushJobId(id, device.id)))?.remove();
+    expect(await service.fanOut({ id, residentId: bob.id })).toBe(0);
+    expect(await queue.getJob(pushJobId(id, device.id))).toBeUndefined();
+    await new Promise((r) => setTimeout(r, 300));
+    expect(push.to(e)).toHaveLength(1);
+  });
+
+  it('a push fan-out fault never holds the SMS back (V2 P2)', async () => {
+    const service = app.get(PushService);
+    const spy = jest.spyOn(service, 'fanOut').mockRejectedValueOnce(new Error('redis hiccup'));
+    await notify(alice.id);
+    await waitFor(() => sms.messagesTo(alice.phone).length, (n) => n >= 1);
+    expect(sms.messagesTo(alice.phone)).toContain('Your round is going ahead.');
+    spy.mockRestore();
+  });
+
+  it('stores the endpoint normalised — the URL validated is the URL sent to (V2 P3)', async () => {
+    const raw = `https://FCM.googleapis.com/fcm/send/norm-${Date.now()}`;
+    await subscribe(bobToken, { endpoint: raw, keys, accent: 'mono' }).expect(200);
+    const row = await prisma.pushSubscription.findFirst({ where: { residentId: bob.id, endpoint: { contains: 'norm-' } } });
+    expect(row?.endpoint).toBe(raw.replace('FCM.googleapis.com', 'fcm.googleapis.com'));
   });
 
   it('a device the push service says is gone is removed', async () => {

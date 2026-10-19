@@ -231,6 +231,10 @@ model Notification {
   attempts   Int                @default(0)
   lastError  String?
   sentAt     DateTime?
+  // FEAT-020 (ADR-0032): set once, atomically, when this message is fanned out to push
+  // devices. The claim — not BullMQ job ids, which vanish when completed jobs are evicted
+  // — is what stops a retried or reconciled dispatch from pushing it twice.
+  pushQueuedAt DateTime?
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 

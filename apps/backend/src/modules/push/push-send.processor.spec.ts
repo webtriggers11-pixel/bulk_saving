@@ -55,6 +55,15 @@ describe('PushSendProcessor (FEAT-020)', () => {
     expect(gone.sender.send).not.toHaveBeenCalled();
   });
 
+  it('a stored endpoint off the allowlist is never called — it is removed (V2 P3)', async () => {
+    const { push, sender, processor, job } = setup(async () => undefined, {
+      findDevice: jest.fn().mockResolvedValue({ ...device, endpoint: 'https://169.254.169.254/latest' }),
+    });
+    await expect(processor.process(job(0))).resolves.toBe('device-gone');
+    expect(sender.send).not.toHaveBeenCalled();
+    expect(push.forget).toHaveBeenCalledWith('d1');
+  });
+
   it('an unknown stored accent falls back to Mono', async () => {
     const { sender, processor, job } = setup(async () => undefined, {
       findDevice: jest.fn().mockResolvedValue({ ...device, accent: 'neon' }),

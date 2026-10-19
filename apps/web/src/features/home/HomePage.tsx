@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe } from '../auth/auth.api';
 import { useAuthStore } from '../auth/auth.store';
+import { releasePushOnSignOut } from '../../lib/push';
 import { Button } from '../../components/ui/button';
 import { SchemeToggle } from '../../components/ui/scheme-toggle';
 import { Icon } from '../../components/ui/icon';
@@ -25,7 +26,10 @@ export function HomePage() {
   const { data, isLoading, refetch } = meQuery;
   const failed = queryStalled(meQuery);
 
-  function handleLogout() {
+  async function handleLogout() {
+    // FEAT-020: stop this phone receiving notifications meant for the person signing out —
+    // while the token still works to tell the server.
+    await releasePushOnSignOut({ server: true });
     logout();
     queryClient.clear();
     navigate('/onboard', { replace: true });

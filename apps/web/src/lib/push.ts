@@ -61,11 +61,47 @@ export async function enablePush(accent: Accent): Promise<PushState> {
   if (!publicKey) return 'unavailable';
   const reg = await registration();
   if (!reg) return 'unsupported';
-  const subscription =
-    (await reg.pushManager.getSubscription()) ??
-    (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) }));
+  const key = keyBytes(publicKey);
+  let subscription = await reg.pushManager.getSubscription();
+  // A subscription made under an OLD server key (keys rotated) can never be delivered to;
+  // re-posting it would show "on" while every push failed (V2 P2). Replace it.
+  if (subscription && !sameKey(subscription.options?.applicationServerKey ?? null, key)) {
+    await subscription.unsubscribe();
+    subscription = null;
+  }
+  subscription ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
   await apiRequest('/push/subscriptions', { method: 'POST', body: toBody(subscription, accent) });
   return 'on';
+}
+
+function sameKey(current: ArrayBuffer | null, expected: Uint8Array): boolean {
+  if (!current) return true; // the browser does not expose it: nothing to compare, keep it
+  const bytes = new Uint8Array(current);
+  return bytes.length === expected.length && bytes.every((byte, i) => byte === expected[i]);
+}
+
+/**
+ * Signing out (V2 P2): this phone must stop receiving the signed-out resident's rounds —
+ * a shared phone would otherwise show them to the next person. With `server`, the device
+ * row is deleted too (needs the token, so call BEFORE clearing it); a forced sign-out
+ * without a usable token only drops the browser side, and the server row is pruned on
+ * its next push (410). Bounded and silent: signing out never waits on, or fails with, this.
+ */
+export async function releasePushOnSignOut({ server }: { server: boolean }): Promise<void> {
+  const work = (async () => {
+    try {
+      if (!pushSupported()) return;
+      const reg = await registration();
+      const subscription = reg ? await reg.pushManager.getSubscription() : null;
+      if (!subscription) return;
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+      if (server) await apiRequest('/push/subscriptions', { method: 'DELETE', body: { endpoint } });
+    } catch {
+      // Offline, or the session already gone: the 410 path cleans the server row up.
+    }
+  })();
+  await Promise.race([work, new Promise((resolve) => window.setTimeout(resolve, 3_000))]);
 }
 
 /** Unsubscribe this device everywhere: the browser first, then the server. */

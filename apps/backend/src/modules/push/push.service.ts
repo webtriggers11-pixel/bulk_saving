@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { Accent, PushSubscribeBody } from '@bulk/shared';
+import type { PushSubscribeBody } from '@bulk/shared';
 import type { Notification, PushSubscription } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -58,6 +58,9 @@ export class PushService {
     body: PushSubscribeBody,
     userAgent: string | undefined,
   ): Promise<void> {
+    // Stored normalised (WHATWG serialisation): the URL we validated is the URL we send to,
+    // whatever another parser would make of the raw string (V2 P3).
+    const endpoint = new URL(body.endpoint).href;
     const data = {
       residentId,
       societyId,
@@ -67,8 +70,8 @@ export class PushService {
       userAgent: userAgent?.slice(0, 200) ?? null,
     };
     await this.prisma.pushSubscription.upsert({
-      where: { endpoint: body.endpoint },
-      create: { endpoint: body.endpoint, ...data },
+      where: { endpoint },
+      create: { endpoint, ...data },
       // A fresh subscribe is a fresh start: forget earlier failures.
       update: { ...data, consecutiveFailures: 0 },
     });
@@ -76,22 +79,39 @@ export class PushService {
 
   /** Forget a device — only if it is the caller's (another resident's row is left alone). */
   async unsubscribe(residentId: string, endpoint: string): Promise<void> {
-    await this.prisma.pushSubscription.deleteMany({ where: { endpoint, residentId } });
+    let normalised = endpoint;
+    try {
+      normalised = new URL(endpoint).href;
+    } catch {
+      // Not a URL: nothing stored could match it anyway.
+    }
+    await this.prisma.pushSubscription.deleteMany({ where: { endpoint: normalised, residentId } });
   }
 
   /**
-   * Queue one push per device the notification's resident has. Idempotent: the job id is
-   * (notification, device), so the outbox retrying its dispatch job adds nothing new.
+   * Queue one push per device the notification's resident has — ONCE per notification.
+   *
+   * The once is a claim on the Notification row (`pushQueuedAt`, set only where it is
+   * null), not the BullMQ job id: a completed job is evicted after a while, and a dispatch
+   * retried during an SMS outage (or re-run by the boot reconciler) would then queue the
+   * same pushes again (V2 P1). The job id still dedupes within one fan-out. If queueing
+   * fails after the claim, the claim is released so the next dispatch attempt can retry.
    * No devices, or push switched off → nothing queued.
    */
   async fanOut(notification: Pick<Notification, 'id' | 'residentId'>): Promise<number> {
     if (!this.sender.enabled) return 0;
+    const { count: claimed } = await this.prisma.notification.updateMany({
+      where: { id: notification.id, pushQueuedAt: null },
+      data: { pushQueuedAt: new Date() },
+    });
+    if (claimed === 0) return 0;
     const devices = await this.prisma.pushSubscription.findMany({
       where: { residentId: notification.residentId },
       select: { id: true },
     });
     if (devices.length === 0) return 0;
-    await this.queue.addBulk(
+    try {
+      await this.queue.addBulk(
       devices.map((device) => ({
         name: 'send',
         data: { notificationId: notification.id, subscriptionId: device.id },
@@ -99,11 +119,15 @@ export class PushService {
           jobId: pushJobId(notification.id, device.id),
           attempts: PUSH_SEND_ATTEMPTS,
           backoff: { type: 'exponential', delay: 2_000 },
-          removeOnComplete: 1_000,
-          removeOnFail: 5_000,
+          removeOnComplete: { age: 24 * 60 * 60, count: 50_000 },
+          removeOnFail: { age: 7 * 24 * 60 * 60 },
         },
       })),
     );
+    } catch (err) {
+      await this.prisma.notification.updateMany({ where: { id: notification.id }, data: { pushQueuedAt: null } });
+      throw err;
+    }
     return devices.length;
   }
 
@@ -141,8 +165,4 @@ export class PushService {
     return count > 0 ? 'pruned' : 'kept';
   }
 
-  /** Update the colour a device's pushes are styled in (it changed accent in Appearance). */
-  async setAccent(residentId: string, endpoint: string, accent: Accent): Promise<void> {
-    await this.prisma.pushSubscription.updateMany({ where: { endpoint, residentId }, data: { accent } });
-  }
 }

@@ -96,12 +96,15 @@ export class EnvironmentVariables {
    * switched off (subscribing answers PUSH_DISABLED). Required in production.
    * Generate with `npx web-push generate-vapid-keys`; SUBJECT is a `mailto:` or https URL.
    */
+  // base64url of a P-256 public key (65 bytes → 87 chars) and private key (32 → 43): a
+  // placeholder like `__GENERATE__` fails here with a clear message instead of crashing
+  // inside web-push at boot (V2 P3).
   @IsOptional()
-  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{87}$/, { message: 'VAPID_PUBLIC_KEY must be the 87-character base64url public key.' })
   VAPID_PUBLIC_KEY?: string;
 
   @IsOptional()
-  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{43}$/, { message: 'VAPID_PRIVATE_KEY must be the 43-character base64url private key.' })
   VAPID_PRIVATE_KEY?: string;
 
   @IsOptional()

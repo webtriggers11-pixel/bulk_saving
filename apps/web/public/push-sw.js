@@ -46,9 +46,15 @@
         for (var i = 0; i < windows.length; i += 1) {
           var client = windows[i];
           if (new URL(client.url).origin === scope.location.origin && 'focus' in client) {
-            return client.focus().then(function (focused) {
-              return focused && 'navigate' in focused ? focused.navigate(path) : focused;
-            });
+            return client
+              .focus()
+              .then(function (focused) {
+                return focused && 'navigate' in focused ? focused.navigate(path) : focused;
+              })
+              .catch(function () {
+                // `navigate` rejects for a window this worker does not control (V2 P3).
+                return scope.clients.openWindow(path);
+              });
           }
         }
         return scope.clients.openWindow(path);

@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { ACCENTS, type Accent } from '@bulk/shared';
 import type { Job } from 'bullmq';
-import { PUSH_SENDER, PushGoneError, type PushSender, redactEndpoint } from './push-sender';
+import { isKnownPushEndpoint, PUSH_SENDER, PushGoneError, type PushSender, redactEndpoint } from './push-sender';
 import { pushFor, PUSH_TTL_SECONDS } from './push-templates';
 import { PUSH_QUEUE, type PushJobData, PushService } from './push.service';
 
@@ -44,6 +44,12 @@ export class PushSendProcessor extends WorkerHost {
     ]);
     if (!device) return 'no-device';
     if (!notification) return 'no-notification';
+    // Checked again at send time: a row written before the allowlist, or by another route,
+    // must never make this worker call an arbitrary host (V2 P3, ADR-0032).
+    if (!isKnownPushEndpoint(device.endpoint)) {
+      await this.push.forget(device.id);
+      return 'device-gone';
+    }
 
     const accent: Accent = (ACCENTS as readonly string[]).includes(device.accent) ? (device.accent as Accent) : 'mono';
     const { payload, urgency } = pushFor(notification, accent);

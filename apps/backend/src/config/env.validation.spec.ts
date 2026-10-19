@@ -11,8 +11,8 @@ function env(overrides: Partial<EnvironmentVariables> = {}): EnvironmentVariable
     OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
     NODE_ENV: 'production',
     CORS_ORIGINS: 'https://app.example.com',
-    VAPID_PUBLIC_KEY: 'BPublicKeyForTests',
-    VAPID_PRIVATE_KEY: 'privateKeyForTests',
+    VAPID_PUBLIC_KEY: 'B'.repeat(87),
+    VAPID_PRIVATE_KEY: 'p'.repeat(43),
     VAPID_SUBJECT: 'mailto:ops@example.com',
     ...overrides,
   } as EnvironmentVariables;
@@ -116,5 +116,25 @@ describe('JWT_REFRESH_TTL_SECONDS', () => {
     expect(() => validateEnv({ ...base, JWT_REFRESH_TTL_SECONDS: '-1' })).toThrow(
       /JWT_REFRESH_TTL_SECONDS/,
     );
+  });
+});
+
+describe('VAPID key format (FEAT-020 V2 P3)', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    JWT_ACCESS_SECRET: 'a-real-access-secret-value',
+    JWT_REFRESH_SECRET: 'a-real-refresh-secret-value',
+    OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
+  };
+  it('refuses the example placeholder with a clear message', () => {
+    expect(() => validateEnv({ ...base, VAPID_PUBLIC_KEY: '__GENERATE__' })).toThrow(/87-character/);
+    expect(() => validateEnv({ ...base, VAPID_PRIVATE_KEY: '__GENERATE__' })).toThrow(/43-character/);
+  });
+  it('accepts real-shaped keys', () => {
+    expect(() =>
+      validateEnv({ ...base, VAPID_PUBLIC_KEY: 'B'.repeat(87), VAPID_PRIVATE_KEY: 'p'.repeat(43), VAPID_SUBJECT: 'mailto:a@b.co' }),
+    ).not.toThrow();
   });
 });

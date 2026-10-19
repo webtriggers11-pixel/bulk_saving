@@ -47,6 +47,20 @@ job ids must not contain `:` (found by the integration test, not the docs).
 10. **Config:** VAPID keys from env; absent in dev → push switched off cleanly
     (`PUSH_DISABLED`); absent in production → the API refuses to boot (`assertProductionSafe`).
 
+11. **Once per notification is a claim on the row** (`Notification.pushQueuedAt`, set where
+    null) — job ids dedupe only while completed jobs are still in Redis, and a dispatch retried
+    in an SMS outage or re-run by the reconciler would otherwise push again (V2 P1). Fan-out
+    faults are logged and never block the SMS (V2 P2).
+12. **Endpoints are stored normalised** (WHATWG `href`) and re-checked against the allowlist at
+    send time, so the URL validated is the URL called, whatever another parser would make of
+    the raw string (V2 P3).
+13. **Signing out releases the phone** (browser unsubscribe + server delete while the token
+    works; browser-only on a forced sign-out) so a shared phone never shows the previous
+    resident's rounds; a subscription under a rotated server key is replaced, not re-posted.
+14. Accepted risk: anyone holding a device's endpoint URL could re-register it under their own
+    account and keys — the device then gets pushes it cannot decrypt (denial of service only;
+    endpoints are unguessable capability URLs). This is what lets a shared phone switch residents.
+
 ## Consequences
 
 - New dependency `web-push`; additive migration (`PushSubscription`); three new env vars.

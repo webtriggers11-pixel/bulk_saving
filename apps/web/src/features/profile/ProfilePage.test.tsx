@@ -72,13 +72,14 @@ describe('ProfilePage', () => {
     expect(screen.getByTestId('profile-role')).not.toHaveTextContent('SUPER_ADMIN');
   });
 
-  it('logs out: clears the session, clears cached server data, lands on onboarding', () => {
+  it('logs out: clears the session, clears cached server data, lands on onboarding', async () => {
     const { client } = renderProfile();
     client.setQueryData(['rounds'], [{ id: 'round-1' }]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
 
-    expect(useAuthStore.getState().status).toBe('unauthenticated');
+    // FEAT-020: sign-out first releases this phone from push (bounded), then clears.
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('unauthenticated'));
     expect(useAuthStore.getState().accessToken).toBeNull();
     // ADR-0015: the next resident on this phone must not see these rounds.
     expect(client.getQueryData(['rounds'])).toBeUndefined();
