@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
@@ -23,7 +23,8 @@ import { PriceLadder } from './PriceLadder';
 import { RoundsSummary } from './RoundsSummary';
 import { InviteButton } from './InviteButton';
 import { Celebrate } from './Celebrate';
-import { useNow } from './useNow';
+import { useDeadlineClock } from './useDeadlineClock';
+import { Toast } from '../../components/ui/toast';
 import { reachedTiers } from './roundMath';
 
 /** Units a single resident may pledge (mirrors the backend MAX_UNITS_PER_RESIDENT guard). */
@@ -78,7 +79,15 @@ function PledgeNotices({ paused, failed }: { paused: boolean; failed: boolean })
  * button that opens the pledge sheet — "Join" or "Change". The sheet is where units are
  * chosen and a price is previewed; nothing is sent until its one action is pressed.
  */
-function JoinControl({ round, onSaved }: { round: RoundDto; onSaved: () => void }) {
+function JoinControl({
+  round,
+  onSaved,
+  onInvited,
+}: {
+  round: RoundDto;
+  onSaved: (saved: RoundDto) => void;
+  onInvited: (message: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const joined = round.myUnits > 0;
   // The writes live HERE, not in the sheet, so a pledge queued offline still says so on
@@ -116,7 +125,7 @@ function JoinControl({ round, onSaved }: { round: RoundDto; onSaved: () => void 
         >
           {joined ? 'Change' : 'Join'}
         </Button>
-        <InviteButton round={round} />
+        <InviteButton round={round} onMessage={onInvited} />
       </div>
       {/* What happened to a write after the sheet was closed — queued offline, or refused
           once it reached the server (V2 round 2). Inside the sheet, the sheet says it. */}
@@ -152,7 +161,7 @@ function PledgeSheet({
   open: boolean;
   onClose: () => void;
   /** A join or a change the server accepted — the card celebrates it (FEAT-018). */
-  onSaved: () => void;
+  onSaved: (saved: RoundDto) => void;
   mutations: {
     join: ReturnType<typeof useJoinRound>;
     update: ReturnType<typeof useUpdatePledge>;
@@ -175,9 +184,9 @@ function PledgeSheet({
   const units = clampUnits(draft);
   const done = { onSuccess: onClose };
   const saved = {
-    onSuccess: () => {
+    onSuccess: (round: RoundDto) => {
       onClose();
-      onSaved();
+      onSaved(round);
     },
   };
 
@@ -347,15 +356,21 @@ function SparkBurst() {
 }
 
 /** A single round card: service, live progress, current price, next-tier hint, deadline, join control. */
-function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
+function RoundCard({
+  round,
+  lead,
+  onInvited,
+}: {
+  round: RoundDto;
+  lead: boolean;
+  onInvited: (message: string) => void;
+}) {
   const progress = tierProgress(round);
   const liveCount = useCountUp(round.unitsCount);
   // "Closes in 6h" is a different kind of fact from "Closes in 4 days". Asked of the
   // deadline itself rather than by re-parsing the sentence just formatted from it.
-  const remainingMs = new Date(round.deadline).getTime() - Date.now();
-  const urgent = remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000;
-  // FEAT-018: the last day ticks, once a second; further out, no timer at all.
-  const now = useNow(urgent);
+  // FEAT-018: the last day ticks, once a second; further out, one timeout for when it starts.
+  const { now, urgent } = useDeadlineClock(round.deadline);
   const closing = urgent ? formatClock(round.deadline, now) : formatCountdown(round.deadline);
   const joined = round.myUnits > 0;
 
@@ -363,10 +378,26 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
   // Tracked during render (as PledgeSheet tracks `open`), not in an effect.
   const reached = reachedTiers(round);
   const [seenReached, setSeenReached] = useState(reached);
+  // The tier a saved pledge already celebrated: the refetch that follows a join brings
+  // that same tier in, and celebrating it again restarted the confetti mid-flight (V2 P2-2).
+  const [celebratedTier, setCelebratedTier] = useState(reached);
   const [burst, setBurst] = useState(0);
   if (reached !== seenReached) {
     setSeenReached(reached);
-    if (reached > seenReached) setBurst((n) => n + 1);
+    if (reached > seenReached && reached > celebratedTier) {
+      setCelebratedTier(reached);
+      setBurst((n) => n + 1);
+    }
+    // A tier lost (someone left) can be won again, and should be celebrated again.
+    if (reached < celebratedTier) setCelebratedTier(reached);
+  }
+  function onSaved(saved: RoundDto | undefined) {
+    // A pledge queued offline replays later, and what it resolves with is not guaranteed to
+    // be a full round (an offline test resolves it with a bare body) — use it only if it is.
+    if (saved && Array.isArray(saved.tiers)) {
+      setCelebratedTier((tier) => Math.max(tier, reachedTiers(saved)));
+    }
+    setBurst((n) => n + 1);
   }
 
   return (
@@ -451,7 +482,7 @@ function RoundCard({ round, lead }: { round: RoundDto; lead: boolean }) {
       )}
 
       <div className="mt-[17px] border-t border-line/10 pt-[17px]">
-        <JoinControl round={round} onSaved={() => setBurst((n) => n + 1)} />
+        <JoinControl round={round} onSaved={onSaved} onInvited={onInvited} />
       </div>
     </Card>
   );
@@ -472,6 +503,11 @@ export function RoundsPage() {
   const query = useRounds();
   const { data, isLoading, refetch } = query;
   const failed = queryStalled(query);
+  // FEAT-018: one invite toast for the screen, not one per card (V2 P3-2). The dismiss
+  // handler is stable: a new one every render restarted the toast's timer each second
+  // on a ticking card, so it never went away (V2 P2-1).
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const dismissInvite = useCallback(() => setInviteMessage(null), []);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
@@ -504,10 +540,14 @@ export function RoundsPage() {
       {data && data.length > 0 && (
         <section className="stagger flex flex-col gap-3.5" aria-label="Open rounds">
           {data.map((round, index) => (
-            <RoundCard key={round.id} round={round} lead={index === 0} />
+            <RoundCard key={round.id} round={round} lead={index === 0} onInvited={setInviteMessage} />
           ))}
         </section>
       )}
+
+      <Toast onDismiss={dismissInvite} duration={4_000}>
+        {inviteMessage}
+      </Toast>
     </main>
   );
 }

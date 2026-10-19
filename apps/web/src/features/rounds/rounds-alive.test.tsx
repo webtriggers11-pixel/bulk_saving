@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,7 @@ import { RoundsSummary } from './RoundsSummary';
 import { InviteButton, inviteText } from './InviteButton';
 import { Celebrate } from './Celebrate';
 import { formatClock } from './formatCountdown';
+import { useDeadlineClock } from './useDeadlineClock';
 import { fetchRounds, joinRound } from './rounds.api';
 
 /**
@@ -62,8 +63,11 @@ function renderPage() {
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => {
-  vi.unstubAllGlobals();
+  // Real timers back BEFORE restoring spies: a spy taken on a fake timer otherwise
+  // restores to a function that no longer exists.
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('PriceLadder (AC2)', () => {
@@ -116,7 +120,7 @@ describe('InviteButton (AC3)', () => {
   it('uses the phone share sheet when there is one', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { ...navigator, share });
-    render(<InviteButton round={ac} />);
+    render(<InviteButton round={ac} onMessage={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Invite neighbours to AC Servicing' }));
     await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
     expect(share.mock.calls[0][0].url).toBe(`${window.location.origin}/rounds`);
@@ -125,9 +129,10 @@ describe('InviteButton (AC3)', () => {
   it('falls back to the clipboard and says so', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText } });
-    render(<InviteButton round={ac} />);
+    const onMessage = vi.fn();
+    render(<InviteButton round={ac} onMessage={onMessage} />);
     fireEvent.click(screen.getByTestId('invite-round_ac'));
-    expect(await screen.findByText(/Invite link copied/)).toBeInTheDocument();
+    await waitFor(() => expect(onMessage).toHaveBeenCalledWith(expect.stringMatching(/Invite link copied/)));
     expect(writeText.mock.calls[0][0]).toContain('/rounds');
   });
 
@@ -135,11 +140,12 @@ describe('InviteButton (AC3)', () => {
     const share = vi.fn().mockRejectedValue(new DOMException('cancelled', 'AbortError'));
     const writeText = vi.fn();
     vi.stubGlobal('navigator', { ...navigator, share, clipboard: { writeText } });
-    render(<InviteButton round={ac} />);
+    const onMessage = vi.fn();
+    render(<InviteButton round={ac} onMessage={onMessage} />);
     fireEvent.click(screen.getByTestId('invite-round_ac'));
     await waitFor(() => expect(share).toHaveBeenCalled());
     expect(writeText).not.toHaveBeenCalled();
-    expect(screen.queryByText(/copied/)).not.toBeInTheDocument();
+    expect(onMessage).not.toHaveBeenCalled();
   });
 });
 
@@ -198,11 +204,11 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     expect(await screen.findByTestId('celebrate')).toBeInTheDocument();
   });
 
-  it('ticks the last day as a clock, and stops ticking on unmount', async () => {
+  it('ticks the last day as a clock on the card', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const deadline = new Date(Date.now() + 2 * 3600_000 + 5_000).toISOString();
     fetchRoundsMock.mockResolvedValue([{ ...ac, deadline }]);
-    const view = renderPage();
+    renderPage();
     const badge = await screen.findByTestId('closing-round_ac');
     expect(badge.textContent).toMatch(/Closes in 02:00:0\d/);
     const before = badge.textContent;
@@ -210,9 +216,60 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
     expect(screen.getByTestId('closing-round_ac').textContent).not.toBe(before);
-    const clear = vi.spyOn(window, 'clearInterval');
-    view.unmount();
-    expect(clear).toHaveBeenCalled();
+  });
+
+  it('the invite toast goes away on its own even while the card ticks every second (V2 P2-1)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const deadline = new Date(Date.now() + 3600_000).toISOString();
+    fetchRoundsMock.mockResolvedValue([{ ...ac, deadline }]);
+    vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    renderPage();
+    fireEvent.click(await screen.findByTestId('invite-round_ac'));
+    expect(await screen.findByText(/Invite link copied/)).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+    expect(screen.queryByText(/Invite link copied/)).not.toBeInTheDocument();
+  });
+
+  it('a join that also reaches a cheaper tier celebrates once, not twice (V2 P2-2)', async () => {
+    allowMotion();
+    const crossed = { ...ac, myUnits: 4, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } };
+    fetchRoundsMock.mockResolvedValueOnce([ac]).mockResolvedValue([crossed]);
+    joinRoundMock.mockResolvedValue(crossed);
+    renderPage();
+    fireEvent.click(await screen.findByTestId('pledge-open-round_ac'));
+    fireEvent.click(screen.getByTestId('join-round_ac'));
+    const first = await screen.findByTestId('celebrate');
+    // The refetch brings the new tier in; the burst already playing must not restart.
+    await waitFor(() => expect(fetchRoundsMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByTestId('price-round_ac')).toHaveTextContent('₹700'));
+    expect(screen.getByTestId('celebrate')).toBe(first);
+  });
+
+  it('losing a tier is not celebrated — and winning it back is (V2 P2-3, M4)', async () => {
+    allowMotion();
+    fetchRoundsMock.mockResolvedValue([ac]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <RoundsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await screen.findByTestId('round-card');
+    act(() => {
+      client.setQueryData(['rounds'], [{ ...ac, unitsCount: 3, nextTier: { threshold: 5, price: 900 } }]);
+    });
+    // TanStack batches cache notifications on a timer: wait for the dip to RENDER, or the
+    // next write lands first and the component never sees the tier go.
+    await waitFor(() => expect(screen.getByTestId('to-go-round_ac')).toHaveTextContent('this round goes ahead'));
+    expect(screen.queryByTestId('celebrate')).not.toBeInTheDocument();
+    act(() => {
+      client.setQueryData(['rounds'], [ac]);
+    });
+    expect(await screen.findByTestId('celebrate')).toBeInTheDocument();
   });
 
   it('formats the clock, and reads Closed once past', () => {
@@ -230,5 +287,43 @@ describe('TierRing glow (AC7)', () => {
       expect(shape.getAttribute('class') ?? '').not.toMatch(/drop-shadow/);
     }
     expect(container.querySelector('svg')?.getAttribute('class')).toMatch(/ring-arc .*drop-shadow/);
+  });
+});
+
+describe('useDeadlineClock (AC6, V2 P2-3, P3-1)', () => {
+  const HOUR = 3600_000;
+
+  it('a round days away runs no interval at all (M5)', () => {
+    const setInterval = vi.spyOn(window, 'setInterval');
+    const { result } = renderHook(() => useDeadlineClock(new Date(Date.now() + 5 * 24 * HOUR).toISOString()));
+    expect(result.current.urgent).toBe(false);
+    expect(setInterval).not.toHaveBeenCalled();
+  });
+
+  it('clears the very interval it started, on unmount (M3)', () => {
+    const setInterval = vi.spyOn(window, 'setInterval');
+    const clearInterval = vi.spyOn(window, 'clearInterval');
+    const { unmount } = renderHook(() => useDeadlineClock(new Date(Date.now() + 2 * HOUR).toISOString()));
+    expect(setInterval).toHaveBeenCalledTimes(1);
+    const id = setInterval.mock.results[0].value;
+    unmount();
+    expect(clearInterval).toHaveBeenCalledWith(id);
+  });
+
+  it('starts ticking by itself when the last day begins on screen (P3-1)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Fixed once: computed inside the callback, the deadline moved with every render.
+    const deadline = new Date(Date.now() + 24 * HOUR + 2_000).toISOString();
+    const { result } = renderHook(() => useDeadlineClock(deadline));
+    expect(result.current.urgent).toBe(false);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+    expect(result.current.urgent).toBe(true);
+    const at = result.current.now;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.now).toBeGreaterThan(at);
   });
 });

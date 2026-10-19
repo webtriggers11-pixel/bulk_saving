@@ -936,3 +936,14 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - ADR-0030; DESIGN-SYSTEM.md (rounds pieces, confetti timing).
 - V1: gate exit 0 — backend 396/396, web 472/472, 1615 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-018 — V2 round 1: PASS with findings → all taken
+- V2 (independent; gate exit 0, 396/472; 5 mutations, 3 survived):
+  - P2-1 invite toast never auto-dismissed on a ticking (<24h) card — a new `onDismiss` every second reset its timer → ONE toast lifted to RoundsPage with a stable `useCallback` dismiss (also P3-2: no stacked per-card toasts). Test: toast gone after 6s on a ticking card.
+  - P2-2 a join that crossed a tier celebrated twice (onSaved, then the refetch) → `celebratedTier` state: the saved round's tier is marked celebrated; a lost tier resets it so winning it back celebrates. Tests: one burst (same node across the refetch); losing a tier silent, regaining it celebrates.
+  - P2-3 weak tests (M3 cleanup no-op, M4 tier-down, M5 timer for far rounds survived) → hook-level tests: no interval for a far round, the exact interval id cleared on unmount.
+  - P3-1 a round crossing into its last day on screen did not start ticking → `useDeadlineClock` (replaces `useNow`): one timeout to the 24h boundary, then the interval. Test with fake time.
+  - P3-3 correction: under Mono the ring glow is removed (`.ring-arc{filter:none}`), not redrawn; in the tinted palettes it is drawn on the `<svg>` without the box. P3-4 (track circle also tinted by the glow) accepted — cosmetic.
+- Found while fixing: a pledge queued OFFLINE resolves later with whatever body the replay gets (an offline test: a bare object) → `onSaved` only reads the round if it has `tiers`. Test-isolation: real timers restored before spies.
+- V1: gate exit 0 — backend 396/396, web 478/478, no unhandled errors.
+- By: agent (autonomous)

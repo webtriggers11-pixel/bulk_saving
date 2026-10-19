@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
-import { Toast } from '../../components/ui/toast';
 import { formatRupees } from './formatPrice';
 import { moreUnits, unitsToNext } from './roundMath';
 
@@ -22,11 +20,10 @@ export function inviteText(round: RoundDto): string {
 
 /**
  * Invite neighbours (FEAT-018): the phone's share sheet where there is one; otherwise the
- * link goes to the clipboard and a toast says so. A dismissed share sheet is not an error.
+ * link goes to the clipboard and `onMessage` says so — the screen owns the one toast
+ * (V2 P3-2). A dismissed share sheet is not an error and says nothing.
  */
-export function InviteButton({ round }: { round: RoundDto }) {
-  const [message, setMessage] = useState<string | null>(null);
-
+export function InviteButton({ round, onMessage }: { round: RoundDto; onMessage: (message: string) => void }) {
   async function invite() {
     const url = `${window.location.origin}/rounds`;
     const text = inviteText(round);
@@ -41,26 +38,21 @@ export function InviteButton({ round }: { round: RoundDto }) {
     }
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
-      setMessage('Invite link copied — paste it in your society group.');
+      onMessage('Invite link copied — paste it in your society group.');
     } catch {
-      setMessage(`Share this link with your neighbours: ${url}`);
+      onMessage(`Share this link with your neighbours: ${url}`);
     }
   }
 
   return (
-    <>
-      <Button
-        variant="secondary"
-        size="icon"
-        aria-label={`Invite neighbours to ${round.service.name}`}
-        onClick={() => void invite()}
-        data-testid={`invite-${round.id}`}
-      >
-        <Icon name="share" size={19} strokeWidth={2} />
-      </Button>
-      <Toast onDismiss={() => setMessage(null)} duration={4_000}>
-        {message}
-      </Toast>
-    </>
+    <Button
+      variant="secondary"
+      size="icon"
+      aria-label={`Invite neighbours to ${round.service.name}`}
+      onClick={() => void invite()}
+      data-testid={`invite-${round.id}`}
+    >
+      <Icon name="share" size={19} strokeWidth={2} />
+    </Button>
   );
 }
