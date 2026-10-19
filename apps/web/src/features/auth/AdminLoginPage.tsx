@@ -5,6 +5,8 @@ import { useMutation } from '@tanstack/react-query';
 import { requestAdminOtp, verifyAdminOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { messageFromError, PHONE_HINT } from './error-messages';
+import { useDevOtp } from './useDevOtp';
+import { DevOtpToast } from './DevOtpToast';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -32,9 +34,13 @@ export function AdminLoginPage() {
   const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
   const [code, setCode] = useState('');
 
+  const devOtp = useDevOtp();
   const requestMutation = useMutation({
     mutationFn: () => requestAdminOtp({ phone: normalisePhone(phone) ?? phone.trim() }),
-    onSuccess: () => setStep('code'),
+    onSuccess: () => {
+      setStep('code');
+      devOtp.fetchFor(phone);
+    },
   });
 
   const verifyMutation = useMutation({
@@ -69,6 +75,7 @@ export function AdminLoginPage() {
 
   return (
     <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+      <DevOtpToast code={devOtp.code} onUse={setCode} onDismiss={devOtp.clear} />
       <AmbientGround id="admin-login-grain" />
 
       <header className="animate-rise relative flex flex-1 flex-col justify-center gap-[18px] px-7 pb-6 pt-10">

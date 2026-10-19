@@ -14,6 +14,10 @@ interface ToastProps {
   duration?: number | null;
   /** Small label above the message, e.g. "DEV ONLY". */
   label?: string;
+  /** Where it pins. `bottom` (default) rises from the bottom; `top` drops in under the status bar. */
+  placement?: 'bottom' | 'top';
+  /** An action beside the message, e.g. "Use it". */
+  action?: ReactNode;
 }
 
 const TONES: Record<ToastTone, string> = {
@@ -31,7 +35,7 @@ const TONES: Record<ToastTone, string> = {
  * from the bottom rather than appearing, and sits on the ink token so it reads as
  * the same product in every palette.
  */
-export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, label }: ToastProps) {
+export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, label, placement = 'bottom', action }: ToastProps) {
   const visible = children !== null && children !== undefined && children !== false;
 
   useEffect(() => {
@@ -47,7 +51,13 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-4">
+    <div
+      className={cn(
+        'pointer-events-none fixed inset-x-0 z-50 flex justify-center p-4',
+        placement === 'top' ? 'top-0 pt-[max(env(safe-area-inset-top),16px)]' : 'bottom-0',
+      )}
+      data-placement={placement}
+    >
       <div
         role="status"
         aria-live="polite"
@@ -65,6 +75,7 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
           )}
           <div className="break-words font-semibold">{children}</div>
         </div>
+        {action}
         <button
           type="button"
           onClick={onDismiss}

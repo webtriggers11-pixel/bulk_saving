@@ -156,6 +156,54 @@ describe('OnboardingPage', () => {
     expect(await screen.findByText(/doesn't look like a phone number/)).toBeInTheDocument();
   });
 
+  it('DEV build: the code the stub "sent" arrives as a top toast, and "Use it" fills the field (FEAT-026)', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('MODE', 'development');
+    const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
+      const url = String(args[0]);
+      if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
+      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '654321' } } }));
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('654321');
+    expect(screen.getByRole('status').parentElement).toHaveAttribute('data-placement', 'top');
+    expect(screen.getByText('Dev only')).toBeInTheDocument();
+    expect(mock.mock.calls.some(([url]) => String(url).includes('/dev/otp?phone=%2B919999900201'))).toBe(true);
+
+    fireEvent.click(screen.getByTestId('dev-otp-use'));
+    expect(screen.getByLabelText('6-digit code')).toHaveValue('654321');
+    expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
+
+  it('DEV build without the dev route (404): no toast, nothing else changes', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('MODE', 'development');
+    const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
+      const url = String(args[0]);
+      if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
+      if (url.includes('/dev/otp')) return Promise.resolve(jsonResponse({ ok: false, status: 404, body: { success: false, error: { code: 'NOT_FOUND', message: 'no' } } }));
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
+
   it('renders a friendly message when verify returns OTP_INVALID', async () => {
     const mock = installFetch({
       ok: false,

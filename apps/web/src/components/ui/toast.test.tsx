@@ -69,3 +69,17 @@ describe('Toast', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });
+
+describe('Toast placement (FEAT-026)', () => {
+  it('pins to the bottom by default and to the top on request, with an optional action', () => {
+    const { rerender } = render(<Toast onDismiss={() => undefined}>hello</Toast>);
+    expect(screen.getByRole('status').parentElement).toHaveAttribute('data-placement', 'bottom');
+    rerender(
+      <Toast onDismiss={() => undefined} placement="top" action={<button type="button">Use it</button>}>
+        hello
+      </Toast>,
+    );
+    expect(screen.getByRole('status').parentElement).toHaveAttribute('data-placement', 'top');
+    expect(screen.getByRole('button', { name: 'Use it' })).toBeInTheDocument();
+  });
+});

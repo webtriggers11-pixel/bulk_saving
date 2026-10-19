@@ -7,6 +7,7 @@ import { validateEnv } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { devToolsImports } from './modules/dev/dev-tools.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ResidentsModule } from './modules/residents/residents.module';
@@ -43,6 +44,8 @@ import { RedisModule } from './redis/redis.module';
     }),
     PrismaModule,
     RedisModule,
+    // FEAT-026 (ADR-0037): developer routes exist only where the dev OTP echo is on.
+    ...devToolsImports(),
     HealthModule,
     QueueModule,
     NotificationsModule,

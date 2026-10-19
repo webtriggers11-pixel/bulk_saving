@@ -1314,3 +1314,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Web: `Toast` gains `placement` (`top` under the safe area) and an `action`; `useDevOtp` (behind `import.meta.env.DEV`, retries 0/0.4/0.8/1.6s for the admin door's queued send, silent on 404); `DevOtpToast` ("Dev only · Your code is 123456 · Use it" fills the field) on both doors. Tests: hook (DEV call + canonical phone, retry then give up, non-DEV never calls), toast placement, Onboarding page toast + Use it + 404 → nothing.
 - Alone: backend dev suites 3/3, web auth + toast 41/41, typecheck clean. Gate running.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-026 — T3 browser pass; V1 PASS
+- V1 run 1 failed one web test: under Vitest `import.meta.env.DEV` is true, so the hook fired after every successful request and the BUG-004 offline test saw a `/dev/otp` call it never asked for → `devOtpToastEnabled()` also requires `MODE !== 'test'`; the hook/page tests opt in with `vi.stubEnv('MODE', 'development')`. Run 2: gate exit 0 — backend 504/504 (+3), web 643/643 (+6), 3290 class tokens.
+- T3 on a dev server (own instance on :5174 — :5173 holds the owner's session and both doors redirect while signed in): resident door, `99999 00203` → "DEV ONLY · Your code is 524181 · Use it" at the top; Use it filled the field and dismissed the toast; "Sent by SMS to +919999900203". Admin door, `9999900209` (queued send) → the retry found it: "Your code is 409216" at the top. Temporary server stopped.
+- By: agent (autonomous)

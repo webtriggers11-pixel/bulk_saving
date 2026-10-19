@@ -5,6 +5,8 @@ import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { messageFromError, PHONE_HINT } from './error-messages';
+import { useDevOtp } from './useDevOtp';
+import { DevOtpToast } from './DevOtpToast';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -29,10 +31,15 @@ export function OnboardingPage() {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
 
+  // FEAT-026: in a DEV build, the code the stub channel "sent" arrives as a toast.
+  const devOtp = useDevOtp();
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
     mutationFn: () => requestOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim() }),
-    onSuccess: () => setStep('otp'),
+    onSuccess: () => {
+      setStep('otp');
+      devOtp.fetchFor(phone);
+    },
   });
 
   const verifyMutation = useMutation({
@@ -76,6 +83,7 @@ export function OnboardingPage() {
 
   return (
     <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+      <DevOtpToast code={devOtp.code} onUse={setCode} onDismiss={devOtp.clear} />
       {/* /onboard renders outside the app shell (FEAT-008 AC2), so it brings its own
           ground — the primitive, not a second copy of it. */}
       <AmbientGround id="onboard-grain" />
