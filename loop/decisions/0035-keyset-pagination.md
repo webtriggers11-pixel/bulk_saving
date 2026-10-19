@@ -27,7 +27,11 @@ keyset, and what the response looks like.
    control need, and one `count` per page is cheap at this scale.
 4. **`limit` 1–50, default 20**, validated by DTO; a malformed `cursor` is a 400, and a cursor
    for a row that no longer exists is an empty page with `nextCursor: null` (Prisma's cursor
-   on a missing row finds nothing), never a 500.
+   on a missing row finds nothing), never a 500. **A cursor row that still exists but no longer
+   matches** (a round that closed while the resident was on page 1 — the normal case on an
+   OPEN-only list) is handled explicitly (V2 P2): Prisma seeks to the row's position and then
+   applies `where`, so the page is fetched WITHOUT `skip` and the cursor row is removed by id —
+   the very next matching row is the first on the page, nothing is dropped.
 5. **Filters and tenancy are unchanged** (ADR-0026, ADR-0003): a page is a page OF the filtered,
    tenant-scoped set. The cursor carries no filter state; the client re-sends the filters.
 6. **The client loads pages explicitly** ("Show more"), not by scroll: it is testable, honest
@@ -40,6 +44,9 @@ keyset, and what the response looks like.
 Good: no hidden caps; lists scale; stable pages under live inserts.
 Bad: a `count` per page; every list consumer re-written to pages; summaries are partial past
 the first page (rare for a resident: more than 20 open rounds in one society is beyond v1).
+Live polling (ADR-0010) now costs one request per LOADED page every 20s — a resident who
+pressed "Show more" twice polls three requests. Acceptable at v1 scale; revisit with the
+trigger below.
 
 ## Revisit trigger
 If any list routinely exceeds ~50 pages, or a client needs to jump to an arbitrary page,

@@ -23,7 +23,7 @@ export function RoundsSummary({ rounds, total }: { rounds: RoundDto[]; total?: n
     <Card surface="solid" interactive={false} padding="none" className="p-[18px]" data-testid="rounds-summary">
       <dl className="grid grid-cols-3 divide-x divide-line/10 [&>*]:px-3 [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
         <Fact variant="plain" size="large" term="Open" value={total ?? rounds.length} testId="summary-open" />
-        <Fact variant="plain" size="large" term={partial ? `You're in (of ${rounds.length})` : "You're in"} value={joined} testId="summary-joined" />
+        <Fact variant="plain" size="large" term={partial ? `You're in (of the ${rounds.length} shown)` : "You're in"} value={joined} testId="summary-joined" />
         <Fact
           variant="plain"
           size="large"

@@ -135,6 +135,50 @@ describe('Pagination (integration, needs DB + Redis)', () => {
     }
   });
 
+  it('a cursor row that stopped matching (the round closed) drops nothing (V2 P2)', async () => {
+    const first = await get('/rounds?limit=2').expect(200);
+    const page1 = first.body.data as Page<{ id: string }>;
+    const all = (await get('/rounds?limit=50').expect(200)).body.data as Page<{ id: string }>;
+    const cursorRound = page1.items[1];
+    await prisma.round.update({ where: { id: cursorRound.id }, data: { status: 'CANCELLED' } });
+    try {
+      const second = await get(`/rounds?limit=2&cursor=${cursorRound.id}`).expect(200);
+      const page2 = second.body.data as Page<{ id: string }>;
+      // The very next OPEN round after the cursor comes first — not the one after it.
+      const expectedNext = all.items[all.items.findIndex((r) => r.id === cursorRound.id) + 1];
+      expect(page2.items[0].id).toBe(expectedNext.id);
+      expect(page2.items).toHaveLength(2);
+      expect(page2.total).toBe(all.total - 1);
+    } finally {
+      await prisma.round.update({ where: { id: cursorRound.id }, data: { status: 'OPEN' } });
+    }
+  });
+
+  it('rows created in the same instant are still a total order — the id breaks the tie (V2 P2)', async () => {
+    const at = new Date('2026-01-01T00:00:00.000Z');
+    const made: string[] = [];
+    const tieServices: string[] = [];
+    for (let n = 0; n < 3; n += 1) {
+      const service = await prisma.service.create({ data: { name: `${tag} Tie ${n}`, slug: `${tag}-tie-${n}`, description: 'x', category: 'Home Care' } });
+      tieServices.push(service.id);
+      await prisma.serviceOffering.create({ data: { societyId: society.id, serviceId: service.id, enabled: true } });
+      const round = await prisma.round.create({
+        data: { societyId: society.id, serviceId: service.id, deadline: new Date(Date.now() + 86_400_000), createdAt: at, tiers: { create: [{ threshold: 5, price: 500 }] } },
+      });
+      made.push(round.id);
+    }
+    try {
+      const { items, total } = await walk<{ id: string }>('/rounds', 1);
+      expect(total).toBe(10);
+      expect(new Set(items.map((r) => r.id)).size).toBe(10);
+      expect(made.every((id) => items.some((r) => r.id === id))).toBe(true);
+    } finally {
+      // Leave the fixture as it was: rounds, then the services (cascading their offerings).
+      await prisma.round.deleteMany({ where: { id: { in: made } } });
+      await prisma.service.deleteMany({ where: { id: { in: tieServices } } });
+    }
+  });
+
   it('GET /rounds/mine, /catalog page the same way; the last page says there is no more', async () => {
     const mine = await walk<{ id: string }>('/rounds/mine', 4);
     expect(mine.total).toBe(7);
@@ -182,9 +226,15 @@ describe('Pagination (integration, needs DB + Redis)', () => {
 
   it('a resident cannot page into another society by cursor', async () => {
     const foreignRound = await prisma.round.findFirstOrThrow({ where: { societyId: other.id } });
-    const res = await get(`/rounds?limit=3&cursor=${foreignRound.id}`).expect(200);
-    // The cursor names a row outside the caller's scope: Prisma finds nothing to seek
-    // from within `where`, so the page is empty — and never the other society's rows.
-    expect(res.body.data.items.every((r: { id: string }) => r.id !== foreignRound.id)).toBe(true);
+    const res = await get(`/rounds?limit=50&cursor=${foreignRound.id}`).expect(200);
+    const mine = (await get('/rounds?limit=50').expect(200)).body.data as Page<{ id: string }>;
+    // The cursor names a row outside the caller's scope: the seek lands at its position in
+    // the order, and `where` keeps the page inside the caller's society — a subset of their
+    // own list, never the other society's rows.
+    const ids = new Set(mine.items.map((r) => r.id));
+    const items = res.body.data.items as Array<{ id: string }>;
+    expect(items.every((r) => ids.has(r.id))).toBe(true);
+    expect(items.some((r) => r.id === foreignRound.id)).toBe(false);
+    expect(res.body.data.total).toBe(mine.total);
   });
 });

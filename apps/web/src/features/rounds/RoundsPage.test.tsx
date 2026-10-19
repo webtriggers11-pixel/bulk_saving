@@ -244,3 +244,31 @@ describe('RoundsPage', () => {
     });
   });
 });
+
+describe('RoundsPage pages (FEAT-025, ADR-0035)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('"Show more" appends the next page and disappears on the last one', async () => {
+    const second: RoundDto = { ...openRound, id: 'round_2', service: { ...openRound.service, id: 'svc_2', name: 'Pest Control', slug: 'pest' } };
+    fetchRoundsMock.mockImplementation(async (query) =>
+      query?.cursor === 'round_1'
+        ? page([second], { total: 2 })
+        : page([openRound], { nextCursor: 'round_1', total: 2 }),
+    );
+    renderPage();
+    await screen.findByTestId('round-card');
+    expect(screen.getAllByTestId('round-card')).toHaveLength(1);
+    // The summary counts the server's total, not what is loaded.
+    expect(screen.getByTestId('summary-open')).toHaveTextContent('2');
+    const more = screen.getByTestId('show-more');
+    expect(more).toHaveTextContent('Show 1 more round');
+
+    fireEvent.click(more);
+    await waitFor(() => expect(screen.getAllByTestId('round-card')).toHaveLength(2));
+    expect(screen.getByText('Pest Control')).toBeInTheDocument();
+    expect(fetchRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: 'round_1' }));
+    expect(screen.queryByTestId('show-more')).not.toBeInTheDocument();
+  });
+});

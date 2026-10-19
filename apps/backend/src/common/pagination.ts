@@ -26,12 +26,23 @@ export class PageQueryDto implements PageQuery {
   cursor?: string;
 }
 
-/** The Prisma `findMany` slice for one page: one extra row tells us whether there is a next page. */
-export function pageArgs(query: PageQuery): { take: number; skip?: number; cursor?: { id: string } } {
-  const limit = Math.min(PAGE_LIMIT_MAX, Math.max(1, Number(query.limit ?? PAGE_LIMIT_DEFAULT) || PAGE_LIMIT_DEFAULT));
+/** The page size a query asks for, clamped. */
+export function pageLimit(query: PageQuery): number {
+  return Math.min(PAGE_LIMIT_MAX, Math.max(1, Number(query.limit ?? PAGE_LIMIT_DEFAULT) || PAGE_LIMIT_DEFAULT));
+}
+
+/**
+ * The Prisma `findMany` slice for one page. Prisma's `cursor` seeks to the cursor row's
+ * position in the ORDER and then applies `where` — so when the cursor row still exists but
+ * no longer matches (a round that closed while the resident was on page 1), the first row
+ * returned is the next MATCHING row, and a `skip: 1` would silently drop it (V2 P2). So: no
+ * skip; two spare rows (the cursor row itself, when it still matches, plus the one that
+ * says "there is more"); `pageOf` removes the cursor row by id.
+ */
+export function pageArgs(query: PageQuery): { take: number; cursor?: { id: string } } {
   return {
-    take: limit + 1,
-    ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+    take: pageLimit(query) + 2,
+    ...(query.cursor ? { cursor: { id: query.cursor } } : {}),
   };
 }
 
@@ -42,10 +53,10 @@ export function pageOf<Row extends { id: string }, T>(
   total: number,
   map: (row: Row) => T,
 ): Page<T> {
-  const { take } = pageArgs(query);
-  const limit = take - 1;
-  const more = rows.length > limit;
-  const slice = more ? rows.slice(0, limit) : rows;
+  const limit = pageLimit(query);
+  const after = query.cursor ? rows.filter((row) => row.id !== query.cursor) : rows;
+  const more = after.length > limit;
+  const slice = more ? after.slice(0, limit) : after;
   return {
     items: slice.map(map),
     nextCursor: more && slice.length > 0 ? slice[slice.length - 1].id : null,

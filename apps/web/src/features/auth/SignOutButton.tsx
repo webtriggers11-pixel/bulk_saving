@@ -46,7 +46,10 @@ export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
         open={asking}
         // Always closable (Sheet contract): a sign-out in flight finishes on its own — both of
         // its steps are time-capped — and nothing is lost by hiding the question meanwhile.
-        onClose={() => setAsking(false)}
+        onClose={() => {
+          setAsking(false);
+          setError(null);
+        }}
         title="Log out of this phone?"
         consequence="You'll need a new code by SMS to sign in again. Your pledges and ratings stay."
         confirmLabel="Yes, log out"
