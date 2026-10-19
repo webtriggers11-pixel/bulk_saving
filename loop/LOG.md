@@ -1156,3 +1156,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — TRIAGE — FEAT-024 confirmations, FEAT-025 server-side pagination
 - Owner: "some actions need confirmation like logout, delete, leave etc; also use server side pagination". FEAT-024: one confirm sheet (Sheet primitive, ADR-0022) in front of every destructive action — resident: log out, leave a round, delete a rating, withdraw an ask; admin: cancel a round, deactivate a vendor. FEAT-025: specced after reading the list endpoints (next entry).
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-017 + BUG-018 — V1 PASS (run 2)
+- Gate exit 0 — backend 463/463 (run 1 had the BUG-018 flake), web 599/599, 3278 class tokens. BUG-018's fix (test-only) rode along; the flaky test now waits for the send instead of sleeping. V2 handed to the code-reviewer subagent.
+- By: agent (autonomous)
