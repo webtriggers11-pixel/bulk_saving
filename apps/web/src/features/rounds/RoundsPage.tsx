@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
@@ -391,13 +391,20 @@ function RoundCard({
     // A tier lost (someone left) can be won again, and should be celebrated again.
     if (reached < celebratedTier) setCelebratedTier(reached);
   }
+  // When the last burst started. A poll can bring the new tier in BEFORE the response to the
+  // join itself; the tier burst then plays, and the pledge burst must not restart it (V2 r2 P3-1).
+  // (No apostrophes in this comment: check-css-classes pairs quotes across the file.)
+  const lastBurstAt = useRef(0);
+  useEffect(() => {
+    if (burst > 0) lastBurstAt.current = Date.now();
+  }, [burst]);
   function onSaved(saved: RoundDto | undefined) {
     // A pledge queued offline replays later, and what it resolves with is not guaranteed to
     // be a full round (an offline test resolves it with a bare body) — use it only if it is.
     if (saved && Array.isArray(saved.tiers)) {
       setCelebratedTier((tier) => Math.max(tier, reachedTiers(saved)));
     }
-    setBurst((n) => n + 1);
+    if (Date.now() - lastBurstAt.current > 1_500) setBurst((n) => n + 1);
   }
 
   return (

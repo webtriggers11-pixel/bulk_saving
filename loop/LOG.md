@@ -947,3 +947,18 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Found while fixing: a pledge queued OFFLINE resolves later with whatever body the replay gets (an offline test: a bare object) → `onSaved` only reads the round if it has `tiers`. Test-isolation: real timers restored before spies.
 - V1: gate exit 0 — backend 396/396, web 478/478, no unhandled errors.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-019 — TRIAGED: one Vercel look, colour as a choice, sparks
+- Owner: "again you change — I want the Vercel theme type, but modern components; give users multiple colour combinations; add micro-interaction animation … sparks … modern and creative". Picking a palette in FEAT-017 brought the glass look back — the owner wants one look. This is ADR-0029's revisit trigger ("Mono's geometry with colour → split geometry into its own attribute"). Plan: `data-look="vercel"` + `data-accent` (7 two-hue pairs), legacy palettes migrate, brand→brand-2 gradients, spotlight/beam/sparkles/shimmer/press-sparks, all off under reduced motion. Starts once FEAT-018 closes.
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-020 — TRIAGED: push notifications (after FEAT-019)
+- Owner: "create push notification as per application with custom message as per theme but use workers queue and all scalable flow … very important feat". Shape to plan at start: Web Push (VAPID) as a second `NotificationChannel` on the existing transactional outbox (ADR-0013) — subscriptions table, per-recipient BullMQ jobs with retries/backoff and dedupe, a fan-out job for society-wide events, expired-subscription pruning (410), service-worker `push`/`notificationclick` handlers in the PWA (ADR-0015), opt-in UI, per-event templates whose icon/accent follow the user's chosen colour. Needs: a `web-push` dependency and a Prisma migration (both flagged in the plan per CLAUDE.md), VAPID keys in env.
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-018 — V2 round 2 PASS; V3; CLOSED · BUG-012 triaged
+- V2 round 2 (independent; gate exit 0, 396/478; mutations M3–M7 killed, M8 survived): PASS. Two P3s taken: (1) a poll landing before the join response still double-burst → pledge burst skipped within 1.5s of a tier burst; test with a deferred join (mutation without the guard → test fails, verified); (2) the toast test now advances one second at a time.
+- **Found during V3:** the class-token count fell 1615 → 1570 with no class change. Cause: `scripts/check-css-classes.mjs` pairs quotes across the whole file, so two apostrophes in a new comment shifted the pairing and ~45 real class tokens went unchecked. Comment reworded (back to 1609; the rest is the removed per-card toast). The weakness is pre-existing and repo-wide (apostrophes in comments in ≥10 files) → **BUG-012**.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 479/479, 1609 class tokens. No flakes.
+- FEAT-018 → done.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

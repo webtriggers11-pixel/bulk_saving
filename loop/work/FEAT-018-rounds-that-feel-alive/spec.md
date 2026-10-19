@@ -1,6 +1,6 @@
 # FEAT-018 — Group buys that feel alive: price ladder, live countdown, invite, celebrate
 
-**Status:** specced · **Priority:** P1 · **Owner:** Vivek (requested) / agent · **Opened:** 2026-10-19
+**Status:** done · **Priority:** P1 · **Owner:** Vivek (requested) / agent · **Opened:** 2026-10-19
 
 ## Problem / Why
 
@@ -25,23 +25,23 @@ has no moment of delight.
 
 ## Acceptance criteria (testable — this IS the definition of done)
 
-- [ ] AC1 — a summary strip above the list: open rounds, rounds I've joined, and my best
+- [x] AC1 — a summary strip above the list: open rounds, rounds I've joined, and my best
       possible saving (Σ over joined rounds of (first-tier price − best tier price) × my
       units; hidden when 0). Derived from the existing `GET /rounds` data only.
-- [ ] AC2 — `PriceLadder`: one step per tier in threshold order, each showing price and
+- [x] AC2 — `PriceLadder`: one step per tier in threshold order, each showing price and
       threshold; reached steps marked, the current one highlighted, a fill showing the
       live count's position; "N more <units> to unlock ₹X" (or "Best price unlocked").
       Accessible: a list with readable text, the fill decorative.
-- [ ] AC3 — "Invite neighbours" on every open round: `navigator.share` with a text + the
+- [x] AC3 — "Invite neighbours" on every open round: `navigator.share` with a text + the
       rounds URL when available, otherwise copies it to the clipboard and confirms with a
       toast. No personal data in the shared text or URL.
-- [ ] AC4 — joined rounds are visibly yours: a "You're in" mark and "your N <units>".
-- [ ] AC5 — a celebration (CSS particle burst, no dependency) when a join/update succeeds,
+- [x] AC4 — joined rounds are visibly yours: a "You're in" mark and "your N <units>".
+- [x] AC5 — a celebration (CSS particle burst, no dependency) when a join/update succeeds,
       and on a card when its tier advances while on screen; none under reduced motion.
-- [ ] AC6 — under 24h, the deadline badge ticks live (HH:MM:SS), once a second, cleaned
+- [x] AC6 — under 24h, the deadline badge ticks live (HH:MM:SS), once a second, cleaned
       up on unmount; otherwise unchanged.
-- [ ] AC7 — the tier ring's drop-shadow artifact (a grey box behind the arc in Mono) is gone.
-- [ ] AC8 — works in all four palettes and both schemes (tokens only — the existing design
+- [x] AC7 — the tier ring's drop-shadow artifact (a grey box behind the arc in Mono) is gone.
+- [x] AC8 — works in all four palettes and both schemes (tokens only — the existing design
       tests pass); browser pass at phone width, day and night.
 
 ## Out of scope (explicit, prevents gold-plating)

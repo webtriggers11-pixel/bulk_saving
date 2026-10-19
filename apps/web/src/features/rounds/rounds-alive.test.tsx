@@ -226,9 +226,13 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     renderPage();
     fireEvent.click(await screen.findByTestId('invite-round_ac'));
     expect(await screen.findByText(/Invite link copied/)).toBeInTheDocument();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(6_000);
-    });
+    // One second at a time, as the clock ticks: a single 6s jump batches the renders and
+    // let the original bug (a timer reset every tick) pass (V2 r2 P3-2).
+    for (let tick = 0; tick < 6; tick += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000);
+      });
+    }
     expect(screen.queryByText(/Invite link copied/)).not.toBeInTheDocument();
   });
 
@@ -325,5 +329,36 @@ describe('useDeadlineClock (AC6, V2 P2-3, P3-1)', () => {
       await vi.advanceTimersByTimeAsync(1_100);
     });
     expect(result.current.now).toBeGreaterThan(at);
+  });
+});
+
+describe('one burst per win, whichever arrives first (V2 r2 P3-1)', () => {
+  it('a poll that brings the new tier in before the join responds does not restart the burst', async () => {
+    allowMotion();
+    const crossed = { ...ac, myUnits: 4, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } };
+    let respond: (round: RoundDto) => void = () => {};
+    joinRoundMock.mockReturnValue(new Promise<RoundDto>((resolve) => (respond = resolve)));
+    fetchRoundsMock.mockResolvedValue([ac]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <RoundsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByTestId('pledge-open-round_ac'));
+    fireEvent.click(screen.getByTestId('join-round_ac'));
+    // The poll lands first.
+    act(() => {
+      client.setQueryData(['rounds'], [crossed]);
+    });
+    const first = await screen.findByTestId('celebrate');
+    fetchRoundsMock.mockResolvedValue([crossed]);
+    await act(async () => {
+      respond(crossed);
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByTestId('celebrate')).toBe(first);
   });
 });
