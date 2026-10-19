@@ -10,6 +10,10 @@ export default defineConfig({
   // conversion covers by default — so without this its named exports are invisible to the
   // production build ("normalisePhone is not exported by …/dist/index.js").
   build: { commonjsOptions: { include: [/node_modules/, /packages\/shared/] } },
+  // …and the DEV server does not go through Rollup at all: a linked dependency outside
+  // node_modules is served raw, so the browser got CommonJS and threw "does not provide an
+  // export named normalisePhone" (V2 P1). esbuild pre-bundling gives it CJS interop.
+  optimizeDeps: { include: ['@bulk/shared'] },
   plugins: [
     react(),
     VitePWA({

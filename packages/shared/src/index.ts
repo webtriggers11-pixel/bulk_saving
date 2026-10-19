@@ -681,10 +681,14 @@ export const normalisePhone = (raw: string): string | null => {
   }
   if (!/^\d+$/.test(digits)) return null;
   if (!plus) {
+    // An Indian mobile number starts 6–9; a trunk 0 may precede it; `91` may be typed.
     if (digits.length === 10) digits = `91${digits}`;
     else if (digits.length === 11 && digits.startsWith('0')) digits = `91${digits.slice(1)}`;
     else if (!(digits.length === 12 && digits.startsWith('91'))) return null;
   }
+  // No country code starts with 0; an Indian number keeps no trunk 0 after 91 and starts 6–9.
+  if (digits.startsWith('0')) return null;
+  if (digits.startsWith('91') && !/^91[6-9]\d{9}$/.test(digits)) return null;
   if (digits.length < 7 || digits.length > 15) return null;
   return `+${digits}`;
 };

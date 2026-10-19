@@ -154,7 +154,9 @@ describe('Pagination (integration, needs DB + Redis)', () => {
     }
   });
 
-  it('rows created in the same instant are still a total order — the id breaks the tie (V2 P2)', async () => {
+  // The tiebreaker itself is asserted on the SOURCE (src/common/pagination.spec.ts): Prisma adds
+  // an implicit id order on cursor queries, so this walk cannot tell it apart (V2 round 2).
+  it('rows created in the same instant walk without a gap or a repeat', async () => {
     const at = new Date('2026-01-01T00:00:00.000Z');
     const made: string[] = [];
     const tieServices: string[] = [];

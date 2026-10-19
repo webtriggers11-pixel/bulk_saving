@@ -46,7 +46,7 @@ export function pageArgs(query: PageQuery): { take: number; cursor?: { id: strin
   };
 }
 
-/** Shape one page from the `limit + 1` rows and the filtered count. */
+/** Shape one page from the (up to) `limit + 2` fetched rows and the filtered count. */
 export function pageOf<Row extends { id: string }, T>(
   rows: Row[],
   query: PageQuery,

@@ -1289,3 +1289,4 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Gate running on main; V2 round 3 for both next.
 - By: agent (autonomous) + code-reviewer subagent
 - Gate run 1 on the round-2 fixes died with `Segmentation fault: 11` two suites into the backend tests — CHORE-021's Node 24 GC crash, not a failure. Rerunning.
+- V1 run 2: gate exit 0 — backend 500/500 (+12: pagination source guard and unit cases, normaliser edge cases, the shared-budget case), web 634/634, 3280 class tokens.

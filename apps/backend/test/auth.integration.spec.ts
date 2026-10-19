@@ -148,6 +148,12 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
     expect(ids.size).toBe(1);
     const stored = await prisma.resident.findMany({ where: { societyId: society.id, phone: { contains: digits } } });
     expect(stored).toHaveLength(1);
+
+    // And the resend budget is per CANONICAL number: a second spelling within 30s is the
+    // same person asking again, not a fresh budget.
+    await request(app.getHttpServer()).post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone: digits }).expect(200);
+    const again = await request(app.getHttpServer()).post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone: `+91 ${digits}` }).expect(429);
+    expect(again.body.error.code).toBe(ErrorCode.OTP_RATE_LIMITED);
   });
 
   it('rejects an unknown invite code and sends no OTP', async () => {

@@ -15,6 +15,10 @@ export function authErrorMessage(code: string): string {
       return 'This number is not an administrator. Use the resident sign-in instead.';
     case 'OTP_RATE_LIMITED':
       return 'Too many requests. Please wait a moment before trying again.';
+    // BUG-019: the server refused the number itself (either the DTO shape or the normaliser).
+    case 'VALIDATION_ERROR':
+    case 'BAD_REQUEST':
+      return "That doesn't look like a phone number. Use your 10-digit mobile number, or +country code and number.";
     case 'UNAUTHORIZED':
     case 'TOKEN_REVOKED':
       return 'Your session has expired. Please sign in again.';

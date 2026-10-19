@@ -54,7 +54,8 @@ export function OnboardingPage() {
 
   function submitPhone(event: FormEvent) {
     event.preventDefault();
-    if (phone.trim().length === 0) return;
+    // BUG-019: only a number the server will accept — the button says so until then.
+    if (normalisePhone(phone) === null) return;
     requestMutation.mutate();
   }
 
@@ -175,7 +176,7 @@ export function OnboardingPage() {
               <Button
                 className="flex-1"
                 type="submit"
-                disabled={requestMutation.isPending || phone.trim().length === 0}
+                disabled={requestMutation.isPending || normalisePhone(phone) === null}
               >
                 {queuedOffline
                   ? OFFLINE_WAITING_LABEL

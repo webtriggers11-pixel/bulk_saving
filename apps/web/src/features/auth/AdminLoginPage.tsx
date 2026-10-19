@@ -49,7 +49,7 @@ export function AdminLoginPage() {
 
   function submitPhone(event: FormEvent) {
     event.preventDefault();
-    if (phone.trim().length === 0) return;
+    if (normalisePhone(phone) === null) return;
     requestMutation.mutate();
   }
 
@@ -134,7 +134,7 @@ export function AdminLoginPage() {
             <Button
               className="mt-[22px] w-full"
               type="submit"
-              disabled={requestMutation.isPending || phone.trim().length === 0}
+              disabled={requestMutation.isPending || normalisePhone(phone) === null}
             >
               {queuedOffline
                 ? OFFLINE_WAITING_LABEL
@@ -150,7 +150,7 @@ export function AdminLoginPage() {
           <form onSubmit={submitCode} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">Enter the code</h2>
             <p className="mb-6 mt-2 text-caption text-ink-muted">
-              Sent by SMS to <span className="num font-bold text-ink">{phone}</span>.
+              Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
             <Label htmlFor="admin-code">6-digit code</Label>
             <Input
