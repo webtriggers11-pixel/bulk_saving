@@ -5,31 +5,26 @@
 
 ## Latest session (2026-10-19)
 
-- **Closed:** FEAT-017 (Vercel "Mono" look, ADR-0029), FEAT-018 (rounds: price ladder, summary, invite,
-  confetti, live last-day clock, ADR-0030), FEAT-019 (one Vercel look + seven accent pairs + spotlight /
-  border beam / sparkles / shimmer / press sparks, ADR-0031). Each: V2 to PASS, V3 two identical runs.
-- **Open:** FEAT-020 web push (ADR-0032) — built, V2 round 3 PASS, V3 green (449/551); waiting only on a
-  real-device check: owner turns on Profile → Notifications at :5175 and allows the prompt, then trigger a
-  round event and watch it arrive. Two additive migrations applied to the dev DB
-  (`PushSubscription`, `Notification.pushQueuedAt`); dependency `web-push`; dev VAPID keys in the
-  gitignored apps/backend/.env; production REQUIRES VAPID_* (`.env.prod.example`).
-- **Also closed:** FEAT-021 (service cards show their open round and book it in one tap via
-  `/rounds?join=<id>`), BUG-013 (admin-auth test waited for ANY phone's OTP). Follow-up worth asking the
-  owner: "Ask for this service" when no round is open (needs an API).
-- **Also closed:** FEAT-022 ("Ask for this service": demand on cards, admin to-do list, an opened round
-  notifies the askers by SMS + push deep link; migration `ServiceAsk` + SERVICE_ASK_OPENED). Browser pass
-  waits on the owner restarting the :3000 API (its watch mode is stuck on 3:03 PM code).
-- **Triaged:** BUG-014 — intermittent route-level 404 in backend integration tests, only inside full
-  verify.sh runs (2 of ~15 today). A test-only probe in `test/helpers/test-app.ts` logs every 404 (expected
-  ones included, ~22 per run); look for one on a route that exists.
-- **Triaged:** BUG-012 — `scripts/check-css-classes.mjs` pairs quotes across a whole file, so an
-  apostrophe in a comment hides (or reveals) class lists; it bit three times this session (token count
-  moved 1615→1570, 1642→1623, 1703→2008 with no class change). Until fixed: no apostrophes in comments
-  in .tsx/.ts files.
-- **Machine:** global pnpm shim broken → a scratchpad shim `exec corepack pnpm "$@"` on PATH + Node 24.22.0
-  for verify.sh. Port 5173 is ANOTHER project; Bulk Saving web is on 5174 (owner's dev server — needs a
-  restart to pick up the Tailwind token config) and 5175 (agent's production preview). Admin login:
-  `+919999900001` at /admin/login (full +91), code from `redis-cli -p 6399 get dev:last-otp:+919999900001`.
+- **Closed:** FEAT-017 (Vercel Mono look), FEAT-018 (rounds: ladder, summary, invite, confetti, live clock),
+  FEAT-019 (one Vercel look + 7 accent pairs + micro-interactions), FEAT-021 (service cards book in one tap),
+  FEAT-022 ("Ask for this service" + admin demand list + askers notified when a round opens), BUG-013 (admin
+  OTP test race), BUG-015 + BUG-016 (phone view: no squeeze/overflow, aligned tile values, 18/22px card
+  padding, 44px icon boxes, row-shaped service tiles under 400px, one-row admin nav — measured at 360/390/
+  400/430/448px), BUG-012 (class gate parses TS — 3278 tokens checked, was 1922). Each with V2 + V3.
+- **Open:** FEAT-020 web push — built, V2 PASS, V3 green; real delivery verified to the browser (FCM accepted,
+  Chrome created the notifications) but the owner did not see banners — macOS notification settings for
+  Chrome (Notification Center / System Settings → Notifications → Google Chrome / Focus). Mark T7 done once
+  the owner sees one. Also the owner's call: cancel or keep the test round "Geyser Service" (Green Meadows,
+  opened by the agent; the Platform Admin pledged 1).
+- **Triaged:** BUG-014 (intermittent route-level 404 in backend integration tests under verify.sh — a probe in
+  test/helpers/test-app.ts logs every 404; ~22 expected per run), CHORE-023 (class gate: static parts of
+  `${}` templates), CHORE-022 (admin OTP strength — owner decision).
+- **Machine:** global pnpm shim broken → scratchpad shim `exec corepack pnpm "$@"` + Node 24.22.0 for
+  verify.sh. Ports: 5173 is ANOTHER project; Bulk Saving web on 5174 (owner dev server) and 5175 (agent's
+  production PREVIEW — rebuild with `vite build` to update; it is what the push service worker runs on).
+  API :3000 is the owner's `nest start --watch` — its watch mode stalls after schema changes; restart it.
+  Dev admin: +919999900001 at /admin/login (full +91); OTP via `redis-cli -p 6399 get dev:last-otp:+91…`.
+  Phone-width audits: same-origin iframes at 360/390px (the Chrome window will not go below 500px).
 
 ## Session before (2026-10-18)
 

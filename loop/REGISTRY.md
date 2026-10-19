@@ -62,7 +62,7 @@
 | FEAT-018 | Group buys that feel alive: price ladder, live countdown, invite neighbours, celebrate | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-018-rounds-that-feel-alive/ | ADR-0021, ADR-0022, ADR-0030 |
 | FEAT-019 | One Vercel look, seven colour combinations, micro-interactions that spark | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-019-vercel-accents-and-sparks/ | ADR-0029, ADR-0031 |
 | FEAT-020 | Web push notifications on the outbox + BullMQ pipeline: per-event custom messages, theme-aware, scalable fan-out | in-progress | P1 | 2026-10-19 | — | loop/work/FEAT-020-web-push-notifications/ | ADR-0013, ADR-0015 |
-| BUG-012 | check-css-classes pairs quotes across a whole file — an apostrophe in a comment silently hides class lists from the gate | in-progress | P2 | 2026-10-19 | — | (see LOG) | ADR-0021 |
+| BUG-012 | check-css-classes pairs quotes across a whole file — an apostrophe in a comment silently hides class lists from the gate | done | P2 | 2026-10-19 | 2026-10-19 | (see LOG) | ADR-0021 |
 | FEAT-021 | From a service to booking it in one tap: open-round status on service cards, deep link that opens the pledge sheet | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-021-services-to-booking/ | ADR-0010 |
 | BUG-013 | admin-auth integration test reads the latest OTP to ANY phone — leftover queued admin-door jobs from earlier suites hand it the wrong code (flaky, ~1 in 10 full runs) | done | P2 | 2026-10-19 | 2026-10-19 | (fix in test helpers; see LOG) | ADR-0027 |
 | FEAT-022 | "Ask for this service": residents ask, admin sees demand, an opened round notifies the askers | done | P1 | 2026-10-19 | 2026-10-19 | loop/work/FEAT-022-ask-for-this-service/ | ADR-0033 |

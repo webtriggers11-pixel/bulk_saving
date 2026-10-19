@@ -1125,3 +1125,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (independent; gate exit 0, 3248 tokens, 457/593): PASS. Compared old vs new extractor on all 174 files: old 2100 tokens, new 3451; the 20 lists only the old one saw were backtick snippets inside COMMENTS and prose test names — no regression. Probes: JSX attributes, cn(...) args incl. `cond && '…'`, object maps, ternaries, no-substitution templates, after apostrophes — all found. Gate still fails on a broken class (bg-brand/12 p-[17.3px] in HomePage → exit 1 naming both). Parse of all files: ~121ms.
 - Taken: P3-1 `.ts` parsed as TS (an angle-bracket assertion broke a TSX parse) + test; P3-2 arbitrary properties (`[animation-delay:140ms]`) accepted as class tokens + test → +30 tokens checked (3278), all resolve; P3-4 merged doc comments. P3-3 (static parts of `${}` templates unchecked) → CHORE-023. P3-5 (string literal types now checked) harmless.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-19 — BUG-012 — V3; CLOSED
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 595/595, 3278 class tokens.
+- BUG-012 → done. The "no apostrophes in .tsx comments" workaround in HANDOFF is retired.
+- By: agent (autonomous)
