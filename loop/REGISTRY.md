@@ -81,3 +81,6 @@
 - **P1** — needed for the next release
 - **P2** — important, not urgent
 - **P3** — nice to have; revisit quarterly
+| BUG-017 | Signing in on a second device ends the first device's lifetime session — the rotation handle is one key per resident, not per session | triaged | P1 | 2026-10-19 | — | loop/work/BUG-017-second-device-ends-first-session/ | ADR-0024 |
+| FEAT-023 | Home leads with Group buys: the accent surface carries live open-round counts and up to three rounds deep-linking into the pledge sheet | specced | P1 | 2026-10-19 | — | loop/work/FEAT-023-home-leads-with-group-buys/ | ADR-0021, ADR-0022 |
+| CHORE-024 | Profile: the "This app" card is cluttered; one clean settings list with one row shape | triaged | P2 | 2026-10-19 | — | loop/work/CHORE-024-profile-clean-up/ | ADR-0021 |

@@ -1138,3 +1138,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Seen on the way (not FEAT-020): the onboarding phone field sends the number exactly as typed — `9999900201` and `+919999900201` are two different residents. Triage candidate, noted in HANDOFF.
 - FEAT-020 → done. All AC1–AC8 met; V2 round 3 PASS and V3 (449/551, 1703 tokens) stand from the previous entry.
 - By: agent (autonomous)
+
+## 2026-10-19 — TRIAGE — three owner asks after FEAT-020 closed
+- **BUG-017 (P1)** — owner: "one time authenticate then lifetime login; only a reinstall needs OTP again". Verified the lifetime half holds (Farah's `refresh:` handle TTL −1, JWT_REFRESH_TTL_SECONDS=0, ADR-0024) — but the handle is ONE key per resident, so a second device's sign-in revokes the first device within 15 minutes. Found by reading `auth.service.ts`; this session's own browser sign-in as +919999900201 would have signed the owner's phone out if they were that resident. Bug (test first) + ADR-0034 amending ADR-0024 (per-session handles).
+- **FEAT-023 (P1)** — owner: "Group buys is the main feature and on Home it looks hidden; make it the point of contact". Home's accent surface moves from Services to Group buys with live counts and up to three rounds deep-linking into the pledge sheet (FEAT-021). Frontend only; spec/plan/tasks written.
+- **CHORE-024 (P2)** — owner's screenshot: the Profile "Add to your home screen" card (filled button + "Connected" pill on one line) and "overall I want a clean one". One settings list, one row shape; test ids kept.
+- Order: BUG-017 → FEAT-023 → CHORE-024.
+- By: agent (autonomous)
