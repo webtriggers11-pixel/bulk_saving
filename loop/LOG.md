@@ -1202,3 +1202,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (independent, in a detached worktree; gate exit 0, 464/604, 3338 tokens; 2 mutations killed): PASS, no P1/P2.
 - Taken: P3-1 the lead reads `queryStalled` so an offline cold start says "Could not check just now" instead of the good-news line; P3-2 tests for a failed refetch with cached rows, the loading line, and offline cold start; P3-3 phone-layout guard pins `truncate` + `whitespace-nowrap` on the row. P3-4 (copy: "See group buys" when ≤3) accepted as deliberate — AC3 satisfied by "See all N group buys" when there are more.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-19 — FEAT-023 — V3; CLOSED
+- V3 (in the detached review worktree at c9b57fc): two back-to-back gate runs, both exit 0 and identical — backend 464/464, web 608/608, 3284 class tokens. No flakes.
+- FEAT-023 → done. Home leads with Group buys.
+- By: agent (autonomous)
