@@ -108,7 +108,7 @@ describe('design tokens', () => {
   });
 
   it('Mono tightens the geometry and sets Geist — and only Mono does', () => {
-    const mono = tokensOf("html[data-theme='mono'] {");
+    const mono = tokensOf("html[data-look='vercel'] {");
     expect(mono.get('--radius-card')).toBe('12px');
     expect(mono.get('--radius-control')).toBe('8px');
     expect(mono.get('--font-sans')).toMatch(/^'Geist'/);

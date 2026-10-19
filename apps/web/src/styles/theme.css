@@ -27,6 +27,7 @@
   /* the three ambient mesh washes behind the glass */
   --mesh-1: 46 214 187;
   --mesh-2: 15 118 110;
+  --brand-2: 63 140 170;
   --mesh-3: 63 118 140;
   /* FEAT-016 (ADR-0028): the hairline tint (light at night — see the night blocks) */
   --line: 9 52 47;
@@ -45,6 +46,7 @@
   --shadow-rgb: 30 27 75;
   --mesh-1: 139 140 255;
   --mesh-2: 79 70 229;
+  --brand-2: 236 72 153;
   --mesh-3: 236 72 153;
   /* FEAT-016 (ADR-0028): the hairline tint (light at night — see the night blocks) */
   --line: 30 27 75;
@@ -63,6 +65,7 @@
   --shadow-rgb: 90 40 15;
   --mesh-1: 251 146 60;
   --mesh-2: 194 65 12;
+  --brand-2: 251 191 36;
   --mesh-3: 180 120 90;
   /* FEAT-016 (ADR-0028): the hairline tint (light at night — see the night blocks) */
   --line: 90 40 15;
@@ -70,7 +73,8 @@
 
 /* FEAT-017 (ADR-0029): Mono — the Vercel/Geist register. Ink is the brand: a black fill
    by day, a near-white one by night. Its geometry, type and flat surfaces are further
-   down (`html[data-theme='mono']`); this block is colour only, like the others. */
+   down (`html[data-look='vercel']`); this block is colour only, like the others. In the
+   Vercel look it is the NEUTRAL base every accent (below) paints over (FEAT-019). */
 [data-theme='mono'] {
   --brand: 23 23 23;
   --brand-deep: 0 0 0;
@@ -86,6 +90,7 @@
   --mesh-2: 170 170 170;
   --mesh-3: 140 140 140;
   --line: 0 0 0;
+  --brand-2: 115 115 115;
 }
 
 /* State hues are meanings, not decoration: they do NOT change with the palette. */
@@ -166,6 +171,7 @@ html[data-scheme='dark']:not([data-theme='indigo']):not([data-theme='ember']):no
   --mesh-2: 10 70 64;
   --mesh-3: 30 64 80;
   --on-fill: 255 255 255;
+  --brand-2: 72 200 230;
 }
 html[data-scheme='dark'][data-theme='indigo'] {
   --brand: 99 92 241;
@@ -182,6 +188,7 @@ html[data-scheme='dark'][data-theme='indigo'] {
   --mesh-2: 46 40 130;
   --mesh-3: 120 40 90;
   --on-fill: 255 255 255;
+  --brand-2: 244 114 182;
 }
 html[data-scheme='dark'][data-theme='ember'] {
   --brand: 190 62 12; /* white on it: 5.4:1 */
@@ -198,6 +205,7 @@ html[data-scheme='dark'][data-theme='ember'] {
   --mesh-2: 110 40 12;
   --mesh-3: 100 64 48;
   --on-fill: 255 255 255;
+  --brand-2: 252 211 77;
 }
 /* Mono's night: Vercel's #0a0a0a ground, #111 cards, and a near-white fill that takes
    dark text — which is why fills carry `on-fill`, never `white` (ADR-0029). */
@@ -216,6 +224,111 @@ html[data-scheme='dark'][data-theme='mono'] {
   --mesh-2: 30 30 30;
   --mesh-3: 50 50 50;
   --on-fill: 10 10 10;
+  --brand-2: 160 160 160;
+}
+
+/* ---- accents (FEAT-019, ADR-0031) ------------------------------------------
+   The colour inside the Vercel look: seven PAIRS — `--brand` and its gradient partner
+   `--brand-2` — over Mono's neutral ground, ink and paper. By day the fill is deep enough
+   for white text; by night it is light, and Mono's night `--on-fill` (near-black) sits on
+   it. Day selectors are bare attributes so a swatch dot can carry its accent too. */
+[data-accent='mono'] {
+  --brand: 23 23 23;
+  --brand-2: 115 115 115;
+  --brand-deep: 0 0 0;
+  --brand-light: 115 115 115;
+  --brand-ink: 23 23 23;
+}
+[data-accent='ocean'] {
+  --brand: 0 102 230;
+  --brand-2: 6 182 212;
+  --brand-deep: 0 76 180;
+  --brand-light: 96 165 250;
+  --brand-ink: 0 92 210;
+}
+[data-accent='aurora'] {
+  --brand: 124 58 237;
+  --brand-2: 219 39 119;
+  --brand-deep: 91 33 182;
+  --brand-light: 167 139 250;
+  --brand-ink: 109 40 217;
+}
+[data-accent='bloom'] {
+  --brand: 190 24 93;
+  --brand-2: 124 58 237;
+  --brand-deep: 157 23 77;
+  --brand-light: 244 114 182;
+  --brand-ink: 190 24 93;
+}
+[data-accent='sunset'] {
+  --brand: 194 65 12;
+  --brand-2: 219 39 119;
+  --brand-deep: 154 52 18;
+  --brand-light: 251 146 60;
+  --brand-ink: 180 60 10;
+}
+[data-accent='forest'] {
+  --brand: 21 128 61;
+  --brand-2: 13 148 136;
+  --brand-deep: 22 101 52;
+  --brand-light: 74 222 128;
+  --brand-ink: 21 115 55;
+}
+[data-accent='lagoon'] {
+  --brand: 15 118 110;
+  --brand-2: 8 145 178;
+  --brand-deep: 10 84 76;
+  --brand-light: 45 212 191;
+  --brand-ink: 15 118 110;
+}
+html[data-scheme='dark'][data-accent='mono'] {
+  --brand: 237 237 237;
+  --brand-2: 160 160 160;
+  --brand-deep: 255 255 255;
+  --brand-light: 160 160 160;
+  --brand-ink: 237 237 237;
+}
+html[data-scheme='dark'][data-accent='ocean'] {
+  --brand: 82 168 255;
+  --brand-2: 34 211 238;
+  --brand-deep: 125 190 255;
+  --brand-light: 147 197 253;
+  --brand-ink: 125 190 255;
+}
+html[data-scheme='dark'][data-accent='aurora'] {
+  --brand: 167 139 250;
+  --brand-2: 244 114 182;
+  --brand-deep: 196 181 253;
+  --brand-light: 139 92 246;
+  --brand-ink: 196 181 253;
+}
+html[data-scheme='dark'][data-accent='bloom'] {
+  --brand: 244 114 182;
+  --brand-2: 192 132 252;
+  --brand-deep: 249 168 212;
+  --brand-light: 236 72 153;
+  --brand-ink: 249 168 212;
+}
+html[data-scheme='dark'][data-accent='sunset'] {
+  --brand: 251 146 60;
+  --brand-2: 244 114 182;
+  --brand-deep: 253 186 116;
+  --brand-light: 234 88 12;
+  --brand-ink: 253 186 116;
+}
+html[data-scheme='dark'][data-accent='forest'] {
+  --brand: 74 222 128;
+  --brand-2: 45 212 191;
+  --brand-deep: 134 239 172;
+  --brand-light: 22 163 74;
+  --brand-ink: 134 239 172;
+}
+html[data-scheme='dark'][data-accent='lagoon'] {
+  --brand: 45 212 191;
+  --brand-2: 103 232 249;
+  --brand-deep: 94 234 212;
+  --brand-light: 13 148 136;
+  --brand-ink: 94 234 212;
 }
 
 html {
@@ -854,12 +967,13 @@ button:hover .nudge {
   z-index: 1;
 }
 
-/* ---- Mono: the Vercel register (FEAT-017, ADR-0029) ----------------------
-   Flat paper, 1px hairlines, tight corners, Geist. Everything here overrides a system
-   class under `html[data-theme='mono']` — attribute + class outranks the base rule and any
+/* ---- The Vercel look (FEAT-017, ADR-0029; re-keyed FEAT-019, ADR-0031) -------
+   Flat paper, 1px hairlines, tight corners, Geist. A LOOK, not a colour: `data-look`
+   carries it and `data-accent` the colour pair. Everything here overrides a system
+   class under `html[data-look='vercel']` — attribute + class outranks the base rule and any
    single utility, so no component branches on the palette and none needs `!important`.
    Light is the edge of the thing, not a glow on it: hover darkens the hairline. */
-html[data-theme='mono'] {
+html[data-look='vercel'] {
   --radius-chip: 6px;
   --radius-control: 8px;
   --radius-inset: 8px;
@@ -873,18 +987,18 @@ html[data-theme='mono'] {
   --sheen: transparent;
   background-image: none;
 }
-html[data-scheme='dark'][data-theme='mono'] {
+html[data-scheme='dark'][data-look='vercel'] {
   --hairline: rgb(var(--line) / 0.11);
   --hairline-strong: rgb(var(--line) / 0.22);
 }
 /* Geist at 800 is a poster weight; Vercel sets its headings at 600–700. */
-html[data-theme='mono'] .font-extrabold { font-weight: 700; }
-html[data-theme='mono'] .font-bold { font-weight: 600; }
+html[data-look='vercel'] .font-extrabold { font-weight: 700; }
+html[data-look='vercel'] .font-bold { font-weight: 600; }
 
 /* The ground: no washes — a faint grid that fades out below the fold, and one soft
    light at the top. Drawn by AmbientGround, which every shell mounts. */
-html[data-theme='mono'] .ambient-ground > * { display: none; }
-html[data-theme='mono'] .ambient-ground::before {
+html[data-look='vercel'] .ambient-ground > * { display: none; }
+html[data-look='vercel'] .ambient-ground::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -896,17 +1010,26 @@ html[data-theme='mono'] .ambient-ground::before {
   -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 30%, transparent 75%);
   mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 30%, transparent 75%);
 }
-html[data-theme='mono'] .ambient-ground::after {
+/* FEAT-019: an aurora of the accent pair at the top of the page, drifting slowly. */
+html[data-look='vercel'] .ambient-ground::after {
   content: '';
   position: absolute;
-  inset: -20% 0 auto;
-  height: 60%;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgb(var(--line) / 0.05), transparent 70%);
+  inset: -20% -10% auto;
+  height: 62%;
+  background:
+    radial-gradient(ellipse 45% 55% at 25% 0%, rgb(var(--brand) / 0.16), transparent 70%),
+    radial-gradient(ellipse 45% 55% at 78% 0%, rgb(var(--brand-2) / 0.16), transparent 70%);
+  filter: blur(8px);
+  animation: aurora 16s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  from { transform: translate3d(-4%, 0, 0) scale(1); }
+  to { transform: translate3d(4%, 3%, 0) scale(1.08); }
 }
 
 /* Surfaces: paper and a hairline. No blur on cards — nothing to see through. */
-html[data-theme='mono'] .surface-glass,
-html[data-theme='mono'] .surface-solid {
+html[data-look='vercel'] .surface-glass,
+html[data-look='vercel'] .surface-solid {
   background-image: none;
   background-color: rgb(var(--paper));
   backdrop-filter: none;
@@ -914,97 +1037,199 @@ html[data-theme='mono'] .surface-solid {
   border: 1px solid var(--hairline);
   box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / 0.04);
 }
-html[data-theme='mono'] .surface-tint {
+html[data-look='vercel'] .surface-tint {
   background-image: linear-gradient(rgb(var(--line) / 0.03), rgb(var(--line) / 0.03));
   background-color: rgb(var(--paper));
   border: 1px solid var(--hairline);
   box-shadow: none;
 }
-html[data-theme='mono'] .surface-inset {
+html[data-look='vercel'] .surface-inset {
   background-image: none;
   background-color: rgb(var(--line) / 0.03);
   border: 1px solid var(--hairline);
   box-shadow: none;
 }
 /* The one accent surface is the inverted card: ink by day, near-white by night. */
-html[data-theme='mono'] .surface-accent {
-  background-image: linear-gradient(160deg, rgb(var(--brand)), rgb(var(--brand-deep)));
+html[data-look='vercel'] .surface-accent {
+  /* The partner hue glows in from the top-right corner; text sits on brand → brand-deep,
+     both of which clear 4.5:1 with on-fill (FEAT-019). */
+  background-image:
+    radial-gradient(90% 80% at 100% 0%, rgb(var(--brand-2) / 0.55), transparent 62%),
+    linear-gradient(160deg, rgb(var(--brand)), rgb(var(--brand-deep)));
   border: 1px solid rgb(var(--brand));
   box-shadow: 0 12px 32px -16px rgb(var(--shadow-rgb) / 0.35);
 }
-html[data-theme='mono'] .surface-sheet {
+html[data-look='vercel'] .surface-sheet {
   background-image: none;
   background-color: rgb(var(--paper));
   border-top: 1px solid var(--hairline);
   box-shadow: 0 -16px 48px -24px rgb(var(--shadow-rgb) / 0.25);
 }
 @media (min-width: 768px) {
-  html[data-theme='mono'] .surface-sheet { border: 1px solid var(--hairline); }
+  html[data-look='vercel'] .surface-sheet { border: 1px solid var(--hairline); }
 }
 
 /* Interaction: the hairline answers, the card does not jump. */
-html[data-theme='mono'] .card-hover:hover {
+html[data-look='vercel'] .card-hover:hover {
   transform: none;
   border-color: var(--hairline-strong);
   box-shadow: 0 4px 14px -6px rgb(var(--shadow-rgb) / 0.1);
 }
-html[data-theme='mono'] .card-glow::after,
-html[data-theme='mono'] .sweep::after,
-html[data-theme='mono'] .sheen::before,
-html[data-theme='mono'] .halo-sweep,
-html[data-theme='mono'] .card-wash,
-html[data-theme='mono'] .animate-glide {
+html[data-look='vercel'] .card-glow::after,
+html[data-look='vercel'] .sweep::after,
+html[data-look='vercel'] .sheen::before,
+html[data-look='vercel'] .halo-sweep,
+html[data-look='vercel'] .card-wash,
+html[data-look='vercel'] .animate-glide {
   display: none;
 }
-html[data-theme='mono'] .ring-arc {
+html[data-look='vercel'] .ring-arc {
   filter: none;
 }
-html[data-theme='mono'] .row-hover:hover {
+html[data-look='vercel'] .row-hover:hover {
   background-color: rgb(var(--line) / 0.035);
 }
 
 /* Fills. */
-html[data-theme='mono'] .paint-brand,
-html[data-theme='mono'] .paint-mono {
+html[data-look='vercel'] .paint-brand,
+html[data-look='vercel'] .paint-mono {
   background-image: none;
   background-color: rgb(var(--brand));
 }
-html[data-theme='mono'] .paint-brand:hover {
+html[data-look='vercel'] .paint-brand:hover {
   background-color: rgb(var(--brand) / 0.86);
 }
-html[data-theme='mono'] .paint-glass {
+html[data-look='vercel'] .paint-glass {
   background-image: none;
   background-color: rgb(var(--paper));
   box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / 0.04);
 }
-html[data-theme='mono'] .paint-glass:hover {
+html[data-look='vercel'] .paint-glass:hover {
   background-image: linear-gradient(rgb(var(--line) / 0.04), rgb(var(--line) / 0.04));
 }
 /* Not on a focused or invalid FIELD: those borders are the field telling you something.
    A focused button keeps its hairline — it lost it after a sheet returned focus to it,
    paper on paper (FEAT-018 browser pass). */
-html[data-theme='mono'] .paint-glass:not(:is(input, select, textarea):focus):not([aria-invalid='true']) {
+html[data-look='vercel'] .paint-glass:not(:is(input, select, textarea):focus):not([aria-invalid='true']) {
   border-color: var(--hairline-strong);
 }
-html[data-theme='mono'] .paint-tint {
+html[data-look='vercel'] .paint-tint {
   background-image: none;
   background-color: rgb(var(--line) / 0.04);
 }
-html[data-theme='mono'] .shadow-glow,
-html[data-theme='mono'] .shadow-accent {
+html[data-look='vercel'] .shadow-glow,
+html[data-look='vercel'] .shadow-accent {
   box-shadow: none;
 }
-html[data-theme='mono'] .paint-brand {
+html[data-look='vercel'] .paint-brand {
   box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / 0.18);
 }
 /* No shimmer on a progress fill: Mono has no sheen (AC3). */
-html[data-theme='mono'] .bar-fill::after {
+html[data-look='vercel'] .bar-fill::after {
   display: none;
 }
 /* The switch knob is white in every palette but one place: on Mono's near-white night
    fill it vanished (FEAT-017 V2 P1-2). There it takes the fill text colour. */
-html[data-scheme='dark'][data-theme='mono'] .switch[aria-checked='true'] .switch-knob {
+html[data-scheme='dark'][data-look='vercel'] .switch[aria-checked='true'] .switch-knob {
   background-color: rgb(var(--on-fill));
+}
+
+/* ---- micro-interactions (FEAT-019, ADR-0031) ------------------------------
+   Decoration that answers the pointer and celebrates small wins. Every animation here
+   is named, so the reduced-motion block below stops it; none of it moves layout. */
+
+/* (a) Spotlight: a soft disc of the accent follows the pointer across an interactive
+   card (Card writes --mx/--my on pointer move). The accent card keeps its own paint. */
+html[data-look='vercel'] .card-hover:not(.surface-accent):hover {
+  background-image: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 0%),
+    rgb(var(--brand) / 0.08),
+    transparent 65%
+  );
+}
+
+/* (b) Border beam: a short light travelling round the lead card's edge. */
+@property --beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes beam-spin {
+  to { --beam-angle: 360deg; }
+}
+html[data-look='vercel'] .border-beam {
+  position: relative;
+}
+html[data-look='vercel'] .border-beam::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg 290deg,
+    rgb(var(--brand-2)) 330deg,
+    rgb(var(--brand)) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 1;
+  pointer-events: none;
+  animation: beam-spin 7s linear infinite;
+}
+
+/* (c) Sparkles: three small stars that twinkle around a number worth celebrating. */
+@keyframes twinkle {
+  0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(90deg); opacity: 1; }
+}
+.animate-twinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+/* (d) Shimmer text: a light passing through a headline figure. Both stops are ink that
+   clears 4.5:1 (brand-ink and ink), so the number never drops below legible. */
+@keyframes shimmer-text {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.ink-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--ink)) 35%,
+    rgb(var(--brand-ink)) 50%,
+    rgb(var(--ink)) 65%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+/* (e) Press sparks: a primary button throws a few sparks from where it was pressed. */
+@keyframes press-spark {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+}
+.animate-press-spark {
+  animation: press-spark 520ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* The Appearance swatch: the accent pair, split on the diagonal, ringed so it reads on
+   a night sheet. */
+.swatch-pair {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--brand)) 0 50%,
+    rgb(var(--brand-2)) 50% 100%
+  );
+  box-shadow: 0 0 0 1px rgb(var(--line) / 0.2);
 }
 
 /* Focus (FEAT-017 V2 P1-1). Every focus indicator is a box-shadow utility, and the Mono
@@ -1012,20 +1237,12 @@ html[data-scheme='dark'][data-theme='mono'] .switch[aria-checked='true'] .switch
    inputs and chips. These come last and carry one more class, so a focused control
    always shows its ring. Mono's ring is Vercel's: a ground-coloured gap, then solid ink —
    visible on a black, a white or a paper control alike. */
-html[data-theme='mono'] .focus-visible\:shadow-focus:focus-visible,
-html[data-theme='mono'] .group:focus-visible .group-focus-visible\:shadow-focus {
+html[data-look='vercel'] .focus-visible\:shadow-focus:focus-visible,
+html[data-look='vercel'] .group:focus-visible .group-focus-visible\:shadow-focus {
   box-shadow: 0 0 0 2px rgb(var(--ground)), 0 0 0 4px rgb(var(--ink));
 }
-html[data-theme='mono'] .focus\:shadow-ring:focus {
+html[data-look='vercel'] .focus\:shadow-ring:focus {
   box-shadow: 0 0 0 3px rgb(var(--ink) / 0.18);
-}
-/* The Mono swatch in Appearance shows Mono whatever is active: ink with a ring, so it
-   reads on a night sheet too. (Only the dot carries `data-theme`, see AppearanceSheet.) */
-/* `html` first: it must outrank the Mono fill rule above when Mono is also active. */
-html .paint-mono[data-theme='mono'] {
-  background-image: none;
-  background-color: rgb(23 23 23);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.28), 0 0 0 3px rgb(23 23 23 / 0.12);
 }
 
 /**
@@ -1057,6 +1274,18 @@ html .paint-mono[data-theme='mono'] {
     animation: none !important;
   }
   .sheet-out {
+    animation: none !important;
+  }
+  /* FEAT-019: parked sparks and stars are specks; the shimmer would freeze mid-light. */
+  .animate-press-spark {
+    animation: none !important;
+    display: none !important;
+  }
+  .animate-twinkle {
+    animation: none !important;
+    display: none !important;
+  }
+  .ink-shimmer {
     animation: none !important;
   }
   /* Without its flight a confetti piece is a coloured speck parked on the ring. */

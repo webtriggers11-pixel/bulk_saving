@@ -11,6 +11,7 @@ import { Fact } from './fact';
 import { Input } from './input';
 import { Label } from './label';
 import { Monogram } from './monogram';
+import { Sparkles } from './sparkles';
 import { Skeleton, SkeletonScreen } from './skeleton';
 import { StatCard } from './stat';
 import { DataCell, DataRow, DataRows, RowSurface } from './data-rows';
@@ -134,6 +135,7 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ['Label', <Label key="l">x</Label>],
   ['Skeleton', <Skeleton key="s" />],
   ['Monogram', <Monogram key="m" name="Priya Sharma" />],
+  ['Sparkles', <Sparkles key="sp">₹750</Sparkles>],
   ['StatCard', <StatCard key="sc" label="Open" value="4" />],
   ['EmptyState', <EmptyState key="e" icon="users" title="t" description="d" />],
   ['RowSurface', <RowSurface key="rs">x</RowSurface>],

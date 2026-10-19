@@ -26,7 +26,7 @@ export function PriceLadder({ round }: { round: RoundDto }) {
     <div className="mt-4" data-testid={`ladder-${round.id}`}>
       <div aria-hidden="true" className="relative mx-2 h-1.5 rounded-full bg-line/10">
         <span
-          className="bar-fill block h-full rounded-full bg-brand transition-[width] duration-500 ease-entrance"
+          className="bar-fill block h-full rounded-full bg-gradient-to-r from-brand to-brand-2 transition-[width] duration-500 ease-entrance"
           style={{ width: `${fill}%` }}
         />
         {tiers.map((tier, index) => (

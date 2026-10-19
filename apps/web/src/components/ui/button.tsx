@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { forwardRef, useState, type ButtonHTMLAttributes, type PointerEvent } from 'react';
 import { cn } from '../../lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger';
@@ -67,10 +67,62 @@ const SIZES: Record<ButtonSize, string> = {
   icon: 'h-icon w-icon px-0',
 };
 
+/** Where each of the eight press sparks flies (px), fixed so a render is reproducible. */
+const SPARK_PATHS = Array.from({ length: 8 }, (_, index) => {
+  const angle = (index / 8) * Math.PI * 2;
+  const distance = index % 2 === 0 ? 26 : 18;
+  return { dx: Math.round(Math.cos(angle) * distance), dy: Math.round(Math.sin(angle) * distance) };
+});
+
+function motionAllowed(): boolean {
+  try {
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * FEAT-019 (ADR-0031): a primary button throws a few sparks from where it was pressed.
+ * Rendered only while they fly (~0.5s), so the button's markup at rest is unchanged; never
+ * under reduced motion.
+ */
+function usePressSparks(enabled: boolean) {
+  const [bursts, setBursts] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  function onPress(event: PointerEvent<HTMLButtonElement>) {
+    if (!enabled || !motionAllowed()) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const burst = { id: event.timeStamp, x: event.clientX - box.left, y: event.clientY - box.top };
+    setBursts((current) => [...current, burst]);
+    window.setTimeout(() => setBursts((current) => current.filter((b) => b.id !== burst.id)), 600);
+  }
+  const sparks = bursts.map((burst) => (
+    <span
+      key={burst.id}
+      aria-hidden="true"
+      className="pointer-events-none absolute"
+      style={{ left: burst.x, top: burst.y }}
+    >
+      {SPARK_PATHS.map((path, index) => (
+        <span
+          key={index}
+          className={cn(
+            'animate-press-spark absolute left-0 top-0 size-1 rounded-full',
+            index % 2 === 0 ? 'bg-on-fill' : 'bg-brand-2',
+          )}
+          style={{ ['--dx' as string]: `${path.dx}px`, ['--dy' as string]: `${path.dy}px` }}
+        />
+      ))}
+    </span>
+  ));
+  return { onPress, sparks };
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', tone = 'default', className, type = 'button', ...props },
+  { variant = 'primary', size = 'md', tone = 'default', className, type = 'button', children, onPointerDown, ...props },
   ref,
 ) {
+  const { onPress, sparks } = usePressSparks(variant === 'primary');
   return (
     <button
       ref={ref}
@@ -90,7 +142,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         variant !== 'link' && 'hover:-translate-y-0.5',
         className,
       )}
+      onPointerDown={(event) => {
+        onPress(event);
+        onPointerDown?.(event);
+      }}
       {...props}
-    />
+    >
+      {children}
+      {sparks}
+    </button>
   );
 });

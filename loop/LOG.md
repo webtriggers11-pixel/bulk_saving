@@ -962,3 +962,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 479/479, 1609 class tokens. No flakes.
 - FEAT-018 → done.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — FEAT-019 — T1–T4 built
+- Look and colour split: FEAT-017's section re-keyed `html[data-theme='mono']` → `html[data-look='vercel']` (37 + 2 selectors, same specificity, so every cascade argument from FEAT-017's two V2 rounds holds). `data-theme` is always `mono` (the neutral base); `data-accent` is the pair. Seven accents (mono, ocean, aurora, bloom, sunset, forest, lagoon) × day/night, each `--brand`, `--brand-2`, `--brand-deep`, `--brand-light`, `--brand-ink`; every palette/night gained `--brand-2` (parity tests). Legacy teal/indigo/ember migrate to lagoon/aurora/sunset (appearance.ts + pre-paint script agree; status-bar table is scheme-only now).
+- Pair in use: ring arc and ladder fill brand→brand-2; accent card gets a brand-2 corner glow over brand→brand-deep (text stays on the two fills that clear 4.5:1); an aurora of the pair drifts at the top of the ground.
+- Micro-interactions: (a) Card writes `--mx/--my` on mouse move → accent spotlight (not touch, not the accent card); (b) `border-beam` — a conic light travelling the lead round card's border (`@property --beam-angle`); (c) `Sparkles` primitive — three twinkling stars (on "Could save" and "Best price unlocked"); (d) `ink-shimmer` — a light through the saving figure, both stops ≥4.5:1 ink; (e) primary `Button` press sparks (8, from the press point, rendered only while flying, none under reduced motion or on other variants). All named, all in the reduced-motion block (fade-outs `animation: none` + hidden).
+- Tests rejected first attempts: `.text-shimmer` collided with the Tailwind `text-` family → `.ink-shimmer`; `h-1 w-1` in button.tsx tripped the touch-floor scan → `size-1`; grouped reduced-motion selectors don't satisfy the fade-out guard → one block each; `Sparkles` had to join the BUG-007 primitive list; jsdom lacks PointerEvent → test polyfill.
+- V1: gate exit 0 — backend 396/396, web 511/511 (+32), 1642 class tokens.
+- By: agent (autonomous)

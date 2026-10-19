@@ -1,6 +1,7 @@
 import type { RoundDto } from '@bulk/shared';
 import { Card } from '../../components/ui/card';
 import { Fact } from '../../components/ui/fact';
+import { Sparkles } from '../../components/ui/sparkles';
 import { formatRupees } from './formatPrice';
 import { bestSavingForMe } from './roundMath';
 
@@ -24,7 +25,16 @@ export function RoundsSummary({ rounds }: { rounds: RoundDto[] }) {
           variant="plain"
           size="large"
           term="Could save"
-          value={saving > 0 ? formatRupees(saving) : '—'}
+          value={
+            saving > 0 ? (
+              // FEAT-019: the one number on this screen worth a little light.
+              <Sparkles>
+                <span className="ink-shimmer">{formatRupees(saving)}</span>
+              </Sparkles>
+            ) : (
+              '—'
+            )
+          }
           testId="summary-saving"
         />
       </dl>

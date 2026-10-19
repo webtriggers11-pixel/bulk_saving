@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="mono" data-scheme="light">
+<html lang="en" data-look="vercel" data-theme="mono" data-accent="mono" data-scheme="light">
   <head>
     <meta charset="UTF-8" />
     <!-- FEAT-016: viewport-fit=cover lets the app draw under the notch and home bar;
@@ -14,24 +14,27 @@
     <script>
       (function () {
         var d = document.documentElement, pref = 'system', pal = 'mono';
+        // FEAT-019 (ADR-0031): one look, seven accents; retired glass palettes migrate.
+        var ACCENTS = ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon'];
+        var LEGACY = { teal: 'lagoon', indigo: 'aurora', ember: 'sunset' };
         try {
           pref = localStorage.getItem('bulk:scheme') || 'system';
           pal = localStorage.getItem('bulk:palette') || 'mono';
         } catch (e) {}
         var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia &&
           window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (pal !== 'teal' && pal !== 'indigo' && pal !== 'ember') pal = 'mono';
+        if (ACCENTS.indexOf(pal) < 0) pal = LEGACY[pal] || 'mono';
         d.setAttribute('data-scheme', dark ? 'dark' : 'light');
-        d.setAttribute('data-theme', pal);
+        d.setAttribute('data-look', 'vercel');
+        d.setAttribute('data-theme', 'mono');
+        d.setAttribute('data-accent', pal);
         // The status bar matches the ground from the first frame, not only once the app
         // module loads (FEAT-016 V2 P2-9). These are the --ground tokens in theme.css;
         // design-system.test.tsx fails if they drift.
-        var GROUND = {
-          'light:mono': 'rgb(250, 250, 250)', 'light:teal': 'rgb(238, 242, 241)', 'light:indigo': 'rgb(239, 240, 248)', 'light:ember': 'rgb(246, 241, 236)',
-          'dark:mono': 'rgb(10, 10, 10)', 'dark:teal': 'rgb(11, 20, 19)', 'dark:indigo': 'rgb(12, 13, 26)', 'dark:ember': 'rgb(20, 13, 10)'
-        };
+        // Every accent shares Mono's neutral ground, so only the scheme picks the colour.
+        var GROUND = { 'light:mono': 'rgb(250, 250, 250)', 'dark:mono': 'rgb(10, 10, 10)' };
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', GROUND[(dark ? 'dark' : 'light') + ':' + pal]);
+        if (meta) meta.setAttribute('content', GROUND[(dark ? 'dark' : 'light') + ':mono']);
       })();
     </script>
     <!-- FEAT-011: the design system's typeface; FEAT-017 adds Geist + Geist Mono for Mono. A CDN link rather than a bundled

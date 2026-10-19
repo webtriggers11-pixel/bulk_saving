@@ -1,4 +1,4 @@
-import { type HTMLAttributes } from 'react';
+import { type HTMLAttributes, type PointerEvent } from 'react';
 import { cn } from '../../lib/utils';
 
 type Surface = 'glass' | 'solid' | 'tint' | 'accent';
@@ -32,15 +32,36 @@ const SURFACES: Record<Surface, string> = {
   accent: 'surface-accent',
 };
 
+/**
+ * FEAT-019 (ADR-0031): the spotlight. An interactive card tells the stylesheet where the
+ * mouse is (`--mx`/`--my`); the Vercel look paints a soft accent disc there. Written to the
+ * element's style directly — a re-render per pointer move would be absurd. Touch is ignored.
+ */
+function trackPointer(event: PointerEvent<HTMLDivElement>) {
+  if (event.pointerType !== 'mouse') return;
+  const box = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--mx', `${Math.round(event.clientX - box.left)}px`);
+  event.currentTarget.style.setProperty('--my', `${Math.round(event.clientY - box.top)}px`);
+}
+
 export function Card({
   surface = 'glass',
   interactive = true,
   padding = 'default',
   className,
+  onPointerMove,
   ...props
 }: CardProps) {
   return (
     <div
+      onPointerMove={
+        interactive
+          ? (event) => {
+              trackPointer(event);
+              onPointerMove?.(event);
+            }
+          : onPointerMove
+      }
       className={cn(
         'rounded-card t',
         PADDING[padding],

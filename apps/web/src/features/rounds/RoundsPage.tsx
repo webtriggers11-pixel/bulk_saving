@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
@@ -12,6 +13,7 @@ import { PageHeader } from '../../components/ui/page-header';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Sheet } from '../../components/ui/sheet';
+import { Sparkles } from '../../components/ui/sparkles';
 import { formatClock, formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
@@ -307,9 +309,11 @@ function TierLine({ round }: { round: RoundDto }) {
     return (
       <span className="relative inline-block" data-testid={`top-tier-${round.id}`}>
         <SparkBurst />
-        <Badge tone="teal" icon={<Icon name="spark" size={13} strokeWidth={2.2} />} className="animate-pop">
-          Best price unlocked
-        </Badge>
+        <Sparkles>
+          <Badge tone="teal" icon={<Icon name="spark" size={13} strokeWidth={2.2} />} className="animate-pop">
+            Best price unlocked
+          </Badge>
+        </Sparkles>
       </span>
     );
   }
@@ -410,7 +414,8 @@ function RoundCard({
   return (
     <Card padding="none"
       surface={lead ? 'glass' : 'solid'}
-      className="relative overflow-hidden p-[22px]"
+      // FEAT-019: the lead round gets the travelling border light.
+      className={cn('relative overflow-hidden p-[22px]', lead && 'border-beam')}
       data-testid="round-card"
     >
       {lead && (

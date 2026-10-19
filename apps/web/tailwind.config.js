@@ -22,6 +22,8 @@ export default {
           deep: rgb('--brand-deep'),
           light: rgb('--brand-light'),
           ink: rgb('--brand-ink'),
+          // FEAT-019 (ADR-0031): the accent's gradient partner.
+          2: rgb('--brand-2'),
         },
         ink: {
           DEFAULT: rgb('--ink'),

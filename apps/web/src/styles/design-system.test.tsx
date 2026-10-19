@@ -141,6 +141,12 @@ describe('AC3 — a palette swap cannot change a layout', () => {
     expect(indigo).toEqual(teal);
     expect(ember).toEqual(teal);
     expect(mono).toEqual(teal);
+    // FEAT-019: an accent is CSS too.
+    for (const accent of ['ocean', 'aurora', 'sunset']) {
+      document.documentElement.dataset.accent = accent;
+      expect(markupUnder('mono'), accent).toEqual(teal);
+    }
+    document.documentElement.removeAttribute('data-accent');
   });
 });
 
@@ -395,14 +401,9 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
       return `rgb(${rgb.split(' ').join(', ')})`;
     };
     const expected: Record<string, string> = {
-      'light:teal': ground(":root,\n[data-theme='teal']"),
-      'light:indigo': ground("[data-theme='indigo'] {"),
-      'light:ember': ground("[data-theme='ember'] {"),
+      // FEAT-019: every accent paints over Mono's neutral ground, so the scheme alone decides.
       'light:mono': ground("[data-theme='mono'] {"),
       'dark:mono': ground("html[data-scheme='dark'][data-theme='mono'] {"),
-      'dark:teal': ground("html[data-scheme='dark']:not([data-theme='indigo'])"),
-      'dark:indigo': ground("html[data-scheme='dark'][data-theme='indigo']"),
-      'dark:ember': ground("html[data-scheme='dark'][data-theme='ember']"),
     };
     for (const [key, value] of Object.entries(expected)) {
       expect(html, key).toContain(`'${key}': '${value}'`);
@@ -412,7 +413,7 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
 
 describe('FEAT-017 — Mono keeps every focus ring and the switch knob (V2 P1-1, P1-2)', () => {
   /**
-   * Mono's overrides are `html[data-theme='mono'] .x` — they outrank a single focus
+   * The Vercel look's overrides are `html[data-look='vercel'] .x` — they outrank a single focus
    * utility. Every focus-shadow utility a component uses must therefore have a Mono rule
    * of its own, or that control has no visible focus in the default palette.
    */
@@ -427,14 +428,14 @@ describe('FEAT-017 — Mono keeps every focus ring and the switch knob (V2 P1-1,
     const mono = css.slice(css.indexOf('/* Focus (FEAT-017 V2 P1-1)'));
     for (const utility of used) {
       const escaped = utility.replace(':', '\\:');
-      expect(mono, `${utility} has no Mono focus rule`).toContain(`html[data-theme='mono']`);
+      expect(mono, `${utility} has no Mono focus rule`).toContain(`html[data-look='vercel']`);
       expect(mono.includes(`.${escaped}`), `${utility} has no Mono focus rule`).toBe(true);
     }
   });
 
   it("the switch knob takes the fill text on Mono's near-white night fill", () => {
     expect(css).toMatch(
-      /html\[data-scheme='dark'\]\[data-theme='mono'\] \.switch\[aria-checked='true'\] \.switch-knob \{\s*background-color: rgb\(var\(--on-fill\)\);/,
+      /html\[data-scheme='dark'\]\[data-look='vercel'\] \.switch\[aria-checked='true'\] \.switch-knob \{\s*background-color: rgb\(var\(--on-fill\)\);/,
     );
   });
 });

@@ -48,8 +48,9 @@ export function TierRing({ percent, value, unitLabel, label, size = 108 }: TierR
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" className="[stop-color:rgb(var(--brand-deep))]" />
-            <stop offset="1" className="[stop-color:rgb(var(--brand-light))]" />
+            {/* FEAT-019: the accent pair, so the ring carries the chosen combination. */}
+            <stop offset="0" className="[stop-color:rgb(var(--brand))]" />
+            <stop offset="1" className="[stop-color:rgb(var(--brand-2))]" />
           </linearGradient>
         </defs>
         <circle cx="40" cy="40" r={RADIUS} fill="none" strokeWidth="7" className="stroke-line/15" />

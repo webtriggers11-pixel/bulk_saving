@@ -19,7 +19,15 @@ const SCHEME_OPTIONS = [
   { value: 'system', label: 'Match phone' },
 ];
 
-const PALETTE_NAMES: Record<Palette, string> = { mono: 'Mono', teal: 'Lagoon', indigo: 'Dusk', ember: 'Ember' };
+const PALETTE_NAMES: Record<Palette, string> = {
+  mono: 'Mono',
+  ocean: 'Ocean',
+  aurora: 'Aurora',
+  bloom: 'Bloom',
+  sunset: 'Sunset',
+  forest: 'Forest',
+  lagoon: 'Lagoon',
+};
 
 /** "Dark · Dusk" — what the Appearance row says is set. */
 export function describeAppearance(preference: SchemePreference, palette: Palette): string {
@@ -96,8 +104,8 @@ export function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () 
                       browser pass). */}
                   <span
                     aria-hidden="true"
-                    data-theme={p}
-                    className="paint-mono relative flex h-11 w-11 items-center justify-center rounded-full shadow-accent"
+                    data-accent={p}
+                    className="swatch-pair relative flex h-11 w-11 items-center justify-center rounded-full"
                   >
                     {checked && <Icon name="check" size={18} strokeWidth={2.6} className="animate-pop text-white" />}
                   </span>

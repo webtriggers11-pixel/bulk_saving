@@ -86,23 +86,31 @@ describe('appearance', () => {
     expect(root().dataset.scheme).toBe('light');
   });
 
-  it('remembers the palette, and ignores a palette it does not know', async () => {
+  it('remembers the accent inside the one Vercel look, and ignores one it does not know (FEAT-019)', async () => {
     mockMedia();
     let a = await load();
-    a.setPalette('ember');
-    expect(root().dataset.theme).toBe('ember');
+    a.setPalette('sunset');
+    expect(root().dataset.accent).toBe('sunset');
+    expect(root().dataset.look).toBe('vercel');
+    expect(root().dataset.theme).toBe('mono');
     localStorage.setItem(a.PALETTE_KEY, 'neon');
     a = await load();
     a.initAppearance();
-    expect(root().dataset.theme).toBe('mono');
+    expect(root().dataset.accent).toBe('mono');
   });
 
-  it('keeps a stored tinted palette — a device that chose Lagoon is not moved to Mono', async () => {
+  it.each([
+    ['teal', 'lagoon'],
+    ['indigo', 'aurora'],
+    ['ember', 'sunset'],
+  ])('a device that chose the retired %s palette keeps its colour as %s — in the Vercel look', async (legacy, accent) => {
     mockMedia();
-    localStorage.setItem('bulk:palette', 'teal');
+    localStorage.setItem('bulk:palette', legacy);
     const a = await load();
     a.initAppearance();
-    expect(root().dataset.theme).toBe('teal');
+    expect(root().dataset.accent).toBe(accent);
+    expect(root().dataset.look).toBe('vercel');
+    expect(root().dataset.theme).toBe('mono');
   });
 
   it('matches the status bar to the ground', async () => {

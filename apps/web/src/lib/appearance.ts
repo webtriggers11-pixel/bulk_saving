@@ -14,12 +14,19 @@ import { useSyncExternalStore } from 'react';
 
 export type SchemePreference = 'light' | 'dark' | 'system';
 export type Scheme = 'light' | 'dark';
-export type Palette = 'mono' | 'teal' | 'indigo' | 'ember';
+/**
+ * The colour inside the Vercel look (FEAT-019, ADR-0031): seven accent PAIRS. Stored under
+ * the old palette key; the three retired glass palettes migrate to their nearest pair.
+ */
+export type Palette = 'mono' | 'ocean' | 'aurora' | 'bloom' | 'sunset' | 'forest' | 'lagoon';
 
 export const SCHEME_KEY = 'bulk:scheme';
 export const PALETTE_KEY = 'bulk:palette';
 /** Mono first: it is the default for a device that has not chosen (FEAT-017, ADR-0029). */
-export const PALETTES: readonly Palette[] = ['mono', 'teal', 'indigo', 'ember'];
+export const PALETTES: readonly Palette[] = ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon'];
+
+/** FEAT-019: the glass palettes are retired; a device that chose one keeps its colour. */
+const LEGACY: Record<string, Palette> = { teal: 'lagoon', indigo: 'aurora', ember: 'sunset' };
 
 interface Appearance {
   preference: SchemePreference;
@@ -54,7 +61,8 @@ function asPreference(value: string | null): SchemePreference {
 }
 
 function asPalette(value: string | null): Palette {
-  return value === 'indigo' || value === 'ember' || value === 'teal' || value === 'mono' ? value : 'mono';
+  if (value && (PALETTES as readonly string[]).includes(value)) return value as Palette;
+  return (value && LEGACY[value]) || 'mono';
 }
 
 function resolve(preference: SchemePreference): Scheme {
@@ -71,7 +79,10 @@ const listeners = new Set<() => void>();
 function apply(): void {
   const root = document.documentElement;
   root.dataset.scheme = state.scheme;
-  root.dataset.theme = state.palette;
+  // FEAT-019 (ADR-0031): one look — Vercel, on Mono's neutral base — and the accent pair.
+  root.dataset.look = 'vercel';
+  root.dataset.theme = 'mono';
+  root.dataset.accent = state.palette;
   const ground = getComputedStyle(root).getPropertyValue('--ground').trim();
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta && ground) {
