@@ -221,3 +221,14 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     expect(formatClock('2026-10-19T09:00:00Z', now)).toBe('Closed');
   });
 });
+
+describe('TierRing glow (AC7)', () => {
+  it('sits on the <svg>, never on an SVG element — a filtered <circle> painted a grey box', async () => {
+    const { TierRing } = await import('./TierRing');
+    const { container } = render(<TierRing label="AC: progress" percent={70} value={7} unitLabel="AC units" />);
+    for (const shape of container.querySelectorAll('svg *')) {
+      expect(shape.getAttribute('class') ?? '').not.toMatch(/drop-shadow/);
+    }
+    expect(container.querySelector('svg')?.getAttribute('class')).toMatch(/ring-arc .*drop-shadow/);
+  });
+});

@@ -929,3 +929,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The BUG-007 class-conflict guard caught padding passed into `Fact` → spacing moved to the `<dl>`.
 - V1: gate exit 0 — backend 396/396, web 471/471 (+27), 1613 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-018 — T6 browser pass + T7 docs
+- Chrome at phone width as demo resident Asha: summary (4 open · 2 joined · ₹750), AC Servicing ladder (₹900 reached, ₹700 next with pulse, fill at 7/10, "3 more AC units and everyone pays ₹700"), single-tier Bike Service correctly has no ladder; Mono day + night, Lagoon day. Real write: joined Bike Service with 1 → count 1, "You're in", confetti fired (16 pieces, `confetti` animation, verified in DOM); then left it again — demo data restored. No console errors.
+- **Found and fixed (tests could not see):** (1) the tier-ring box artifact was NOT Mono-only — Lagoon showed it too; the glow moved from the SVG `<circle>` to the `<svg>` (test pins it); (2) FEAT-017 regression: after a sheet returns focus to a secondary button, Mono's `.paint-glass:not(:focus)` exemption dropped its hairline (paper on paper) → exemption narrowed to focused input/select/textarea.
+- ADR-0030; DESIGN-SYSTEM.md (rounds pieces, confetti timing).
+- V1: gate exit 0 — backend 396/396, web 472/472, 1615 class tokens.
+- By: agent (autonomous)

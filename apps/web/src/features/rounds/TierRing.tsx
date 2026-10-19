@@ -37,7 +37,15 @@ export function TierRing({ percent, value, unitLabel, label, size = 108 }: TierR
       className="relative shrink-0"
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 80 80" width={size} height={size} aria-hidden="true" className="block">
+      {/* The glow is on the <svg>, not the arc: an SVG drop-shadow on the <circle> rendered
+          its filter region as a grey box behind the ring (FEAT-018 AC7). */}
+      <svg
+        viewBox="0 0 80 80"
+        width={size}
+        height={size}
+        aria-hidden="true"
+        className="ring-arc block overflow-visible drop-shadow-[0_4px_9px_rgb(var(--brand)/0.35)]"
+      >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" className="[stop-color:rgb(var(--brand-deep))]" />
@@ -56,7 +64,7 @@ export function TierRing({ percent, value, unitLabel, label, size = 108 }: TierR
           strokeDasharray={CIRCUMFERENCE.toFixed(2)}
           strokeDashoffset={offset.toFixed(2)}
           transform="rotate(-90 40 40)"
-          className="ring-arc transition-[stroke-dashoffset] duration-500 ease-entrance drop-shadow-[0_4px_9px_rgb(var(--brand)/0.5)]"
+          className="transition-[stroke-dashoffset] duration-500 ease-entrance"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

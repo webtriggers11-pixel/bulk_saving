@@ -980,8 +980,10 @@ html[data-theme='mono'] .paint-glass {
 html[data-theme='mono'] .paint-glass:hover {
   background-image: linear-gradient(rgb(var(--line) / 0.04), rgb(var(--line) / 0.04));
 }
-/* Not while focused or invalid: those borders are the field telling you something. */
-html[data-theme='mono'] .paint-glass:not(:focus):not([aria-invalid='true']) {
+/* Not on a focused or invalid FIELD: those borders are the field telling you something.
+   A focused button keeps its hairline — it lost it after a sheet returned focus to it,
+   paper on paper (FEAT-018 browser pass). */
+html[data-theme='mono'] .paint-glass:not(:is(input, select, textarea):focus):not([aria-invalid='true']) {
   border-color: var(--hairline-strong);
 }
 html[data-theme='mono'] .paint-tint {

@@ -147,6 +147,7 @@ ADR-0021). Money and counts always take `.num` (tabular figures).
 | Scheme reveal | 520ms circle from the control (`lib/appearance.ts`) |
 | Tab pill | 420ms slide with a slight overshoot (`tab-pill`) |
 | Compact title bar | 220ms in (`compact-bar`) |
+| Confetti | 1100ms, 16 pieces, once per saved pledge / tier reached (`animate-confetti`) |
 
 **Everything collapses under `prefers-reduced-motion: reduce`** — one media query in
 `theme.css`, and a test forbids inline `animation` styles that would escape it.
@@ -187,6 +188,12 @@ rather than by the test (V2 P1-2).
 | `Sheet` | the "do one thing" surface: bottom sheet on a phone, centred panel on `md`. Dialog semantics, focus trap (tabbable only) and restore (`returnFocus` when the opener goes away), Escape/backdrop/drag to dismiss. **Always closable** — keep the draft in the caller, never block `onClose` on a pending save. |
 | `SchemeToggle` | the sun/moon quick switch; reveals from its own centre. |
 | `PageHeader collapsible` | the large title shrinks into a blurred compact bar once scrolled past (title only — the action stays where it was). |
+
+**Rounds screen pieces (FEAT-018, ADR-0030)** — feature components, not primitives:
+`PriceLadder` (tiers as steps, live fill, "N more … and everyone pays ₹X"),
+`RoundsSummary` (Open · You're in · Could save — `Fact size="large"`), `InviteButton`
+(share sheet → clipboard → toast), `Celebrate` (`animate-confetti`, never under reduced
+motion), and the last-day clock (`useNow` + `formatClock`).
 
 Two rules keep them honest:
 
