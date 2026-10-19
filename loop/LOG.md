@@ -1239,3 +1239,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — FEAT-025 — V1 PASS
 - Gate run 1: all tests green (470/628) but vitest exit 1 — four unhandled rejections from `getNextPageParam` on an undefined page (a `vi.fn()` list mock that resolves to nothing in `offline-pages.test`). The hook now ends the list on a malformed/empty page instead of throwing inside the observer. Run 2: gate exit 0 — backend 470/470, web 628/628, 3280 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-025 — T5 browser + live API pass
+- Live API (admin door, Ops admin): `/admin/rounds?limit=2` → 2 items, total 18, cursor; `&cursor=…` → the next 2, no repeat; `limit=0` → 400 "limit must not be less than 1"; `/admin/vendors?limit=3` → 3 of 7 with a next cursor.
+- Preview :5175: Rounds (summary Open 4 from `total`, 4 cards), My Requests (4), Services — 20 on the first page and **"Show 3 more services"**; tapping it appended the 3 (23 on screen) and the control went away. No alerts.
+- By: agent (autonomous)

@@ -4,5 +4,5 @@
 - [x] T2 Rounds + My requests endpoints paged + tests
 - [x] T3 Catalog + admin services + admin vendors + admin rounds paged + tests
 - [x] T4 Web: usePagedQuery + ShowMore + consumers + tests; e2e script
-- [ ] T5 Browser pass
+- [x] T5 Browser pass (preview :5175 + live API walk)
 - [ ] T6 V2 · T7 V3; close
