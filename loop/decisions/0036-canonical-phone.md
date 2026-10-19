@@ -20,6 +20,10 @@ The phone reached the rate limiter, the OTP stash and the resident upsert exactl
 
 ## Consequences
 Good: one person, one row, one budget, one device list, whatever they type.
+This is the web's FIRST runtime import from `@bulk/shared`, which builds to CommonJS: the
+production build needs `build.commonjsOptions.include` and the dev server needs
+`optimizeDeps.include` (found by V2 — the dev server was serving raw CJS). Both go away if the
+package is built as ESM (or dual); until then, any new runtime import from shared rides on them.
 Bad: a non-Indian number typed without `+` is refused rather than guessed — by design.
 
 ## Revisit trigger
