@@ -65,11 +65,11 @@ const createdRound: RoundDto = {
   finalPrice: null,
 };
 
-function renderPage() {
+function renderPage(url = '/admin/rounds/new') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/admin/rounds/new']}>
+      <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/admin/rounds/new" element={<AdminNewRoundPage />} />
           <Route path="/admin/rounds/:id" element={<p>Round detail page</p>} />
@@ -106,6 +106,13 @@ describe('AdminNewRoundPage', () => {
       service,
       { ...service, id: 'svc_off', name: 'Retired Service', active: false },
     ]);
+  });
+
+  it('arrives with society and service chosen from the demand list (FEAT-022)', async () => {
+    renderPage('/admin/rounds/new?society=soc_1&service=svc_1');
+    await screen.findByRole('option', { name: /Green Park/ });
+    expect(screen.getByLabelText('Society')).toHaveValue('soc_1');
+    expect(screen.getByLabelText('Service')).toHaveValue('svc_1');
   });
 
   it('offers only active services', async () => {

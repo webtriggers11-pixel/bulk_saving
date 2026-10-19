@@ -10,7 +10,7 @@ import { EmptyState } from '../../components/ui/empty-state';
 import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { formatIndicativePrice } from './formatPrice';
-import { useCatalog } from './useCatalog';
+import { useCatalog, useServiceAsk } from './useCatalog';
 import { FilterChips } from '../../components/ui/filter-chips';
 import { ResultSummary } from '../../components/ui/result-summary';
 import { SearchField } from '../../components/ui/search-field';
@@ -69,15 +69,17 @@ function PriceLine({ service, className }: { service: ServiceDto; className?: st
  * price, how far along — or plainly that there is none yet.
  * `undefined` = the rounds list has not loaded: say nothing rather than guess.
  */
-function RoundStatus({ round, className }: { round: RoundDto | null | undefined; className?: string }) {
+function RoundStatus({
+  service,
+  round,
+  className,
+}: {
+  service: ServiceDto;
+  round: RoundDto | null | undefined;
+  className?: string;
+}) {
   if (round === undefined) return null;
-  if (round === null) {
-    return (
-      <p className={cn('text-micro text-ink-soft', className)} data-testid="service-no-round">
-        No group buy open yet
-      </p>
-    );
-  }
+  if (round === null) return <AskControl service={service} className={className} />;
   // Already pledged: say so — the tap changes a pledge rather than making one (V2 P3).
   const lead =
     round.myUnits > 0
@@ -91,6 +93,57 @@ function RoundStatus({ round, className }: { round: RoundDto | null | undefined;
       </span>
       <Icon name="forward" size={16} strokeWidth={2.2} className="nudge shrink-0" />
     </p>
+  );
+}
+
+/**
+ * FEAT-022 (ADR-0033): no round is open, so the resident can ASK for one — and see who
+ * else has. Asking again takes it back. When an admin opens a round for it, everyone who
+ * asked is told (SMS + push) and lands on that round.
+ */
+function AskControl({ service, className }: { service: ServiceDto; className?: string }) {
+  const ask = useServiceAsk();
+  const { askCount, askedByMe } = service.demand;
+  const others = askedByMe ? askCount - 1 : askCount;
+  const neighbours = (n: number) => `${n} neighbour${n === 1 ? '' : 's'}`;
+  const line =
+    askCount === 0
+      ? 'No group buy open yet — be the first to ask'
+      : askedByMe
+        ? others > 0
+          ? `You and ${neighbours(others)} asked`
+          : 'You asked — we’ll tell you when it opens'
+        : `${neighbours(askCount)} asked for this`;
+  return (
+    <div className={cn('flex flex-col gap-2', className)} data-testid="service-no-round">
+      <div className="flex items-center gap-3">
+        <p className="min-w-0 flex-1 text-micro text-ink-muted" data-testid="service-demand">
+          {line}
+        </p>
+        <Button
+          size="sm"
+          variant={askedByMe ? 'secondary' : 'primary'}
+          aria-pressed={askedByMe}
+          disabled={ask.isPending}
+          onClick={() => ask.mutate({ serviceId: service.id, asked: askedByMe })}
+          data-testid={`ask-${service.slug}`}
+        >
+          {askedByMe ? (
+            <>
+              <Icon name="check" size={15} strokeWidth={2.4} />
+              Asked
+            </>
+          ) : (
+            'Ask for this'
+          )}
+        </Button>
+      </div>
+      {ask.isError && (
+        <p role="alert" className="text-micro font-bold text-danger-ink">
+          Couldn’t send that. Please try again.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -126,7 +179,7 @@ function ServiceHero({ service, round }: { service: ServiceDto; round?: RoundDto
           {service.unitDescription}
         </p>
       )}
-      <RoundStatus round={round} className="relative mt-3.5" />
+      <RoundStatus service={service} round={round} className="relative mt-3.5" />
     </Card>
   );
 }
@@ -147,7 +200,7 @@ function ServiceTile({ service, round }: { service: ServiceDto; round?: RoundDto
           {service.unitDescription}
         </p>
       )}
-      <RoundStatus round={round} className="mt-2.5" />
+      <RoundStatus service={service} round={round} className="mt-2.5" />
     </Card>
   );
 }
@@ -176,7 +229,7 @@ function ServiceRow({ service, round }: { service: ServiceDto; round?: RoundDto 
         ) : (
           <p className="mt-1 text-micro text-ink-muted">{service.description}</p>
         )}
-        <RoundStatus round={round} className="mt-2" />
+        <RoundStatus service={service} round={round} className="mt-2" />
       </div>
       <PriceLine service={service} className="shrink-0 text-right text-[16px]" />
     </Card>

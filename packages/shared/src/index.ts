@@ -156,6 +156,17 @@ export interface ServiceDto extends ServiceUnitLabels {
   category: string;
   imageUrl?: string;
   indicativePrice?: number;
+  /**
+   * FEAT-022: residents of the caller's society asking for a round of this service, and
+   * whether the caller is one of them. Only asks still waiting count — they are cleared
+   * when a round opens.
+   */
+  demand: ServiceDemand;
+}
+
+export interface ServiceDemand {
+  askCount: number;
+  askedByMe: boolean;
 }
 
 /**
@@ -543,11 +554,22 @@ export interface AdminSocietyDemand {
 }
 
 /** `GET /admin/dashboard`. */
+/** FEAT-022: one service residents of one society are asking for, most-asked first. */
+export interface AdminServiceAsk {
+  society: { id: string; name: string };
+  service: { id: string; name: string; slug: string };
+  askCount: number;
+  /** When the earliest still-waiting ask was made (ISO) — how long they have waited. */
+  since: string;
+}
+
 export interface AdminDashboardDto {
   /** Count of rounds in every status (all 7 keys present, zeros included). */
   statusCounts: Record<RoundStatus, number>;
   /** One entry per society (including societies with no open rounds), ordered by name. */
   demandBySociety: AdminSocietyDemand[];
+  /** FEAT-022: services residents are asking for, most-asked first (top 20). */
+  asks: AdminServiceAsk[];
   /** Totals over ASSIGNED / DELIVERED / RATED rounds (integer ₹). */
   payments: { collectedAmount: number; outstandingAmount: number };
   /**

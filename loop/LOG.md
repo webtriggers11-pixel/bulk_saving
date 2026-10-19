@@ -1045,3 +1045,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 449/449, web 563/563, 1723 class tokens. No flakes.
 - FEAT-021 → done. Browser: 4 of 23 services bookable in the demo data; tapping AC Servicing opened `/rounds` on that round with Asha's pledge sheet ("Your pledge"), param cleared, no console errors.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — FEAT-022 — OPENED and built: "Ask for this service"
+- Owner: "yes do it" (to the follow-up offered with FEAT-021). ADR-0033. Additive migration: `ServiceAsk` (unique resident × service) + NotificationType SERVICE_ASK_OPENED.
+- Backend: `GET /catalog` carries `demand { askCount, askedByMe }` (two grouped reads for the list); `POST/DELETE /catalog/:serviceId/ask` idempotent, tenancy from JWT, 404 for a service the society does not offer, 409 ROUND_ALREADY_OPEN while a round is open. `createRound` stages SERVICE_ASK_OPENED for every asker and deletes the asks INSIDE the round transaction, dispatching after commit; SMS template + push title, and the push deep-links `/rounds?join=<id>` (service-worker path allowlist widened to exactly that query). Admin dashboard `asks` (society × service, most asked, oldest first, top 20).
+- Frontend: `AskControl` on cards with no open round (social-proof line, "Ask for this" ⇄ "Asked" with aria-pressed, inline error); admin "Residents are asking for" list with "Open a round" → New round form pre-filled from `?society=&service=`.
+- Tests: integration (idempotent, per-society counts, withdraw, 404, dashboard, round-open notifies exactly the askers + clears + 409 after), template fixture; web 11 (lines per state, ask/withdraw/refresh, error, open round never asks, admin list + link, empty state, pre-fill).
+- V1: gate exit 0 — backend 456/456, web 574/574, 1750 class tokens.
+- By: agent (autonomous)

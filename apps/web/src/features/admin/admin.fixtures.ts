@@ -120,6 +120,7 @@ export const dashboard: AdminDashboardDto = {
     RATED: 0,
     CANCELLED: 1,
   },
+  asks: [],
   demandBySociety: [
     {
       society: { id: 'soc_1', name: 'Green Park', city: 'Pune' },

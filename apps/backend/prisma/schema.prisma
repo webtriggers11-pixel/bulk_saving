@@ -41,6 +41,8 @@ enum NotificationType {
   ROUND_ASSIGNED
   ROUND_DELIVERED
   ROUND_CANCELLED
+  // FEAT-022: a round opened for a service the resident had asked for.
+  SERVICE_ASK_OPENED
 }
 
 enum NotificationStatus {
@@ -76,6 +78,7 @@ model Resident {
   notifications       Notification[]
   ratings             Rating[]
   pushSubscriptions   PushSubscription[]
+  serviceAsks         ServiceAsk[]
 
   @@unique([societyId, phone])
   // CHORE-015: the admin door (unauthenticated) looks residents up by phone ALONE; the
@@ -110,6 +113,7 @@ model Service {
   updatedAt   DateTime          @updatedAt
   offerings   ServiceOffering[]
   rounds      Round[]
+  asks        ServiceAsk[]
 }
 
 model ServiceOffering {
@@ -240,6 +244,23 @@ model Notification {
 
   @@index([status, createdAt])
   @@index([residentId, createdAt])
+}
+
+// "Ask for this service" (FEAT-022, ADR-0033). A resident's standing request that a
+// round be opened for a service in their society. One per resident per service (the
+// unique key makes asking idempotent); withdrawn by deleting it, and deleted — after the
+// askers are notified, in the same transaction — when a round opens for that service.
+model ServiceAsk {
+  id         String   @id @default(cuid())
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  societyId  String
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([residentId, serviceId])
+  @@index([societyId, serviceId])
 }
 
 // Web push (FEAT-020, ADR-0032). One row per browser/device a resident turned

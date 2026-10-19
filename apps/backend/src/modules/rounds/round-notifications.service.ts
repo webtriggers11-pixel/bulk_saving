@@ -72,6 +72,36 @@ export class RoundNotificationsService {
   }
 
   /**
+   * FEAT-022 (ADR-0033): a round has opened — tell everyone in that society who ASKED for
+   * this service, and clear their asks (they are answered). Runs inside the transaction
+   * that creates the round, so a rolled-back open neither notifies nor clears; the dedupe
+   * key (round × resident) makes a re-run harmless.
+   */
+  async stageAskOpened(
+    tx: Tx,
+    round: { id: string; societyId: string; serviceId: string; deadline: Date; service: { name: string; unitLabel: string; unitLabelPlural: string } },
+  ): Promise<string[]> {
+    const asks = await tx.serviceAsk.findMany({
+      where: { societyId: round.societyId, serviceId: round.serviceId },
+      select: { residentId: true },
+    });
+    if (asks.length === 0) return [];
+    const body = renderNotification({ type: NotificationType.SERVICE_ASK_OPENED, round: this.forMessage(round) });
+    const ids = await this.notifications.stage(
+      tx,
+      asks.map(({ residentId }) => ({
+        residentId,
+        roundId: round.id,
+        type: NotificationType.SERVICE_ASK_OPENED,
+        dedupeKey: `${NotificationType.SERVICE_ASK_OPENED}:${round.id}:${residentId}`,
+        body,
+      })),
+    );
+    await tx.serviceAsk.deleteMany({ where: { societyId: round.societyId, serviceId: round.serviceId } });
+    return ids;
+  }
+
+  /**
    * One row per current participant for a round-wide event. A round with no
    * participants stages nothing. Re-staging the same event is a no-op thanks to
    * the unique dedupe key, which is what makes an idempotent re-close safe.

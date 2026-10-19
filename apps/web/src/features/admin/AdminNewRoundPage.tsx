@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { RoundTierDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -69,8 +69,10 @@ export function AdminNewRoundPage() {
   const create = useCreateRound();
 
   const nextKey = useRef(1);
-  const [societyId, setSocietyId] = useState('');
-  const [serviceId, setServiceId] = useState('');
+  // FEAT-022: "Open a round" from the dashboard demand list arrives with both chosen.
+  const [searchParams] = useSearchParams();
+  const [societyId, setSocietyId] = useState(() => searchParams.get('society') ?? '');
+  const [serviceId, setServiceId] = useState(() => searchParams.get('service') ?? '');
   const [deadline, setDeadline] = useState('');
   const [tiers, setTiers] = useState<TierRow[]>([{ key: 0, threshold: '', price: '' }]);
   const [formError, setFormError] = useState<string | null>(null);

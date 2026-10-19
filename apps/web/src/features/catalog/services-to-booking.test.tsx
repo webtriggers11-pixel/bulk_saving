@@ -30,6 +30,7 @@ const ac: ServiceDto = {
   unitLabel: 'AC unit',
   unitLabelPlural: 'AC units',
   unitDescription: null,
+  demand: { askCount: 0, askedByMe: false },
 };
 const paint: ServiceDto = { ...ac, id: 'svc_paint', name: 'Painting', slug: 'painting', unitLabel: 'room', unitLabelPlural: 'rooms' };
 

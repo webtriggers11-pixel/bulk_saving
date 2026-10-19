@@ -120,4 +120,35 @@ describe('AdminDashboardPage', () => {
     await screen.findByTestId('admin-rounds-empty');
     expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
   });
+
+  it('lists what residents are asking for, each one link away from opening a round (FEAT-022)', async () => {
+    fetchDashboardMock.mockResolvedValue({
+      ...dashboard,
+      asks: [
+        {
+          society: { id: 'soc_1', name: 'Green Park' },
+          service: { id: 'svc_tank', name: 'Water Tank Cleaning', slug: 'tank' },
+          askCount: 12,
+          since: '2026-10-10T09:00:00.000Z',
+        },
+      ],
+    });
+    fetchAdminRoundsMock.mockResolvedValue([]);
+    renderPage();
+    const row = await screen.findByTestId('ask-row-tank');
+    expect(row).toHaveTextContent('Water Tank Cleaning');
+    expect(row).toHaveTextContent('Green Park');
+    expect(row).toHaveTextContent('12');
+    expect(within(row).getByRole('link', { name: /Open a round/ })).toHaveAttribute(
+      'href',
+      '/admin/rounds/new?society=soc_1&service=svc_tank',
+    );
+  });
+
+  it('says so when nobody is waiting', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue([]);
+    renderPage();
+    expect(await screen.findByTestId('asks')).toHaveTextContent('Nobody is waiting');
+  });
 });

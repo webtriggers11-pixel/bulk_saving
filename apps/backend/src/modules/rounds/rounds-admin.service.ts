@@ -11,6 +11,7 @@ import type {
   AdminRoundParticipantDto,
   AdminRoundSummaryDto,
   AdminRoundsQuery,
+  AdminServiceAsk,
   AdminSocietyDemand,
   CreateRoundBody,
   RoundDto,
@@ -20,6 +21,7 @@ import { ErrorCode } from '../../common/error-codes';
 import { containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RatingsService } from './ratings.service';
+import { RoundNotificationsService } from './round-notifications.service';
 import { RoundClosingScheduler } from './round-closing.scheduler';
 import { RoundReminderScheduler } from './round-reminder.scheduler';
 import {
@@ -62,6 +64,7 @@ export class RoundsAdminService {
     private readonly scheduler: RoundClosingScheduler,
     private readonly reminders: RoundReminderScheduler,
     private readonly ratings: RatingsService,
+    private readonly roundNotifications: RoundNotificationsService,
   ) {}
 
   /**
@@ -112,9 +115,13 @@ export class RoundsAdminService {
         // whose queued follow-ups silently went missing. A round whose whole
         // window is shorter than the 24h lead simply gets no reminder.
         await this.reminders.schedule(round.id, round.deadline);
-        return round;
+        // FEAT-022: everyone who asked for this service hears it opened — staged here,
+        // so the message exists if and only if the round does (ADR-0013).
+        const askNotifications = await this.roundNotifications.stageAskOpened(tx, round);
+        return { round, askNotifications };
       }, ROUND_TX_OPTIONS);
-      return buildRoundDto(created as RoundWithView);
+      await this.roundNotifications.dispatch(created.askNotifications);
+      return buildRoundDto(created.round as RoundWithView);
     } catch (err) {
       // Partial unique index race: a concurrent open won → surface 409, never 500.
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -257,12 +264,42 @@ export class RoundsAdminService {
 
     // FEAT-007: the BRIEF's success metric ("delivered jobs average >= 4.0 / 5").
     const ratings = await this.ratings.platformSummary();
+    const asks = await this.askedFor();
     return {
       statusCounts,
       demandBySociety,
+      asks,
       payments: { collectedAmount, outstandingAmount },
       ratings,
     };
+  }
+
+  /**
+   * FEAT-022 (ADR-0033): what residents are asking for — per society and service, most
+   * asked first, with how long the oldest ask has waited. Top 20: this is a to-do list
+   * for opening rounds, not a report.
+   */
+  private async askedFor(): Promise<AdminServiceAsk[]> {
+    const groups = await this.prisma.serviceAsk.groupBy({
+      by: ['societyId', 'serviceId'],
+      _count: { _all: true },
+      _min: { createdAt: true },
+      orderBy: [{ _count: { residentId: 'desc' } }, { _min: { createdAt: 'asc' } }],
+      take: 20,
+    });
+    if (groups.length === 0) return [];
+    const [societies, services] = await Promise.all([
+      this.prisma.society.findMany({ where: { id: { in: groups.map((g) => g.societyId) } }, select: { id: true, name: true } }),
+      this.prisma.service.findMany({ where: { id: { in: groups.map((g) => g.serviceId) } }, select: { id: true, name: true, slug: true } }),
+    ]);
+    const societyById = new Map(societies.map((s) => [s.id, s]));
+    const serviceById = new Map(services.map((s) => [s.id, s]));
+    return groups.flatMap((g) => {
+      const society = societyById.get(g.societyId);
+      const service = serviceById.get(g.serviceId);
+      if (!society || !service) return [];
+      return [{ society, service, askCount: g._count._all, since: (g._min.createdAt ?? new Date()).toISOString() }];
+    });
   }
 
   /**

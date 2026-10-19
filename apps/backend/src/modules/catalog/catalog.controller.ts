@@ -1,5 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import type { ServiceDto } from '@bulk/shared';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
+import type { ServiceDemand, ServiceDto } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { CatalogQueryDto } from './catalog.dto';
@@ -18,6 +18,19 @@ export class CatalogController {
   @Get()
   list(@CurrentAuth() ctx: AuthContext, @Query() query: CatalogQueryDto): Promise<ServiceDto[]> {
     // The query can narrow the list; it can never name a society (ADR-0003).
-    return this.catalog.listForSociety(ctx.societyId, query);
+    return this.catalog.listForSociety(ctx.societyId, query, ctx.residentId);
+  }
+
+  /** FEAT-022: ask for a round of this service in the caller's society. */
+  @Post(':serviceId/ask')
+  @HttpCode(HttpStatus.OK)
+  ask(@CurrentAuth() ctx: AuthContext, @Param('serviceId') serviceId: string): Promise<ServiceDemand> {
+    return this.catalog.ask(ctx.residentId, ctx.societyId, serviceId);
+  }
+
+  /** FEAT-022: withdraw that ask. */
+  @Delete(':serviceId/ask')
+  withdraw(@CurrentAuth() ctx: AuthContext, @Param('serviceId') serviceId: string): Promise<ServiceDemand> {
+    return this.catalog.withdraw(ctx.residentId, ctx.societyId, serviceId);
   }
 }

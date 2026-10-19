@@ -72,7 +72,9 @@ export type TemplateInput =
       units: number;
     }
   | { type: typeof NotificationType.ROUND_DELIVERED; round: RoundForMessage }
-  | { type: typeof NotificationType.ROUND_CANCELLED; round: RoundForMessage };
+  | { type: typeof NotificationType.ROUND_CANCELLED; round: RoundForMessage }
+  /** FEAT-022: the round a resident asked for has opened. */
+  | { type: typeof NotificationType.SERVICE_ASK_OPENED; round: RoundForMessage };
 
 /** `700` -> `₹700`. Integer rupees throughout (ADR-0012). */
 function rupees(amount: number): string {
@@ -215,6 +217,13 @@ function cancelled(input: Extract<TemplateInput, { type: 'ROUND_CANCELLED' }>): 
   );
 }
 
+function askOpened(input: Extract<TemplateInput, { type: 'SERVICE_ASK_OPENED' }>): string {
+  return (
+    `${SENDER}: You asked, and it is open — a ${input.round.serviceName} group buy has started in your society. ` +
+    `Join before ${formatDeadline(input.round.deadline)}; the more neighbours join, the lower the price.`
+  );
+}
+
 /**
  * Render the SMS body for a staged notification. Total function over
  * {@link NotificationType}: adding an enum member without a template is a
@@ -236,5 +245,7 @@ export function renderNotification(input: TemplateInput): string {
       return clamp(delivered(input));
     case NotificationType.ROUND_CANCELLED:
       return clamp(cancelled(input));
+    case NotificationType.SERVICE_ASK_OPENED:
+      return clamp(askOpened(input));
   }
 }

@@ -110,6 +110,40 @@ function DashboardSummary() {
         })}
       </section>
 
+      {/* FEAT-022 (ADR-0033): what residents are asking for, as a to-do list for rounds. */}
+      <Card data-testid="asks">
+        <CardHeader>
+          <CardTitle>Residents are asking for</CardTitle>
+          <CardDescription>
+            Services with no open round that residents want — open one and everyone who asked is told
+          </CardDescription>
+        </CardHeader>
+        {data.asks.length === 0 ? (
+          <p className="text-caption text-ink-muted">Nobody is waiting on a service right now.</p>
+        ) : (
+          <DataRows>
+            {data.asks.map((ask) => (
+              <DataRow
+                key={`${ask.society.id}:${ask.service.id}`}
+                title={ask.service.name}
+                meta={`${ask.society.name} · asking since ${formatDateTime(ask.since)}`}
+                data-testid={`ask-row-${ask.service.slug}`}
+                columns={<DataCell label="Residents asking" value={ask.askCount} />}
+                trailing={
+                  <Link
+                    to={`/admin/rounds/new?society=${encodeURIComponent(ask.society.id)}&service=${encodeURIComponent(ask.service.id)}`}
+                    className="inline-flex min-h-touch items-center gap-2 rounded-control px-3 text-meta font-bold text-brand-ink t hover:bg-paper/60 focus-visible:shadow-focus focus-visible:outline-none"
+                  >
+                    Open a round
+                    <Icon name="forward" size={15} strokeWidth={2.2} className="nudge" />
+                  </Link>
+                }
+              />
+            ))}
+          </DataRows>
+        )}
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">
           <CardHeader>

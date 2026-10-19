@@ -47,6 +47,7 @@ const ALL_INPUTS: TemplateInput[] = [
   },
   { type: NotificationType.ROUND_DELIVERED, round },
   { type: NotificationType.ROUND_CANCELLED, round },
+  { type: NotificationType.SERVICE_ASK_OPENED, round },
 ];
 
 describe('formatDeadline', () => {
@@ -176,6 +177,12 @@ describe('renderNotification — per type', () => {
         expect(body).not.toContain(phrase);
       }
     }
+  });
+
+  it('SERVICE_ASK_OPENED tells the asker their round opened, and by when to join (FEAT-022)', () => {
+    const body = renderNotification(ALL_INPUTS[7]);
+    expect(body).toContain('You asked, and it is open');
+    expect(body).toContain('Join before');
   });
 
   it('ROUND_CANCELLED reports the cancellation and that nothing is owed', () => {

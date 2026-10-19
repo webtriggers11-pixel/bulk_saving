@@ -18,6 +18,7 @@ const EVENT: Record<NotificationType, { title: string; url: string; urgency: 'no
   [NotificationType.ROUND_ASSIGNED]: { title: 'Vendor confirmed 🛠️', url: '/my-requests', urgency: 'normal' },
   [NotificationType.ROUND_DELIVERED]: { title: 'Job done — how was it? ⭐', url: '/my-requests', urgency: 'normal' },
   [NotificationType.ROUND_CANCELLED]: { title: 'Round cancelled', url: '/my-requests', urgency: 'high' },
+  [NotificationType.SERVICE_ASK_OPENED]: { title: 'You asked — it’s open ✨', url: '/rounds', urgency: 'high' },
 };
 
 /** How long a push may wait for an offline device before the push service drops it. */
@@ -33,7 +34,11 @@ export function pushFor(
     payload: {
       title: event.title,
       body: notification.body,
-      url: event.url,
+      // FEAT-022: an ask that opened a round lands on THAT round, with its sheet open.
+      url:
+        notification.type === NotificationType.SERVICE_ASK_OPENED && notification.roundId
+          ? `/rounds?join=${notification.roundId}`
+          : event.url,
       tag: notification.roundId ? `round:${notification.roundId}` : `event:${notification.type}`,
       accent,
       icon: `/push/icon-${accent}.png`,

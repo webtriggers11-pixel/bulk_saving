@@ -17,6 +17,7 @@ const services: ServiceDto[] = [
     unitLabel: 'AC unit',
     unitLabelPlural: 'AC units',
     unitDescription: null,
+    demand: { askCount: 0, askedByMe: false },
   },
   {
     id: 'svc_2',
@@ -28,6 +29,7 @@ const services: ServiceDto[] = [
     unitLabel: 'room',
     unitLabelPlural: 'rooms',
     unitDescription: 'One room up to 12x12 ft: walls only.',
+    demand: { askCount: 0, askedByMe: false },
   },
 ];
 
