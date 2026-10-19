@@ -279,12 +279,15 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     expect(ratio(p['--brand-ink'], WHITE)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(PALETTES)('%s: white on the accent surface clears 4.5:1 at its lightest stop', (_name, selector) => {
+  it.each(PALETTES)('%s: fill text on the accent surface clears 4.5:1 at its lightest stop', (_name, selector) => {
+    // Read `--on-fill` (shared :root by day) rather than assuming white (FEAT-017 V2 P3-3).
+    const onFill = palette(":root {\n  color-scheme: light;")['--on-fill'];
+    expect(onFill).toEqual(WHITE);
     const p = palette(selector);
     // The accent gradient runs deep -> brand -> light; `brand` is the midpoint the
     // headline sits over, and it is the one that has to hold.
-    expect(ratio(WHITE, p['--brand'])).toBeGreaterThanOrEqual(4.5);
-    expect(ratio(WHITE, p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(onFill, p['--brand'])).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(onFill, p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
   });
 
   it.each(PALETTES)('%s: even the softest ink clears 4.5:1 — it carries 9.5–13px text', (_name, selector) => {
@@ -404,5 +407,34 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
     for (const [key, value] of Object.entries(expected)) {
       expect(html, key).toContain(`'${key}': '${value}'`);
     }
+  });
+});
+
+describe('FEAT-017 — Mono keeps every focus ring and the switch knob (V2 P1-1, P1-2)', () => {
+  /**
+   * Mono's overrides are `html[data-theme='mono'] .x` — they outrank a single focus
+   * utility. Every focus-shadow utility a component uses must therefore have a Mono rule
+   * of its own, or that control has no visible focus in the default palette.
+   */
+  it('every focus box-shadow utility in a component has a Mono rule that outranks the overrides', () => {
+    const used = new Set<string>();
+    for (const file of appSources()) {
+      for (const [m] of readFileSync(file, 'utf8').matchAll(/\b(?:group-)?focus(?:-visible)?:shadow-[a-z]+/g)) {
+        used.add(m);
+      }
+    }
+    expect(used.size, 'found no focus utilities — this check is vacuous').toBeGreaterThan(1);
+    const mono = css.slice(css.indexOf('/* Focus (FEAT-017 V2 P1-1)'));
+    for (const utility of used) {
+      const escaped = utility.replace(':', '\\:');
+      expect(mono, `${utility} has no Mono focus rule`).toContain(`html[data-theme='mono']`);
+      expect(mono.includes(`.${escaped}`), `${utility} has no Mono focus rule`).toBe(true);
+    }
+  });
+
+  it("the switch knob takes the fill text on Mono's near-white night fill", () => {
+    expect(css).toMatch(
+      /html\[data-scheme='dark'\]\[data-theme='mono'\] \.switch\[aria-checked='true'\] \.switch-knob \{\s*background-color: rgb\(var\(--on-fill\)\);/,
+    );
   });
 });

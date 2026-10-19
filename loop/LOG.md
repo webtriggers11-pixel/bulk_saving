@@ -904,3 +904,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - DESIGN-SYSTEM.md: Mono section, on-fill rule, radius tokens.
 - V1: gate exit 0 — backend 396/396, web 442/442, 1607 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-017 — V2 round 1 FAIL → fixed (2×P1, 1×P2, 4×P3)
+- V2 (independent; ran the gate itself: exit 0, 396/442) returned FAIL:
+  - P1-1 Mono's `html[data-theme='mono'] .x` overrides (0,2,1) outranked every focus-shadow utility (0,2,0) — no visible focus on primary/secondary buttons, the checked chip, inputs/selects in the default palette. → Mono focus rules last and one class stronger; Mono's ring is a ground gap + solid ink ring (also P3-2: brand/0.28 was ~1.9:1). Test: every focus utility a component uses has a Mono rule. Verified in Chrome: input `0 0 0 3px ink/.18`, chip `2px ground + 4px ink`.
+  - P1-2 white switch knob on Mono's near-white night fill (~1.1:1) → knob takes `on-fill` there; test pins the rule.
+  - P2-1 primary lost its light shadow (AC3) → restored after the shadow-accent reset.
+  - P3: progress shimmer hidden under Mono; day accent contrast test reads `--on-fill`; swatch flattening noted in ADR-0029 (§7); focus ring strength (with P1-1).
+- V1: gate exit 0 — backend 396/396, web 444/444.
+- By: agent (autonomous)

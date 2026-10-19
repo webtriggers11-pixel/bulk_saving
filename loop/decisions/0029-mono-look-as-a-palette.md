@@ -31,6 +31,13 @@ background #fafafa / #0a0a0a, hairline ≈ 8% alpha) used as the reference value
 5. **Mono is the default for a device with no stored palette.** The CSS fallback on `:root`
    stays teal (no-JS only — the pre-paint script always sets `data-theme`).
 
+6. **Focus outranks the look.** Because the overrides outrank single utilities, they also
+   outranked the focus-ring utilities (V2 P1-1). Mono declares its own focus rules last,
+   one class stronger: a ground-coloured gap then a solid ink ring (Vercel's). A test
+   requires a Mono rule for every focus utility a component uses.
+7. While Mono is active, the other swatch dots in Appearance render as flat day fills
+   (the Mono fill rule reaches them too). Accepted: they still show their colour.
+
 ## Alternatives rejected
 
 - A separate "style" attribute (`data-look`) orthogonal to palette: 4 × 3 × 2 combinations

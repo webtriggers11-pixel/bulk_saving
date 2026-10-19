@@ -974,6 +974,31 @@ html[data-theme='mono'] .shadow-glow,
 html[data-theme='mono'] .shadow-accent {
   box-shadow: none;
 }
+html[data-theme='mono'] .paint-brand {
+  box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / 0.18);
+}
+/* No shimmer on a progress fill: Mono has no sheen (AC3). */
+html[data-theme='mono'] .bar-fill::after {
+  display: none;
+}
+/* The switch knob is white in every palette but one place: on Mono's near-white night
+   fill it vanished (FEAT-017 V2 P1-2). There it takes the fill text colour. */
+html[data-scheme='dark'][data-theme='mono'] .switch[aria-checked='true'] .switch-knob {
+  background-color: rgb(var(--on-fill));
+}
+
+/* Focus (FEAT-017 V2 P1-1). Every focus indicator is a box-shadow utility, and the Mono
+   overrides above (attribute + class) outrank them — they hid the ring on buttons,
+   inputs and chips. These come last and carry one more class, so a focused control
+   always shows its ring. Mono's ring is Vercel's: a ground-coloured gap, then solid ink —
+   visible on a black, a white or a paper control alike. */
+html[data-theme='mono'] .focus-visible\:shadow-focus:focus-visible,
+html[data-theme='mono'] .group:focus-visible .group-focus-visible\:shadow-focus {
+  box-shadow: 0 0 0 2px rgb(var(--ground)), 0 0 0 4px rgb(var(--ink));
+}
+html[data-theme='mono'] .focus\:shadow-ring:focus {
+  box-shadow: 0 0 0 3px rgb(var(--ink) / 0.18);
+}
 /* The Mono swatch in Appearance shows Mono whatever is active: ink with a ring, so it
    reads on a night sheet too. (Only the dot carries `data-theme`, see AppearanceSheet.) */
 /* `html` first: it must outrank the Mono fill rule above when Mono is also active. */

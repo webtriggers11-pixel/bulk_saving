@@ -6,5 +6,5 @@
 - [x] T4 Appearance: mono default, swatch, pre-paint + theme-color, Geist link (AC5, AC6)
 - [x] T5 Browser pass, day + night, phone width (AC7)
 - [x] T6 DESIGN-SYSTEM.md
-- [ ] T7 V2 independent review
+- [x] T7 V2 round 1 FAIL → 2×P1, 1×P2, 4×P3 fixed
 - [ ] T8 V3 two back-to-back gate runs
