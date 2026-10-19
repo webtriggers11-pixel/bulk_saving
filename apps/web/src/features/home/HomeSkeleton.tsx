@@ -30,7 +30,7 @@ export function HomeSkeleton() {
       {[0, 1].map((tile) => (
         <div key={tile} className="surface-solid flex min-h-[168px] flex-col rounded-card p-[18px]">
           <Skeleton radius="control" className="h-11 w-11" delay={tile === 0 ? 0 : 1} />
-          <Skeleton className="mt-auto h-2.5 w-3/5" delay={2} />
+          <Skeleton className="mt-4 h-2.5 w-3/5" delay={2} />
           <Skeleton className="mt-2.5 h-4 w-4/5" delay={3} />
         </div>
       ))}

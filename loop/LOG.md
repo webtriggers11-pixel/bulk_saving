@@ -1099,3 +1099,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Guards: `styles/phone-layout.test.ts` now also pins the padding rule, the icon-box rule, top-aligned tiles and bottom-aligned values; primitives signature for StatCard updated.
 - Result: resident ×5 at 360 dark+light and 390 light (3 screens), admin ×5 at 360 dark+light — deep audit clean; screenshots of Services, My Requests, Home, Profile, admin dashboard re-checked.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-016 — V2 round 1: PASS with findings → taken (measured in the browser)
+- V2 (independent; gate exit 0, 457/586; built CSS checked; 2 of 4 guard mutations survived): P2-1 tile prices misaligned at ≥400px; P2-2 admin rail clipped focus/active shadow and did not bring the current page into view.
+- Fixes, each MEASURED (the first attempt at both did not hold): P2-1 — pushing the price down only aligns when both footers are the same height (one round line vs one ask button were not: 846 vs 817px) → at ≥400px title, description and scope each reserve two lines (`min-h-[2lh]`, an empty reserved line when no scope); priceTops now equal at 400/430/448px. P2-2 — vertical padding inside the rail, focus ring on each link, `scrollIntoRail` on the active link; it still left "Vendors" cut off because the shared `chip-rail` scroll-snap pulled the scroll back to an item start → `snap-none`; active item fully visible on Vendors/Services/Dashboard at 360px.
+- P3s: skeletons match the real geometry again (catalog tiles row-shaped below 400px, home tiles top-aligned, rounds 22px); the last 48px icon (Profile install card) → 44; guards strengthened (token paddings, Card presets, token icon sizes, positive Profile label, tile col-span, countdown+arrow wrapper, admin rail) — the two surviving mutations now killed (verified). P3-3 (StatCard note sinking with the value) noted, no caller. P3-4: removing the apostrophe in a ProfilePage comment let the class gate read that file — tokens 1788 → 1922 (BUG-012 again).
+- V1: gate exit 0 — backend 457/457, web 590/590, 1922 class tokens.
+- By: agent (autonomous)

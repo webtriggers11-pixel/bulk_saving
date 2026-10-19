@@ -41,7 +41,7 @@ function Tile({
       <span className="flex h-11 w-11 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
         <Icon name={icon} size={20} strokeWidth={1.8} />
       </span>
-      {/* BUG-016: top-aligned under the icon, as Home's tiles are — bottom-aligned, a value
+      {/* BUG-016: top-aligned under the icon, like the tiles on Home — bottom-aligned, a value
           that wrapped to two lines lifted its label above its neighbour's. */}
       <p className="mt-4 term-label">
         {term}
@@ -119,7 +119,7 @@ export function ProfilePage() {
 
         <Card padding="none" surface="tint" className="col-span-2 p-[18px]">
           <div className="flex items-start gap-4">
-            <span className="animate-breathe flex h-12 w-12 shrink-0 items-center justify-center rounded-inset border border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift">
+            <span className="animate-breathe flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift">
               <Icon name="install" size={23} strokeWidth={1.8} />
             </span>
             <div className="min-w-0 flex-1">

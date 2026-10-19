@@ -202,18 +202,29 @@ function ServiceHero({ service, round }: { service: ServiceDto; round?: RoundDto
 function ServiceTile({ service, round }: { service: ServiceDto; round?: RoundDto | null }) {
   return (
     <Card padding="none" surface="solid" className="flex h-full flex-col p-[18px]" data-testid="service-card">
-      <div className="mb-3.5 flex items-start gap-3.5 min-[400px]:flex-col min-[400px]:gap-0">
+      <div className="mb-3.5 flex items-start gap-3.5 min-[400px]:flex-1 min-[400px]:flex-col min-[400px]:gap-0">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
           <ServiceGlyph service={service} size={22} />
         </span>
-        <div className="min-w-0 flex-1 min-[400px]:mt-3.5">
+        <div className="min-w-0 flex-1 min-[400px]:mt-3.5 min-[400px]:flex min-[400px]:flex-col">
           <CardEyebrow>{service.category}</CardEyebrow>
-          <h3 className="mt-1 text-[16px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
-          <p className="mt-1 line-clamp-2 text-micro text-ink-muted">{service.description}</p>
-          {service.unitDescription?.trim() && (
-            <p className="mt-1.5 text-[10.5px] leading-snug text-ink-soft" data-testid="service-unit-scope">
+          {/* From 400px tiles sit side by side. Title, description and scope each reserve two
+              lines there, so the price lands at the same height in both tiles whatever their
+              text or their footers (BUG-016 V2 P2-1 — pushing the price down only aligned it
+              when both footers happened to be the same height). */}
+          <h3 className="mt-1 text-[16px] font-extrabold tracking-[-0.034em] text-ink min-[400px]:line-clamp-2 min-[400px]:min-h-[2lh]">
+            {service.name}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-micro text-ink-muted min-[400px]:min-h-[2lh]">{service.description}</p>
+          {service.unitDescription?.trim() ? (
+            <p
+              className="mt-1.5 text-[10.5px] leading-snug text-ink-soft min-[400px]:line-clamp-2 min-[400px]:min-h-[2lh]"
+              data-testid="service-unit-scope"
+            >
               {service.unitDescription}
             </p>
+          ) : (
+            <p aria-hidden="true" className="mt-1.5 hidden text-[10.5px] leading-snug min-[400px]:block min-[400px]:min-h-[2lh]" />
           )}
           <PriceLine service={service} className="mt-2 text-[15px]" />
         </div>

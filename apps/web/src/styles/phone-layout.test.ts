@@ -50,12 +50,15 @@ describe('one platform, one rhythm (BUG-016)', () => {
     });
   const resident = files(join(process.cwd(), 'src/features')).filter((f) => !f.includes('/admin/'));
 
-  it('cards use 18px or 22px padding — nothing in between', () => {
-    const odd = resident.flatMap((f) =>
-      [...readFileSync(f, 'utf8').matchAll(/\bp-\[(\d+)px\]/g)]
-        .filter((m) => !['18', '22'].includes(m[1]))
-        .map((m) => `${f.replace(process.cwd(), '')}: ${m[0]}`),
-    );
+  it('cards use 18px or 22px padding — nothing in between, and no padding presets', () => {
+    const odd = resident.flatMap((f) => {
+      const source = readFileSync(f, 'utf8');
+      const arbitrary = [...source.matchAll(/\bp-\[(\d+)px\]/g)].filter((m) => !['18', '22'].includes(m[1]));
+      // Token paddings on a card surface, and Card presets (16/20/24/28px), slipped past the
+      // arbitrary-value check (V2 P3-2).
+      const tokens = [...source.matchAll(/(?:surface-(?:solid|glass|tint|accent)[^"]*\bp-[4-7]\b|<Card[^>]*\bp-[4-7]\b|padding="(?:tight|snug|default|roomy)")/g)];
+      return [...arbitrary, ...tokens].map((m) => `${f.replace(process.cwd(), '')}: ${m[0].slice(0, 60)}`);
+    });
     expect(odd).toEqual([]);
   });
 
@@ -67,11 +70,17 @@ describe('one platform, one rhythm (BUG-016)', () => {
         .filter((m) => Number(m[1]) >= 40 && Number(m[1]) <= 56)
         .map((m) => `${f.replace(process.cwd(), '')}: ${m[0]}`),
     );
-    expect(odd).toEqual([]);
+    // Token sizes too: h-12 w-12 (48px) on a non-lead card slipped past (V2 P3-2).
+    const tokens = resident.flatMap((f) =>
+      [...readFileSync(f, 'utf8').matchAll(/\bh-(10|12|13|14) w-\1\b/g)].map((m) => `${f.replace(process.cwd(), '')}: ${m[0]}`),
+    );
+    expect([...odd, ...tokens]).toEqual([]);
   });
 
   it('tiles side by side top-align their labels, so a wrapped value never lifts its own', () => {
-    expect(src('profile/ProfilePage.tsx')).not.toMatch(/mt-auto pt-3\.5 term-label/);
+    // Positive: the label sits at a fixed distance under the icon (V2 P3-2 — rejecting only
+    // the old string let `mt-auto pt-4` through).
+    expect(src('profile/ProfilePage.tsx')).toMatch(/<p className="mt-4 term-label">/);
     expect(src('home/HomePage.tsx')).toMatch(/<CardEyebrow className="mt-4">Your society<\/CardEyebrow>/);
   });
 
@@ -79,5 +88,27 @@ describe('one platform, one rhythm (BUG-016)', () => {
     const fact = readFileSync(join(process.cwd(), 'src/components/ui/fact.tsx'), 'utf8');
     expect(fact).toMatch(/rounded-inset flex flex-col px-3\.5 py-3/);
     expect(fact).toMatch(/num mt-auto pt-1\.5/);
+  });
+});
+
+describe('BUG-016 V2 — the pieces a phone layout depends on', () => {
+  it('service tiles span the row below 400px and sit 2-up above', () => {
+    expect(src('catalog/ServicesPage.tsx')).toContain("'col-span-2 min-[400px]:col-span-1'");
+  });
+
+  it('from 400px, a tile reserves two lines for title, description and scope so prices line up', () => {
+    const tile = src('catalog/ServicesPage.tsx').split('function ServiceTile')[1].split('\n}\n')[0];
+    expect(tile.match(/min-\[400px\]:min-h-\[2lh\]/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+
+  it('the countdown and its arrow break as one piece', () => {
+    expect(src('catalog/ServicesPage.tsx')).toMatch(/<span className="inline-flex items-center gap-1 whitespace-nowrap">\s*\{formatCountdown/);
+  });
+
+  it('the admin nav is a scrolling rail on a phone that keeps the current page in view and its focus ring uncut', () => {
+    const layout = src('admin/AdminLayout.tsx');
+    expect(layout).toMatch(/chip-rail snap-none[^"]*overflow-x-auto[^"]*py-1\.5/);
+    expect(layout).toContain('scrollIntoRail(rail.current, active)');
+    expect(layout).toContain('focus-visible:shadow-focus');
   });
 });

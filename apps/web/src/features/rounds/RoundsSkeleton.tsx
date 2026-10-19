@@ -25,7 +25,7 @@ export function RoundsSkeleton() {
           <Skeleton radius="control" className="ml-auto h-11 w-20" delay={3} />
         </div>
       </div>
-      <div className="surface-solid rounded-card p-5">
+      <div className="surface-solid rounded-card p-[22px]">
         <div className="flex items-center gap-3.5">
           <div className="flex-1">
             <Skeleton className="h-2.5 w-1/3" />
