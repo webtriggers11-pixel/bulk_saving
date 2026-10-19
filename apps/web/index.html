@@ -23,7 +23,7 @@
         } catch (e) {}
         var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia &&
           window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (ACCENTS.indexOf(pal) < 0) pal = LEGACY[pal] || 'mono';
+        if (ACCENTS.indexOf(pal) < 0) pal = Object.prototype.hasOwnProperty.call(LEGACY, pal) ? LEGACY[pal] : 'mono';
         d.setAttribute('data-scheme', dark ? 'dark' : 'light');
         d.setAttribute('data-look', 'vercel');
         d.setAttribute('data-theme', 'mono');

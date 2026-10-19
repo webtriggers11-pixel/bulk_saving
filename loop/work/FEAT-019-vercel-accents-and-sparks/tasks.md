@@ -6,4 +6,5 @@
 - [x] T4 Micro-interactions: spotlight, border beam, sparkles, shimmer text, press sparks (AC5, AC6)
 - [x] T5 Browser pass (AC7)
 - [x] T6 ADR-0031, DESIGN-SYSTEM.md
-- [ ] T7 V2 · T8 V3
+- [x] T7 V2 round 1 PASS-with-findings → 2×P2 + 8×P3 taken
+- [ ] T8 V2 round 2 · V3

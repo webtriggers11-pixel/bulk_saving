@@ -1,4 +1,4 @@
-import { forwardRef, useState, type ButtonHTMLAttributes, type PointerEvent } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type PointerEvent } from 'react';
 import { cn } from '../../lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger';
@@ -89,12 +89,24 @@ function motionAllowed(): boolean {
  */
 function usePressSparks(enabled: boolean) {
   const [bursts, setBursts] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  // A counter, not the timeStamp of the event: two simultaneous touches shared one (V2 P3-8).
+  const nextId = useRef(0);
+  const timers = useRef(new Set<number>());
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach((timer) => window.clearTimeout(timer));
+  }, []);
   function onPress(event: PointerEvent<HTMLButtonElement>) {
     if (!enabled || !motionAllowed()) return;
     const box = event.currentTarget.getBoundingClientRect();
-    const burst = { id: event.timeStamp, x: event.clientX - box.left, y: event.clientY - box.top };
+    nextId.current += 1;
+    const burst = { id: nextId.current, x: event.clientX - box.left, y: event.clientY - box.top };
     setBursts((current) => [...current, burst]);
-    window.setTimeout(() => setBursts((current) => current.filter((b) => b.id !== burst.id)), 600);
+    const timer = window.setTimeout(() => {
+      timers.current.delete(timer);
+      setBursts((current) => current.filter((b) => b.id !== burst.id));
+    }, 600);
+    timers.current.add(timer);
   }
   const sparks = bursts.map((burst) => (
     <span

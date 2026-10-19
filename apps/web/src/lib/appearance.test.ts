@@ -99,6 +99,14 @@ describe('appearance', () => {
     expect(root().dataset.accent).toBe('mono');
   });
 
+  it('a tampered stored value cannot reach Object.prototype (V2 P3-7)', async () => {
+    mockMedia();
+    localStorage.setItem('bulk:palette', 'toString');
+    const a = await load();
+    a.initAppearance();
+    expect(root().dataset.accent).toBe('mono');
+  });
+
   it.each([
     ['teal', 'lagoon'],
     ['indigo', 'aurora'],

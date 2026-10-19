@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Sparkles } from '../components/ui/sparkles';
-import { PALETTES } from '../lib/appearance';
+import { LEGACY, PALETTES } from '../lib/appearance';
 
 /**
  * FEAT-019 (ADR-0031) — one Vercel look, seven accent pairs, and the micro-interactions.
@@ -63,6 +63,40 @@ describe('accents — seven pairs over the neutral Vercel base (AC2)', () => {
       expect(ratio(DAY['--on-fill'], day[fill]), `day ${fill}`).toBeGreaterThanOrEqual(4.5);
       expect(ratio(NIGHT['--on-fill'], night[fill]), `night ${fill}`).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it.each(PALETTES)('%s: fill text still clears 4.5:1 where the partner glow is strongest (V2 P2-1)', (accent) => {
+    const rule = css.slice(css.indexOf("html[data-look='vercel'] .surface-accent {"));
+    const alpha = Number(/rgb\(var\(--brand-2\) \/ ([\d.]+)\)/.exec(rule)?.[1]);
+    expect(alpha).toBeGreaterThan(0);
+    const mix = (a: RGB, b: RGB): RGB => a.map((v, i) => v * (1 - alpha) + b[i] * alpha) as RGB;
+    const day = block(`[data-accent='${accent}'] {`);
+    const night = block(`html[data-scheme='dark'][data-accent='${accent}'] {`);
+    expect(ratio(DAY['--on-fill'], mix(day['--brand'], day['--brand-2'])), 'day').toBeGreaterThanOrEqual(4.5);
+    expect(ratio(NIGHT['--on-fill'], mix(night['--brand'], night['--brand-2'])), 'night').toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('text on a fill is never faded — a 75% eyebrow fell under 4.5:1 on every colour (V2 P2-2)', () => {
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/\.tsx$/.test(entry) && !/\.test\./.test(entry) && /text-on-fill\/\d/.test(readFileSync(path, 'utf8'))) {
+          offenders.push(path.replace(process.cwd(), ''));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('the pre-paint script knows the same accents and migrations as appearance.ts (V2 P3-3)', () => {
+    const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
+    const accents = /var ACCENTS = (\[[^\]]*\]);/.exec(html)?.[1];
+    const legacy = /var LEGACY = (\{[^}]*\});/.exec(html)?.[1];
+    expect(JSON.parse(accents!.replace(/'/g, '"'))).toEqual([...PALETTES]);
+    expect(JSON.parse(legacy!.replace(/'/g, '"').replace(/(\w+):/g, '"$1":'))).toEqual(LEGACY);
   });
 
   it('accent blocks come after the neutral base, so they win at equal specificity', () => {
@@ -146,7 +180,7 @@ describe('micro-interactions (AC5, AC6)', () => {
 
   it('every new animation is stopped by the reduced-motion block', () => {
     const query = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
-    for (const name of ['.animate-press-spark', '.animate-twinkle', '.ink-shimmer']) {
+    for (const name of ['.animate-press-spark', '.animate-twinkle', '.ink-shimmer', '.border-beam::after', '.ambient-ground::after']) {
       expect(query, name).toContain(name);
     }
   });

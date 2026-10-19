@@ -29,7 +29,7 @@ const PALETTE_NAMES: Record<Palette, string> = {
   lagoon: 'Lagoon',
 };
 
-/** "Dark · Dusk" — what the Appearance row says is set. */
+/** "Dark · Aurora" — what the Appearance row says is set. */
 export function describeAppearance(preference: SchemePreference, palette: Palette): string {
   const scheme = preference === 'system' ? 'Matches phone' : preference === 'dark' ? 'Dark' : 'Light';
   return `${scheme}, ${PALETTE_NAMES[palette]}`;
@@ -107,7 +107,13 @@ export function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () 
                     data-accent={p}
                     className="swatch-pair relative flex h-11 w-11 items-center justify-center rounded-full"
                   >
-                    {checked && <Icon name="check" size={18} strokeWidth={2.6} className="animate-pop text-white" />}
+                    {checked && (
+                      // On a dark disc: the tick straddles both halves of the pair, and a
+                      // light partner (the cyan in Ocean) left white at 2.4:1 (V2 P3-6).
+                      <span className="animate-pop flex items-center justify-center rounded-full bg-shade/50 p-1 text-white">
+                        <Icon name="check" size={16} strokeWidth={2.6} />
+                      </span>
+                    )}
                   </span>
                   <span className="text-meta font-bold text-ink">{PALETTE_NAMES[p]}</span>
                 </button>

@@ -170,6 +170,11 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     fetchRoundsMock.mockResolvedValue([ac, { ...ac, id: 'mine', myUnits: 2 }]);
     renderPage();
     expect(await screen.findByTestId('rounds-summary')).toBeInTheDocument();
+    // FEAT-019 wiring (V2 P3-4): the beam on the lead card only, light through the saving.
+    const cards = screen.getAllByTestId('round-card');
+    expect(cards[0].className).toMatch(/\bborder-beam\b/);
+    expect(cards[1].className).not.toMatch(/\bborder-beam\b/);
+    expect(screen.getByTestId('summary-saving').querySelector('.ink-shimmer')).not.toBeNull();
     expect(screen.getByTestId('joined-mine')).toHaveTextContent("You're in");
     expect(screen.queryByTestId('joined-round_ac')).not.toBeInTheDocument();
   });

@@ -84,7 +84,7 @@ export function StatCard({
         <p
           className={cn(
             'text-eyebrow uppercase',
-            lead ? 'text-on-fill/75' : alert ? 'text-amber-ink' : 'text-brand-ink',
+            lead ? 'text-on-fill' : alert ? 'text-amber-ink' : 'text-brand-ink',
           )}
         >
           {label}
@@ -98,7 +98,7 @@ export function StatCard({
           {value}
         </p>
         {note && (
-          <p className={cn('mt-1.5 text-meta', lead ? 'text-on-fill/75' : 'text-ink-muted')}>{note}</p>
+          <p className={cn('mt-1.5 text-meta', lead ? 'text-on-fill' : 'text-ink-muted')}>{note}</p>
         )}
       </div>
       {action}

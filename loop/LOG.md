@@ -976,3 +976,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Restarted my own :5175 dev server first (Tailwind config changed — the stale-config trap from FEAT-017).
 - ADR-0031; DESIGN-SYSTEM.md (accents table, micro-interactions).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-019 — V2 round 1: PASS with findings → all taken
+- V2 (independent; gate exit 0, 396/511): no P0/P1. P2-1 white over the 55% brand-2 corner glow fell to 3.42 (Ocean) / 4.28 (Forest) / 4.38 (Lagoon) by day → glow capped at 15% and Ocean/Forest day fills deepened to their ink tones; a test now computes the MIXED corner colour per accent, day and night. P2-2 `text-on-fill/75` (Home eyebrow, lead StatCard label/note) 3.5–3.9:1 on every colour accent → full on-fill; test bans faded text on a fill (the decorative Home glyph moved to `opacity-10`).
+- P3s taken: pre-paint ↔ appearance.ts parity test (accents + legacy map); wiring tests for the beam (lead card only) and the shimmer; beam/aurora in the reduced-motion block + test; swatch tick on a dark disc (white straddled a light partner at 2.4:1) — day pair shown at night is intended (swatches name the colour, not the scheme); `Object.hasOwn` for legacy keys (both places) + test; press-spark ids from a counter and timers cleared on unmount; spotlight only under `(hover: hover)` and layered over the tint; stale doc comment.
+- BUG-012 bit again mid-fix: two new comments with apostrophes dropped the token count 1642 → 1623; reworded → 1648.
+- V1: gate exit 0 — backend 396/396, web 521/521, 1648 class tokens.
+- By: agent (autonomous)

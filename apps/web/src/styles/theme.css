@@ -240,7 +240,7 @@ html[data-scheme='dark'][data-theme='mono'] {
   --brand-ink: 23 23 23;
 }
 [data-accent='ocean'] {
-  --brand: 0 102 230;
+  --brand: 0 92 210;
   --brand-2: 6 182 212;
   --brand-deep: 0 76 180;
   --brand-light: 96 165 250;
@@ -268,7 +268,7 @@ html[data-scheme='dark'][data-theme='mono'] {
   --brand-ink: 180 60 10;
 }
 [data-accent='forest'] {
-  --brand: 21 128 61;
+  --brand: 21 115 55;
   --brand-2: 13 148 136;
   --brand-deep: 22 101 52;
   --brand-light: 74 222 128;
@@ -1051,10 +1051,11 @@ html[data-look='vercel'] .surface-inset {
 }
 /* The one accent surface is the inverted card: ink by day, near-white by night. */
 html[data-look='vercel'] .surface-accent {
-  /* The partner hue glows in from the top-right corner; text sits on brand → brand-deep,
-     both of which clear 4.5:1 with on-fill (FEAT-019). */
+  /* The partner hue glows in from the top-right corner. Capped at 15%: at 55% white text
+     in that corner fell to 3.4:1 on Ocean (FEAT-019 V2 P2-1). accents.test.tsx checks the
+     mixed corner colour per accent, day and night. */
   background-image:
-    radial-gradient(90% 80% at 100% 0%, rgb(var(--brand-2) / 0.55), transparent 62%),
+    radial-gradient(90% 80% at 100% 0%, rgb(var(--brand-2) / 0.15), transparent 62%),
     linear-gradient(160deg, rgb(var(--brand)), rgb(var(--brand-deep)));
   border: 1px solid rgb(var(--brand));
   box-shadow: 0 12px 32px -16px rgb(var(--shadow-rgb) / 0.35);
@@ -1140,12 +1141,20 @@ html[data-scheme='dark'][data-look='vercel'] .switch[aria-checked='true'] .switc
 
 /* (a) Spotlight: a soft disc of the accent follows the pointer across an interactive
    card (Card writes --mx/--my on pointer move). The accent card keeps its own paint. */
-html[data-look='vercel'] .card-hover:not(.surface-accent):hover {
-  background-image: radial-gradient(
-    300px circle at var(--mx, 50%) var(--my, 0%),
-    rgb(var(--brand) / 0.08),
-    transparent 65%
-  );
+@media (hover: hover) {
+  html[data-look='vercel'] .card-hover:not(.surface-accent):hover {
+    background-image: radial-gradient(
+      300px circle at var(--mx, 50%) var(--my, 0%),
+      rgb(var(--brand) / 0.08),
+      transparent 65%
+    );
+  }
+  /* A tinted card keeps its tint under the disc (V2 P3-9). */
+  html[data-look='vercel'] .surface-tint.card-hover:hover {
+    background-image:
+      radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgb(var(--brand) / 0.08), transparent 65%),
+      linear-gradient(rgb(var(--line) / 0.03), rgb(var(--line) / 0.03));
+  }
 }
 
 /* (b) Border beam: a short light travelling round the lead card's edge. */
@@ -1286,6 +1295,14 @@ html[data-look='vercel'] .focus\:shadow-ring:focus {
     display: none !important;
   }
   .ink-shimmer {
+    animation: none !important;
+  }
+  /* A parked beam is a stray arc on the card's edge; a frozen aurora is fine but still. */
+  .border-beam::after {
+    animation: none !important;
+    display: none !important;
+  }
+  .ambient-ground::after {
     animation: none !important;
   }
   /* Without its flight a confetti piece is a coloured speck parked on the ring. */

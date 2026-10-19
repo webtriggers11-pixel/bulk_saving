@@ -26,7 +26,7 @@ export const PALETTE_KEY = 'bulk:palette';
 export const PALETTES: readonly Palette[] = ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon'];
 
 /** FEAT-019: the glass palettes are retired; a device that chose one keeps its colour. */
-const LEGACY: Record<string, Palette> = { teal: 'lagoon', indigo: 'aurora', ember: 'sunset' };
+export const LEGACY: Record<string, Palette> = { teal: 'lagoon', indigo: 'aurora', ember: 'sunset' };
 
 interface Appearance {
   preference: SchemePreference;
@@ -62,7 +62,8 @@ function asPreference(value: string | null): SchemePreference {
 
 function asPalette(value: string | null): Palette {
   if (value && (PALETTES as readonly string[]).includes(value)) return value as Palette;
-  return (value && LEGACY[value]) || 'mono';
+  // Own keys only: a tampered `toString` must not reach Object.prototype (V2 P3-7).
+  return value && Object.hasOwn(LEGACY, value) ? LEGACY[value] : 'mono';
 }
 
 function resolve(preference: SchemePreference): Scheme {

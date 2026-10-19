@@ -85,14 +85,14 @@ export function HomePage() {
               aria-hidden="true"
               className="animate-glide absolute -right-8 -top-12 h-48 w-48 rounded-full bg-on-fill/40 blur-3xl"
             />
-            <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-on-fill/10">
+            <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-on-fill opacity-10">
               <Icon name="services" size={170} strokeWidth={1.1} />
             </span>
             <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-inset border border-on-fill/40 bg-on-fill/20 text-on-fill">
               <Icon name="services" size={25} strokeWidth={1.8} />
             </span>
             <div className="relative min-w-0 flex-1">
-              <p className="text-eyebrow uppercase text-on-fill/75">Explore</p>
+              <p className="text-eyebrow uppercase text-on-fill">Explore</p>
               <h2 className="mt-1.5 text-headline font-extrabold leading-tight text-on-fill">
                 Services in
                 <br />
