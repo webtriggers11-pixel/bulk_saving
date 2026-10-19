@@ -39,4 +39,14 @@ describe('class gate extractor (BUG-012)', () => {
     `;
     expect(lists(source)).toEqual(['paint-brand text-on-fill border', 'border-transparent text-ink-muted', 'surface-glass']);
   });
+
+  it('parses .ts files as TS — an angle-bracket assertion does not end the scan (V2 P3-1)', () => {
+    const source = `const a = <number>value;\nexport const B = 'flex items-center gap-2';`;
+    expect(classLists(source, 'thing.ts').map((t: string[]) => t.join(' '))).toEqual(['flex items-center gap-2']);
+  });
+
+  it('checks lists that contain an arbitrary property (V2 P3-2)', () => {
+    const source = `export const A = () => <span className="animate-pop [animation-delay:140ms] absolute" />;`;
+    expect(lists(source)).toEqual(['animate-pop [animation-delay:140ms] absolute']);
+  });
 });

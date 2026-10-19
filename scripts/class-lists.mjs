@@ -16,7 +16,10 @@ const ts = createRequire(join(dirname(fileURLToPath(import.meta.url)), '../apps/
  * literals count only without substitutions (`${...}` makes a list unknowable).
  */
 export function stringLiterals(source, fileName = 'source.tsx') {
-  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+  // TS for .ts files: parsed as TSX, an angle-bracket assertion (`<T>x`) breaks the parse
+  // and every list after it is lost (V2 P3-1).
+  const kind = fileName.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
+  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, false, kind);
   const out = [];
   const visit = (node) => {
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) out.push(node.text);
@@ -26,14 +29,14 @@ export function stringLiterals(source, fileName = 'source.tsx') {
   return out;
 }
 
-/** A token that looks like a utility or a system class, e.g. `bg-brand/20`, `h-[52px]`, `surface-glass`. */
-export const CLASSY = /^-?[a-z][a-z0-9]*(?:[-:/.][a-z0-9[\]()%#.,_-]+)*$/i;
-
 /**
- * Prefixes that mean "this single word is a class, not a string". Needed because a
- * one-token literal like 'surface-glass' (the Card SURFACES map) is indistinguishable
- * from 'one-time-code' (an autocomplete value) without one of these.
+ * A token that looks like a utility or a system class, e.g. `bg-brand/20`, `h-[52px]`,
+ * `surface-glass` — or a Tailwind arbitrary property, `[animation-delay:140ms]`, optionally
+ * behind variants (`md:[grid-area:a]`). Before V2 P3-2 an arbitrary property made its whole
+ * list fail the shape test, so ~30 tokens on the sign-in pages went unchecked.
  */
+export const CLASSY = /^(?:-?[a-z][a-z0-9]*(?:[-:/.][a-z0-9[\]()%#.,_-]+)*|(?:[a-z0-9-]+:)*\[[a-z-]+:[^\s\]]+\])$/i;
+
 /**
  * A ONE-token literal is only treated as a class when it is one the design system
  * owns. Tailwind's own families are hopeless to recognise in isolation — `my-rating`

@@ -69,6 +69,7 @@
 | BUG-014 | Intermittent route-level 404 in backend integration tests under verify.sh (auth OTP request, admin OTP verify) — ~2 in 12 gate runs | triaged | P2 | 2026-10-19 | — | (probe in test/helpers/test-app.ts) | — |
 | BUG-015 | Phone view: the ask control squeezed into the service row's text column (one word a line); also /my-requests 12px past a 360px screen and service-row text crushed by the price | done | P1 | 2026-10-19 | 2026-10-19 | (see LOG) | — |
 | BUG-016 | Platform consistency at phone width: misaligned values in fact/stat tiles, uneven card padding and icon sizes, cramped 2-up service tiles, orphan arrows, admin nav eating 300px | done | P1 | 2026-10-19 | 2026-10-19 | (see LOG) | ADR-0021, ADR-0022 |
+| CHORE-023 | Class gate: check the fixed parts of template literals with `${}` (e.g. Celebrate pieces) — today such lists are skipped whole | triaged | P3 | 2026-10-19 | — | (folder at start) | — |
 
 > Build order (dependency-driven): CHORE-001 → FEAT-001 → FEAT-002 → FEAT-003 →
 > FEAT-004 → FEAT-005 → (FEAT-006 cross-cuts, needed by FEAT-001 OTP) → FEAT-007 →
