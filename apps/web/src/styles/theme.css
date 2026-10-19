@@ -937,6 +937,7 @@ html[data-theme='mono'] .card-glow::after,
 html[data-theme='mono'] .sweep::after,
 html[data-theme='mono'] .sheen::before,
 html[data-theme='mono'] .halo-sweep,
+html[data-theme='mono'] .card-wash,
 html[data-theme='mono'] .animate-glide {
   display: none;
 }

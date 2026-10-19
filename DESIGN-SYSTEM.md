@@ -20,12 +20,13 @@
 
 ## Themes
 
-Three palettes, one geometry. The palette is **one attribute on `<html>`**:
+Three tinted palettes share one geometry; Mono brings its own (below). The palette is **one attribute on `<html>`**:
 
 ```html
 <html data-theme="teal">   <!-- default -->
 <html data-theme="indigo">
 <html data-theme="ember">
+<html data-theme="mono">   <!-- FEAT-017: the app's default -->
 ```
 
 Nothing in the component tree knows which is active — a test asserts the rendered
@@ -35,6 +36,23 @@ miss a token.
 
 State hues (error red, delivered green, offline amber, booked blue, the rating star)
 deliberately **do not** move with the palette. They are meanings, not decoration.
+
+### Mono — the Vercel register (FEAT-017, ADR-0029) — the default
+
+`data-theme="mono"` is a fourth palette that also carries **geometry and type**: flat
+paper with 1px hairlines, 6/8/8/10/12/16px radii, Geist (600/700 weights) with Geist Mono
+micro-labels, a faint fading grid instead of the mesh washes, an inverted accent card
+(ink by day, near-white by night), and no sweep, sheen, halo or glow. Hover darkens the
+hairline instead of lifting the card.
+
+- It is CSS only: one `html[data-theme='mono'] .<system class>` section in `theme.css`
+  overrides the surfaces and fills. Components never branch on it (AC3 test covers 4 palettes).
+- Radii and the sans family are tokens (`--radius-*`, `--font-sans`, `--font-label`);
+  the tinted palettes keep their original values, pinned by test.
+- New devices start in Mono; a stored palette is kept. The CSS fallback on `:root` is still
+  teal (only seen without JS).
+- Hooks it uses beyond the surface classes: `.ambient-ground` (grid instead of washes) and
+  `.card-wash` (decorative washes it hides).
 
 ### Day and night (FEAT-016, ADR-0028)
 
@@ -66,10 +84,10 @@ serves `bg-brand` and `bg-brand/20` alike.
 | `--line` | `border-line/10`, `bg-line/20`, `stroke-line/15` | hairlines, dividers, tracks: the shadow tint by day, white at night |
 | `--paper` | `bg-paper/60`, `border-paper/85`, … | what light surfaces are made of: white by day, the palette's night surface at night |
 | `--edge-strong/--edge/--edge-soft`, `--sheen` | (full colours, used in `theme.css` and the `shadow-*` scale) | glass highlights and the button sheen — night needs a different alpha, not just a channel |
-| `--on-fill` | `text-on-fill` | text on the accent fill |
+| `--on-fill` | `text-on-fill`, `bg-on-fill/20`, `border-on-fill/40` | text and marks on an accent fill — white in the tinted palettes, near-black on Mono's night fill |
 
-**`white` is reserved for accent fills** (primary button, lead stat, home hero,
-monogram, switch knob, palette tick). `design-system.test.tsx` counts every white
+**Marks on an accent fill use `on-fill`, not `white`** (FEAT-017): Mono's night fill is
+near-white. Literal `white` is left only on the switch knob and the swatch tick. `design-system.test.tsx` counts every white
 utility per allowlisted file — a new one anywhere is a decision the test makes you
 write down.
 | `--state-*`, `--star` | `text-danger-ink`, `text-success-ink`, `text-amber-ink`, `text-info-ink`, `text-star` | meanings |
@@ -102,7 +120,8 @@ ADR-0021). Money and counts always take `.num` (tabular figures).
 ## Radius, elevation, spacing
 
 - **Radius:** `rounded-chip` 12 · `rounded-control` 16 · `rounded-inset` 18 ·
-  `rounded-tile` 20 · `rounded-card` 24 · `rounded-sheet` 34. Nothing in between.
+  `rounded-tile` 20 · `rounded-card` 24 · `rounded-sheet` 34 (Mono: 6 · 8 · 8 · 10 · 12 · 16).
+  Tokens (`--radius-*`); nothing in between.
 - **Micro-label:** `.term-label` — the 10px uppercase label over a value. A token,
   because four files had typed the same five classes.
 - **Elevation:** `shadow-hairline` → `shadow-lift` → `shadow-float` → `shadow-deep`,

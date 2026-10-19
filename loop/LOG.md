@@ -896,3 +896,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Mono is the default (appearance.ts + pre-paint script); stored palettes respected; Appearance lists 4 swatches.
 - V1: gate exit 0 — backend 396/396, web 442/442, 1607 class tokens. (Machine: global pnpm shim still broken; ran with a corepack shim on PATH + Node 24.22.0.)
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-017 — T5 browser pass + T6 docs
+- Chrome at 400px and desktop, Mono night and day: admin login (grid ground, flat card), admin dashboard (hairline stat tiles, Geist Mono labels, inverted Collected card), resident Home (inverted hero, 12px corners), Profile, Appearance (4 swatches; Mono's ringed dot reads on a night sheet), Services. Switched to Lagoon: original glass/Jakarta/34px sheet intact. No console errors.
+- Found and fixed: a decorative wash in Home's signed-in card (a raw `bg-mesh-1` blob) showed as a smudge → `card-wash` hook, hidden under Mono.
+- **Dev note:** the owner's web dev server (:5174) cached the old Tailwind config — `.rounded-card` stayed 24px after the config moved to tokens; touching the config did not help. It needs a restart. The browser pass ran on a fresh server at :5175 (in the CORS allowlist). (Port 5173 is another project.)
+- DESIGN-SYSTEM.md: Mono section, on-fill rule, radius tokens.
+- V1: gate exit 0 — backend 396/396, web 442/442, 1607 class tokens.
+- By: agent (autonomous)

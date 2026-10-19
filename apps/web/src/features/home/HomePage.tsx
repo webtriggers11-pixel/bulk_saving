@@ -59,7 +59,7 @@ export function HomePage() {
           <Card padding="none" className="col-span-2 flex items-center gap-4 overflow-hidden p-[22px]">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
+              className="card-wash pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-mesh-1/40 blur-2xl"
             />
             <Monogram name={data.resident.name} />
             <div className="relative min-w-0 flex-1">
