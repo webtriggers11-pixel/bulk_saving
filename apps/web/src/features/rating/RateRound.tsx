@@ -97,7 +97,9 @@ export function RateRound({ round }: { round: MyRoundDto }) {
     <>
       {saved ? (
         <div className="mt-4 border-t border-line/10 pt-4" data-testid="rating-saved">
-          <div className="flex items-center justify-between gap-3">
+          {/* BUG-015: wraps on a phone — five 44px stars beside Change + Remove ran past
+              a 360px screen. */}
+          <div className="flex flex-wrap items-center justify-between gap-3" data-testid="rating-saved-row">
             <div>
               <p className="term-label">Your rating</p>
               {/* `my-rating` is FEAT-008's existing test contract for a saved

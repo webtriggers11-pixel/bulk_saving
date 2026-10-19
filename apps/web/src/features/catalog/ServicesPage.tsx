@@ -104,7 +104,8 @@ function RoundStatus({
  */
 function AskControl({ service, className }: { service: ServiceDto; className?: string }) {
   const ask = useServiceAsk();
-  const { askCount, askedByMe } = service.demand;
+  // An API that predates FEAT-022 sends no `demand`: treat it as nobody asking yet.
+  const { askCount, askedByMe } = service.demand ?? { askCount: 0, askedByMe: false };
   const others = askedByMe ? askCount - 1 : askCount;
   const neighbours = (n: number) => `${n} neighbour${n === 1 ? '' : 's'}`;
   const line =
@@ -117,8 +118,9 @@ function AskControl({ service, className }: { service: ServiceDto; className?: s
         : `${neighbours(askCount)} asked for this`;
   return (
     <div className={cn('flex flex-col gap-2', className)} data-testid="service-no-round">
-      <div className="flex items-center gap-3">
-        <p className="min-w-0 flex-1 text-micro text-ink-muted" data-testid="service-demand">
+      {/* Wraps rather than squeezes (BUG-015): on a narrow tile the button drops below. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="min-w-[9rem] flex-1 text-micro text-ink-muted" data-testid="service-demand">
           {line}
         </p>
         <Button
@@ -213,28 +215,34 @@ function ServiceRow({ service, round }: { service: ServiceDto; round?: RoundDto 
   return (
     <Card padding="none"
       surface="solid"
-      className="col-span-2 flex items-center gap-3.5 p-[17px]"
+      className="col-span-2 flex flex-col p-[17px]"
       data-testid="service-card"
     >
-      <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
-        <ServiceGlyph service={service} size={25} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <CardEyebrow>{service.category}</CardEyebrow>
-        <h3 className="mt-1 text-[16.5px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
-        {/* `service-unit-scope` means "what one unit includes" (ADR-0019) and
-            nothing else — a service with no unitDescription shows its description
-            instead, under no testid, rather than widening what the id means. */}
-        {service.unitDescription?.trim() ? (
-          <p className="mt-1 text-micro text-ink-muted" data-testid="service-unit-scope">
-            {service.unitDescription}
-          </p>
-        ) : (
-          <p className="mt-1 text-micro text-ink-muted">{service.description}</p>
-        )}
-        <RoundStatus service={service} round={round} className="mt-2" />
+      <div className="flex items-center gap-3.5">
+        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inset border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
+          <ServiceGlyph service={service} size={25} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <CardEyebrow>{service.category}</CardEyebrow>
+          <h3 className="mt-1 text-[16.5px] font-extrabold tracking-[-0.034em] text-ink">{service.name}</h3>
+          {/* `service-unit-scope` means "what one unit includes" (ADR-0019) and
+              nothing else — a service with no unitDescription shows its description
+              instead, under no testid, rather than widening what the id means. */}
+          {service.unitDescription?.trim() ? (
+            <p className="mt-1 text-micro text-ink-muted" data-testid="service-unit-scope">
+              {service.unitDescription}
+            </p>
+          ) : (
+            <p className="mt-1 text-micro text-ink-muted">{service.description}</p>
+          )}
+          {/* BUG-015: under the text, not a fixed column beside it — "From ₹3,500 / flat"
+              on the right left the name and scope 33–77px wide on a 360px phone. */}
+          <PriceLine service={service} className="mt-2 text-[15px]" />
+        </div>
       </div>
-      <PriceLine service={service} className="shrink-0 text-right text-[16px]" />
+      {/* BUG-015: the round / ask line gets the card full width as a footer. Inside the
+          text column it was squeezed between the glyph and the price, one word a line. */}
+      <RoundStatus service={service} round={round} className="mt-3.5 border-t border-line/10 pt-3.5" />
     </Card>
   );
 }

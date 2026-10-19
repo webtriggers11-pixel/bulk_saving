@@ -130,3 +130,27 @@ describe('Ask for this service (FEAT-022)', () => {
     expect(screen.queryByTestId('ask-tank')).not.toBeInTheDocument();
   });
 });
+
+describe('BUG-015 — the ask control has the full width of the card, never the text column', () => {
+  it('on a wide row card the status sits in a footer below the row, not beside the price', async () => {
+    // Four services so the fourth renders as a ROW card (lead, two tiles, then rows).
+    vi.mocked(fetchCatalog).mockResolvedValue(
+      ['a', 'b', 'c', 'd'].map((x) => ({ ...tank({ askCount: 0, askedByMe: false }), id: `svc_${x}`, slug: x, name: `Service ${x}` })),
+    );
+    renderPage();
+    await screen.findAllByTestId('service-no-round');
+    for (const card of screen.getAllByTestId('service-card')) {
+      const status = card.querySelector('[data-testid="service-no-round"]');
+      expect(status, 'every card states its round').not.toBeNull();
+      // Its parent is the card itself (a full-width footer), not a nested column.
+      expect(status!.parentElement).toBe(card);
+    }
+  });
+
+  it('the line and the button wrap rather than squeeze on a narrow card', async () => {
+    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 0, askedByMe: false })]);
+    renderPage();
+    const row = (await screen.findByTestId('service-demand')).parentElement!;
+    expect(row.className).toMatch(/\bflex-wrap\b/);
+  });
+});
