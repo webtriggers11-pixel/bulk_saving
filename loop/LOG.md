@@ -1039,3 +1039,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Kept straight apostrophes out of ServicesPage.tsx (BUG-012).
 - V1: gate exit 0 — backend 449/449, web 562/562, 1723 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-021 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 449/562; P1 probe: 1 scroll across 3 changed refetches, was 4; 2 mutations killed): PASS. Two latent P3s taken: a second `join` while on the page now opens that sheet too (the "seen" pattern on `startOpen`); the scroll guard is keyed on the navigation (`location.key`), so re-requesting the same round scrolls again and still clears the param. Tests extended for both.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 449/449, web 563/563, 1723 class tokens. No flakes.
+- FEAT-021 → done. Browser: 4 of 23 services bookable in the demo data; tapping AC Servicing opened `/rounds` on that round with Asha's pledge sheet ("Your pledge"), param cleared, no console errors.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)

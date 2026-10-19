@@ -13,6 +13,9 @@
   round event and watch it arrive. Two additive migrations applied to the dev DB
   (`PushSubscription`, `Notification.pushQueuedAt`); dependency `web-push`; dev VAPID keys in the
   gitignored apps/backend/.env; production REQUIRES VAPID_* (`.env.prod.example`).
+- **Also closed:** FEAT-021 (service cards show their open round and book it in one tap via
+  `/rounds?join=<id>`), BUG-013 (admin-auth test waited for ANY phone's OTP). Follow-up worth asking the
+  owner: "Ask for this service" when no round is open (needs an API).
 - **Triaged:** BUG-012 — `scripts/check-css-classes.mjs` pairs quotes across a whole file, so an
   apostrophe in a comment hides (or reveals) class lists; it bit three times this session (token count
   moved 1615→1570, 1642→1623, 1703→2008 with no class change). Until fixed: no apostrophes in comments
