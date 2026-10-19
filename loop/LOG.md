@@ -1183,3 +1183,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Guards hit on the way: `text-on-fill/80` refused by the accents contrast test (text on a fill is never faded) → full `text-on-fill`; the Skeleton `delay` union; a 1-day fixture reading "23h".
 - V1: gate exit 0 — backend 464/464, web 604/604 (+5), 3338 class tokens (+60).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-023 — T3 browser pass
+- Preview :5175 (new build; the installed SW served its precache until `registration.update()` + reload — expected with `autoUpdate`). Home: identity → **Group buys** lead ("4 open in your society · You're in 4 of them", AC Servicing ₹920/AC unit · Closes in 2h, Water Tank ₹699/tank · 1 day, Painting ₹3,100/room · 4 days, "See all 4 group buys") → Your society + Services tiles. Tapping the AC row landed on /rounds with the AC pledge sheet open (FEAT-021 deep link). Phone width: the automation window is full-screen (innerWidth 1920) and would not resize; the layout is a 448px column either way, and the row's price is `whitespace-nowrap` beside a `truncate` name.
+- Not a regression, noted: the fresh automation tab had no stored session (Farah's legacy `refresh:` key was untouched — nothing refreshed or signed out), so this pass re-signed in (OTP 3/5 this hour for +919999900201).
+- By: agent (autonomous)
