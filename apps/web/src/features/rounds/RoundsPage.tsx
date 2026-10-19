@@ -531,18 +531,27 @@ export function RoundsPage() {
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const dismissInvite = useCallback(() => setInviteMessage(null), []);
 
-  // FEAT-021: `/rounds?join=<id>` — arrived from a service card to book it. Read ONCE: the
-  // param is then dropped from the URL, so back and refresh do not reopen the sheet.
+  // FEAT-021: `/rounds?join=<id>` — arrived from a service card to book it. The id is
+  // kept (it drives the highlight and the open sheet) while the param is dropped from the
+  // URL, so back and refresh do not reopen the sheet. A new `join` while mounted is adopted.
   const [searchParams, setSearchParams] = useSearchParams();
-  const [requested] = useState(() => searchParams.get('join'));
+  const joinParam = searchParams.get('join');
+  const [requested, setRequested] = useState(joinParam);
+  if (joinParam && joinParam !== requested) setRequested(joinParam);
+  // Scroll ONCE per request: `data` gets a new reference on every poll, focus refetch and
+  // pledge, and re-scrolling then dragged a resident back from wherever they had moved to
+  // (V2 P1).
+  const handled = useRef<string | null>(null);
   useEffect(() => {
-    if (!requested || !data) return;
+    if (!requested || !data || handled.current === requested) return;
+    handled.current = requested;
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
     document.getElementById(`round-${requested}`)?.scrollIntoView?.({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
     setSearchParams(
       (params) => {
-        params.delete('join');
-        return params;
+        const next = new URLSearchParams(params);
+        next.delete('join');
+        return next;
       },
       { replace: true },
     );

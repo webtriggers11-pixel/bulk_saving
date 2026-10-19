@@ -78,12 +78,16 @@ function RoundStatus({ round, className }: { round: RoundDto | null | undefined;
       </p>
     );
   }
+  // Already pledged: say so — the tap changes a pledge rather than making one (V2 P3).
+  const lead =
+    round.myUnits > 0
+      ? `You’re in with ${formatUnits(round.myUnits, round.service)}`
+      : `Group buy open · ${formatUnits(round.unitsCount, round.service)} in`;
   return (
     <p className={cn('flex items-center gap-2 text-meta font-bold text-brand-ink', className)} data-testid="service-round">
       <span aria-hidden="true" className="animate-pulse-ring h-2 w-2 shrink-0 rounded-full bg-brand" />
       <span className="min-w-0 flex-1">
-        Group buy open · {formatRupees(round.currentPrice)} now · {formatUnits(round.unitsCount, round.service)} in ·{' '}
-        {formatCountdown(round.deadline)}
+        {lead} · {formatRupees(round.currentPrice)} now · {formatCountdown(round.deadline)}
       </span>
       <Icon name="forward" size={16} strokeWidth={2.2} className="nudge shrink-0" />
     </p>
@@ -294,7 +298,8 @@ export function ServicesPage() {
                   {round ? (
                     <Link
                       to={`/rounds?join=${encodeURIComponent(round.id)}`}
-                      aria-label={`Book ${service.name} — join the open group buy`}
+                      // No aria-label: the card IS the name — service, price, units and
+                      // countdown are what a screen-reader user decides on too (V2 P3).
                       className="block h-full rounded-card focus-visible:shadow-focus focus-visible:outline-none"
                       data-testid={`book-${service.slug}`}
                     >

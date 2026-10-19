@@ -1033,3 +1033,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Rounds: `?join=<id>` read once → scrolls the round into view (smooth unless reduced motion), pulses an accent ring twice (`round-requested`), opens its pledge sheet; the param is then removed (replace) so back/refresh do not reopen it; an id that is not open → a notice and the open list.
 - 7 tests (services-to-booking.test.tsx). V1: gate exit 0 — backend 449/449, web 558/558, 1723 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-021 — V2 round 1 FAIL → fixed
+- V2 (independent; gate exit 0, 449/558; 3 mutations killed): P1 the arrival scroll re-ran on every new `data` reference (each 20s poll that moved a count, focus refetch, pledge) and again when react-router changed `setSearchParams` identity — a resident who scrolled away was dragged back. Fix: scroll once per requested id (`useRef`), param removal on a copy of the params; a new `join` while mounted is adopted. P2 no test covered the scroll → tests: once across two refetches, `auto` under reduced motion, a second `join` honoured. **Mutation (guard removed) → 2 tests fail, verified.** P3s: no `aria-label` on the card link (its content names it — price, units, countdown); the catalog says "You’re in with N" for a round already pledged. P3 (BUG-013 "nothing sent" waits a fixed 300ms) accepted as noted.
+- Kept straight apostrophes out of ServicesPage.tsx (BUG-012).
+- V1: gate exit 0 — backend 449/449, web 562/562, 1723 class tokens.
+- By: agent (autonomous)

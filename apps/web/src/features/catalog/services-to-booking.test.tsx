@@ -1,7 +1,7 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoundDto, ServiceDto } from '@bulk/shared';
 import { ServicesPage } from './ServicesPage';
 import { RoundsPage } from '../rounds/RoundsPage';
@@ -54,9 +54,15 @@ function Where() {
   return <output data-testid="where">{location.pathname + location.search}</output>;
 }
 
+let go: (to: string) => void = () => {};
+function Nav() {
+  go = useNavigate();
+  return null;
+}
+
 function renderApp(url: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const view = render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[url]}>
         <Routes>
@@ -64,9 +70,11 @@ function renderApp(url: string) {
           <Route path="/rounds" element={<RoundsPage />} />
         </Routes>
         <Where />
+        <Nav />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { ...view, client };
 }
 
 beforeEach(() => {
@@ -79,8 +87,8 @@ describe('the catalog says whether a service can be booked now (AC1, AC2)', () =
     renderApp('/services');
     const link = await screen.findByTestId('book-ac-servicing');
     expect(link).toHaveAttribute('href', '/rounds?join=round_ac');
-    expect(link).toHaveAccessibleName('Book AC Servicing — join the open group buy');
-    expect(link).toHaveTextContent('Group buy open · ₹900 now · 7 AC units in');
+    // Named by its content: the service and the round facts, not a generic label.
+    expect(link).toHaveAccessibleName(/AC Servicing.*Group buy open · 7 AC units in · ₹900 now/);
   });
 
   it('a service with no open round says so, and is not a link', async () => {
@@ -126,5 +134,52 @@ describe('/rounds?join=<id> lands on the pledge sheet (AC3, AC4)', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('join-gone')).not.toBeInTheDocument();
     expect(document.querySelector('.round-requested')).toBeNull();
+  });
+});
+
+describe('the arrival scroll (V2 P1, P2)', () => {
+  const scroll = vi.fn();
+  beforeEach(() => {
+    scroll.mockReset();
+    Element.prototype.scrollIntoView = scroll;
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('scrolls to the requested round once — a later refetch does not drag the page back', async () => {
+    const { client } = renderApp('/rounds?join=round_ac');
+    await screen.findByRole('dialog', { name: 'Join AC Servicing' });
+    await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
+    // Two polls that move the count: new `data` references each time.
+    act(() => client.setQueryData(['rounds'], [{ ...acRound, unitsCount: 8 }]));
+    await waitFor(() => expect(screen.getByTestId('units-count-round_ac')).toHaveTextContent('8 AC units pledged'));
+    act(() => client.setQueryData(['rounds'], [{ ...acRound, unitsCount: 9 }]));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(scroll).toHaveBeenCalledTimes(1);
+  });
+
+  it('jumps instead of gliding under reduced motion', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
+    renderApp('/rounds?join=round_ac');
+    await waitFor(() => expect(scroll).toHaveBeenCalledWith({ block: 'center', behavior: 'auto' }));
+  });
+
+  it('a second request while on the page is honoured too', async () => {
+    const other = { ...acRound, id: 'round_two', service: { ...acRound.service, slug: 'ac-2', name: 'Deep Clean' } };
+    vi.mocked(fetchRounds).mockResolvedValue([acRound, other]);
+    renderApp('/rounds?join=round_ac');
+    await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
+    act(() => go('/rounds?join=round_two'));
+    await waitFor(() => expect(scroll).toHaveBeenCalledTimes(2));
+    expect(document.getElementById('round-round_two')?.className).toMatch(/\bround-requested\b/);
+  });
+});
+
+describe('a round you are already in (V2 P3)', () => {
+  it('the catalog says you are in, not that you can join', async () => {
+    vi.mocked(fetchRounds).mockResolvedValue([{ ...acRound, myUnits: 3 }]);
+    renderApp('/services');
+    expect(await screen.findByTestId('service-round')).toHaveTextContent('You’re in with 3 AC units · ₹900 now');
   });
 });
