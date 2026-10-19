@@ -151,7 +151,7 @@ describe('AdminRoundDetailPage', () => {
     await waitFor(() => expect(deliverRoundMock).toHaveBeenCalledWith('round_1'));
   });
 
-  it('cancel requires the inline confirm step', async () => {
+  it('cancel asks first (FEAT-024)', async () => {
     fetchAdminRoundMock.mockResolvedValue(roundDetail());
     cancelRoundMock.mockResolvedValue({} as never);
     renderPage();
@@ -167,6 +167,17 @@ describe('AdminRoundDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel round' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel round' }));
     await waitFor(() => expect(cancelRoundMock).toHaveBeenCalledWith('round_1'));
+  });
+
+  it('a refused cancel stays in the sheet with its reason (FEAT-024 AC1)', async () => {
+    fetchAdminRoundMock.mockResolvedValue(roundDetail());
+    cancelRoundMock.mockRejectedValue(new ApiError('ROUND_CLOSED', 'Already closed.', 409));
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel round' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel round' }));
+    await waitFor(() => expect(cancelRoundMock).toHaveBeenCalled());
+    expect(screen.getByRole('dialog', { name: 'Cancel this round?' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent(/Already closed/);
   });
 
   it('DELIVERED: no lifecycle actions, payment toggles still available', async () => {

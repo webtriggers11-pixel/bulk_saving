@@ -167,6 +167,10 @@ describe('RoundsPage', () => {
       fireEvent.click(screen.getByTestId('confirm-keep'));
       expect(screen.queryByRole('dialog', { name: 'Leave this round?' })).not.toBeInTheDocument();
       expect(screen.getByRole('dialog', { name: 'Your pledge' })).toBeInTheDocument();
+      // A mutation reaches the API after microtasks — give it the chance, THEN assert (V2 r2 P2).
+      await act(async () => {
+        await Promise.resolve();
+      });
       expect(leaveRoundMock).not.toHaveBeenCalled();
     });
 
@@ -181,10 +185,19 @@ describe('RoundsPage', () => {
       });
       try {
         fireEvent.click(screen.getByTestId('confirm-yes'));
-        expect(await screen.findByRole('button', { name: 'Waiting for a connection…' })).toBeDisabled();
+        // Both the confirm and the opener behind it say they are waiting; check the confirm.
+        await waitFor(() => expect(screen.getByTestId('confirm-yes')).toHaveTextContent('Waiting for a connection…'));
+        expect(screen.getByTestId('confirm-yes')).toBeDisabled();
         expect(leaveRoundMock).not.toHaveBeenCalled();
-        fireEvent.click(screen.getByTestId('confirm-keep'));
+        // Escape dismisses it too (the Sheet contract); the mutation stays queued.
+        fireEvent.keyDown(document, { key: 'Escape' });
         expect(screen.queryByRole('dialog', { name: 'Leave this round?' })).not.toBeInTheDocument();
+        expect(leaveRoundMock).not.toHaveBeenCalled();
+        // Back online, the queued leave completes once.
+        act(() => {
+          onlineManager.setOnline(true);
+        });
+        await waitFor(() => expect(leaveRoundMock).toHaveBeenCalledTimes(1));
       } finally {
         act(() => {
           onlineManager.setOnline(true);

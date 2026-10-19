@@ -256,7 +256,7 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
 
         {canCancel && (
           <Button variant="danger" disabled={busy} aria-haspopup="dialog" onClick={() => setConfirmingCancel(true)}>
-            Cancel round
+            {cancel.isPaused ? OFFLINE_WAITING_LABEL : cancel.isPending ? 'Cancelling…' : 'Cancel round'}
           </Button>
         )}
         {/* FEAT-024: the same confirmation the resident gets — one sheet, not a hand-rolled box. */}
@@ -270,7 +270,8 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
           keepLabel="Keep round"
           busy={cancel.isPending}
           error={cancel.isError ? errorMessage(cancel.error) : null}
-          onConfirm={() => cancel.mutate(undefined, { onSettled: () => setConfirmingCancel(false) })}
+          // onSuccess, not onSettled (V2 r2): a refused cancel keeps the sheet open with its error.
+          onConfirm={() => cancel.mutate(undefined, { onSuccess: () => setConfirmingCancel(false) })}
           data-testid="cancel-confirm"
         />
 

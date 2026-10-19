@@ -1248,3 +1248,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — TRIAGE — BUG-019 phone not normalised
 - Seen during FEAT-020 T7: typing the number without `+91` makes a second resident. Triaged P2 with the failing test named; not started (FEAT-024/025 verification first).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 — V2 round 2 FAIL → fixed (3×P2, 3×P3)
+- V2 round 2 (independent, worktree at c0849e6; gate exit 0, 464/621): the P1 is closed (proven offline with Keep/Escape/backdrop and reconnect), but: P2 the back-out tests asserted `not.toHaveBeenCalled` synchronously, before a mutation could reach the API (mutation "fire onConfirm on open" survived there) → an `await act(async () => await Promise.resolve())` before the assertion, and the mutation now fails them; P2 `SignOutButton` still blocked `onClose` while busy → unconditional, plus tests for the error path (AC7) and for closing mid-flight; P2 admin cancel used `onSettled`, so a refused cancel closed the sheet and the `error` prop was dead → `onSuccess`; the opener reads "Waiting for a connection…"/"Cancelling…" while the mutation is paused/pending; test for a refused cancel staying in the sheet with its reason.
+- P3s taken: `ConfirmSheet` JSDoc; the pledge sheet's Leave button says "Waiting for a connection…" while paused; the offline tests now also dismiss via Escape (leave) and the backdrop (remove) and assert the queued action completes once on reconnect.
+- Affected suites 92/92 alone; gate run queued; V2 round 3 to follow.
+- By: agent (autonomous) + code-reviewer subagent
+- V1 (round-2 fixes): gate exit 0 — backend 470/470, web 631/631 (+3), 3280 class tokens.

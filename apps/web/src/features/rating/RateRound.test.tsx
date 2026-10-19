@@ -219,6 +219,9 @@ describe('RateRound (on the My Requests card)', () => {
       expect(screen.getByRole('dialog', { name: 'Remove your rating?' })).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Keep my rating' }));
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      await act(async () => {
+        await Promise.resolve();
+      });
       expect(removeRatingMock).not.toHaveBeenCalled();
       expect(screen.getByTestId('my-rating')).toHaveTextContent('4 / 5');
     });
@@ -235,8 +238,12 @@ describe('RateRound (on the My Requests card)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
         expect(await screen.findByRole('button', { name: 'Waiting for a connection…' })).toBeDisabled();
         expect(removeRatingMock).not.toHaveBeenCalled();
-        fireEvent.click(screen.getByRole('button', { name: 'Keep my rating' }));
+        fireEvent.click(screen.getByTestId('sheet-backdrop'));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        act(() => {
+          onlineManager.setOnline(true);
+        });
+        await waitFor(() => expect(removeRatingMock).toHaveBeenCalledTimes(1));
       } finally {
         act(() => {
           onlineManager.setOnline(true);

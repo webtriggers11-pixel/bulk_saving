@@ -240,7 +240,7 @@ function PledgeSheet({
               onClick={() => setConfirmLeave(true)}
               data-testid={`leave-${round.id}`}
             >
-              {leave.isPending ? 'Leaving…' : 'Leave this round'}
+              {leave.isPaused ? OFFLINE_WAITING_LABEL : leave.isPending ? 'Leaving…' : 'Leave this round'}
             </Button>
           )}
           <ConfirmSheet

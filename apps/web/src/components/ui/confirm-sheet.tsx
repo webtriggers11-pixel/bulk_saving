@@ -29,8 +29,9 @@ interface ConfirmSheetProps {
  * the safe choice is the quiet one, the costly one is the loud one, and neither is hidden.
  *
  * The CALLER keeps the action and its pending/error state; this sheet only asks. While the
- * action runs the sheet stays open with its pending label, and it is the caller's `onClose`
- * — after success — that dismisses it.
+ * action runs the confirm button shows the pending label; the sheet is always closable
+ * (Keep, Escape, backdrop) and a running action simply carries on. The caller closes it on
+ * success and leaves it open — with `error` — on failure.
  */
 export function ConfirmSheet({
   open,
