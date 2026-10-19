@@ -149,6 +149,8 @@ describe('RoundsPage', () => {
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
       fireEvent.click(screen.getByTestId('leave-round_1'));
+      // FEAT-024: it asks first.
+      fireEvent.click(screen.getByTestId('confirm-yes'));
       await waitFor(() => expect(leaveRoundMock).toHaveBeenCalledWith('round_1'));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     });

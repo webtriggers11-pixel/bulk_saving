@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Sheet } from '../../components/ui/sheet';
+import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import type { MyRoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
@@ -56,6 +57,8 @@ export function RateRound({ round }: { round: MyRoundDto }) {
   const saved = round.myRating ?? (remove.isSuccess ? null : (rate.data ?? null));
   // FEAT-016: the form lives in a sheet; `editing` is whether that sheet is open.
   const [editing, setEditing] = useState(false);
+  // FEAT-024: removing asks first.
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [stars, setStars] = useState<StarValue | null>(saved ? asStarValue(saved.stars) : null);
   const [comment, setComment] = useState(saved?.comment ?? '');
 
@@ -128,24 +131,41 @@ export function RateRound({ round }: { round: MyRoundDto }) {
                 variant="ghost"
                 size="sm"
                 disabled={busy}
-                onClick={() =>
-                  // Clear the local draft too (V2 P1-4): without this the form
-                  // reopens with the stars and comment the resident just deleted
-                  // still filled in, one tap away from re-creating them.
-                  remove.mutate(round.id, {
-                    onSuccess: () => {
-                      setStars(null);
-                      setComment('');
-                      setEditing(false);
-                      rate.reset();
-                    },
-                  })
-                }
+                aria-haspopup="dialog"
+                onClick={() => setConfirmRemove(true)}
               >
                 {remove.isPending ? 'Removing…' : 'Remove'}
               </Button>
             </div>
           </div>
+          <ConfirmSheet
+            open={confirmRemove}
+            onClose={() => {
+              if (!remove.isPending) setConfirmRemove(false);
+            }}
+            title="Remove your rating?"
+            consequence="The vendor's average will no longer include it. You can rate this job again later."
+            confirmLabel="Yes, remove"
+            pendingLabel="Removing…"
+            keepLabel="Keep my rating"
+            busy={remove.isPending}
+            error={removeError ? ratingErrorMessage(removeError) : null}
+            onConfirm={() =>
+              // Clear the local draft too (V2 P1-4): without this the form
+              // reopens with the stars and comment the resident just deleted
+              // still filled in, one tap away from re-creating them.
+              remove.mutate(round.id, {
+                onSuccess: () => {
+                  setStars(null);
+                  setComment('');
+                  setEditing(false);
+                  setConfirmRemove(false);
+                  rate.reset();
+                },
+              })
+            }
+            data-testid="remove-rating-confirm"
+          />
           {saved.comment && (
             <p className="surface-inset mt-3 rounded-inset px-3.5 py-3 text-caption italic text-ink-muted">
               “{saved.comment}”
@@ -157,7 +177,9 @@ export function RateRound({ round }: { round: MyRoundDto }) {
               {OFFLINE_QUEUED_TEXT}
             </p>
           )}
-          {removeError && (
+          {/* FEAT-024: while the confirm sheet is open it carries this error; the card says it
+              once the sheet is closed, so a refused withdrawal is never silent. */}
+          {removeError && !confirmRemove && (
             <p role="alert" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
               <Icon name="alert" size={16} strokeWidth={2} />
               {ratingErrorMessage(removeError)}

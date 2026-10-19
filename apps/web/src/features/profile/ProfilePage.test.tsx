@@ -79,6 +79,8 @@ describe('ProfilePage', () => {
     client.setQueryData(['rounds'], [{ id: 'round-1' }]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+    // FEAT-024: it asks first.
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, log out' }));
 
     // FEAT-020: sign-out first releases this phone from push (bounded), then clears.
     await waitFor(() => expect(useAuthStore.getState().status).toBe('unauthenticated'));

@@ -217,6 +217,8 @@ describe('RateRound (on the My Requests card)', () => {
       renderPage();
 
       fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+      // FEAT-024: it asks first.
+      fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
 
       await waitFor(() => expect(removeRatingMock).toHaveBeenCalledWith('round_1'));
     });
@@ -227,6 +229,8 @@ describe('RateRound (on the My Requests card)', () => {
       renderPage();
 
       fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+      // FEAT-024: it asks first.
+      fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
 
       expect(await screen.findByRole('alert')).toBeInTheDocument();
       expect(screen.getByTestId('my-rating')).toHaveTextContent('4 / 5');
@@ -305,6 +309,7 @@ describe('RateRound (on the My Requests card)', () => {
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
 
     // Back to the unrated prompt, and opening it shows nothing carried over.
     await openRating();

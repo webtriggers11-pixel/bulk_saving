@@ -1211,3 +1211,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — HARNESS — two gates must not run at once
 - FEAT-024's second V1 run failed `service-asks.integration.spec` ("You asked" SMS never arrived) while the FEAT-023 V3 double run was going in the review worktree. Both test apps share Redis and the `bull-test` queue, so the other process's worker consumed this process's outbox job — BUG-013's class, by construction, not a product bug. The suite passes 6/6 alone. Rule from here: one gate at a time per machine; the worktree is for the REVIEWER's gate while the implementer edits, not for concurrent gates.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 — T1–T3 built: confirm before destructive actions
+- `ConfirmSheet` (on `Sheet`: title = the question, one consequence line, danger "Yes, …", ghost "Keep …"; the caller keeps the action and its pending/error state). `SignOutButton` (icon on Home, wide on Profile) asks "Log out of this phone?" — since BUG-017 that ends the lifetime session. Pledge sheet: "Leave this round" → "Leave this round? Your pledge of N units is withdrawn…" stacked on the pledge sheet. Rating: "Remove" → "Remove your rating?"; the card's own error line yields to the sheet's while it is open. Admin: the hand-rolled cancel box becomes the same sheet (`cancel-confirm` id kept, "Keep round"). Not confirmed, deliberately: withdraw an ask, deactivate, pledge count, notifications off.
+- Guards on the way: `class-conflicts` coverage wanted the new primitive named; an unused helper after the leave rewrite (lint). DESIGN-SYSTEM.md primitives table gains the row.
+- V1: gate exit 0 — backend 464/464, web 617/617 (+9), 3277 class tokens. (An earlier run failed `service-asks` only because a second gate was running in the review worktree — see the harness note above.)
+- By: agent (autonomous)

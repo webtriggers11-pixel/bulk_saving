@@ -13,6 +13,7 @@ import { PageHeader } from '../../components/ui/page-header';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Sheet } from '../../components/ui/sheet';
+import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import { Sparkles } from '../../components/ui/sparkles';
 import { Notice } from '../../components/ui/notice';
 import { formatClock, formatCountdown } from './formatCountdown';
@@ -183,6 +184,8 @@ function PledgeSheet({
 }) {
   const joined = round.myUnits > 0;
   const [draft, setDraft] = useState<number>(joined ? round.myUnits : MIN_UNITS);
+  // FEAT-024: leaving asks first — a pledge is a place in the price ladder for everyone.
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [seenOpen, setSeenOpen] = useState(open);
   // Each opening starts from what is pledged now, not from an abandoned draft.
   if (open !== seenOpen) {
@@ -195,7 +198,6 @@ function PledgeSheet({
   const paused = anyPaused(join, update, leave);
   const plural = unitLabelPluralFor(round.service);
   const units = clampUnits(draft);
-  const done = { onSuccess: onClose };
   const saved = {
     onSuccess: (round: RoundDto) => {
       onClose();
@@ -233,12 +235,28 @@ function PledgeSheet({
               variant="danger"
               className="w-full"
               disabled={busy}
-              onClick={() => leave.mutate(round.id, done)}
+              aria-haspopup="dialog"
+              onClick={() => setConfirmLeave(true)}
               data-testid={`leave-${round.id}`}
             >
               {leave.isPending ? 'Leaving…' : 'Leave this round'}
             </Button>
           )}
+          <ConfirmSheet
+            open={confirmLeave}
+            onClose={() => {
+              if (!leave.isPending) setConfirmLeave(false);
+            }}
+            title="Leave this round?"
+            consequence={`Your pledge of ${formatUnits(round.myUnits, round.service)} is withdrawn, and the price for everyone may change.`}
+            confirmLabel="Yes, leave"
+            pendingLabel="Leaving…"
+            keepLabel="Keep my pledge"
+            busy={leave.isPending}
+            error={leave.isError ? 'Could not leave just now. Please try again.' : null}
+            onConfirm={() => leave.mutate(round.id, { onSuccess: () => { setConfirmLeave(false); onClose(); } })}
+            data-testid={`leave-confirm-${round.id}`}
+          />
         </div>
       }
     >

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useAuthStore } from '../auth/auth.store';
-import { useSignOut } from '../auth/useSignOut';
+import { SignOutButton } from '../auth/SignOutButton';
 import { isStandalone, useInstallPrompt } from '../shell/useInstallPrompt';
 import { useOnlineStatus } from '../../lib/useOnlineStatus';
 import { Button } from '../../components/ui/button';
@@ -128,7 +128,6 @@ function SettingsRow({
 export function ProfilePage() {
   const resident = useAuthStore((state) => state.resident);
   const society = useAuthStore((state) => state.society);
-  const signOut = useSignOut();
   const { canInstall, promptInstall } = useInstallPrompt();
   const online = useOnlineStatus();
   // Already running from the home screen: there is nothing to install, and the
@@ -228,10 +227,7 @@ export function ProfilePage() {
         {/* FEAT-020: web push for this phone. */}
         <NotificationsRow />
 
-        <Button variant="secondary" className="col-span-2 w-full" onClick={() => void signOut()}>
-          <Icon name="logout" size={18} strokeWidth={2} />
-          Log out
-        </Button>
+        <SignOutButton variant="wide" />
       </div>
     </main>
   );

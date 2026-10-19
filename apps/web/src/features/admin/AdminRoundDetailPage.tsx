@@ -4,6 +4,7 @@ import { useIsMutating } from '@tanstack/react-query';
 import type {
   RoundServiceSummary, AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import { Fact } from '../../components/ui/fact';
 import { Field } from '../../components/ui/field';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
@@ -253,38 +254,27 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
           </Button>
         )}
 
-        {canCancel &&
-          (confirmingCancel ? (
-            <div
-              className="flex flex-col gap-3 rounded-inset border border-paper/55 bg-danger-ink/10 p-4 shadow-hairline"
-              data-testid="cancel-confirm"
-            >
-              <p className="text-meta font-bold text-danger-ink">
-                Cancel this round? Residents' pledges will no longer be fulfilled. This cannot be
-                undone.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="danger"
-                  disabled={busy}
-                  onClick={() => cancel.mutate(undefined, { onSettled: () => setConfirmingCancel(false) })}
-                >
-                  {cancel.isPaused ? OFFLINE_WAITING_LABEL : cancel.isPending ? 'Cancelling…' : 'Yes, cancel round'}
-                </Button>
-                <Button variant="ghost" disabled={busy} onClick={() => setConfirmingCancel(false)}>
-                  Keep round
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button
-              variant="danger"
-              disabled={busy}
-              onClick={() => setConfirmingCancel(true)}
-            >
-              Cancel round
-            </Button>
-          ))}
+        {canCancel && (
+          <Button variant="danger" disabled={busy} aria-haspopup="dialog" onClick={() => setConfirmingCancel(true)}>
+            Cancel round
+          </Button>
+        )}
+        {/* FEAT-024: the same confirmation the resident gets — one sheet, not a hand-rolled box. */}
+        <ConfirmSheet
+          open={confirmingCancel}
+          onClose={() => {
+            if (!cancel.isPending) setConfirmingCancel(false);
+          }}
+          title="Cancel this round?"
+          consequence="Residents' pledges will no longer be fulfilled. This cannot be undone."
+          confirmLabel="Yes, cancel round"
+          pendingLabel={cancel.isPaused ? OFFLINE_WAITING_LABEL : 'Cancelling…'}
+          keepLabel="Keep round"
+          busy={cancel.isPending}
+          error={cancel.isError ? errorMessage(cancel.error) : null}
+          onConfirm={() => cancel.mutate(undefined, { onSettled: () => setConfirmingCancel(false) })}
+          data-testid="cancel-confirm"
+        />
 
         {[close, deliver, cancel].map((mutation, index) =>
           mutation.isError ? (

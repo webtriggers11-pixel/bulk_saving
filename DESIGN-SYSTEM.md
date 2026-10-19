@@ -211,6 +211,7 @@ rather than by the test (V2 P1-2).
 | `AmbientGround` | the fixed, inert ground: three drifting washes plus grain. |
 | `Sheet` | the "do one thing" surface: bottom sheet on a phone, centred panel on `md`. Dialog semantics, focus trap (tabbable only) and restore (`returnFocus` when the opener goes away), Escape/backdrop/drag to dismiss. **Always closable** — keep the draft in the caller, never block `onClose` on a pending save. |
 | `SchemeToggle` | the sun/moon quick switch; reveals from its own centre. |
+| `ConfirmSheet` | the question before a destructive action (FEAT-024): title, one line of consequence, a danger "Yes, …" and a ghost "Keep …". Built on `Sheet`, so it stacks and traps focus. The caller keeps the action and its pending/error state. |
 | `PageHeader collapsible` | the large title shrinks into a blurred compact bar once scrolled past (title only — the action stays where it was). |
 
 **Rounds screen pieces (FEAT-018, ADR-0030)** — feature components, not primitives:
