@@ -1207,3 +1207,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 (in the detached review worktree at c9b57fc): two back-to-back gate runs, both exit 0 and identical — backend 464/464, web 608/608, 3284 class tokens. No flakes.
 - FEAT-023 → done. Home leads with Group buys.
 - By: agent (autonomous)
+
+## 2026-10-19 — HARNESS — two gates must not run at once
+- FEAT-024's second V1 run failed `service-asks.integration.spec` ("You asked" SMS never arrived) while the FEAT-023 V3 double run was going in the review worktree. Both test apps share Redis and the `bull-test` queue, so the other process's worker consumed this process's outbox job — BUG-013's class, by construction, not a product bug. The suite passes 6/6 alone. Rule from here: one gate at a time per machine; the worktree is for the REVIEWER's gate while the implementer edits, not for concurrent gates.
+- By: agent (autonomous)
