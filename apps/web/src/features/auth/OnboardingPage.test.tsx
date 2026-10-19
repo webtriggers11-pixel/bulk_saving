@@ -127,6 +127,35 @@ describe('OnboardingPage', () => {
     expect(JSON.parse(String(verify?.[1]?.body))).toMatchObject({ phone: '+919999900201' });
   });
 
+  it('an implausible number keeps Send code off and says what a number must look like (BUG-019)', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '022 2345 6789' } });
+    expect(screen.getByRole('button', { name: 'Send code' })).toBeDisabled();
+    expect(screen.getByTestId('phone-hint')).toHaveTextContent(/10-digit mobile/);
+    expect(screen.getByLabelText('Phone number')).toHaveAttribute('aria-describedby', 'phone-hint');
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '98765 43210' } });
+    expect(screen.queryByTestId('phone-hint')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send code' })).toBeEnabled();
+  });
+
+  it('a number the server refuses gets the phone message, not a generic apology (BUG-019)', async () => {
+    const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) =>
+      String(args[0]).endsWith('/auth/otp/request')
+        ? Promise.resolve(jsonResponse({ ok: false, status: 400, body: { success: false, error: { code: 'VALIDATION_ERROR', message: 'phone must be a valid phone number.' } } }))
+        : Promise.reject(new Error('unexpected')),
+    );
+    vi.stubGlobal('fetch', mock);
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+1 415 555 2671' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    expect(await screen.findByText(/doesn't look like a phone number/)).toBeInTheDocument();
+  });
+
   it('renders a friendly message when verify returns OTP_INVALID', async () => {
     const mock = installFetch({
       ok: false,

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestAdminOtp, verifyAdminOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { messageFromError } from './error-messages';
+import { messageFromError, PHONE_HINT } from './error-messages';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -28,6 +28,8 @@ export function AdminLoginPage() {
 
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
+  // Typed something, but not yet a number the server will accept.
+  const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
   const [code, setCode] = useState('');
 
   const requestMutation = useMutation({
@@ -124,7 +126,14 @@ export function AdminLoginPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="num"
+              aria-describedby={implausible ? 'admin-phone-hint' : undefined}
             />
+            {/* BUG-019: a disabled button with no words is a dead end — say what a number must look like. */}
+            {implausible && (
+              <p id="admin-phone-hint" className="mt-2 text-caption text-ink-muted" data-testid="admin-phone-hint">
+                {PHONE_HINT}
+              </p>
+            )}
             {queuedOffline && (
               <Notice tone="warn" data-testid="admin-login-offline">
                 {OFFLINE_QUEUED_TEXT}

@@ -1,5 +1,8 @@
 import { ApiError } from '../../lib/api';
 
+/** What a number must look like (BUG-019) — shown under the field and for the server's refusal. */
+export const PHONE_HINT = "Use your 10-digit mobile number, or +country code and number.";
+
 /** Map a backend auth error code to a friendly, resident-facing message. */
 export function authErrorMessage(code: string): string {
   switch (code) {
@@ -18,7 +21,7 @@ export function authErrorMessage(code: string): string {
     // BUG-019: the server refused the number itself (either the DTO shape or the normaliser).
     case 'VALIDATION_ERROR':
     case 'BAD_REQUEST':
-      return "That doesn't look like a phone number. Use your 10-digit mobile number, or +country code and number.";
+      return `That doesn't look like a phone number. ${PHONE_HINT}`;
     case 'UNAUTHORIZED':
     case 'TOKEN_REVOKED':
       return 'Your session has expired. Please sign in again.';

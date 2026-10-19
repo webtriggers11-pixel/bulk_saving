@@ -686,8 +686,10 @@ export const normalisePhone = (raw: string): string | null => {
     else if (digits.length === 11 && digits.startsWith('0')) digits = `91${digits.slice(1)}`;
     else if (!(digits.length === 12 && digits.startsWith('91'))) return null;
   }
-  // No country code starts with 0; an Indian number keeps no trunk 0 after 91 and starts 6–9.
+  // No country code starts with 0. After 91 a trunk 0 may be typed ("+91 (0) 98765 43210",
+  // the business-card form) — it is not part of the number.
   if (digits.startsWith('0')) return null;
+  if (/^910[6-9]\d{9}$/.test(digits)) digits = `91${digits.slice(3)}`;
   if (digits.startsWith('91') && !/^91[6-9]\d{9}$/.test(digits)) return null;
   if (digits.length < 7 || digits.length > 15) return null;
   return `+${digits}`;

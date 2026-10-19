@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { messageFromError } from './error-messages';
+import { messageFromError, PHONE_HINT } from './error-messages';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -24,6 +24,8 @@ export function OnboardingPage() {
   const [step, setStep] = useState<Step>('invite');
   const [inviteCode, setInviteCode] = useState('');
   const [phone, setPhone] = useState('');
+  // Typed something, but not yet a number the server will accept.
+  const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
 
@@ -155,7 +157,14 @@ export function OnboardingPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="num"
+              aria-describedby={implausible ? 'phone-hint' : undefined}
             />
+            {/* BUG-019: a disabled button with no words is a dead end — say what a number must look like. */}
+            {implausible && (
+              <p id="phone-hint" className="mt-2 text-caption text-ink-muted" data-testid="phone-hint">
+                {PHONE_HINT}
+              </p>
+            )}
             {queuedOffline && (
               <Notice tone="warn" data-testid="onboarding-offline">
                 {OFFLINE_QUEUED_TEXT}

@@ -137,6 +137,16 @@ describe('AdminLoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
     await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
     expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
+    // The code step shows the canonical number back.
+    expect(screen.getByText('+919999900001')).toBeInTheDocument();
+  });
+
+  it('an implausible number keeps Send code off, with the hint (BUG-019)', () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderAdminLogin();
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '12345' } });
+    expect(screen.getByRole('button', { name: 'Send code' })).toBeDisabled();
+    expect(screen.getByTestId('admin-phone-hint')).toBeInTheDocument();
   });
 
   it('explains NOT_AN_ADMIN in words a resident can act on, and signs nobody in', async () => {
