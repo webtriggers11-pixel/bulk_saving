@@ -1217,3 +1217,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Guards on the way: `class-conflicts` coverage wanted the new primitive named; an unused helper after the leave rewrite (lint). DESIGN-SYSTEM.md primitives table gains the row.
 - V1: gate exit 0 — backend 464/464, web 617/617 (+9), 3277 class tokens. (An earlier run failed `service-asks` only because a second gate was running in the review worktree — see the harness note above.)
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 — T4 browser pass
+- Preview :5175. Profile → Log out → "Log out of this phone? You'll need a new code by SMS to sign in again. Your pledges and ratings stay." / Yes, log out / Stay signed in → stayed signed in. Rounds → Change → Leave this round → "Leave this round? Your pledge of 1 purifier is withdrawn, and the price for everyone may change." stacked over the pledge sheet; Escape closed only the confirmation (focus back on "Leave this round"), a second Escape closed the pledge sheet; afterwards 0 dialogs, body overflow released, focus on "Change". V2 handed to the code-reviewer subagent (worktree).
+- By: agent (autonomous)
