@@ -1013,3 +1013,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P2 claim could stick if reading devices threw → findMany moved inside the try; ADR-0032 §11 now states the guarantee is AT MOST ONCE (a crash between claim and queue drops that push; SMS still goes) and that a forced sign-out drops push on the device. P3: hostnames must be plain DNS characters (`https://;x.push.apple.com/` parsed differently by web-push's parser); cap timer cleared.
 - V1: gate exit 0 — backend 449/449, web 551/551, 1703 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-020 — V2 round 3 PASS; V3 — open only for the real-device check
+- V2 round 3 (independent; gate exit 0, 449/551): PASS — M-B, M-C and a new M-D (DNS-only hostname check) all killed; nothing open.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 449/449, web 551/551, 1703 class tokens. No flakes.
+- **Not closed:** T7 (a real push on a real browser). The production preview on :5175 has the service worker with `push-sw.js` active and the Profile switch live; granting notification permission is a browser prompt the owner must accept. FEAT-020 stays in-progress until then.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)

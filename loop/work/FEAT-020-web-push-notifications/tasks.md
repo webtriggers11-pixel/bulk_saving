@@ -8,4 +8,6 @@
 - [x] T6 Opt-in UI (Profile + contextual prompt) + tests
 - [ ] T7 Local end-to-end in Chrome
 - [x] T8a V2 round 1 FAIL → 1×P1 + 3×P2 + 5×P3 fixed
-- [ ] T8b V2 round 2 · T9 V3 · T7 local end-to-end (owner grants notification permission)
+- [x] T8b V2 round 2 FAIL (vacuous tests) → fixed; round 3 PASS
+- [x] T9 V3 two identical runs (449/551, 1703 tokens)
+- [ ] T7 Local end-to-end on a real browser — needs the owner to grant notification permission

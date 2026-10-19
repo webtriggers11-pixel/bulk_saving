@@ -3,7 +3,26 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-18)
+## Latest session (2026-10-19)
+
+- **Closed:** FEAT-017 (Vercel "Mono" look, ADR-0029), FEAT-018 (rounds: price ladder, summary, invite,
+  confetti, live last-day clock, ADR-0030), FEAT-019 (one Vercel look + seven accent pairs + spotlight /
+  border beam / sparkles / shimmer / press sparks, ADR-0031). Each: V2 to PASS, V3 two identical runs.
+- **Open:** FEAT-020 web push (ADR-0032) — built, V2 round 3 PASS, V3 green (449/551); waiting only on a
+  real-device check: owner turns on Profile → Notifications at :5175 and allows the prompt, then trigger a
+  round event and watch it arrive. Two additive migrations applied to the dev DB
+  (`PushSubscription`, `Notification.pushQueuedAt`); dependency `web-push`; dev VAPID keys in the
+  gitignored apps/backend/.env; production REQUIRES VAPID_* (`.env.prod.example`).
+- **Triaged:** BUG-012 — `scripts/check-css-classes.mjs` pairs quotes across a whole file, so an
+  apostrophe in a comment hides (or reveals) class lists; it bit three times this session (token count
+  moved 1615→1570, 1642→1623, 1703→2008 with no class change). Until fixed: no apostrophes in comments
+  in .tsx/.ts files.
+- **Machine:** global pnpm shim broken → a scratchpad shim `exec corepack pnpm "$@"` on PATH + Node 24.22.0
+  for verify.sh. Port 5173 is ANOTHER project; Bulk Saving web is on 5174 (owner's dev server — needs a
+  restart to pick up the Tailwind token config) and 5175 (agent's production preview). Admin login:
+  `+919999900001` at /admin/login (full +91), code from `redis-cli -p 6399 get dev:last-otp:+919999900001`.
+
+## Session before (2026-10-18)
 
 - **Closed:** FEAT-016 — premium phone-app feel (ADR-0028). Night palette per colour
   theme; Light / Dark / Match phone + palette in a Profile → Appearance sheet; a
@@ -16,7 +35,7 @@
 - **Dev note:** a second backend beside the owner's :3000 must use its own
   `BULLMQ_PREFIX`, or the admin's queued sign-in code prints in the other terminal.
 
-## Session before (2026-10-17)
+## Earlier (2026-10-17)
 
 - **Closed today:** CHORE-018 (demo seed), FEAT-014 (admin Services, closed categories,
   staples pilot), CHORE-006, FEAT-015 (server-side filters + filtering UI), BUG-011 (error
