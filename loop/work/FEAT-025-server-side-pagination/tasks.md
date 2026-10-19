@@ -5,4 +5,5 @@
 - [x] T3 Catalog + admin services + admin vendors + admin rounds paged + tests
 - [x] T4 Web: usePagedQuery + ShowMore + consumers + tests; e2e script
 - [x] T5 Browser pass (preview :5175 + live API walk)
-- [ ] T6 V2 · T7 V3; close
+- [ ] T6 V2 (round 1 FAIL → fixed; round 2 pending)
+- [ ] T7 V3; close
