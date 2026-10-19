@@ -12,6 +12,7 @@ import type {
   CreateRoundBody,
   CreateServiceBody,
   CreateVendorBody,
+  Page,
   RoundDto,
   ServiceOfferingDto,
   SetPaymentBody,
@@ -40,8 +41,8 @@ export function fetchSocieties(): Promise<AdminSocietyDto[]> {
 }
 
 /** GET /admin/services — master services, including inactive ones, filtered on the server (FEAT-015). */
-export function fetchServices(query: AdminServicesQuery = {}): Promise<AdminServiceDto[]> {
-  return apiRequest<AdminServiceDto[]>(`/admin/services${toQueryString(query)}`);
+export function fetchServices(query: AdminServicesQuery = {}): Promise<Page<AdminServiceDto>> {
+  return apiRequest<Page<AdminServiceDto>>(`/admin/services${toQueryString(query)}`);
 }
 
 /** POST /admin/services — create a master service (409 SERVICE_SLUG_TAKEN for a duplicate slug). */
@@ -78,8 +79,8 @@ export function buildRoundsQueryString(query: AdminRoundsQuery): string {
 }
 
 /** GET /admin/rounds — round summaries across societies, newest first. */
-export function fetchAdminRounds(query: AdminRoundsQuery = {}): Promise<AdminRoundSummaryDto[]> {
-  return apiRequest<AdminRoundSummaryDto[]>(`/admin/rounds${buildRoundsQueryString(query)}`);
+export function fetchAdminRounds(query: AdminRoundsQuery = {}): Promise<Page<AdminRoundSummaryDto>> {
+  return apiRequest<Page<AdminRoundSummaryDto>>(`/admin/rounds${buildRoundsQueryString(query)}`);
 }
 
 /** GET /admin/rounds/:id — one round plus its participants. */
@@ -137,8 +138,8 @@ export function setPayment(
 }
 
 /** GET /admin/vendors — the global vendor list, filtered on the server (FEAT-015). */
-export function fetchVendors(query: AdminVendorsQuery = {}): Promise<VendorDto[]> {
-  return apiRequest<VendorDto[]>(`/admin/vendors${toQueryString(query)}`);
+export function fetchVendors(query: AdminVendorsQuery = {}): Promise<Page<VendorDto>> {
+  return apiRequest<Page<VendorDto>>(`/admin/vendors${toQueryString(query)}`);
 }
 
 /** POST /admin/vendors — add a vendor. */

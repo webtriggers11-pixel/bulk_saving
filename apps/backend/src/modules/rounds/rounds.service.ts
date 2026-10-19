@@ -5,9 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType, type Prisma } from '@prisma/client';
-import type { AdminRoundParticipantDto, MyRoundDto, RoundDto } from '@bulk/shared';
+import type { AdminRoundParticipantDto, MyRoundDto, Page, PageQuery, RoundDto } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
+import { pageArgs, pageOf } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
 import { VendorsService } from '../vendors/vendors.service';
 import { toRatingDto } from './ratings.mapper';
@@ -106,14 +107,23 @@ export class RoundsService {
     };
   }
 
-  /** OPEN rounds in the caller's society, each shaped with pricing + the caller's pledge. */
-  async listForSociety(societyId: string, residentId: string): Promise<RoundDto[]> {
-    const rounds = await this.prisma.round.findMany({
-      where: { societyId, status: 'OPEN' },
-      include: this.viewInclude(residentId),
-      orderBy: { createdAt: 'desc' },
-    });
-    return (rounds as RoundWithView[]).map(buildRoundDto);
+  /**
+   * OPEN rounds in the caller's society, each shaped with pricing + the caller's pledge —
+   * one page of them (FEAT-025, ADR-0035): newest first, `id` as the tiebreaker so the
+   * order is total and a cursor means one thing.
+   */
+  async listForSociety(societyId: string, residentId: string, page: PageQuery = {}): Promise<Page<RoundDto>> {
+    const where = { societyId, status: 'OPEN' as const };
+    const [rounds, total] = await Promise.all([
+      this.prisma.round.findMany({
+        where,
+        include: this.viewInclude(residentId),
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs(page),
+      }),
+      this.prisma.round.count({ where }),
+    ]);
+    return pageOf(rounds as RoundWithView[], page, total, buildRoundDto);
   }
 
   /**
@@ -122,13 +132,18 @@ export class RoundsService {
    * resident can see a delivered round, and therefore the only way they can reach
    * the rating flow. Tenant-scoped like every resident read (ADR-0003).
    */
-  async listMine(societyId: string, residentId: string): Promise<MyRoundDto[]> {
-    const rounds = await this.prisma.round.findMany({
-      where: { societyId, participants: { some: { residentId } } },
-      include: { ...this.viewInclude(residentId), ratings: { where: { residentId } } },
-      orderBy: { createdAt: 'desc' },
-    });
-    return rounds.map((round) => ({
+  async listMine(societyId: string, residentId: string, page: PageQuery = {}): Promise<Page<MyRoundDto>> {
+    const where = { societyId, participants: { some: { residentId } } };
+    const [rounds, total] = await Promise.all([
+      this.prisma.round.findMany({
+        where,
+        include: { ...this.viewInclude(residentId), ratings: { where: { residentId } } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs(page),
+      }),
+      this.prisma.round.count({ where }),
+    ]);
+    return pageOf(rounds, page, total, (round) => ({
       ...buildRoundDto(round as RoundWithView),
       myRating: round.ratings[0] ? toRatingDto(round.ratings[0]) : null,
     }));

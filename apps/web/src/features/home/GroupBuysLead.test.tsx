@@ -7,6 +7,7 @@ import type { RoundDto } from '@bulk/shared';
 import { fetchRounds } from '../rounds/rounds.api';
 import { GroupBuysLead } from './GroupBuysLead';
 import { signIn, signOutAfterTest } from '../../test/session';
+import { page, pagedData } from '../../test/page';
 
 vi.mock('../rounds/rounds.api', () => ({
   fetchRounds: vi.fn(),
@@ -43,7 +44,7 @@ function round(id: string, name: string, daysLeft: number, myUnits = 0, unitLabe
 
 function renderLead(seed?: RoundDto[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  if (seed) client.setQueryData(['rounds'], seed);
+  if (seed) client.setQueryData(['rounds'], pagedData(seed));
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
@@ -65,12 +66,12 @@ describe('GroupBuysLead (FEAT-023)', () => {
   });
 
   it('leads with the live counts and up to three rounds, soonest-closing first', async () => {
-    fetchRoundsMock.mockResolvedValue([
+    fetchRoundsMock.mockResolvedValue(page([
       round('paint', 'Painting', 9),
       round('tank', 'Water Tank Cleaning', 1.5, 2, 'tank'),
       round('pest', 'Pest Control', 3, 1),
       round('ac', 'AC Servicing', 5),
-    ]);
+    ]));
     renderLead();
 
     expect(await screen.findByText('4 open in your society')).toBeInTheDocument();
@@ -93,7 +94,7 @@ describe('GroupBuysLead (FEAT-023)', () => {
   });
 
   it('a row deep-links into that round’s pledge sheet (FEAT-021)', async () => {
-    fetchRoundsMock.mockResolvedValue([round('pest', 'Pest Control', 3)]);
+    fetchRoundsMock.mockResolvedValue(page([round('pest', 'Pest Control', 3)]));
     renderLead();
     fireEvent.click(await screen.findByTestId('group-buys-row-pest'));
     expect(navigate).toHaveBeenCalledWith('/rounds?join=pest');
@@ -103,7 +104,7 @@ describe('GroupBuysLead (FEAT-023)', () => {
   });
 
   it('says so plainly when nothing is open, and points at Services', async () => {
-    fetchRoundsMock.mockResolvedValue([]);
+    fetchRoundsMock.mockResolvedValue(page([]));
     renderLead();
     expect(await screen.findByText('Nothing open right now')).toBeInTheDocument();
     expect(screen.queryByTestId('group-buys-rows')).not.toBeInTheDocument();
@@ -129,7 +130,7 @@ describe('GroupBuysLead (FEAT-023)', () => {
   it('offline on a cold start reads as "could not check", not as good news (V2 P3)', async () => {
     onlineManager.setOnline(false);
     try {
-      fetchRoundsMock.mockResolvedValue([]);
+      fetchRoundsMock.mockResolvedValue(page([]));
       renderLead();
       expect(await screen.findByText(/Could not check just now/)).toBeInTheDocument();
     } finally {

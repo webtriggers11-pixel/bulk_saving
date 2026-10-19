@@ -502,7 +502,7 @@ export interface AdminRoundDetailDto extends AdminRoundSummaryDto {
 }
 
 /** `GET /admin/rounds` query filters (all optional). `q` matches service, society or vendor name. */
-export interface AdminRoundsQuery {
+export interface AdminRoundsQuery extends PageQuery {
   status?: RoundStatus;
   societyId?: string;
   q?: string;
@@ -514,6 +514,29 @@ export interface AdminRoundsQuery {
  * case-insensitive substring search, trimmed; a blank `q` means "no search".
  * ------------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------------
+ * Pagination (FEAT-025, ADR-0035). Every list endpoint takes `limit` + `cursor` and
+ * answers with a Page. Keyset: `cursor` is the id of the last item the client holds.
+ * ------------------------------------------------------------------------- */
+
+export const PAGE_LIMIT_DEFAULT = 20;
+export const PAGE_LIMIT_MAX = 50;
+
+export interface PageQuery {
+  /** 1–50; default 20. */
+  limit?: number;
+  /** The last item's id from the previous page; omit for the first page. */
+  cursor?: string;
+}
+
+export interface Page<T> {
+  items: T[];
+  /** Pass as `cursor` for the next page; null on the last page. */
+  nextCursor: string | null;
+  /** How many match in all (the filtered, tenant-scoped set). */
+  total: number;
+}
+
 /** Longest search term any list accepts. */
 export const MAX_SEARCH = 80;
 
@@ -522,7 +545,7 @@ export type ActiveFilter = 'active' | 'inactive';
 export const ACTIVE_FILTERS: readonly ActiveFilter[] = ['active', 'inactive'];
 
 /** `GET /admin/services` query. `offeredIn` = a society id: only services enabled there. */
-export interface AdminServicesQuery {
+export interface AdminServicesQuery extends PageQuery {
   q?: string;
   category?: string;
   status?: ActiveFilter;
@@ -530,14 +553,14 @@ export interface AdminServicesQuery {
 }
 
 /** `GET /admin/vendors` query. `q` matches name, phone or notes. */
-export interface AdminVendorsQuery {
+export interface AdminVendorsQuery extends PageQuery {
   q?: string;
   category?: string;
   status?: ActiveFilter;
 }
 
 /** `GET /catalog` query — always within the caller's own society. */
-export interface CatalogQuery {
+export interface CatalogQuery extends PageQuery {
   q?: string;
   category?: string;
 }

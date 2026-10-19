@@ -1,5 +1,4 @@
 import {
-  keepPreviousData,
   useMutation,
   useMutationState,
   useQuery,
@@ -48,6 +47,7 @@ import {
   updateVendor,
   upsertOffering,
 } from './admin.api';
+import { fetchAllPages, usePagedQuery, type Paged } from '../../lib/pages';
 import { catalogQueryKey } from '../catalog/useCatalog';
 import { roundsQueryKey } from '../rounds/useRounds';
 
@@ -89,13 +89,13 @@ export function useAdminDashboard(): UseQueryResult<AdminDashboardDto> {
 }
 
 /** GET /admin/rounds with optional status / society filters (part of the key). */
-export function useAdminRounds(filters: AdminRoundsQuery): UseQueryResult<AdminRoundSummaryDto[]> {
-  return useQuery({
+export function useAdminRounds(filters: AdminRoundsQuery): Paged<AdminRoundSummaryDto> {
+  return usePagedQuery({
     queryKey: adminKeys.rounds(filters),
-    queryFn: () => fetchAdminRounds(filters),
+    fetchPage: (page) => fetchAdminRounds({ ...filters, ...page }),
     // FEAT-015: hold the last result on screen while a new filter loads, rather than
     // flashing to a skeleton between keystrokes.
-    placeholderData: keepPreviousData,
+    placeholderData: 'keepPrevious',
   });
 }
 
@@ -114,20 +114,33 @@ export function useAdminSocieties(): UseQueryResult<AdminSocietyDto[]> {
 }
 
 /** GET /admin/services, filtered on the server (FEAT-015). No filters = every service. */
-export function useAdminServices(filters: AdminServicesQuery = {}): UseQueryResult<AdminServiceDto[]> {
-  return useQuery({
+export function useAdminServices(filters: AdminServicesQuery = {}): Paged<AdminServiceDto> {
+  return usePagedQuery({
     queryKey: adminKeys.servicesFiltered(filters),
-    queryFn: () => fetchServices(filters),
-    placeholderData: keepPreviousData,
+    fetchPage: (page) => fetchServices({ ...filters, ...page }),
+    placeholderData: 'keepPrevious',
   });
 }
 
+/** Every service, for a picker (the new-round form) — walks the pages (FEAT-025). */
+export function useAllServices(): UseQueryResult<AdminServiceDto[]> {
+  return useQuery({ queryKey: [...adminKeys.services, 'all'], queryFn: () => fetchAllPages(fetchServices) });
+}
+
 /** GET /admin/vendors, filtered on the server (FEAT-015). No filters = every vendor. */
-export function useVendors(filters: AdminVendorsQuery = {}): UseQueryResult<VendorDto[]> {
-  return useQuery({
+export function useVendors(filters: AdminVendorsQuery = {}): Paged<VendorDto> {
+  return usePagedQuery({
     queryKey: adminKeys.vendorsFiltered(filters),
-    queryFn: () => fetchVendors(filters),
-    placeholderData: keepPreviousData,
+    fetchPage: (page) => fetchVendors({ ...filters, ...page }),
+    placeholderData: 'keepPrevious',
+  });
+}
+
+/** Every active vendor, for the assign picker — walks the pages (FEAT-025). */
+export function useAllVendors(): UseQueryResult<VendorDto[]> {
+  return useQuery({
+    queryKey: [...adminKeys.vendors, 'all'],
+    queryFn: () => fetchAllPages((page) => fetchVendors({ status: 'active', ...page })),
   });
 }
 

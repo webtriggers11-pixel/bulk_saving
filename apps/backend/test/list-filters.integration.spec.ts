@@ -97,7 +97,7 @@ describe('List filters (integration, needs DB + Redis)', () => {
 
   describe('GET /admin/services', () => {
     const names = async (qs: string) =>
-      ((await get(`/admin/services${qs}`).expect(200)).body.data as AdminServiceDto[])
+      ((await get(`/admin/services${qs}`).expect(200)).body.data.items as AdminServiceDto[])
         .filter((s) => s.slug.startsWith(`${slugPrefix}-`))
         .map((s) => s.name)
         .sort();
@@ -107,7 +107,7 @@ describe('List filters (integration, needs DB + Redis)', () => {
     });
 
     it('narrows the WHOLE list, not just ours — every row returned matches', async () => {
-      const all = (await get(`/admin/services?q=${token}`).expect(200)).body.data as AdminServiceDto[];
+      const all = (await get(`/admin/services?q=${token}`).expect(200)).body.data.items as AdminServiceDto[];
       expect(all.length).toBe(3);
     });
 
@@ -116,8 +116,8 @@ describe('List filters (integration, needs DB + Redis)', () => {
     });
 
     it('treats a blank search as no search', async () => {
-      const unfiltered = (await get('/admin/services').expect(200)).body.data.length;
-      const blank = (await get('/admin/services?q=%20%20').expect(200)).body.data.length;
+      const unfiltered = (await get('/admin/services').expect(200)).body.data.items.length;
+      const blank = (await get('/admin/services?q=%20%20').expect(200)).body.data.items.length;
       expect(blank).toBe(unfiltered);
     });
 
@@ -142,7 +142,7 @@ describe('List filters (integration, needs DB + Redis)', () => {
 
   describe('GET /admin/vendors', () => {
     const names = async (qs: string) =>
-      ((await get(`/admin/vendors${qs}`).expect(200)).body.data as VendorDto[])
+      ((await get(`/admin/vendors${qs}`).expect(200)).body.data.items as VendorDto[])
         .filter((v) => vendors.some((mine) => mine.id === v.id))
         .map((v) => v.name)
         .sort();
@@ -164,7 +164,7 @@ describe('List filters (integration, needs DB + Redis)', () => {
 
   describe('GET /admin/rounds', () => {
     const ours = async (qs: string) =>
-      ((await get(`/admin/rounds${qs}`).expect(200)).body.data as AdminRoundSummaryDto[])
+      ((await get(`/admin/rounds${qs}`).expect(200)).body.data.items as AdminRoundSummaryDto[])
         .filter((r) => r.society.id === societyA.id || r.society.id === societyB.id)
         .map((r) => r.service.name)
         .sort();
@@ -185,7 +185,7 @@ describe('List filters (integration, needs DB + Redis)', () => {
 
   describe('GET /catalog (resident)', () => {
     const names = async (qs: string) =>
-      ((await get(`/catalog${qs}`, residentAToken).expect(200)).body.data as ServiceDto[]).map((s) => s.name).sort();
+      ((await get(`/catalog${qs}`, residentAToken).expect(200)).body.data.items as ServiceDto[]).map((s) => s.name).sort();
 
     it('searches within the caller’s society only — a match elsewhere never leaks', async () => {
       // "foam" is only in the car wash's description, and the car wash is offered in B.

@@ -1,5 +1,6 @@
 import { IsIn, IsOptional, IsString, Length } from 'class-validator';
 import { ACTIVE_FILTERS, MAX_SEARCH, type ActiveFilter } from '@bulk/shared';
+import { PageQueryDto } from './pagination';
 
 /**
  * Shared pieces of the FEAT-015 list filters (ADR-0026).
@@ -25,8 +26,8 @@ export function activeFrom(status: ActiveFilter | undefined): boolean | undefine
   return status === undefined ? undefined : status === 'active';
 }
 
-/** `q`, `category`, `status` — the three filters services and vendors share. */
-export class SearchCategoryStatusQuery {
+/** `q`, `category`, `status` — the three filters services and vendors share — on a page (FEAT-025). */
+export class SearchCategoryStatusQuery extends PageQueryDto {
   @IsOptional()
   @IsString()
   @Length(0, MAX_SEARCH)

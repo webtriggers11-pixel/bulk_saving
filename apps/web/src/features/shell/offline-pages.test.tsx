@@ -7,6 +7,7 @@ import { ServicesPage } from '../catalog/ServicesPage';
 import { fetchCatalog } from '../catalog/catalog.api';
 import { RoundsPage } from '../rounds/RoundsPage';
 import { fetchRounds, joinRound } from '../rounds/rounds.api';
+import { page } from '../../test/page';
 
 vi.mock('../catalog/catalog.api', () => ({ fetchCatalog: vi.fn() }));
 vi.mock('../rounds/rounds.api', () => ({
@@ -56,7 +57,7 @@ describe('a data page on an offline cold load', () => {
   });
 
   it('tells the resident it is offline and offers Retry — never a bare heading', async () => {
-    fetchCatalogMock.mockResolvedValue([]);
+    fetchCatalogMock.mockResolvedValue(page([]));
     renderServices();
 
     const alert = await screen.findByTestId('query-error');
@@ -68,7 +69,7 @@ describe('a data page on an offline cold load', () => {
   });
 
   it('does not also show the empty state, which would read as "there are none"', async () => {
-    fetchCatalogMock.mockResolvedValue([]);
+    fetchCatalogMock.mockResolvedValue(page([]));
     renderServices();
 
     await screen.findByTestId('query-error');
@@ -76,7 +77,7 @@ describe('a data page on an offline cold load', () => {
   });
 
   it('recovers on reconnect without a reload', async () => {
-    fetchCatalogMock.mockResolvedValue([]);
+    fetchCatalogMock.mockResolvedValue(page([]));
     renderServices();
     await screen.findByTestId('query-error');
 
@@ -106,7 +107,7 @@ describe('a pledge submitted while offline', () => {
   });
 
   it('says it will send on reconnect instead of spinning silently', async () => {
-    fetchRoundsMock.mockResolvedValue([
+    fetchRoundsMock.mockResolvedValue(page([
       {
         id: 'round_1',
         service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing', category: 'Appliances', unitLabel: 'AC unit', unitLabelPlural: 'AC units', unitDescription: null },
@@ -118,7 +119,7 @@ describe('a pledge submitted while offline', () => {
         myUnits: 0,
         finalPrice: null,
       },
-    ]);
+    ]));
     joinRoundMock.mockResolvedValue({} as never);
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

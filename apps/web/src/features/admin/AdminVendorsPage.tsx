@@ -14,6 +14,7 @@ import {
   queryStalled,
 } from '../../lib/offline';
 import { Button } from '../../components/ui/button';
+import { ShowMore } from '../../components/ui/show-more';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { DataRows, RowSurface } from '../../components/ui/data-rows';
 import { EmptyState } from '../../components/ui/empty-state';
@@ -358,6 +359,7 @@ export function AdminVendorsPage() {
               <VendorRow key={vendor.id} vendor={vendor} />
             ))}
           </DataRows>
+          <ShowMore hasMore={vendorsQuery.hasMore} loaded={data.length} total={vendorsQuery.total} busy={vendorsQuery.loadingMore} onMore={vendorsQuery.loadMore} noun={['vendor', 'vendors']} />
           </div>
         )}
       </Card>

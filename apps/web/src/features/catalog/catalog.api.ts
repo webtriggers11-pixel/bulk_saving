@@ -1,4 +1,4 @@
-import type { CatalogQuery, ServiceDemand, ServiceDto } from '@bulk/shared';
+import type { CatalogQuery, Page, ServiceDemand, ServiceDto } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 import { toQueryString } from '../../lib/filters';
 
@@ -7,8 +7,8 @@ import { toQueryString } from '../../lib/filters';
  * Tenant scope is derived server-side from the access token; the client sends
  * no societyId — FEAT-015's filters narrow within it and can never name another.
  */
-export function fetchCatalog(query: CatalogQuery = {}): Promise<ServiceDto[]> {
-  return apiRequest<ServiceDto[]>(`/catalog${toQueryString(query)}`);
+export function fetchCatalog(query: CatalogQuery = {}): Promise<Page<ServiceDto>> {
+  return apiRequest<Page<ServiceDto>>(`/catalog${toQueryString(query)}`);
 }
 
 /** FEAT-022: ask for a round of this service in your society (idempotent). */

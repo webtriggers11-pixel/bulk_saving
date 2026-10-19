@@ -6,6 +6,7 @@ import { ApiError } from '../../lib/api';
 import { MyRequestsPage } from '../requests/MyRequestsPage';
 import { fetchMyRounds } from '../rounds/rounds.api';
 import { rateRound, removeRating } from './rating.api';
+import { page } from '../../test/page';
 
 vi.mock('../rounds/rounds.api', () => ({
   fetchMyRounds: vi.fn(),
@@ -68,7 +69,7 @@ describe('RateRound (on the My Requests card)', () => {
 
   describe('which rounds offer rating', () => {
     it.each(['DELIVERED', 'RATED'] as RoundStatus[])('offers rating on %s', async (status) => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status })]));
       renderPage();
     await openRating();
       expect(await screen.findByRole('radiogroup', { name: 'Rate AC Servicing' })).toBeInTheDocument();
@@ -77,7 +78,7 @@ describe('RateRound (on the My Requests card)', () => {
     it.each(['OPEN', 'CLOSED_MET', 'CLOSED_EXPIRED', 'ASSIGNED', 'CANCELLED'] as RoundStatus[])(
       'offers NO rating on %s — the job has not been done',
       async (status) => {
-        fetchMyRoundsMock.mockResolvedValue([round({ status })]);
+        fetchMyRoundsMock.mockResolvedValue(page([round({ status })]));
         renderPage();
         await screen.findByText('AC Servicing');
         expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
@@ -88,7 +89,7 @@ describe('RateRound (on the My Requests card)', () => {
 
   describe('submitting', () => {
     it('sends the stars and the trimmed comment', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round()]);
+      fetchMyRoundsMock.mockResolvedValue(page([round()]));
       rateRoundMock.mockResolvedValue({ ...savedRating, stars: 5, comment: 'Great job.' });
       renderPage();
     await openRating();
@@ -105,7 +106,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('omits the comment entirely when it is blank', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round()]);
+      fetchMyRoundsMock.mockResolvedValue(page([round()]));
       rateRoundMock.mockResolvedValue({ ...savedRating, stars: 3, comment: null });
       renderPage();
     await openRating();
@@ -118,7 +119,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('cannot be submitted without a score', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round()]);
+      fetchMyRoundsMock.mockResolvedValue(page([round()]));
       renderPage();
     await openRating();
 
@@ -130,7 +131,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('disables submit while the write is in flight, so a double tap sends one write', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round()]);
+      fetchMyRoundsMock.mockResolvedValue(page([round()]));
       let resolve: ((value: RatingDto) => void) | undefined;
       rateRoundMock.mockImplementation(() => new Promise<RatingDto>((r) => (resolve = r)));
       renderPage();
@@ -153,7 +154,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('shows a friendly error and KEEPS the typed comment when the write fails', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round()]);
+      fetchMyRoundsMock.mockResolvedValue(page([round()]));
       rateRoundMock.mockRejectedValue(new ApiError('ROUND_NOT_DELIVERED', 'not delivered', 409));
       renderPage();
     await openRating();
@@ -173,7 +174,7 @@ describe('RateRound (on the My Requests card)', () => {
 
   describe('an existing rating', () => {
     it('shows what the resident said, with no form until they ask to change it', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       renderPage();
 
       expect(await screen.findByTestId('my-rating')).toHaveTextContent('4 / 5');
@@ -182,7 +183,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('opens the form pre-filled on Change, and saves the revision', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       rateRoundMock.mockResolvedValue({ ...savedRating, stars: 2 });
       renderPage();
 
@@ -200,7 +201,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('can be abandoned with Cancel, leaving the saved rating alone', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       renderPage();
 
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
@@ -212,7 +213,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('removing asks first; backing out runs nothing (FEAT-024)', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
       expect(screen.getByRole('dialog', { name: 'Remove your rating?' })).toBeInTheDocument();
@@ -223,7 +224,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('offline, a confirmed removal says it is waiting and can still be backed out of (V2 P1)', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       removeRatingMock.mockResolvedValue(undefined);
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
@@ -244,7 +245,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('withdraws the rating on Remove', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       removeRatingMock.mockResolvedValue(undefined);
       renderPage();
 
@@ -256,7 +257,7 @@ describe('RateRound (on the My Requests card)', () => {
     });
 
     it('reports a failed withdrawal instead of pretending it worked', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'RATED', myRating: savedRating })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'RATED', myRating: savedRating })]));
       removeRatingMock.mockRejectedValue(new ApiError('NOT_FOUND', 'nothing to remove', 404));
       renderPage();
 
@@ -273,7 +274,7 @@ describe('RateRound (on the My Requests card)', () => {
     // A rejected promise is the SERVER-ERROR path. Offline is different: v5 pauses
     // the mutation, nothing rejects, and isPending stays true — so this must be
     // driven through onlineManager, or the hole is invisible (FEAT-008 V2 finding).
-    fetchMyRoundsMock.mockResolvedValue([round()]);
+    fetchMyRoundsMock.mockResolvedValue(page([round()]));
     renderPage();
     await openRating();
     fireEvent.click(await screen.findByRole('radio', { name: '4 stars' }));
@@ -296,7 +297,7 @@ describe('RateRound (on the My Requests card)', () => {
   });
 
   it('can always be closed — a submit paused OFFLINE does not hold the resident in the sheet (FEAT-016 V2 P1-1)', async () => {
-    fetchMyRoundsMock.mockResolvedValue([round()]);
+    fetchMyRoundsMock.mockResolvedValue(page([round()]));
     renderPage();
     await openRating();
     fireEvent.click(await screen.findByRole('radio', { name: '4 stars' }));
@@ -319,7 +320,7 @@ describe('RateRound (on the My Requests card)', () => {
     // V2 P1-5: the card derived "saved" purely from the polled query, so between a
     // successful PUT and the refetch — or forever, if that refetch pauses offline —
     // the resident saw an empty form for a rating that WAS saved.
-    fetchMyRoundsMock.mockResolvedValue([round()]); // always reports unrated
+    fetchMyRoundsMock.mockResolvedValue(page([round()])); // always reports unrated
     rateRoundMock.mockResolvedValue({ ...savedRating, stars: 5, comment: null });
     renderPage();
     await openRating();
@@ -335,8 +336,8 @@ describe('RateRound (on the My Requests card)', () => {
     // V2 P1-4: local draft state survived the delete, so the form reopened with the
     // stars and comment the resident had just removed — one tap from re-creating them.
     fetchMyRoundsMock
-      .mockResolvedValueOnce([round({ status: 'RATED', myRating: savedRating })])
-      .mockResolvedValue([round({ status: 'RATED', myRating: null })]);
+      .mockResolvedValueOnce(page([round({ status: 'RATED', myRating: savedRating })]))
+      .mockResolvedValue(page([round({ status: 'RATED', myRating: null })]));
     removeRatingMock.mockResolvedValue(undefined);
     renderPage();
 
@@ -355,7 +356,7 @@ describe('RateRound (on the My Requests card)', () => {
     // V2 P2: these errors used to go through the AUTH error map, so every rating
     // failure became "Something went wrong. Please try again." — advice to retry
     // something that cannot succeed.
-    fetchMyRoundsMock.mockResolvedValue([round()]);
+    fetchMyRoundsMock.mockResolvedValue(page([round()]));
     rateRoundMock.mockRejectedValue(new ApiError('NOT_A_PARTICIPANT', 'nope', 403));
     renderPage();
     await openRating();
@@ -367,7 +368,7 @@ describe('RateRound (on the My Requests card)', () => {
   });
 
   it('caps the comment at the same length as the API', async () => {
-    fetchMyRoundsMock.mockResolvedValue([round()]);
+    fetchMyRoundsMock.mockResolvedValue(page([round()]));
     renderPage();
     await openRating();
     expect(await screen.findByLabelText('Comment (optional)')).toHaveAttribute('maxlength', '500');

@@ -10,8 +10,8 @@ import { useSearchParams } from 'react-router-dom';
 export function toQueryString(query: object): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (typeof value === 'string' && value !== '') {
-      params.set(key, value);
+    if ((typeof value === 'string' && value !== '') || typeof value === 'number') {
+      params.set(key, String(value));
     }
   }
   const qs = params.toString();

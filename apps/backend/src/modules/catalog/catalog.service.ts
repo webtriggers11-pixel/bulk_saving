@@ -1,8 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoundStatus } from '@prisma/client';
-import type { CatalogQuery, ServiceDemand, ServiceDto } from '@bulk/shared';
+import type { CatalogQuery, ServiceDemand, ServiceDto, Page } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { containsInsensitive, searchTerm } from '../../common/list-filters';
+import { pageArgs, pageOf } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -20,24 +21,30 @@ export class CatalogService {
    * joined query (`include`, no N+1). Ordered by category then name for a
    * stable, groupable list.
    */
-  async listForSociety(societyId: string, query: CatalogQuery = {}, residentId?: string): Promise<ServiceDto[]> {
+  async listForSociety(societyId: string, query: CatalogQuery = {}, residentId?: string): Promise<Page<ServiceDto>> {
     // FEAT-015 filters narrow WITHIN the society; `societyId` stays the caller's own.
     const q = searchTerm(query.q);
-    const offerings = await this.prisma.serviceOffering.findMany({
-      where: {
-        societyId,
-        enabled: true,
-        service: {
-          active: true,
-          ...(query.category ? { category: query.category } : {}),
-          ...(q
-            ? { OR: [{ name: containsInsensitive(q) }, { description: containsInsensitive(q) }, { unitLabel: containsInsensitive(q) }] }
-            : {}),
-        },
-      },
-      include: { service: true },
-      orderBy: [{ service: { category: 'asc' } }, { service: { name: 'asc' } }],
-    });
+    // FEAT-025: paged over SERVICES (the cursor is the service id the client sees), with
+    // this society's enabled offering carried along for its indicative price. Category,
+    // then name, then id — a total order.
+    const where = {
+      active: true,
+      ...(query.category ? { category: query.category } : {}),
+      ...(q
+        ? { OR: [{ name: containsInsensitive(q) }, { description: containsInsensitive(q) }, { unitLabel: containsInsensitive(q) }] }
+        : {}),
+      offerings: { some: { societyId, enabled: true } },
+    };
+    const [services, total] = await Promise.all([
+      this.prisma.service.findMany({
+        where,
+        include: { offerings: { where: { societyId, enabled: true } } },
+        orderBy: [{ category: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+        ...pageArgs(query),
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+    const offerings = services.map((service) => ({ ...service.offerings[0], service, id: service.id }));
     // FEAT-022: asks waiting in THIS society, and which of them are the caller's — two
     // grouped reads for the whole list, not one per service.
     const serviceIds = offerings.map((o) => o.serviceId);
@@ -54,7 +61,7 @@ export class CatalogService {
     const askCount = new Map(counts.map((c) => [c.serviceId, c._count._all]));
     const askedByMe = new Set(mine.map((m) => m.serviceId));
 
-    return offerings.map((offering): ServiceDto => {
+    return pageOf(offerings, query, total, (offering): ServiceDto => {
       const { service } = offering;
       return {
         id: service.id,

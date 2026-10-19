@@ -26,7 +26,7 @@ import {
   useCloseRound,
   useDeliverRound,
   useSetPayment,
-  useVendors,
+  useAllVendors,
 } from './useAdmin';
 
 /** Final price bounds (integer ₹ per unit), mirroring the backend AssignRoundBody validation. */
@@ -105,7 +105,7 @@ function AssignForm({
   /** V2 P1-B: the negotiated price is per WHAT — this is the field `amountDue` bills. */
   service: RoundServiceSummary;
 }) {
-  const vendors = useVendors();
+  const vendors = useAllVendors();
   const assign = useAssignRound(roundId);
   const [vendorId, setVendorId] = useState('');
   const [finalPrice, setFinalPrice] = useState('');

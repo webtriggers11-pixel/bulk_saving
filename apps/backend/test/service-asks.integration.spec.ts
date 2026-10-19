@@ -80,7 +80,7 @@ describe('Service asks (FEAT-022)', () => {
 
   const demandIn = async (who: string) => {
     const res = await http().get('/catalog').set(as(who)).expect(200);
-    return (res.body.data as Array<{ id: string; demand: unknown }>).find((s) => s.id === service.id)?.demand;
+    return (res.body.data.items as Array<{ id: string; demand: unknown }>).find((s) => s.id === service.id)?.demand;
   };
 
   it('asking is idempotent, counted per society, and each resident sees whether they asked', async () => {

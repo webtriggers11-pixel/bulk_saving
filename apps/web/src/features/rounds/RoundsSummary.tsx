@@ -13,14 +13,17 @@ import { bestSavingForMe } from './roundMath';
  * reaches its best price; a dash until they have joined something, because ₹0 reads as
  * a verdict rather than an invitation.
  */
-export function RoundsSummary({ rounds }: { rounds: RoundDto[] }) {
+export function RoundsSummary({ rounds, total }: { rounds: RoundDto[]; total?: number }) {
+  // FEAT-025: "Open" is the server's count; the other two are over the rounds loaded so
+  // far, and say so when that is not all of them.
+  const partial = total !== undefined && total > rounds.length;
   const joined = rounds.filter((round) => round.myUnits > 0).length;
   const saving = bestSavingForMe(rounds);
   return (
     <Card surface="solid" interactive={false} padding="none" className="p-[18px]" data-testid="rounds-summary">
       <dl className="grid grid-cols-3 divide-x divide-line/10 [&>*]:px-3 [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
-        <Fact variant="plain" size="large" term="Open" value={rounds.length} testId="summary-open" />
-        <Fact variant="plain" size="large" term="You're in" value={joined} testId="summary-joined" />
+        <Fact variant="plain" size="large" term="Open" value={total ?? rounds.length} testId="summary-open" />
+        <Fact variant="plain" size="large" term={partial ? `You're in (of ${rounds.length})` : "You're in"} value={joined} testId="summary-joined" />
         <Fact
           variant="plain"
           size="large"

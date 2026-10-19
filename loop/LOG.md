@@ -1221,3 +1221,21 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — FEAT-024 — T4 browser pass
 - Preview :5175. Profile → Log out → "Log out of this phone? You'll need a new code by SMS to sign in again. Your pledges and ratings stay." / Yes, log out / Stay signed in → stayed signed in. Rounds → Change → Leave this round → "Leave this round? Your pledge of 1 purifier is withdrawn, and the price for everyone may change." stacked over the pledge sheet; Escape closed only the confirmation (focus back on "Leave this round"), a second Escape closed the pledge sheet; afterwards 0 dialogs, body overflow released, focus on "Change". V2 handed to the code-reviewer subagent (worktree).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 — V2 round 1 FAIL → fixed (1×P1, 1×P2, 3×P3)
+- V2 (independent, worktree; gate exit 0, 464/617; 2 mutations killed) returned FAIL:
+  - P1 offline, a confirmed leave/remove/cancel could not be dismissed: TanStack pauses the mutation, `isPending` stays true, and `onClose` was gated on it — against the Sheet contract ("always closable"). Fix: `onClose` unconditional at all three sites; `ConfirmSheet`'s Keep is never disabled; the pending label reads "Waiting for a connection…" while paused (resident sheets now match the admin's). Tests: offline leave and offline remove (`onlineManager.setOnline(false)` → waiting label, backing out still works).
+  - P2 the leave site had no "runs ONLY after confirm" test (mutation A survived there) → back-out tests for leave and remove.
+  - P3 `SignOutButton` now shows an error inside the sheet instead of closing silently; the admin JSDoc no longer says "inline two-step"; the "withdrawn, and" comma accepted.
+- Fixed in the review worktree (clean at b1f7f84) and cherry-picked under the FEAT-025 work in progress (c0849e6). Affected web suites 89/89 there; V2 round 2 queued behind FEAT-025's gate (one gate at a time).
+- By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-19 — FEAT-025 — T1–T4 built: every list is a page
+- ADR-0035 (keyset on `(order, id)`, one envelope `{ items, nextCursor, total }`, `limit` 1–50 default 20, bad input 400, explicit "Show more"). Backend: `common/pagination.ts` (`PageQueryDto`, `pageArgs`, `pageOf`); `/rounds`, `/rounds/mine`, `/catalog`, `/admin/rounds`, `/admin/services`, `/admin/vendors` all paged with `id` as the final order key and a filtered `count`; `ADMIN_ROUNDS_LIMIT` (the silent 200 cap) retired; vendors' rating aggregate now read for the page's vendors only; the catalog pages over SERVICES (the cursor must be the id the client sees — found by the new test: paging offerings returned a cursor that was not an item's id).
+- Web: `lib/pages.ts` (`usePagedQuery` on `useInfiniteQuery`: flat `data`, `total`, `hasMore`, `loadMore`; `fetchAllPages` for pickers), `ShowMore` control; `useRounds`/`useMyRounds`/`useCatalog`/`useAdminRounds`/`useAdminServices`/`useVendors` paged; `useAllServices`/`useAllVendors` for the new-round and assign pickers; "Show more (N left)" on Rounds, My Requests, Services, admin rounds/vendors/services; `RoundsSummary` and the Home lead count from `total` ("You're in (of N)" when partial). `scripts/e2e-smoke.mjs` reads `.items`. `test/page.ts` (`page`, `pagedData`) and 17 test files moved to the envelope by a bracket-matching rewrite (a first version of that script truncated two files by opening for write before reading — restored from HEAD and redone).
+- Tests: `pagination.integration.spec` (6: /rounds pages + tenancy; keyset vs an insert between pages; mine/catalog + filters; admin lists; defaults/caps/400s/missing cursor; foreign cursor), `pages.test` (3), `show-more.test` (4). Alone: backend 470/470, web 628/628, typecheck clean.
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-025 — V1 PASS
+- Gate run 1: all tests green (470/628) but vitest exit 1 — four unhandled rejections from `getNextPageParam` on an undefined page (a `vi.fn()` list mock that resolves to nothing in `offline-pages.test`). The hook now ends the list on a malformed/empty page instead of throwing inside the observer. Run 2: gate exit 0 — backend 470/470, web 628/628, 3280 class tokens.
+- By: agent (autonomous)

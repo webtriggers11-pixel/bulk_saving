@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { ActiveFilter, AdminServiceDto, AdminServicesQuery, AdminSocietyDto, ServiceOfferingDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
+import { ShowMore } from '../../components/ui/show-more';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { DataRows, RowSurface } from '../../components/ui/data-rows';
 import { EmptyState } from '../../components/ui/empty-state';
@@ -554,7 +555,7 @@ export function AdminServicesPage() {
             onChange={(status) => setFilters({ status: status || undefined })}
           />
           <ResultSummary
-            count={data?.length}
+            count={servicesQuery.total ?? data?.length}
             noun={['service', 'services']}
             activeCount={activeCount}
             onClear={clear}
@@ -635,6 +636,7 @@ export function AdminServicesPage() {
               </DataRows>
             </Card>
           ))}
+      {data && <ShowMore hasMore={servicesQuery.hasMore} loaded={data.length} total={servicesQuery.total} busy={servicesQuery.loadingMore} onMore={servicesQuery.loadMore} noun={['service', 'services']} />}
       </div>
     </AdminLayout>
   );

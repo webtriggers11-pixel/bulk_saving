@@ -14,6 +14,7 @@ import { useMyRounds } from '../rounds/useRounds';
 import { hasRows, queryStalled } from '../../lib/offline';
 import { RateRound, isRateable } from '../rating/RateRound';
 import { RequestsSkeleton } from './RequestsSkeleton';
+import { ShowMore } from '../../components/ui/show-more';
 
 /**
  * What each lifecycle state means to the resident who joined (ADR-0011 owns the
@@ -222,6 +223,7 @@ export function MyRequestsPage() {
               lead={index === leadOpenIndex}
             />
           ))}
+          <ShowMore hasMore={query.hasMore} loaded={data.length} total={query.total} busy={query.loadingMore} onMore={query.loadMore} noun={['request', 'requests']} />
         </ol>
       )}
     </main>

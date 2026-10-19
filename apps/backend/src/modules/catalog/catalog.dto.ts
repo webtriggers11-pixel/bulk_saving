@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { SearchCategoryStatusQuery } from '../../common/list-filters';
+import { PageQueryDto } from '../../common/pagination';
 import {
   MAX_INDICATIVE_PRICE,
   MAX_UNIT_DESCRIPTION,
@@ -151,7 +152,7 @@ export class AdminServicesQueryDto extends SearchCategoryStatusQuery implements 
 }
 
 /** `GET /catalog` query (FEAT-015). Society scope still comes only from the token. */
-export class CatalogQueryDto implements CatalogQuery {
+export class CatalogQueryDto extends PageQueryDto implements CatalogQuery {
   @IsOptional()
   @IsString()
   @Length(0, MAX_SEARCH)

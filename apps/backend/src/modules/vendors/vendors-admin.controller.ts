@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import type { VendorDto } from '@bulk/shared';
+import type { Page, VendorDto } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -19,7 +19,7 @@ export class VendorsAdminController {
   constructor(private readonly vendors: VendorsService) {}
 
   @Get()
-  list(@Query() query: AdminVendorsQueryDto): Promise<VendorDto[]> {
+  list(@Query() query: AdminVendorsQueryDto): Promise<Page<VendorDto>> {
     return this.vendors.list(query);
   }
 

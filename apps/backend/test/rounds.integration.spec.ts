@@ -110,7 +110,7 @@ describe('Resident rounds API (integration, needs DB + Redis)', () => {
 
   it('lists OPEN rounds for the caller society with pricing + myUnits; hides other societies', async () => {
     const res = await authGet().expect(200);
-    const rounds = res.body.data as RoundDto[];
+    const rounds = res.body.data.items as RoundDto[];
     const ids = rounds.map((r) => r.id);
     expect(ids).toContain(roundA.id);
     expect(ids).not.toContain(roundClosed.id); // not OPEN

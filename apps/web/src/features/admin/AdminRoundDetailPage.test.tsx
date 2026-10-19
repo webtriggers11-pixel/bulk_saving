@@ -19,6 +19,7 @@ import {
   setPayment,
 } from './admin.api';
 import { AdminRoundDetailPage } from './AdminRoundDetailPage';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
@@ -65,7 +66,7 @@ function renderPage() {
 describe('AdminRoundDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchVendorsMock.mockResolvedValue([activeVendor, inactiveVendor]);
+    fetchVendorsMock.mockResolvedValue(page([activeVendor, inactiveVendor]));
   });
 
   it('OPEN: shows Close and Cancel only, and closing calls closeRound', async () => {
@@ -113,7 +114,7 @@ describe('AdminRoundDetailPage', () => {
 
   it('CLOSED_MET with no active vendors links to the vendors page', async () => {
     fetchAdminRoundMock.mockResolvedValue(roundDetail({ status: 'CLOSED_MET' }));
-    fetchVendorsMock.mockResolvedValue([inactiveVendor]);
+    fetchVendorsMock.mockResolvedValue(page([inactiveVendor]));
     renderPage();
 
     const link = await screen.findByRole('link', { name: 'Add a vendor' });
@@ -241,7 +242,7 @@ describe('AdminRoundDetailPage', () => {
       service: painting,
       tiers: [{ threshold: 5, price: 3500 }],
     });
-    fetchVendorsMock.mockResolvedValue([activeVendor]);
+    fetchVendorsMock.mockResolvedValue(page([activeVendor]));
     renderPage();
 
     await screen.findByText('Painting');

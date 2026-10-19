@@ -207,7 +207,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
       const res = await asAdmin(
         request(server()).get('/admin/rounds').query({ societyId: societyA.id }),
       ).expect(200);
-      const list = res.body.data as AdminRoundSummaryDto[];
+      const list = res.body.data.items as AdminRoundSummaryDto[];
       expect(list.map((r) => r.id)).toEqual([open1.id, open2.id, met.id, met2.id, expired.id]);
 
       const summary = list[0];
@@ -240,7 +240,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
       const res = await asAdmin(
         request(server()).get('/admin/rounds').query({ status: 'OPEN', societyId: societyA.id }),
       ).expect(200);
-      expect((res.body.data as AdminRoundSummaryDto[]).map((r) => r.id)).toEqual([
+      expect((res.body.data.items as AdminRoundSummaryDto[]).map((r) => r.id)).toEqual([
         open1.id,
         open2.id,
       ]);
@@ -248,14 +248,14 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
       const empty = await asAdmin(
         request(server()).get('/admin/rounds').query({ societyId: societyB.id }),
       ).expect(200);
-      expect(empty.body.data).toEqual([]);
+      expect(empty.body.data.items).toEqual([]);
     });
 
     it('filters by status alone across societies', async () => {
       const res = await asAdmin(
         request(server()).get('/admin/rounds').query({ status: 'CLOSED_EXPIRED' }),
       ).expect(200);
-      const list = res.body.data as AdminRoundSummaryDto[];
+      const list = res.body.data.items as AdminRoundSummaryDto[];
       expect(list.length).toBeLessThanOrEqual(200);
       expect(list.every((r) => r.status === 'CLOSED_EXPIRED')).toBe(true);
     });

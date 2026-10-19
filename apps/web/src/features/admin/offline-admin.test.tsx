@@ -15,6 +15,7 @@ import {
   fetchVendors,
 } from './admin.api';
 import { dashboard, roundDetail } from './admin.fixtures';
+import { page } from '../../test/page';
 
 vi.mock('./admin.api', () => ({
   fetchDashboard: vi.fn(),
@@ -52,10 +53,10 @@ vi.mock('./admin.api', () => ({
 describe('admin surfaces when the browser is offline', () => {
   beforeEach(() => {
     vi.mocked(fetchDashboard).mockResolvedValue(dashboard);
-    vi.mocked(fetchAdminRounds).mockResolvedValue([]);
-    vi.mocked(fetchVendors).mockResolvedValue([]);
+    vi.mocked(fetchAdminRounds).mockResolvedValue(page([]));
+    vi.mocked(fetchVendors).mockResolvedValue(page([]));
     vi.mocked(fetchSocieties).mockResolvedValue([]);
-    vi.mocked(fetchServices).mockResolvedValue([]);
+    vi.mocked(fetchServices).mockResolvedValue(page([]));
     vi.mocked(fetchAdminRound).mockResolvedValue(roundDetail({ status: 'CLOSED_MET' }));
   });
 

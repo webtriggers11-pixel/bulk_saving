@@ -15,7 +15,7 @@ import {
 import { unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
-import { useAdminServices, useAdminSocieties, useCreateRound } from './useAdmin';
+import { useAllServices, useAdminSocieties, useCreateRound } from './useAdmin';
 
 /** One editable tier row; `key` is a stable React key, values are raw input strings. */
 interface TierRow {
@@ -65,7 +65,7 @@ function parseTiers(rows: TierRow[]): { tiers: RoundTierDto[] } | { error: strin
 export function AdminNewRoundPage() {
   const navigate = useNavigate();
   const societies = useAdminSocieties();
-  const services = useAdminServices();
+  const services = useAllServices();
   const create = useCreateRound();
 
   const nextKey = useRef(1);

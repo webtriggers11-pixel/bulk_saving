@@ -18,6 +18,7 @@ import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { queryStalled } from '../../lib/offline';
+import { ShowMore } from '../../components/ui/show-more';
 import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
 import { formatUnits } from '../../lib/units';
 
@@ -360,6 +361,7 @@ function RoundsPanel() {
             />
           ))}
         </DataRows>
+        <ShowMore hasMore={roundsQuery.hasMore} loaded={data.length} total={roundsQuery.total} busy={roundsQuery.loadingMore} onMore={roundsQuery.loadMore} noun={['round', 'rounds']} />
         </div>
       )}
     </Card>

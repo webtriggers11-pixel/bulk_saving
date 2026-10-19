@@ -15,9 +15,11 @@ import type {
   AdminSocietyDemand,
   CreateRoundBody,
   RoundDto,
+  Page,
 } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
+import { pageArgs, pageOf } from '../../common/pagination';
 import { containsInsensitive, searchTerm } from '../../common/list-filters';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RatingsService } from './ratings.service';
@@ -47,7 +49,7 @@ import { ROUND_TX_OPTIONS, RoundsService } from './rounds.service';
  * payment actions, which again delegate every write to {@link RoundsService}.
  */
 /** v1 cap on the admin rounds list (no pagination yet, FEAT-005 spec). */
-export const ADMIN_ROUNDS_LIMIT = 200;
+/** Retired by FEAT-025 (ADR-0035): the list is paged; nothing is silently cut off any more. */
 
 /** Statuses whose rounds carry a final price and therefore owe payments (ADR-0012). */
 const PAYABLE_STATUSES: RoundStatus[] = [
@@ -159,10 +161,9 @@ export class RoundsAdminService {
    * vendor name plus an exact service category — newest first, capped at
    * {@link ADMIN_ROUNDS_LIMIT}.
    */
-  async listRounds(query: AdminRoundsQuery): Promise<AdminRoundSummaryDto[]> {
+  async listRounds(query: AdminRoundsQuery): Promise<Page<AdminRoundSummaryDto>> {
     const q = searchTerm(query.q);
-    const rounds = await this.prisma.round.findMany({
-      where: {
+    const where: Prisma.RoundWhereInput = {
         ...(query.status ? { status: query.status } : {}),
         ...(query.societyId ? { societyId: query.societyId } : {}),
         ...(query.category ? { service: { category: query.category } } : {}),
@@ -175,12 +176,18 @@ export class RoundsAdminService {
               ],
             }
           : {}),
-      },
-      include: adminRoundSummaryInclude,
-      orderBy: { createdAt: 'desc' },
-      take: ADMIN_ROUNDS_LIMIT,
-    });
-    return rounds.map(buildAdminRoundSummary);
+    };
+    // FEAT-025: one page, newest first with `id` as the tiebreaker.
+    const [rounds, total] = await Promise.all([
+      this.prisma.round.findMany({
+        where,
+        include: adminRoundSummaryInclude,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs(query),
+      }),
+      this.prisma.round.count({ where }),
+    ]);
+    return pageOf(rounds, query, total, buildAdminRoundSummary);
   }
 
   /** One round with every participant (resident name + phone, payment state). Unknown id → 404. */

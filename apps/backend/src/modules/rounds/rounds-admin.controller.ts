@@ -3,6 +3,7 @@ import type {
   AdminRoundDetailDto,
   AdminRoundParticipantDto,
   AdminRoundSummaryDto,
+  Page,
   RoundDto,
 } from '@bulk/shared';
 import { Role } from '@bulk/shared';
@@ -36,7 +37,7 @@ export class RoundsAdminController {
   }
 
   @Get()
-  list(@Query() query: AdminRoundsQueryDto): Promise<AdminRoundSummaryDto[]> {
+  list(@Query() query: AdminRoundsQueryDto): Promise<Page<AdminRoundSummaryDto>> {
     return this.admin.listRounds(query);
   }
 

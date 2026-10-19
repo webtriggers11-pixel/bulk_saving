@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MyRoundDto } from '@bulk/shared';
 import { MyRequestsPage } from './MyRequestsPage';
 import { fetchMyRounds } from '../rounds/rounds.api';
+import { page } from '../../test/page';
 
 vi.mock('../rounds/rounds.api', () => ({
   fetchMyRounds: vi.fn(),
@@ -57,7 +58,7 @@ describe('MyRequestsPage', () => {
   });
 
   it('reads GET /rounds/mine, not the OPEN-only browse list', async () => {
-    fetchMyRoundsMock.mockResolvedValue([round()]);
+    fetchMyRoundsMock.mockResolvedValue(page([round()]));
     renderPage();
 
     await waitFor(() => expect(fetchMyRoundsMock).toHaveBeenCalledTimes(1));
@@ -65,7 +66,7 @@ describe('MyRequestsPage', () => {
   });
 
   it('shows the pledge and the live price for a joined round', async () => {
-    fetchMyRoundsMock.mockResolvedValue([round({ myUnits: 1, currentPrice: 1200 })]);
+    fetchMyRoundsMock.mockResolvedValue(page([round({ myUnits: 1, currentPrice: 1200 })]));
     renderPage();
 
     // FEAT-010: the service's own word, singular for one.
@@ -80,7 +81,7 @@ describe('MyRequestsPage', () => {
     ['DELIVERED' as const, 'Delivered', /job is done/i],
     ['CANCELLED' as const, 'Cancelled', /not charged/i],
   ])('keeps a %s round visible and explains it in the resident’s words', async (status, badge, detail) => {
-    fetchMyRoundsMock.mockResolvedValue([round({ status })]);
+    fetchMyRoundsMock.mockResolvedValue(page([round({ status })]));
     renderPage();
 
     expect(await screen.findByTestId('status-badge')).toHaveTextContent(badge);
@@ -90,7 +91,7 @@ describe('MyRequestsPage', () => {
   });
 
   it('shows an existing rating when the round carries one', async () => {
-    fetchMyRoundsMock.mockResolvedValue([
+    fetchMyRoundsMock.mockResolvedValue(page([
       round({
         status: 'RATED',
         myRating: {
@@ -103,14 +104,14 @@ describe('MyRequestsPage', () => {
           updatedAt: '2026-09-18T00:00:00.000Z',
         },
       }),
-    ]);
+    ]));
     renderPage();
 
     expect(await screen.findByTestId('my-rating')).toHaveTextContent('4 / 5');
   });
 
   it('offers a way out of the empty state instead of a dead end', async () => {
-    fetchMyRoundsMock.mockResolvedValue([]);
+    fetchMyRoundsMock.mockResolvedValue(page([]));
     renderPage();
 
     expect(await screen.findByTestId('my-requests-empty')).toBeInTheDocument();
@@ -130,7 +131,7 @@ describe('MyRequestsPage', () => {
     // The existing failure test uses mockRejectedValue, which is the SERVER-ERROR
     // path. Offline pauses the query instead: isError false, isLoading false, no
     // data — so gating on those alone rendered the heading and nothing else.
-    fetchMyRoundsMock.mockResolvedValue([]);
+    fetchMyRoundsMock.mockResolvedValue(page([]));
     onlineManager.setOnline(false);
     renderPage();
 
@@ -144,7 +145,7 @@ describe('MyRequestsPage', () => {
   it('does not claim stale data when the list it failed to refresh was empty', async () => {
     // Boolean([]) is true, so the old flag rendered "showing what we loaded earlier"
     // AND the empty-state card together.
-    fetchMyRoundsMock.mockResolvedValueOnce([]).mockRejectedValue(new Error('network down'));
+    fetchMyRoundsMock.mockResolvedValueOnce(page([])).mockRejectedValue(new Error('network down'));
     renderPage();
 
     await screen.findByTestId('my-requests-empty');
@@ -162,9 +163,9 @@ describe('MyRequestsPage', () => {
 
   describe('the price a resident owes (BUG-010)', () => {
     it('shows the negotiated price, labelled final, once the admin has set one — not the tier price', async () => {
-      fetchMyRoundsMock.mockResolvedValue([
+      fetchMyRoundsMock.mockResolvedValue(page([
         round({ status: 'DELIVERED', currentPrice: 700, finalPrice: 680, myUnits: 3 }),
-      ]);
+      ]));
       renderPage();
 
       const price = await screen.findByTestId('my-price');
@@ -175,7 +176,7 @@ describe('MyRequestsPage', () => {
     });
 
     it('shows the tier price, and no total, while nothing has been negotiated', async () => {
-      fetchMyRoundsMock.mockResolvedValue([round({ status: 'OPEN', currentPrice: 900, finalPrice: null })]);
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'OPEN', currentPrice: 900, finalPrice: null })]));
       renderPage();
 
       expect(await screen.findByTestId('my-price')).toHaveTextContent('₹900');

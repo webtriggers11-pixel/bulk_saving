@@ -7,6 +7,7 @@ import { ApiError } from '../../lib/api';
 import { society } from './admin.fixtures';
 import { createService, fetchServices, fetchSocieties, updateService, upsertOffering } from './admin.api';
 import { AdminServicesPage } from './AdminServicesPage';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
@@ -110,7 +111,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('groups services under their category, in catalog order, with legacy categories last', async () => {
-    fetchServicesMock.mockResolvedValue([legacy, rice, tank]);
+    fetchServicesMock.mockResolvedValue(page([legacy, rice, tank]));
     renderPage();
 
     await screen.findByText('Water Tank Cleaning');
@@ -119,7 +120,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('shows where a service is offered, and at what price per unit', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     renderPage();
 
     const row = await screen.findByTestId('service-row');
@@ -136,7 +137,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('creates a service with a slug derived from the name and a category from the list', async () => {
-    fetchServicesMock.mockResolvedValue([]);
+    fetchServicesMock.mockResolvedValue(page([]));
     createServiceMock.mockResolvedValue(rice);
     renderPage();
     await screen.findByTestId('services-empty');
@@ -165,7 +166,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('stops following the name once the admin edits the slug themselves', async () => {
-    fetchServicesMock.mockResolvedValue([]);
+    fetchServicesMock.mockResolvedValue(page([]));
     renderPage();
     await screen.findByTestId('services-empty');
 
@@ -177,7 +178,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('refuses to send a service with no category, or half a unit-label pair', async () => {
-    fetchServicesMock.mockResolvedValue([]);
+    fetchServicesMock.mockResolvedValue(page([]));
     renderPage();
     await screen.findByTestId('services-empty');
 
@@ -193,7 +194,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('the category is a select over the closed list — there is no free-text box to typo into', async () => {
-    fetchServicesMock.mockResolvedValue([]);
+    fetchServicesMock.mockResolvedValue(page([]));
     renderPage();
     await screen.findByTestId('services-empty');
 
@@ -204,7 +205,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('edits a legacy service without resending the category the server would now refuse', async () => {
-    fetchServicesMock.mockResolvedValue([legacy]);
+    fetchServicesMock.mockResolvedValue(page([legacy]));
     updateServiceMock.mockResolvedValue({ ...legacy, name: 'Renamed' });
     renderPage();
 
@@ -223,7 +224,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('deactivates a service with its switch, which moves at once and says "Saved" when the server agrees', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     let resolve: (value: AdminServiceDto) => void = () => {};
     updateServiceMock.mockReturnValue(new Promise((r) => (resolve = r)));
     renderPage();
@@ -240,7 +241,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('holds the new position until the refreshed list lands — no on → off → on flicker (V2 P1-2)', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     updateServiceMock.mockResolvedValue({ ...tank, active: false });
     renderPage();
     const toggle = await screen.findByRole('switch', { name: 'Water Tank Cleaning active' });
@@ -256,7 +257,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('a category or status the URL invents is ignored: not sent, and no "Clear filters" (V2 P2-2)', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     renderPage('/admin/services?category=Foo&status=maybe');
     await screen.findByText('Water Tank Cleaning');
     expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ category: undefined, status: undefined }));
@@ -265,7 +266,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('puts the switch back when the server refuses, and says why', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     updateServiceMock.mockRejectedValue(new ApiError('CONFLICT', 'Service is in use.', 409));
     renderPage();
 
@@ -276,7 +277,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('offers a service in a society with its indicative price', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     upsertOfferingMock.mockResolvedValue({ id: 'off_2', societyId: blue.id, serviceId: tank.id, enabled: true, indicativePrice: 899 });
     renderPage();
 
@@ -290,7 +291,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('stops offering a service, keeping its stored price', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     upsertOfferingMock.mockResolvedValue({ ...tank.offerings[0], enabled: false });
     renderPage();
 
@@ -304,7 +305,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('a price typed while an earlier save is in flight stays unsaved — a later refresh does not wipe it (CHORE-020 V2 P2-b)', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     let land: (value: ServiceOfferingDto) => void = () => {};
     upsertOfferingMock.mockReturnValue(new Promise((r) => (land = r)));
     renderPage();
@@ -316,14 +317,14 @@ describe('AdminServicesPage', () => {
     // While "600" is saving, the admin types on.
     fireEvent.change(box, { target: { value: '700' } });
 
-    fetchServicesMock.mockResolvedValue([{ ...tank, offerings: [{ ...tank.offerings[0], indicativePrice: 600 }] }]);
+    fetchServicesMock.mockResolvedValue(page([{ ...tank, offerings: [{ ...tank.offerings[0], indicativePrice: 600 }] }]));
     await act(async () => land({ ...tank.offerings[0], indicativePrice: 600 }));
     await waitFor(() => expect(within(green).getByText('From ₹600 / tank')).toBeInTheDocument());
     expect(box).toHaveValue('700');
   });
 
   it('refuses a price that is not whole rupees, and sends nothing', async () => {
-    fetchServicesMock.mockResolvedValue([tank]);
+    fetchServicesMock.mockResolvedValue(page([tank]));
     renderPage();
 
     const [, other] = await openSocieties();
@@ -335,7 +336,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('cannot newly offer an inactive service — residents would never see it', async () => {
-    fetchServicesMock.mockResolvedValue([{ ...tank, active: false }]);
+    fetchServicesMock.mockResolvedValue(page([{ ...tank, active: false }]));
     renderPage();
 
     const [green, other] = await openSocieties();
@@ -345,7 +346,7 @@ describe('AdminServicesPage', () => {
   });
 
   it('shows the server’s message when a create is refused', async () => {
-    fetchServicesMock.mockResolvedValue([]);
+    fetchServicesMock.mockResolvedValue(page([]));
     createServiceMock.mockRejectedValue(new ApiError('SERVICE_SLUG_TAKEN', 'A service with slug "x" already exists.', 409));
     renderPage();
     await screen.findByTestId('services-empty');
@@ -361,7 +362,7 @@ describe('AdminServicesPage', () => {
 
   describe('server-side filters (FEAT-015)', () => {
     it('reads its filters from the URL and sends them to the server', async () => {
-      fetchServicesMock.mockResolvedValue([tank]);
+      fetchServicesMock.mockResolvedValue(page([tank]));
       renderPage(`/admin/services?q=tank&category=Utilities&status=active&offeredIn=${society.id}`);
 
       await screen.findByText('Water Tank Cleaning');
@@ -376,18 +377,18 @@ describe('AdminServicesPage', () => {
     });
 
     it('ignores a status the server would refuse rather than sending it', async () => {
-      fetchServicesMock.mockResolvedValue([tank]);
+      fetchServicesMock.mockResolvedValue(page([tank]));
       renderPage('/admin/services?status=archived');
       await screen.findByText('Water Tank Cleaning');
       expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
     });
 
     it('choosing a chip filters on the server and lands in the URL', async () => {
-      fetchServicesMock.mockResolvedValue([tank, rice]);
+      fetchServicesMock.mockResolvedValue(page([tank, rice]));
       renderPage();
       await screen.findByText('Water Tank Cleaning');
 
-      fetchServicesMock.mockResolvedValue([rice]);
+      fetchServicesMock.mockResolvedValue(page([rice]));
       fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Category' })).getByRole('radio', { name: 'Bulk Staples' }));
 
       await waitFor(() => expect(fetchServicesMock).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'Bulk Staples' })));
@@ -396,7 +397,7 @@ describe('AdminServicesPage', () => {
     });
 
     it('debounces the search: one request once typing pauses, not one per keystroke', async () => {
-      fetchServicesMock.mockResolvedValue([tank]);
+      fetchServicesMock.mockResolvedValue(page([tank]));
       renderPage();
       await screen.findByText('Water Tank Cleaning');
       const calls = fetchServicesMock.mock.calls.length;
@@ -412,7 +413,7 @@ describe('AdminServicesPage', () => {
     });
 
     it('keeps the previous rows on screen, marked busy, while the next result loads', async () => {
-      fetchServicesMock.mockResolvedValue([tank]);
+      fetchServicesMock.mockResolvedValue(page([tank]));
       renderPage();
       await screen.findByText('Water Tank Cleaning');
 
@@ -425,7 +426,7 @@ describe('AdminServicesPage', () => {
     });
 
     it('a filtered-to-nothing list says so, names the filters, and offers the way back', async () => {
-      fetchServicesMock.mockResolvedValue([]);
+      fetchServicesMock.mockResolvedValue(page([]));
       renderPage('/admin/services?q=zzz&category=Vehicle&other=keep');
 
       const noMatch = await screen.findByTestId('services-no-match');
@@ -434,7 +435,7 @@ describe('AdminServicesPage', () => {
       // Not the "No services yet" empty state — the catalog is not empty, the filter is.
       expect(screen.queryByTestId('services-empty')).not.toBeInTheDocument();
 
-      fetchServicesMock.mockResolvedValue([tank]);
+      fetchServicesMock.mockResolvedValue(page([tank]));
       fireEvent.click(within(noMatch).getByRole('button', { name: 'Clear filters' }));
       expect(screen.getByTestId('url')).toHaveTextContent('?other=keep');
       expect(await screen.findByText('Water Tank Cleaning')).toBeInTheDocument();
@@ -442,7 +443,7 @@ describe('AdminServicesPage', () => {
     });
 
     it('counts the result, and only offers "Clear filters" when a filter is set', async () => {
-      fetchServicesMock.mockResolvedValue([tank, rice]);
+      fetchServicesMock.mockResolvedValue(page([tank, rice]));
       renderPage();
       await screen.findByText('Water Tank Cleaning');
       expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === '2 services')).toBeInTheDocument();

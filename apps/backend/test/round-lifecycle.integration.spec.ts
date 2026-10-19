@@ -305,7 +305,7 @@ describe('Round lifecycle + scheduler (integration, needs DB + Redis)', () => {
         .get('/rounds')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
-      const statuses = (res.body.data as Array<{ status: string }>).map((r) => r.status);
+      const statuses = (res.body.data.items as Array<{ status: string }>).map((r) => r.status);
       expect(statuses.every((s) => s === 'OPEN')).toBe(true);
     });
   });

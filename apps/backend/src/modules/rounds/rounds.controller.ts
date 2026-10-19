@@ -10,8 +10,10 @@ import {
   Post,
   Put,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import type { MyRoundDto, RatingDto, RoundDto } from '@bulk/shared';
+import type { Page, MyRoundDto, RatingDto, RoundDto } from '@bulk/shared';
+import { PageQueryDto } from '../../common/pagination';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { RatingsService } from './ratings.service';
@@ -33,8 +35,8 @@ export class RoundsController {
   ) {}
 
   @Get()
-  list(@CurrentAuth() ctx: AuthContext): Promise<RoundDto[]> {
-    return this.rounds.listForSociety(ctx.societyId, ctx.residentId);
+  list(@CurrentAuth() ctx: AuthContext, @Query() page: PageQueryDto): Promise<Page<RoundDto>> {
+    return this.rounds.listForSociety(ctx.societyId, ctx.residentId, page);
   }
 
   /**
@@ -44,8 +46,8 @@ export class RoundsController {
    * to `list` documents that this is the second resident feed.
    */
   @Get('mine')
-  listMine(@CurrentAuth() ctx: AuthContext): Promise<MyRoundDto[]> {
-    return this.rounds.listMine(ctx.societyId, ctx.residentId);
+  listMine(@CurrentAuth() ctx: AuthContext, @Query() page: PageQueryDto): Promise<Page<MyRoundDto>> {
+    return this.rounds.listMine(ctx.societyId, ctx.residentId, page);
   }
 
   @Post(':id/join')

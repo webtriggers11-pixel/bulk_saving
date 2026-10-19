@@ -19,6 +19,7 @@ import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories'
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { CatalogSkeleton } from './CatalogSkeleton';
 import { useRounds } from '../rounds/useRounds';
+import { ShowMore } from '../../components/ui/show-more';
 import { formatRupees } from '../rounds/formatPrice';
 import { formatCountdown } from '../rounds/formatCountdown';
 import { formatUnits } from '../../lib/units';
@@ -405,6 +406,7 @@ export function ServicesPage() {
               );
             })}
           </ul>
+          <ShowMore hasMore={query.hasMore} loaded={data.length} total={query.total} busy={query.loadingMore} onMore={query.loadMore} noun={['service', 'services']} />
         </section>
       )}
     </main>

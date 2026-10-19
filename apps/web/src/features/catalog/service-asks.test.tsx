@@ -7,6 +7,7 @@ import { ServicesPage } from './ServicesPage';
 import { askForService, fetchCatalog, withdrawAsk } from './catalog.api';
 import { fetchRounds } from '../rounds/rounds.api';
 import { ApiError } from '../../lib/api';
+import { page } from '../../test/page';
 
 /**
  * FEAT-022 (ADR-0033) — "Ask for this service" on a catalog card with no open round.
@@ -39,7 +40,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(fetchRounds).mockResolvedValue([]);
+  vi.mocked(fetchRounds).mockResolvedValue(page([]));
 });
 
 describe('Ask for this service (FEAT-022)', () => {
@@ -49,7 +50,7 @@ describe('Ask for this service (FEAT-022)', () => {
     [{ askCount: 1, askedByMe: true }, 'You asked — we’ll tell you when it opens', 'Asked'],
     [{ askCount: 3, askedByMe: true }, 'You and 2 neighbours asked', 'Asked'],
   ])('with %o it reads "%s" and offers "%s"', async (demand, line, button) => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank(demand)]);
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank(demand)]));
     renderPage();
     expect(await screen.findByTestId('service-demand')).toHaveTextContent(line);
     const ask = screen.getByTestId('ask-tank');
@@ -59,8 +60,8 @@ describe('Ask for this service (FEAT-022)', () => {
 
   it('asking sends the ask and refreshes the catalog so the count moves', async () => {
     vi.mocked(fetchCatalog)
-      .mockResolvedValueOnce([tank({ askCount: 2, askedByMe: false })])
-      .mockResolvedValue([tank({ askCount: 3, askedByMe: true })]);
+      .mockResolvedValueOnce(page([tank({ askCount: 2, askedByMe: false })]))
+      .mockResolvedValue(page([tank({ askCount: 3, askedByMe: true })]));
     vi.mocked(askForService).mockResolvedValue({ askCount: 3, askedByMe: true });
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: 'Ask for this' }));
@@ -70,7 +71,7 @@ describe('Ask for this service (FEAT-022)', () => {
   });
 
   it('tapping "Asked" takes the ask back', async () => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 1, askedByMe: true })]);
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank({ askCount: 1, askedByMe: true })]));
     vi.mocked(withdrawAsk).mockResolvedValue({ askCount: 0, askedByMe: false });
     renderPage();
     fireEvent.click(await screen.findByTestId('ask-tank'));
@@ -78,7 +79,7 @@ describe('Ask for this service (FEAT-022)', () => {
   });
 
   it('a failed ask says so, and the button works again', async () => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 0, askedByMe: false })]);
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank({ askCount: 0, askedByMe: false })]));
     vi.mocked(askForService).mockRejectedValue(new Error('offline'));
     renderPage();
     fireEvent.click(await screen.findByTestId('ask-tank'));
@@ -87,11 +88,11 @@ describe('Ask for this service (FEAT-022)', () => {
   });
 
   it('a round that opened since the page loaded: says so, and the card turns into booking (V2 P2-3)', async () => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 0, askedByMe: false })]);
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank({ askCount: 0, askedByMe: false })]));
     vi.mocked(askForService).mockRejectedValue(new ApiError('ROUND_ALREADY_OPEN', 'open', 409));
     vi.mocked(fetchRounds)
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([
+      .mockResolvedValueOnce(page([]))
+      .mockResolvedValue(page([
         {
           id: 'round_tank',
           service: { id: 'off', name: 'Water Tank Cleaning', slug: 'tank', category: 'Utilities', unitLabel: 'tank', unitLabelPlural: 'tanks', unitDescription: null },
@@ -103,7 +104,7 @@ describe('Ask for this service (FEAT-022)', () => {
           myUnits: 0,
           finalPrice: null,
         },
-      ]);
+      ]));
     renderPage();
     fireEvent.click(await screen.findByTestId('ask-tank'));
     expect(await screen.findByTestId('book-tank')).toBeInTheDocument();
@@ -111,8 +112,8 @@ describe('Ask for this service (FEAT-022)', () => {
   });
 
   it('a service WITH an open round offers booking, never asking', async () => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 5, askedByMe: true })]);
-    vi.mocked(fetchRounds).mockResolvedValue([
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank({ askCount: 5, askedByMe: true })]));
+    vi.mocked(fetchRounds).mockResolvedValue(page([
       {
         id: 'round_tank',
         service: { id: 'off', name: 'Water Tank Cleaning', slug: 'tank', category: 'Utilities', unitLabel: 'tank', unitLabelPlural: 'tanks', unitDescription: null },
@@ -124,7 +125,7 @@ describe('Ask for this service (FEAT-022)', () => {
         myUnits: 0,
         finalPrice: null,
       },
-    ]);
+    ]));
     renderPage();
     expect(await screen.findByTestId('book-tank')).toBeInTheDocument();
     expect(screen.queryByTestId('ask-tank')).not.toBeInTheDocument();
@@ -135,7 +136,7 @@ describe('BUG-015 — the ask control has the full width of the card, never the 
   it('on a wide row card the status sits in a footer below the row, not beside the price', async () => {
     // Four services so the fourth renders as a ROW card (lead, two tiles, then rows).
     vi.mocked(fetchCatalog).mockResolvedValue(
-      ['a', 'b', 'c', 'd'].map((x) => ({ ...tank({ askCount: 0, askedByMe: false }), id: `svc_${x}`, slug: x, name: `Service ${x}` })),
+      page(['a', 'b', 'c', 'd'].map((x) => ({ ...tank({ askCount: 0, askedByMe: false }), id: `svc_${x}`, slug: x, name: `Service ${x}` }))),
     );
     renderPage();
     await screen.findAllByTestId('service-no-round');
@@ -148,7 +149,7 @@ describe('BUG-015 — the ask control has the full width of the card, never the 
   });
 
   it('the line and the button wrap rather than squeeze on a narrow card', async () => {
-    vi.mocked(fetchCatalog).mockResolvedValue([tank({ askCount: 0, askedByMe: false })]);
+    vi.mocked(fetchCatalog).mockResolvedValue(page([tank({ askCount: 0, askedByMe: false })]));
     renderPage();
     const row = (await screen.findByTestId('service-demand')).parentElement!;
     expect(row.className).toMatch(/\bflex-wrap\b/);

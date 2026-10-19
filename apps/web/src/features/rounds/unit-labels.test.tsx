@@ -6,6 +6,7 @@ import type { MyRoundDto, RoundDto } from '@bulk/shared';
 import { MyRequestsPage } from '../requests/MyRequestsPage';
 import { RoundsPage } from './RoundsPage';
 import { fetchMyRounds, fetchRounds } from './rounds.api';
+import { page } from '../../test/page';
 
 vi.mock('./rounds.api', () => ({
   fetchRounds: vi.fn(),
@@ -62,7 +63,7 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
   });
 
   it('the browse card counts ROOMS, prices per room, and says what a room includes', async () => {
-    vi.mocked(fetchRounds).mockResolvedValue([base]);
+    vi.mocked(fetchRounds).mockResolvedValue(page([base]));
     renderWith(<RoundsPage />);
 
     await waitFor(() => expect(screen.getByText('Painting')).toBeInTheDocument());
@@ -76,7 +77,7 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
   });
 
   it('the join control is labelled with the unit, not "Units"', async () => {
-    vi.mocked(fetchRounds).mockResolvedValue([base]);
+    vi.mocked(fetchRounds).mockResolvedValue(page([base]));
     renderWith(<RoundsPage />);
 
     // FEAT-016: the control lives in the pledge sheet.
@@ -86,7 +87,7 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
   });
 
   it('the pledge line singularises correctly for one room', async () => {
-    vi.mocked(fetchRounds).mockResolvedValue([{ ...base, myUnits: 1 }]);
+    vi.mocked(fetchRounds).mockResolvedValue(page([{ ...base, myUnits: 1 }]));
     renderWith(<RoundsPage />);
 
     expect(await screen.findByTestId('my-units-round_paint')).toHaveTextContent(
@@ -96,7 +97,7 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
 
   it('My Requests shows the pledge and price in rooms', async () => {
     const mine: MyRoundDto = { ...base, myUnits: 2, status: 'ASSIGNED', myRating: null };
-    vi.mocked(fetchMyRounds).mockResolvedValue([mine]);
+    vi.mocked(fetchMyRounds).mockResolvedValue(page([mine]));
     renderWith(<MyRequestsPage />);
 
     expect(await screen.findByTestId('my-units')).toHaveTextContent('2 rooms');
@@ -104,9 +105,9 @@ describe('resident screens speak the service’s unit (FEAT-010)', () => {
   });
 
   it('a service with NO labels still reads correctly — "unit(s)", never blank', async () => {
-    vi.mocked(fetchRounds).mockResolvedValue([
+    vi.mocked(fetchRounds).mockResolvedValue(page([
       { ...base, service: { ...painting, unitLabel: '', unitLabelPlural: '', unitDescription: null } },
-    ]);
+    ]));
     renderWith(<RoundsPage />);
 
     expect(await screen.findByTestId('units-count-round_paint')).toHaveTextContent('6 units pledged');

@@ -1,11 +1,6 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { MyRoundDto, RoundDto } from '@bulk/shared';
+import { usePagedQuery, type Paged } from '../../lib/pages';
 import { fetchMyRounds, fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
 
 /** Query key for the resident rounds list (the caller's own society). */
@@ -21,11 +16,11 @@ export const myRoundsQueryKey = ['rounds', 'mine'] as const;
  */
 const LIVE_REFETCH_MS = 20_000;
 
-/** TanStack Query hook for the resident rounds list (`GET /rounds`), live-polled. */
-export function useRounds(): UseQueryResult<RoundDto[]> {
-  return useQuery({
+/** The resident rounds list (`GET /rounds`), live-polled, one page at a time (FEAT-025). */
+export function useRounds(): Paged<RoundDto> {
+  return usePagedQuery({
     queryKey: roundsQueryKey,
-    queryFn: fetchRounds,
+    fetchPage: fetchRounds,
     refetchOnWindowFocus: true,
     refetchInterval: LIVE_REFETCH_MS,
   });
@@ -36,10 +31,10 @@ export function useRounds(): UseQueryResult<RoundDto[]> {
  * cadence as the browse list: a joined round's unit count and price move while
  * it is OPEN, and its status moves without the resident doing anything.
  */
-export function useMyRounds(): UseQueryResult<MyRoundDto[]> {
-  return useQuery({
+export function useMyRounds(): Paged<MyRoundDto> {
+  return usePagedQuery({
     queryKey: myRoundsQueryKey,
-    queryFn: fetchMyRounds,
+    fetchPage: fetchMyRounds,
     refetchOnWindowFocus: true,
     refetchInterval: LIVE_REFETCH_MS,
   });

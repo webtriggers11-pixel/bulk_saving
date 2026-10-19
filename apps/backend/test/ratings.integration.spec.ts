@@ -301,7 +301,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .set('Authorization', `Bearer ${aliceToken}`)
         .expect(200);
 
-      const mine = res.body.data as MyRoundDto[];
+      const mine = res.body.data.items as MyRoundDto[];
       const deliveredRow = mine.find((r) => r.id === delivered.id);
       const openRow = mine.find((r) => r.id === open.id);
       expect(deliveredRow?.status).toBe('RATED');
@@ -325,7 +325,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .set('Authorization', `Bearer ${carolToken}`)
         .expect(200);
 
-      const ids = (res.body.data as MyRoundDto[]).map((r) => r.id);
+      const ids = (res.body.data.items as MyRoundDto[]).map((r) => r.id);
       expect(ids.indexOf(newer.id)).toBeLessThan(ids.indexOf(older.id));
     });
 
@@ -338,7 +338,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .set('Authorization', `Bearer ${aliceToken}`)
         .expect(200);
 
-      expect((res.body.data as MyRoundDto[]).some((r) => r.id === round.id)).toBe(false);
+      expect((res.body.data.items as MyRoundDto[]).some((r) => r.id === round.id)).toBe(false);
     });
 
     it('requires authentication', async () => {
@@ -413,7 +413,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .get('/admin/vendors')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
-      const vendors = res.body.data as VendorDto[];
+      const vendors = res.body.data.items as VendorDto[];
       const b = vendors.find((v) => v.id === otherVendor.id);
       const c = vendors.find((v) => v.id === unratedVendor.id);
 
@@ -442,7 +442,7 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       // 13 / 3 = 4.333… → 4.3, not 4.333333.
-      expect((res.body.data as VendorDto[]).find((v) => v.id === vendorD.id)).toMatchObject({
+      expect((res.body.data.items as VendorDto[]).find((v) => v.id === vendorD.id)).toMatchObject({
         averageRating: 4.3,
         ratingCount: 3,
       });

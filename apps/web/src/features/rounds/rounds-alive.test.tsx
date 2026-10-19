@@ -11,6 +11,7 @@ import { Celebrate } from './Celebrate';
 import { formatClock } from './formatCountdown';
 import { useDeadlineClock } from './useDeadlineClock';
 import { fetchRounds, joinRound } from './rounds.api';
+import { page, pagedData } from '../../test/page';
 
 /**
  * FEAT-018 — the rounds screen's ladder, summary, invite, celebration and live clock.
@@ -167,7 +168,7 @@ describe('Celebrate (AC5)', () => {
 
 describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
   it('shows the summary, and marks a joined round as mine', async () => {
-    fetchRoundsMock.mockResolvedValue([ac, { ...ac, id: 'mine', myUnits: 2 }]);
+    fetchRoundsMock.mockResolvedValue(page([ac, { ...ac, id: 'mine', myUnits: 2 }]));
     renderPage();
     expect(await screen.findByTestId('rounds-summary')).toBeInTheDocument();
     // FEAT-019 wiring (V2 P3-4): the beam on the lead card only, light through the saving.
@@ -181,7 +182,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
 
   it('celebrates a join the server accepted', async () => {
     allowMotion();
-    fetchRoundsMock.mockResolvedValue([ac]);
+    fetchRoundsMock.mockResolvedValue(page([ac]));
     joinRoundMock.mockResolvedValue({ ...ac, myUnits: 1, unitsCount: 8 });
     renderPage();
     fireEvent.click(await screen.findByTestId('pledge-open-round_ac'));
@@ -191,7 +192,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
 
   it('celebrates when a round reaches a cheaper tier while on screen', async () => {
     allowMotion();
-    fetchRoundsMock.mockResolvedValue([ac]);
+    fetchRoundsMock.mockResolvedValue(page([ac]));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -204,7 +205,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     expect(screen.queryByTestId('celebrate')).not.toBeInTheDocument();
     // The live count crosses 10: the round reaches its second tier.
     act(() => {
-      client.setQueryData(['rounds'], [{ ...ac, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } }]);
+      client.setQueryData(['rounds'], pagedData([{ ...ac, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } }]));
     });
     expect(await screen.findByTestId('celebrate')).toBeInTheDocument();
   });
@@ -212,7 +213,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
   it('ticks the last day as a clock on the card', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const deadline = new Date(Date.now() + 2 * 3600_000 + 5_000).toISOString();
-    fetchRoundsMock.mockResolvedValue([{ ...ac, deadline }]);
+    fetchRoundsMock.mockResolvedValue(page([{ ...ac, deadline }]));
     renderPage();
     const badge = await screen.findByTestId('closing-round_ac');
     expect(badge.textContent).toMatch(/Closes in 02:00:0\d/);
@@ -226,7 +227,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
   it('the invite toast goes away on its own even while the card ticks every second (V2 P2-1)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const deadline = new Date(Date.now() + 3600_000).toISOString();
-    fetchRoundsMock.mockResolvedValue([{ ...ac, deadline }]);
+    fetchRoundsMock.mockResolvedValue(page([{ ...ac, deadline }]));
     vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     renderPage();
     fireEvent.click(await screen.findByTestId('invite-round_ac'));
@@ -244,7 +245,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
   it('a join that also reaches a cheaper tier celebrates once, not twice (V2 P2-2)', async () => {
     allowMotion();
     const crossed = { ...ac, myUnits: 4, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } };
-    fetchRoundsMock.mockResolvedValueOnce([ac]).mockResolvedValue([crossed]);
+    fetchRoundsMock.mockResolvedValueOnce(page([ac])).mockResolvedValue(page([crossed]));
     joinRoundMock.mockResolvedValue(crossed);
     renderPage();
     fireEvent.click(await screen.findByTestId('pledge-open-round_ac'));
@@ -258,7 +259,7 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
 
   it('losing a tier is not celebrated — and winning it back is (V2 P2-3, M4)', async () => {
     allowMotion();
-    fetchRoundsMock.mockResolvedValue([ac]);
+    fetchRoundsMock.mockResolvedValue(page([ac]));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -269,14 +270,14 @@ describe('the rounds screen (AC1, AC4, AC5, AC6)', () => {
     );
     await screen.findByTestId('round-card');
     act(() => {
-      client.setQueryData(['rounds'], [{ ...ac, unitsCount: 3, nextTier: { threshold: 5, price: 900 } }]);
+      client.setQueryData(['rounds'], pagedData([{ ...ac, unitsCount: 3, nextTier: { threshold: 5, price: 900 } }]));
     });
     // TanStack batches cache notifications on a timer: wait for the dip to RENDER, or the
     // next write lands first and the component never sees the tier go.
     await waitFor(() => expect(screen.getByTestId('to-go-round_ac')).toHaveTextContent('this round goes ahead'));
     expect(screen.queryByTestId('celebrate')).not.toBeInTheDocument();
     act(() => {
-      client.setQueryData(['rounds'], [ac]);
+      client.setQueryData(['rounds'], pagedData([ac]));
     });
     expect(await screen.findByTestId('celebrate')).toBeInTheDocument();
   });
@@ -343,7 +344,7 @@ describe('one burst per win, whichever arrives first (V2 r2 P3-1)', () => {
     const crossed = { ...ac, myUnits: 4, unitsCount: 11, currentPrice: 700, nextTier: { threshold: 20, price: 600 } };
     let respond: (round: RoundDto) => void = () => {};
     joinRoundMock.mockReturnValue(new Promise<RoundDto>((resolve) => (respond = resolve)));
-    fetchRoundsMock.mockResolvedValue([ac]);
+    fetchRoundsMock.mockResolvedValue(page([ac]));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -356,10 +357,10 @@ describe('one burst per win, whichever arrives first (V2 r2 P3-1)', () => {
     fireEvent.click(screen.getByTestId('join-round_ac'));
     // The poll lands first.
     act(() => {
-      client.setQueryData(['rounds'], [crossed]);
+      client.setQueryData(['rounds'], pagedData([crossed]));
     });
     const first = await screen.findByTestId('celebrate');
-    fetchRoundsMock.mockResolvedValue([crossed]);
+    fetchRoundsMock.mockResolvedValue(page([crossed]));
     await act(async () => {
       respond(crossed);
     });

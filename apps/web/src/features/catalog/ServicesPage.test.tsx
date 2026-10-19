@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceDto } from '@bulk/shared';
 import { ServicesPage } from './ServicesPage';
 import * as catalogApi from './catalog.api';
+import { page } from '../../test/page';
 
 const services: ServiceDto[] = [
   {
@@ -50,7 +51,7 @@ describe('ServicesPage', () => {
   });
 
   it('renders the society services from the API with names and formatted price', async () => {
-    vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+    vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page(services));
     renderPage();
 
     await waitFor(() => expect(screen.getByText('AC Servicing')).toBeInTheDocument());
@@ -70,7 +71,7 @@ describe('ServicesPage', () => {
   });
 
   it('renders the empty state when the API returns no services', async () => {
-    vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue([]);
+    vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page([]));
     renderPage();
 
     await waitFor(() => expect(screen.getByTestId('catalog-empty')).toBeInTheDocument());
@@ -88,7 +89,7 @@ describe('ServicesPage', () => {
 
   describe('search and categories (FEAT-015)', () => {
     it('sends the URL’s filters to the server and shows them in the controls', async () => {
-      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page(services));
       renderPage('/services?q=ac&category=Appliances');
 
       await screen.findByText('AC Servicing');
@@ -98,7 +99,7 @@ describe('ServicesPage', () => {
     });
 
     it('filters by category from a chip', async () => {
-      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      const spy = vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page(services));
       renderPage();
       await screen.findByText('AC Servicing');
 
@@ -107,19 +108,19 @@ describe('ServicesPage', () => {
     });
 
     it('a search that finds nothing is not "no services yet" — and offers everything back', async () => {
-      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue([]);
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page([]));
       renderPage('/services?q=zzz');
 
       const noMatch = await screen.findByTestId('catalog-no-match');
       expect(screen.queryByTestId('catalog-empty')).not.toBeInTheDocument();
-      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page(services));
       fireEvent.click(within(noMatch).getByRole('button', { name: 'Show all services' }));
       expect(await screen.findByText('AC Servicing')).toBeInTheDocument();
       expect(screen.getByRole('searchbox', { name: 'Search services' })).toHaveValue('');
     });
 
     it('keeps the unfiltered page quiet — no result count until a filter is set', async () => {
-      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(services);
+      vi.spyOn(catalogApi, 'fetchCatalog').mockResolvedValue(page(services));
       renderPage();
       await screen.findByText('AC Servicing');
       expect(screen.queryByText(/match$/)).not.toBeInTheDocument();

@@ -7,6 +7,7 @@ import { ServicesPage } from './ServicesPage';
 import { RoundsPage } from '../rounds/RoundsPage';
 import { fetchCatalog } from './catalog.api';
 import { fetchRounds } from '../rounds/rounds.api';
+import { page, pagedData } from '../../test/page';
 
 /**
  * FEAT-021 — from a service to booking it in one tap: the catalog says whether a service
@@ -79,8 +80,8 @@ function renderApp(url: string) {
 }
 
 beforeEach(() => {
-  vi.mocked(fetchCatalog).mockReset().mockResolvedValue([ac, paint]);
-  vi.mocked(fetchRounds).mockReset().mockResolvedValue([acRound]);
+  vi.mocked(fetchCatalog).mockReset().mockResolvedValue(page([ac, paint]));
+  vi.mocked(fetchRounds).mockReset().mockResolvedValue(page([acRound]));
 });
 
 describe('the catalog says whether a service can be booked now (AC1, AC2)', () => {
@@ -153,9 +154,9 @@ describe('the arrival scroll (V2 P1, P2)', () => {
     await screen.findByRole('dialog', { name: 'Join AC Servicing' });
     await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
     // Two polls that move the count: new `data` references each time.
-    act(() => client.setQueryData(['rounds'], [{ ...acRound, unitsCount: 8 }]));
+    act(() => client.setQueryData(['rounds'], pagedData([{ ...acRound, unitsCount: 8 }])));
     await waitFor(() => expect(screen.getByTestId('units-count-round_ac')).toHaveTextContent('8 AC units pledged'));
-    act(() => client.setQueryData(['rounds'], [{ ...acRound, unitsCount: 9 }]));
+    act(() => client.setQueryData(['rounds'], pagedData([{ ...acRound, unitsCount: 9 }])));
     await new Promise((r) => setTimeout(r, 50));
     expect(scroll).toHaveBeenCalledTimes(1);
   });
@@ -168,7 +169,7 @@ describe('the arrival scroll (V2 P1, P2)', () => {
 
   it('a second request while on the page is honoured too', async () => {
     const other = { ...acRound, id: 'round_two', service: { ...acRound.service, slug: 'ac-2', name: 'Deep Clean' } };
-    vi.mocked(fetchRounds).mockResolvedValue([acRound, other]);
+    vi.mocked(fetchRounds).mockResolvedValue(page([acRound, other]));
     renderApp('/rounds?join=round_ac');
     await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
     // Close the first sheet, then ask for another round from inside the page.
@@ -192,7 +193,7 @@ describe('the arrival scroll (V2 P1, P2)', () => {
 
 describe('a round you are already in (V2 P3)', () => {
   it('the catalog says you are in, not that you can join', async () => {
-    vi.mocked(fetchRounds).mockResolvedValue([{ ...acRound, myUnits: 3 }]);
+    vi.mocked(fetchRounds).mockResolvedValue(page([{ ...acRound, myUnits: 3 }]));
     renderApp('/services');
     expect(await screen.findByTestId('service-round')).toHaveTextContent('You’re in with 3 AC units · ₹900 now');
   });

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoundDto } from '@bulk/shared';
 import { RoundsPage } from './RoundsPage';
 import { fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./rounds.api', () => ({
@@ -57,9 +58,9 @@ describe('RoundsPage', () => {
   });
 
   it('below the first tier, says the round GOES AHEAD there — not that it "unlocks" the price already shown (CHORE-010)', async () => {
-    fetchRoundsMock.mockResolvedValue([
+    fetchRoundsMock.mockResolvedValue(page([
       { ...openRound, unitsCount: 2, currentPrice: 900, nextTier: { threshold: 5, price: 900 } },
-    ]);
+    ]));
     renderPage();
 
     const line = await screen.findByTestId('next-tier-round_1');
@@ -68,7 +69,7 @@ describe('RoundsPage', () => {
   });
 
   it('renders a round with service name, current price, unit count and the next-tier hint', async () => {
-    fetchRoundsMock.mockResolvedValue([openRound]);
+    fetchRoundsMock.mockResolvedValue(page([openRound]));
     renderPage();
 
     await waitFor(() => expect(screen.getByText('AC Servicing')).toBeInTheDocument());
@@ -83,7 +84,7 @@ describe('RoundsPage', () => {
   });
 
   it('joins with the chosen units and refetches the list', async () => {
-    fetchRoundsMock.mockResolvedValue([openRound]);
+    fetchRoundsMock.mockResolvedValue(page([openRound]));
     joinRoundMock.mockResolvedValue({ ...openRound, myUnits: 3, unitsCount: 9 });
     renderPage();
 
@@ -102,7 +103,7 @@ describe('RoundsPage', () => {
   });
 
   it('shows the empty state when there are no open rounds', async () => {
-    fetchRoundsMock.mockResolvedValue([]);
+    fetchRoundsMock.mockResolvedValue(page([]));
     renderPage();
 
     await waitFor(() => expect(screen.getByTestId('rounds-empty')).toBeInTheDocument());
@@ -112,7 +113,7 @@ describe('RoundsPage', () => {
 
   describe('the pledge sheet (FEAT-016)', () => {
     it('stepping costs nothing — nothing is sent until the one action is pressed', async () => {
-      fetchRoundsMock.mockResolvedValue([openRound]);
+      fetchRoundsMock.mockResolvedValue(page([openRound]));
       renderPage();
       fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
       fireEvent.click(screen.getByTestId('increment-round_1'));
@@ -122,7 +123,7 @@ describe('RoundsPage', () => {
     });
 
     it('previews what the chosen number costs — today, and at the next, cheaper tier', async () => {
-      fetchRoundsMock.mockResolvedValue([{ ...openRound, currentPrice: 900, nextTier: { threshold: 10, price: 700 } }]);
+      fetchRoundsMock.mockResolvedValue(page([{ ...openRound, currentPrice: 900, nextTier: { threshold: 10, price: 700 } }]));
       renderPage();
       fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
       fireEvent.change(screen.getByTestId('units-input-round_1'), { target: { value: '2' } });
@@ -133,7 +134,7 @@ describe('RoundsPage', () => {
     });
 
     it('a pledged resident changes it from the same sheet, and cannot "update" to the same number', async () => {
-      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      fetchRoundsMock.mockResolvedValue(page([{ ...openRound, myUnits: 2 }]));
       updatePledgeMock.mockResolvedValue({ ...openRound, myUnits: 3 });
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
@@ -144,7 +145,7 @@ describe('RoundsPage', () => {
     });
 
     it('leaving is in the sheet, and the sheet closes once the server agrees', async () => {
-      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      fetchRoundsMock.mockResolvedValue(page([{ ...openRound, myUnits: 2 }]));
       leaveRoundMock.mockResolvedValue(undefined as never);
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
@@ -156,7 +157,7 @@ describe('RoundsPage', () => {
     });
 
     it('leaving asks first; backing out runs nothing and keeps the pledge sheet open (FEAT-024)', async () => {
-      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      fetchRoundsMock.mockResolvedValue(page([{ ...openRound, myUnits: 2 }]));
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
       fireEvent.click(screen.getByTestId('leave-round_1'));
@@ -170,7 +171,7 @@ describe('RoundsPage', () => {
     });
 
     it('offline, a confirmed leave says it is waiting — and can still be backed out of (V2 P1)', async () => {
-      fetchRoundsMock.mockResolvedValue([{ ...openRound, myUnits: 2 }]);
+      fetchRoundsMock.mockResolvedValue(page([{ ...openRound, myUnits: 2 }]));
       leaveRoundMock.mockResolvedValue(undefined as never);
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: 'Change' }));
@@ -192,7 +193,7 @@ describe('RoundsPage', () => {
     });
 
     it('each opening starts from what is pledged now — an abandoned draft does not come back', async () => {
-      fetchRoundsMock.mockResolvedValue([openRound]);
+      fetchRoundsMock.mockResolvedValue(page([openRound]));
       renderPage();
       fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
       fireEvent.click(screen.getByTestId('increment-round_1'));
@@ -203,7 +204,7 @@ describe('RoundsPage', () => {
     });
 
     it('a pledge queued OFFLINE still says so on the card once the sheet is closed (FEAT-016 V2 P2-3)', async () => {
-      fetchRoundsMock.mockResolvedValue([openRound]);
+      fetchRoundsMock.mockResolvedValue(page([openRound]));
       renderPage();
       fireEvent.click(await screen.findByTestId('pledge-open-round_1'));
       onlineManager.setOnline(false);
@@ -216,7 +217,7 @@ describe('RoundsPage', () => {
     });
 
     it('a queued pledge the server later refuses says so on the card (V2 round 2)', async () => {
-      fetchRoundsMock.mockResolvedValue([openRound]);
+      fetchRoundsMock.mockResolvedValue(page([openRound]));
       joinRoundMock.mockRejectedValue(new Error('round closed'));
       renderPage();
       fireEvent.click(await screen.findByTestId('pledge-open-round_1'));

@@ -1,4 +1,5 @@
 import { Transform, Type } from 'class-transformer';
+import { PageQueryDto } from '../../common/pagination';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -75,7 +76,7 @@ export class JoinRoundDto implements JoinRoundBody {
 }
 
 /** `GET /admin/rounds` query (FEAT-005): optional status + society filters. */
-export class AdminRoundsQueryDto implements AdminRoundsQuery {
+export class AdminRoundsQueryDto extends PageQueryDto implements AdminRoundsQuery {
   @IsOptional()
   @IsIn(Object.values(RoundStatus))
   status?: RoundStatus;

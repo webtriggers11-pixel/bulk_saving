@@ -1,5 +1,6 @@
-import type { JoinRoundBody, MyRoundDto, RoundDto } from '@bulk/shared';
+import type { JoinRoundBody, MyRoundDto, Page, PageQuery, RoundDto } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
+import { toQueryString } from '../../lib/filters';
 
 /**
  * Resident-facing rounds API (FEAT-003). Every route is tenant-scoped server-side
@@ -9,8 +10,8 @@ import { apiRequest } from '../../lib/api';
  */
 
 /** GET /rounds — OPEN rounds in the caller's society, with pricing + the caller's pledge. */
-export function fetchRounds(): Promise<RoundDto[]> {
-  return apiRequest<RoundDto[]>('/rounds');
+export function fetchRounds(page: PageQuery = {}): Promise<Page<RoundDto>> {
+  return apiRequest<Page<RoundDto>>(`/rounds${toQueryString(page)}`);
 }
 
 /**
@@ -19,8 +20,8 @@ export function fetchRounds(): Promise<RoundDto[]> {
  * round would vanish from the tab the moment it closed, which is exactly when a
  * resident most wants to see it.
  */
-export function fetchMyRounds(): Promise<MyRoundDto[]> {
-  return apiRequest<MyRoundDto[]>('/rounds/mine');
+export function fetchMyRounds(page: PageQuery = {}): Promise<Page<MyRoundDto>> {
+  return apiRequest<Page<MyRoundDto>>(`/rounds/mine${toQueryString(page)}`);
 }
 
 /** POST /rounds/:id/join — pledge `units` (>=1); records/updates participation atomically. */

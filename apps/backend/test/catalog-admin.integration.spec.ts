@@ -108,7 +108,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       .get('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const services = res.body.data as AdminServiceDto[];
+    const services = res.body.data.items as AdminServiceDto[];
     expect(Array.isArray(services)).toBe(true);
     expect(services.some((svc) => createdServiceIds.includes(svc.id))).toBe(true);
   });
@@ -335,7 +335,7 @@ describe('Admin catalog API (integration, needs DB + Redis)', () => {
       .get('/admin/services')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const svc = (res.body.data as AdminServiceDto[]).find((s) => s.id === id);
+    const svc = (res.body.data.items as AdminServiceDto[]).find((s) => s.id === id);
     expect(svc?.offerings).toEqual([
       expect.objectContaining({ societyId: society.id, serviceId: id, enabled: true, indicativePrice: 299 }),
     ]);

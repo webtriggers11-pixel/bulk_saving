@@ -7,6 +7,7 @@ import { ApiError } from '../../lib/api';
 import { society } from './admin.fixtures';
 import { createRound, fetchServices, fetchSocieties } from './admin.api';
 import { AdminNewRoundPage } from './AdminNewRoundPage';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
@@ -102,10 +103,10 @@ describe('AdminNewRoundPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fetchSocietiesMock.mockResolvedValue([society]);
-    fetchServicesMock.mockResolvedValue([
+    fetchServicesMock.mockResolvedValue(page([
       service,
       { ...service, id: 'svc_off', name: 'Retired Service', active: false },
-    ]);
+    ]));
   });
 
   it('arrives with society and service chosen from the demand list (FEAT-022)', async () => {

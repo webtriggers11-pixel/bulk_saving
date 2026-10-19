@@ -104,7 +104,7 @@ describe('GET /catalog (integration, needs DB + Redis)', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
 
-    const data = res.body.data as ServiceDto[];
+    const data = res.body.data.items as ServiceDto[];
     const slugs = data.map((d) => d.slug).sort();
     expect(slugs).toEqual([acServicing.slug, pestControl.slug].sort());
 
@@ -130,7 +130,7 @@ describe('GET /catalog (integration, needs DB + Redis)', () => {
       .get('/catalog')
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
-    const slugs = (res.body.data as ServiceDto[]).map((d) => d.slug);
+    const slugs = (res.body.data.items as ServiceDto[]).map((d) => d.slug);
     expect(slugs).not.toContain(painting.slug); // offering disabled
     expect(slugs).not.toContain(inactive.slug); // service inactive
   });
@@ -147,7 +147,7 @@ describe('GET /catalog (integration, needs DB + Redis)', () => {
       .get('/catalog')
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
-    const slugs = (res.body.data as ServiceDto[]).map((d) => d.slug);
+    const slugs = (res.body.data.items as ServiceDto[]).map((d) => d.slug);
     expect(slugs).not.toContain(bOnly.slug);
   });
 

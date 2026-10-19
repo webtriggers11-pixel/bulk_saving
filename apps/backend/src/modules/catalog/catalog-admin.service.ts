@@ -7,10 +7,12 @@ import type {
   ServiceOfferingDto,
   UpdateServiceBody,
   UpsertOfferingBody,
+  Page,
 } from '@bulk/shared';
 import type { Service, ServiceOffering } from '@prisma/client';
 import { ErrorCode } from '../../common/error-codes';
 import { activeFrom, containsInsensitive, searchTerm } from '../../common/list-filters';
+import { pageArgs, pageOf } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -71,7 +73,7 @@ export class CatalogAdminService {
    * Filters (FEAT-015): `q` over name, description and slug; exact `category`; `status`;
    * `offeredIn` = only services ENABLED in that society.
    */
-  async listServices(query: AdminServicesQuery = {}): Promise<AdminServiceDto[]> {
+  async listServices(query: AdminServicesQuery = {}): Promise<Page<AdminServiceDto>> {
     const q = searchTerm(query.q);
     const active = activeFrom(query.status);
     const where: Prisma.ServiceWhereInput = {
@@ -82,12 +84,17 @@ export class CatalogAdminService {
       ...(active !== undefined ? { active } : {}),
       ...(query.offeredIn ? { offerings: { some: { societyId: query.offeredIn, enabled: true } } } : {}),
     };
-    const services = await this.prisma.service.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { offerings: { orderBy: { createdAt: 'asc' } } },
-    });
-    return services.map((service) => toAdminServiceDto(service, service.offerings));
+    // FEAT-025: one page; `id` breaks createdAt ties so the order is total.
+    const [services, total] = await Promise.all([
+      this.prisma.service.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        include: { offerings: { orderBy: { createdAt: 'asc' } } },
+        ...pageArgs(query),
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+    return pageOf(services, query, total, (service) => toAdminServiceDto(service, service.offerings));
   }
 
   /**

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboard, roundSummary, society } from './admin.fixtures';
 import { fetchAdminRounds, fetchDashboard, fetchSocieties } from './admin.api';
 import { AdminDashboardPage } from './AdminDashboardPage';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
@@ -50,7 +51,7 @@ describe('AdminDashboardPage', () => {
 
   it('renders status tiles, demand, payment totals and a linked round row', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue([roundSummary]);
+    fetchAdminRoundsMock.mockResolvedValue(page([roundSummary]));
     renderPage();
 
     const needsVendor = await screen.findByTestId('status-tile-CLOSED_MET');
@@ -71,7 +72,7 @@ describe('AdminDashboardPage', () => {
 
   it('refetches rounds with the chosen status and society filters', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue([]);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage();
 
     await screen.findByTestId('admin-rounds-empty');
@@ -91,7 +92,7 @@ describe('AdminDashboardPage', () => {
 
   it('shows an error state when the dashboard fails to load', async () => {
     fetchDashboardMock.mockRejectedValue(new Error('boom'));
-    fetchAdminRoundsMock.mockResolvedValue([]);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage();
 
     expect(await screen.findByText(/couldn't load the dashboard/i)).toBeInTheDocument();
@@ -99,7 +100,7 @@ describe('AdminDashboardPage', () => {
 
   it('filters rounds on the server from the URL — a shared link opens the same list (FEAT-015)', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue([roundSummary]);
+    fetchAdminRoundsMock.mockResolvedValue(page([roundSummary]));
     renderPage(`/admin?status=CLOSED_MET&societyId=${society.id}&q=ac&category=Appliances`);
 
     await screen.findAllByTestId('admin-round-row');
@@ -115,7 +116,7 @@ describe('AdminDashboardPage', () => {
 
   it('drops a status the server would refuse instead of sending it', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue([]);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage('/admin?status=BOGUS');
     await screen.findByTestId('admin-rounds-empty');
     expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
@@ -133,7 +134,7 @@ describe('AdminDashboardPage', () => {
         },
       ],
     });
-    fetchAdminRoundsMock.mockResolvedValue([]);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage();
     const row = await screen.findByTestId('ask-row-tank');
     expect(row).toHaveTextContent('Water Tank Cleaning');
@@ -147,7 +148,7 @@ describe('AdminDashboardPage', () => {
 
   it('says so when nobody is waiting', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue([]);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage();
     expect(await screen.findByTestId('asks')).toHaveTextContent('Nobody is waiting');
   });

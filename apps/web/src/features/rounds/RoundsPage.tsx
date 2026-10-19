@@ -30,6 +30,7 @@ import { InviteButton } from './InviteButton';
 import { Celebrate } from './Celebrate';
 import { useDeadlineClock } from './useDeadlineClock';
 import { Toast } from '../../components/ui/toast';
+import { ShowMore } from '../../components/ui/show-more';
 import { reachedTiers } from './roundMath';
 
 /** Units a single resident may pledge (mirrors the backend MAX_UNITS_PER_RESIDENT guard). */
@@ -616,7 +617,7 @@ export function RoundsPage() {
         </Notice>
       )}
 
-      {data && data.length > 0 && <RoundsSummary rounds={data} />}
+      {data && data.length > 0 && <RoundsSummary rounds={data} total={query.total} />}
 
       {/* FEAT-020: the one contextual ask for notifications, once something is joined. */}
       {data && <PushPrompt joinedAny={data.some((round) => round.myUnits > 0)} />}
@@ -632,6 +633,7 @@ export function RoundsPage() {
               requested={round.id === requested}
             />
           ))}
+          <ShowMore hasMore={query.hasMore} loaded={data.length} total={query.total} busy={query.loadingMore} onMore={query.loadMore} noun={['round', 'rounds']} />
         </section>
       )}
 

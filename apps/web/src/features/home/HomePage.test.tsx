@@ -8,6 +8,7 @@ import { fetchRounds } from '../rounds/rounds.api';
 import { useAuthStore } from '../auth/auth.store';
 import { HomePage } from './HomePage';
 import { signOutAfterTest } from '../../test/session';
+import { page } from '../../test/page';
 
 vi.mock('../auth/auth.api', () => ({
   fetchMe: vi.fn(),
@@ -45,7 +46,7 @@ function me(role: Role): MeResponse {
 function renderAs(role: Role) {
   const profile = me(role);
   fetchMeMock.mockResolvedValue(profile);
-  fetchRoundsMock.mockResolvedValue([]);
+  fetchRoundsMock.mockResolvedValue(page([]));
   useAuthStore.setState({
     status: 'authenticated',
     accessToken: 'access',

@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import type { AdminServiceDto, ServiceOfferingDto } from '@bulk/shared';
+import type { AdminServiceDto, Page, ServiceOfferingDto } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -34,7 +34,7 @@ export class CatalogAdminController {
   }
 
   @Get('services')
-  listServices(@Query() query: AdminServicesQueryDto): Promise<AdminServiceDto[]> {
+  listServices(@Query() query: AdminServicesQueryDto): Promise<Page<AdminServiceDto>> {
     return this.admin.listServices(query);
   }
 

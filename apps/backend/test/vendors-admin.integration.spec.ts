@@ -114,7 +114,7 @@ describe('Vendors admin API (integration, needs DB)', () => {
       .get('/admin/vendors')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const list = res.body.data as VendorDto[];
+    const list = res.body.data.items as VendorDto[];
     // Globally: no active vendor appears after an inactive one.
     const firstInactive = list.findIndex((v) => !v.active);
     if (firstInactive >= 0) {
@@ -157,7 +157,7 @@ describe('Vendors admin API (integration, needs DB)', () => {
       .get('/admin/vendors')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const mine = (list.body.data as VendorDto[]).filter((v) => createdIds.includes(v.id));
+    const mine = (list.body.data.items as VendorDto[]).filter((v) => createdIds.includes(v.id));
     expect(mine.map((v) => v.id)).toEqual([createdIds[1], betaId]);
   });
 

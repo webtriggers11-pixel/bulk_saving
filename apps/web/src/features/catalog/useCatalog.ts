@@ -1,5 +1,6 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CatalogQuery, ServiceDto } from '@bulk/shared';
+import { usePagedQuery, type Paged } from '../../lib/pages';
 import { askForService, fetchCatalog, withdrawAsk } from './catalog.api';
 import { ApiError } from '../../lib/api';
 import { roundsQueryKey } from '../rounds/useRounds';
@@ -12,11 +13,11 @@ export const catalogQueryKey = ['catalog'] as const;
  * the key (a prefix of `catalogQueryKey`, so invalidating the catalog refreshes every
  * filtered view), and the previous result stays on screen while the next one loads.
  */
-export function useCatalog(query: CatalogQuery = {}): UseQueryResult<ServiceDto[]> {
-  return useQuery({
+export function useCatalog(query: CatalogQuery = {}): Paged<ServiceDto> {
+  return usePagedQuery({
     queryKey: [...catalogQueryKey, query],
-    queryFn: () => fetchCatalog(query),
-    placeholderData: keepPreviousData,
+    fetchPage: (page) => fetchCatalog({ ...query, ...page }),
+    placeholderData: 'keepPrevious',
   });
 }
 

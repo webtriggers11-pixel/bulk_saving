@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, Vendor } from '@prisma/client';
-import type { AdminVendorsQuery, CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto } from '@bulk/shared';
+import type { AdminVendorsQuery, CreateVendorBody, RatingSummary, UpdateVendorBody, VendorDto, Page } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { activeFrom, containsInsensitive, searchTerm } from '../../common/list-filters';
+import { pageArgs, pageOf } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
 import { groupStarsByVendor, summarise } from '../rounds/ratings.mapper';
 
@@ -25,7 +26,7 @@ export class VendorsService {
    * count ships with it, because an average of 5.0 from one rating is not the same
    * claim as 5.0 from fifty.
    */
-  async list(query: AdminVendorsQuery = {}): Promise<VendorDto[]> {
+  async list(query: AdminVendorsQuery = {}): Promise<Page<VendorDto>> {
     // FEAT-015 filters (ADR-0026). Category is matched case-insensitively and exactly:
     // vendor categories are free text (not the closed service list), so "home care"
     // and "Home Care" are the same trade here.
@@ -36,15 +37,18 @@ export class VendorsService {
       ...(query.category ? { category: { equals: query.category, mode: 'insensitive' } } : {}),
       ...(active !== undefined ? { active } : {}),
     };
-    const [vendors, grouped] = await Promise.all([
-      this.prisma.vendor.findMany({ where, orderBy: [{ active: 'desc' }, { name: 'asc' }] }),
-      this.prisma.rating.findMany({
-        where: { round: { vendorId: { not: null } } },
-        select: { stars: true, round: { select: { vendorId: true } } },
-      }),
+    // FEAT-025: one page (active first, by name, then id — a total order); the rating
+    // aggregate is read for the page's vendors only, not for every rating in the system.
+    const [vendors, total] = await Promise.all([
+      this.prisma.vendor.findMany({ where, orderBy: [{ active: 'desc' }, { name: 'asc' }, { id: 'asc' }], ...pageArgs(query) }),
+      this.prisma.vendor.count({ where }),
     ]);
+    const grouped = await this.prisma.rating.findMany({
+      where: { round: { vendorId: { in: vendors.map((vendor) => vendor.id) } } },
+      select: { stars: true, round: { select: { vendorId: true } } },
+    });
     const starsByVendor = groupStarsByVendor(grouped);
-    return vendors.map((vendor) => toVendorDto(vendor, summarise(starsByVendor.get(vendor.id) ?? [])));
+    return pageOf(vendors, query, total, (vendor) => toVendorDto(vendor, summarise(starsByVendor.get(vendor.id) ?? [])));
   }
 
   /** Add a vendor (active by default). */

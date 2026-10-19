@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activeVendor, inactiveVendor } from './admin.fixtures';
 import { createVendor, fetchVendors, updateVendor } from './admin.api';
 import { AdminVendorsPage } from './AdminVendorsPage';
+import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
@@ -53,7 +54,7 @@ describe('AdminVendorsPage', () => {
   });
 
   it('lists vendors with their active state', async () => {
-    fetchVendorsMock.mockResolvedValue([activeVendor, inactiveVendor]);
+    fetchVendorsMock.mockResolvedValue(page([activeVendor, inactiveVendor]));
     renderPage();
 
     expect(await screen.findByText('CoolFix')).toBeInTheDocument();
@@ -62,10 +63,10 @@ describe('AdminVendorsPage', () => {
   });
 
   it('shows each vendor’s average rating with its count (FEAT-009)', async () => {
-    fetchVendorsMock.mockResolvedValue([
+    fetchVendorsMock.mockResolvedValue(page([
       { ...activeVendor, averageRating: 4.5, ratingCount: 8 },
       { ...inactiveVendor, averageRating: null, ratingCount: 0 },
-    ]);
+    ]));
     renderPage();
 
     await screen.findByText('CoolFix');
@@ -77,7 +78,7 @@ describe('AdminVendorsPage', () => {
   });
 
   it('creates a vendor with trimmed values and refetches the list', async () => {
-    fetchVendorsMock.mockResolvedValue([]);
+    fetchVendorsMock.mockResolvedValue(page([]));
     createVendorMock.mockResolvedValue(activeVendor);
     renderPage();
     await screen.findByTestId('vendors-empty');
@@ -98,7 +99,7 @@ describe('AdminVendorsPage', () => {
   });
 
   it('blocks an invalid phone client-side', async () => {
-    fetchVendorsMock.mockResolvedValue([]);
+    fetchVendorsMock.mockResolvedValue(page([]));
     renderPage();
     await screen.findByTestId('vendors-empty');
 
@@ -111,7 +112,7 @@ describe('AdminVendorsPage', () => {
   });
 
   it('deactivates and edits a vendor inline', async () => {
-    fetchVendorsMock.mockResolvedValue([activeVendor]);
+    fetchVendorsMock.mockResolvedValue(page([activeVendor]));
     updateVendorMock.mockResolvedValue(activeVendor);
     renderPage();
 
@@ -143,7 +144,7 @@ describe('AdminVendorsPage', () => {
   it('tells the admin a create is QUEUED when offline, not stuck on "Adding…" (BUG-004)', async () => {
     // Offline pauses the mutation: nothing rejects, isPending stays true. A rejected
     // promise would NOT reproduce this — that is the server-error path.
-    fetchVendorsMock.mockResolvedValue([]);
+    fetchVendorsMock.mockResolvedValue(page([]));
     renderPage();
     await screen.findByLabelText('Name');
 
@@ -164,7 +165,7 @@ describe('AdminVendorsPage', () => {
   });
 
   it('filters on the server from the URL, and says when nothing matches (FEAT-015)', async () => {
-    fetchVendorsMock.mockResolvedValue([]);
+    fetchVendorsMock.mockResolvedValue(page([]));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>

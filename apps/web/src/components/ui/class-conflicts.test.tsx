@@ -183,6 +183,7 @@ const NO_CLASSNAME: Record<string, string> = {
   SavedTick: 'a fixed confirmation chip; placement is its parent\'s job',
   Sheet: 'a portal-rendered modal; its content brings its own layout',
   ConfirmSheet: 'a Sheet with a fixed body and footer; takes no className (FEAT-024)',
+  ShowMore: 'a centred next-page control; placement is the list\'s (FEAT-025)',
 };
 
 /**

@@ -32,7 +32,8 @@ export function GroupBuysLead() {
   // Offline pauses the read instead of failing it (CHORE-005): "stalled" covers both.
   const stalled = queryStalled(query);
   const rounds = data ?? [];
-  const open = rounds.length;
+  // FEAT-025: the server's count — the first page may not be all of them.
+  const open = query.total ?? rounds.length;
   const joined = rounds.filter((round) => round.myUnits > 0).length;
   const known = data !== undefined;
   const empty = known && open === 0;

@@ -231,7 +231,7 @@ async function main() {
   });
 
   await scenario('catalog: a resident sees their society services', async () => {
-    const services = await api('/catalog', { token: state.alice.token, expect: 200 });
+    const services = await api('/catalog', { token: state.alice.token, expect: 200 }).then((res) => ({ ...res, data: res.data.items }));
     state.services = services.data;
     check('the catalog is non-empty', Array.isArray(services.data) && services.data.length > 0, `${services.data?.length}`);
     check(
@@ -246,7 +246,7 @@ async function main() {
     // meaningless, and the resident is billed finalPrice x units.
     const admin = state.admin.token;
     const painting = await api('/admin/services', { token: admin, expect: 200 }).then((res) =>
-      res.data.find((s) => s.slug === 'painting'),
+      res.data.items.find((s) => s.slug === 'painting'),
     );
     check('the seeded Painting service exists', Boolean(painting), 'seed may not have run');
     check('…and its unit is a room, not a "unit"', painting?.unitLabel === 'room', JSON.stringify(painting?.unitLabel));
@@ -255,7 +255,7 @@ async function main() {
 
     // And the label travels on the round DTO a resident actually reads, so no screen
     // needs a second request for it.
-    const feed = await api('/rounds', { token: state.alice.token, expect: 200 });
+    const feed = await api('/rounds', { token: state.alice.token, expect: 200 }).then((res) => ({ ...res, data: res.data.items }));
     const anyRound = feed.data[0];
     check('a resident round carries its service unit label', typeof anyRound?.service?.unitLabel === 'string' && anyRound.service.unitLabel.length > 0, JSON.stringify(anyRound?.service));
   });
@@ -329,7 +329,7 @@ async function main() {
     check('a second resident joins', join2.data?.unitsCount === 4, String(join2.data?.unitsCount));
     check('the tier price unlocks at the threshold', join2.data?.currentPrice === 700, String(join2.data?.currentPrice));
 
-    const listed = await api('/rounds', { token: state.alice.token, expect: 200 });
+    const listed = await api('/rounds', { token: state.alice.token, expect: 200 }).then((res) => ({ ...res, data: res.data.items }));
     check('the round appears in the society feed', listed.data.some((r) => r.id === state.round.id));
 
     const closed = await api(`/admin/rounds/${state.round.id}/close`, { method: 'POST', token: admin, expect: 201 });
@@ -353,7 +353,7 @@ async function main() {
     check('admin assigns the vendor', assigned.data?.status === 'ASSIGNED', assigned.data?.status);
 
     // BUG-010: the resident sees the NEGOTIATED price from here on, not the tier price.
-    const mine = await api('/rounds/mine', { token: state.alice.token, expect: 200 });
+    const mine = await api('/rounds/mine', { token: state.alice.token, expect: 200 }).then((res) => ({ ...res, data: res.data.items }));
     const myRow = mine.data.find((r) => r.id === state.round.id);
     check('the resident sees the negotiated final price', myRow?.finalPrice === 650, JSON.stringify({ finalPrice: myRow?.finalPrice, currentPrice: myRow?.currentPrice }));
 
@@ -491,7 +491,7 @@ async function main() {
     check('the admin sees who said what', aliceRow?.rating?.stars === 5 && aliceRow?.rating?.comment === 'Prompt and tidy.');
 
     // The resident's own view.
-    const mine = await api('/rounds/mine', { token: state.alice.token, expect: 200 });
+    const mine = await api('/rounds/mine', { token: state.alice.token, expect: 200 }).then((res) => ({ ...res, data: res.data.items }));
     const mineRow = mine.data.find((r) => r.id === roundId);
     check('GET /rounds/mine shows the delivered round', Boolean(mineRow), `${mine.data?.length} rounds`);
     check('…carrying the caller’s own rating', mineRow?.myRating?.stars === 5, JSON.stringify(mineRow?.myRating));
