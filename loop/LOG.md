@@ -1106,3 +1106,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3s: skeletons match the real geometry again (catalog tiles row-shaped below 400px, home tiles top-aligned, rounds 22px); the last 48px icon (Profile install card) → 44; guards strengthened (token paddings, Card presets, token icon sizes, positive Profile label, tile col-span, countdown+arrow wrapper, admin rail) — the two surviving mutations now killed (verified). P3-3 (StatCard note sinking with the value) noted, no caller. P3-4: removing the apostrophe in a ProfilePage comment let the class gate read that file — tokens 1788 → 1922 (BUG-012 again).
 - V1: gate exit 0 — backend 457/457, web 590/590, 1922 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-016 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 457/590; built CSS order checked; mutations M3–M6 all killed): PASS. P3s: FilterChips may share the snap-undoes-scroll bug → **measured: it does not** (choosing a chip cut off at the right edge leaves it fully visible; the last chip scrolls to the rail end) — no change; the `2lh` guard counts rather than pins each element (accepted); round-detail pages have no active nav item (expected).
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 590/590, 1922 class tokens.
+- BUG-016 → done. Next: BUG-012 (the class gate pairs quotes across a file; it could not read HomePage at all).
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
