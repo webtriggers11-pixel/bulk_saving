@@ -151,11 +151,12 @@ export function HomePage() {
           {isSuperAdmin && (
             // Solid, not glass: a super-admin would otherwise carry a fourth
             // blurred surface on this screen (V2 round 2, P2-3).
-            <Card padding="none" surface="solid" className="col-span-2 flex items-center gap-4 p-[19px]">
+            // BUG-015: wraps on a phone — the button beside the title squeezed it to 62px.
+            <Card padding="none" surface="solid" className="col-span-2 flex flex-wrap items-center gap-4 p-[19px]" data-testid="admin-entry">
               <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
                 <Icon name="check" size={22} strokeWidth={1.9} />
               </span>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-[1_1_9rem]">
                 <CardEyebrow>Super-admin</CardEyebrow>
                 <CardTitle size="md" className="mt-1.5">Manage rounds and vendors</CardTitle>
               </div>

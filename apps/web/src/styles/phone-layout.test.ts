@@ -18,7 +18,17 @@ describe('phone layout (BUG-015)', () => {
   });
 
   it('the facts on a request card wrap instead of overflowing', () => {
-    expect(src('requests/MyRequestsPage.tsx')).toMatch(/grid-cols-\[repeat\(auto-fit,minmax\(7rem,1fr\)\)\][^"]*" data-testid="my-facts"/);
+    expect(src('requests/MyRequestsPage.tsx')).toMatch(/grid-cols-\[repeat\(auto-fit,minmax\(7rem,1fr\)\)\][^"]*"\s*data-testid="my-facts"/);
+  });
+
+  it('the ask line may shrink to a narrow tile — its 9rem is a basis, never a minimum (V2 P1)', () => {
+    const line = src('catalog/ServicesPage.tsx').match(/<p className="([^"]*)" data-testid="service-demand">/)?.[1] ?? '';
+    expect(line).toContain('min-w-0');
+    expect(line).not.toMatch(/min-w-\[/);
+  });
+
+  it('the super-admin entry on Home wraps its button below the title', () => {
+    expect(src('home/HomePage.tsx')).toMatch(/col-span-2 flex flex-wrap items-center gap-4 p-\[19px\]" data-testid="admin-entry"/);
   });
 
   it('a saved rating wraps its stars and its buttons', () => {

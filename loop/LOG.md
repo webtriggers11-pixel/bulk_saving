@@ -1075,3 +1075,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Result: resident Home, Services, Rounds, My Requests, Profile × 360/390 × dark/light all clean; pledge + Appearance sheets clean at 360 both schemes; admin Dashboard, New round, Services, Vendors, round detail clean at 360 (dark + light) and 390 (dark). Logged-out pages (onboarding, admin login) were not re-measured (seen at 400–500px earlier).
 - Note: to audit admin I replaced my own test tab's resident session (Asha) with the dev admin; that cleared three auth keys in localhost:5175 storage (`bulk-saving-auth`, plus `auth_tokens` / `auth_user`, which are not this app's keys — likely left by another project that once ran on that port).
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-015 — V2 round 1 FAIL → fixed
+- V2 (independent; gate exit 0, 457/580; 3 mutations killed): P1 the ask line's `min-w-[9rem]` (144px) is wider than a tile's content box (117px at 360, 132px at 390) — it spilled ~10–27px past the card edge, INSIDE the viewport, so my off-screen audit could not see it. Fix: `min-w-0 flex-[1_1_9rem]` (9rem is the wrap basis, not a minimum) + source test. P3s taken: dropped the `demand ??` fallback (the owner's API is restarted; a silent default would hide contract drift); a lone last fact spans the row.
+- The audit was strengthened to flag any element past ITS CARD's edge, not only past the screen. Re-run found one more squeeze my resident session could never show: the super-admin entry on Home (title 62px beside the button) → wraps. With the stricter audit: resident ×5 at 360/390 × dark/light and admin ×5 at 360 × dark/light — 30/30 clean.
+- V1: gate exit 0 — backend 457/457, web 582/582, 1758 class tokens.
+- By: agent (autonomous)

@@ -137,7 +137,10 @@ function MyRequestCard({ round, last, lead }: { round: MyRoundDto; last: boolean
 
         {/* BUG-015: a grid that wraps — three facts in one row pushed the card 12px past a
             360px screen and squeezed "Final price per flat" to 45px. */}
-        <dl className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2.5" data-testid="my-facts">
+        <dl
+          className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2.5 [&>*:last-child:nth-child(odd)]:col-span-full"
+          data-testid="my-facts"
+        >
           <Fact term="Your pledge" value={formatUnits(round.myUnits, round.service)} testId="my-units" />
           {/* BUG-010: once the admin has negotiated a price, that is what the resident
               pays — the tier price the round reached while open is history. */}

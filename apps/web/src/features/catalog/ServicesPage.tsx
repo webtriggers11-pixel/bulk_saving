@@ -104,8 +104,7 @@ function RoundStatus({
  */
 function AskControl({ service, className }: { service: ServiceDto; className?: string }) {
   const ask = useServiceAsk();
-  // An API that predates FEAT-022 sends no `demand`: treat it as nobody asking yet.
-  const { askCount, askedByMe } = service.demand ?? { askCount: 0, askedByMe: false };
+  const { askCount, askedByMe } = service.demand;
   const others = askedByMe ? askCount - 1 : askCount;
   const neighbours = (n: number) => `${n} neighbour${n === 1 ? '' : 's'}`;
   const line =
@@ -120,7 +119,9 @@ function AskControl({ service, className }: { service: ServiceDto; className?: s
     <div className={cn('flex flex-col gap-2', className)} data-testid="service-no-round">
       {/* Wraps rather than squeezes (BUG-015): on a narrow tile the button drops below. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className="min-w-[9rem] flex-1 text-micro text-ink-muted" data-testid="service-demand">
+        {/* 9rem is the BASIS (when to wrap), not a minimum: as a min-width it spilled past
+            a 117px tile on a 360px phone (BUG-015 V2 P1). */}
+        <p className="min-w-0 flex-[1_1_9rem] text-micro text-ink-muted" data-testid="service-demand">
           {line}
         </p>
         <Button
