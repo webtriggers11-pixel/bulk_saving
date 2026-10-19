@@ -155,5 +155,27 @@ describe('Service asks (FEAT-022)', () => {
       (a) => a.service.id === service.id,
     );
     expect(pairs.map((a) => a.society.id)).toEqual([other.id]);
+
+    // V2 r2 P2: an ask that slipped in while the round was opening (the READ COMMITTED
+    // race the service comment describes) is not shown — that pair has a round open.
+    await prisma.serviceAsk.create({ data: { residentId: carol.id, societyId: society.id, serviceId: service.id } });
+    const raced = await http().get('/admin/dashboard').set(as('admin')).expect(200);
+    expect(
+      (raced.body.data.asks as Array<{ service: { id: string }; society: { id: string } }>).some(
+        (a) => a.service.id === service.id && a.society.id === society.id,
+      ),
+    ).toBe(false);
+  });
+
+  it('asks for a service the society no longer offers are not on the to-do list (V2 r2 P2)', async () => {
+    // `other` still has the outsider's waiting ask; withdraw the offering there.
+    await prisma.serviceOffering.updateMany({ where: { societyId: other.id, serviceId: service.id }, data: { enabled: false } });
+    const res = await http().get('/admin/dashboard').set(as('admin')).expect(200);
+    expect(
+      (res.body.data.asks as Array<{ service: { id: string }; society: { id: string } }>).some(
+        (a) => a.service.id === service.id && a.society.id === other.id,
+      ),
+    ).toBe(false);
+    await prisma.serviceOffering.updateMany({ where: { societyId: other.id, serviceId: service.id }, data: { enabled: true } });
   });
 });

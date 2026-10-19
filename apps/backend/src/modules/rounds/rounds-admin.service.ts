@@ -303,6 +303,8 @@ export class RoundsAdminService {
     const key = (p: { societyId: string; serviceId: string }) => `${p.societyId}|${p.serviceId}`;
     const open = new Set(openRounds.map(key));
     const ok = new Set(offered.map(key));
+    // Filtered from the top 100: if more than 80 of those are not actionable, lower-ranked
+    // actionable pairs wait for the next look — acceptable for a to-do list (V2 r2 P3).
     const groups = ranked.filter((g) => ok.has(key(g)) && !open.has(key(g))).slice(0, 20);
     if (groups.length === 0) return [];
     const [societies, services] = await Promise.all([
