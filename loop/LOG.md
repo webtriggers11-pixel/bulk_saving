@@ -1019,3 +1019,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 449/449, web 551/551, 1703 class tokens. No flakes.
 - **Not closed:** T7 (a real push on a real browser). The production preview on :5175 has the service worker with `push-sw.js` active and the Profile switch live; granting notification permission is a browser prompt the owner must accept. FEAT-020 stays in-progress until then.
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–3)
+
+## 2026-10-19 — FEAT-021 — OPENED: from a service to booking it
+- Owner: "from /services it needs to redirect to that service to book, right?" Service cards were dead ends. Booking = joining that service's open round (admin-opened, ADR-0010): cards show the open round and link to `/rounds?join=<id>`, which scrolls to it, highlights it and opens its pledge sheet; no open round → said plainly. Frontend only. "Ask for this service" (needs an API) noted as a follow-up.
+- By: agent (autonomous)
+
+## 2026-10-19 — BUG-013 — flaky admin-auth integration test (found during FEAT-021 V1)
+- A full gate failed `admin-auth.integration.spec` "signs an admin in…" (verify → 404); the suite passed 5/5 alone. Cause: `waitForSend` returned `lastCode` once ANY OTP send landed; admin-door sends are queued (ADR-0027), and a leftover job from an earlier suite on the same test queue could land first with another number's code. Fix (test only): `CapturingChannel.otps` records every send; `waitForSend(from, phone)` waits for THIS phone's code; the "nothing is sent" assertion now waits 300ms and checks this phone, instead of comparing a count synchronously against an asynchronous send. Pre-existing (FEAT-012/CHORE-017 era), not caused by FEAT-021.
+- By: agent (autonomous)

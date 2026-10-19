@@ -17,12 +17,15 @@ export class CapturingChannel implements NotificationChannel {
   public lastPhone: string | null = null;
   public sends = 0;
   public messages: Array<{ to: string; body: string }> = [];
+  /** Every OTP sent, in order — so a test can wait for ITS phone's code (BUG-013). */
+  public otps: Array<{ phone: string; code: string }> = [];
   public failSends = false;
 
   async sendOtp(phone: string, code: string): Promise<void> {
     this.sends += 1;
     this.lastPhone = phone;
     this.lastCode = code;
+    this.otps.push({ phone, code });
   }
 
   async send(to: string, message: string): Promise<void> {

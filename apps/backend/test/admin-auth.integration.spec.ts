@@ -61,25 +61,29 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
    * response can land before the SMS does. Tests that need the code wait for it here
    * rather than reading `lastCode` off a race.
    */
-  async function waitForSend(from: number): Promise<string> {
-    for (let i = 0; i < 100; i += 1) {
-      if (channel.sends > from) return channel.lastCode as string;
+  async function waitForSend(from: number, phone: string): Promise<string> {
+    // BUG-013: wait for a code sent to THIS phone. Reading `lastCode` once any send
+    // landed raced with leftover admin-door jobs from earlier suites (same test queue),
+    // whose code for another number arrived first — then verify failed, 1 run in ~10.
+    for (let i = 0; i < 200; i += 1) {
+      const mine = channel.otps.slice(from).filter((sent) => sent.phone === phone);
+      if (mine.length > 0) return mine[mine.length - 1].code;
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
-    throw new Error(`no OTP dispatched within 1s (sends stayed at ${from})`);
+    throw new Error(`no OTP dispatched to ${phone} within 2s`);
   }
 
   it('signs an admin in with a phone number and nothing else (AC1, AC3)', async () => {
     const phone = await makeAdmin();
 
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
     const requested = await server()
       .post('/auth/admin/otp/request')
       .send({ phone })
       .expect(200);
     expect(requested.body).toEqual({ success: true, data: { requested: true } });
 
-    const code = await waitForSend(sendsBefore);
+    const code = await waitForSend(sendsBefore, phone);
     expect(code).toMatch(/^\d{6}$/);
     expect(JSON.stringify(requested.body)).not.toContain(code);
 
@@ -129,7 +133,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       };
     }
 
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
     const asAdmin = await probe(adminPhone);
     const asResident = await probe(residentPhone);
     const asStranger = await probe(strangerPhone);
@@ -142,9 +146,8 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     // The one thing that does differ is the only thing the caller cannot observe:
     // exactly one SMS was dispatched, to the administrator — and it is dispatched
     // off the response path, so it is awaited here rather than asserted inline.
-    await waitForSend(sendsBefore);
-    expect(channel.sends).toBe(sendsBefore + 1);
-    expect(channel.lastPhone).toBe(adminPhone);
+    await waitForSend(sendsBefore, adminPhone);
+    expect(channel.otps.slice(sendsBefore).filter((sent) => sent.phone === adminPhone)).toHaveLength(1);
   });
 
   /**
@@ -199,9 +202,9 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
 
   it('refuses a valid code from a number that is no longer an admin (AC5)', async () => {
     const phone = await makeAdmin();
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    const code = await waitForSend(sendsBefore);
+    const code = await waitForSend(sendsBefore, phone);
 
     // Demoted between requesting the code and using it — the role is an authorisation
     // decision, so it is read at the moment it is acted on, not when the OTP was sent.
@@ -224,10 +227,13 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       });
     }
 
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    // Ambiguous: there is no one society to sign them into, so nothing is sent.
-    expect(channel.sends).toBe(sendsBefore);
+    // Ambiguous: there is no one society to sign them into, so nothing is sent. The send is
+    // queued off the response path, so give the worker a moment before asserting none came
+    // for THIS number (BUG-013: a bare count raced with other suites' leftover jobs).
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(channel.otps.slice(sendsBefore).filter((sent) => sent.phone === phone)).toHaveLength(0);
 
     // ...and the request still consumed the limiter, exactly like every other number.
     await server().post('/auth/admin/otp/request').send({ phone }).expect(429);
@@ -244,9 +250,9 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       data: { societyId: otherSociety.id, phone, role: 'RESIDENT', verifiedAt: new Date() },
     });
 
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
     await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-    const code = await waitForSend(sendsBefore);
+    const code = await waitForSend(sendsBefore, phone);
 
     const res = await server().post('/auth/admin/otp/verify').send({ phone, code }).expect(200);
     // Signed into the society they ADMINISTER, not the one they merely live in.
@@ -256,7 +262,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
 
   it('ignores a body that tries to name its own society or invite code (ADR-0003)', async () => {
     const phone = await makeAdmin();
-    const sendsBefore = channel.sends;
+    const sendsBefore = channel.otps.length;
 
     // The global pipe is `whitelist: true`, so these extra fields are stripped rather
     // than rejected — which is why the assertion that matters is about WHERE the
@@ -265,7 +271,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
       .post('/auth/admin/otp/request')
       .send({ phone, societyId: otherSociety.id, inviteCode: otherSociety.inviteCode })
       .expect(200);
-    const code = await waitForSend(sendsBefore);
+    const code = await waitForSend(sendsBefore, phone);
 
     const res = await server()
       .post('/auth/admin/otp/verify')
