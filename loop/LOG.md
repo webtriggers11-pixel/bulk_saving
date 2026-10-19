@@ -1081,3 +1081,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The audit was strengthened to flag any element past ITS CARD's edge, not only past the screen. Re-run found one more squeeze my resident session could never show: the super-admin entry on Home (title 62px beside the button) → wraps. With the stricter audit: resident ×5 at 360/390 × dark/light and admin ×5 at 360 × dark/light — 30/30 clean.
 - V1: gate exit 0 — backend 457/457, web 582/582, 1758 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — BUG-015 — V2 round 2 PASS; V3; CLOSED
+- V2 round 2 (independent; gate exit 0, 457/582; tile math re-derived: the ask line shrinks to 117px at 360 and the button wraps; Home admin entry wraps; built CSS checked directly; 1 mutation killed): PASS. P3 taken: the lone-fact span moved from an `&>*` arbitrary variant (which `check-css-classes.mjs` cannot read, so the whole class list went unchecked) onto the "You owe" Fact itself.
+- V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 582/582, 1758 class tokens.
+- BUG-015 → done.
+- By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
