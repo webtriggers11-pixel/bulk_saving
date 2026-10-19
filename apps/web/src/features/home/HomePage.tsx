@@ -11,6 +11,7 @@ import { queryStalled } from '../../lib/offline';
 import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
 import { Monogram } from '../../components/ui/monogram';
 import { HomeSkeleton } from './HomeSkeleton';
+import { GroupBuysLead } from './GroupBuysLead';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -47,8 +48,10 @@ export function HomePage() {
       {failed && <QueryErrorState subject="profile" hasData={data !== undefined} onRetry={() => void refetch()} />}
 
       {data && (
-        // The bento: one wide identity card, one wide accent action, two squares.
-        // Emphasis comes from mixing surfaces, never from a new layout per card.
+        // The bento (FEAT-011): one wide identity card, one wide accent lead, two squares.
+        // FEAT-023: the lead is Group buys — the product's core loop, first — and Services
+        // takes the square it used to leave to Group buys. Emphasis comes from mixing
+        // surfaces, never from a new layout per card.
         <div className="stagger grid grid-cols-2 gap-3.5">
           <Card padding="none" className="col-span-2 flex items-center gap-4 overflow-hidden p-[22px]">
             <span
@@ -71,39 +74,7 @@ export function HomePage() {
             </div>
           </Card>
 
-          <Card padding="none"
-            surface="accent"
-            className="sheen col-span-2 flex items-center gap-4 overflow-hidden p-[22px]"
-          >
-            <span
-              aria-hidden="true"
-              className="animate-glide absolute -right-8 -top-12 h-48 w-48 rounded-full bg-on-fill/40 blur-3xl"
-            />
-            <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-on-fill opacity-10">
-              <Icon name="services" size={170} strokeWidth={1.1} />
-            </span>
-            <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-inset border border-on-fill/40 bg-on-fill/20 text-on-fill">
-              <Icon name="services" size={25} strokeWidth={1.8} />
-            </span>
-            <div className="relative min-w-0 flex-1">
-              <p className="text-eyebrow uppercase text-on-fill">Explore</p>
-              <h2 className="mt-1.5 text-headline font-extrabold leading-tight text-on-fill">
-                Services in
-                <br />
-                your society
-              </h2>
-              <Button
-                variant="secondary"
-                tone="onAccent"
-                size="sm"
-                className="mt-3"
-                onClick={() => navigate('/services')}
-              >
-                Browse services
-                <Icon name="forward" size={15} strokeWidth={2.3} className="nudge" />
-              </Button>
-            </div>
-          </Card>
+          <GroupBuysLead />
 
           <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[18px]">
             {/* BUG-016: the two tiles share one shape — same icon box, an eyebrow each, content
@@ -122,21 +93,21 @@ export function HomePage() {
 
           <Card padding="none" className="flex min-h-[168px] flex-col p-[18px]">
             <span className="flex h-11 w-11 items-center justify-center rounded-control border border-paper/85 bg-gradient-to-br from-brand-light/25 to-brand/5 text-brand-ink">
-              <Icon name="users" size={22} strokeWidth={1.8} />
+              <Icon name="services" size={22} strokeWidth={1.8} />
             </span>
             <button
               type="button"
-              aria-label="Group buys"
-              onClick={() => navigate('/rounds')}
+              aria-label="Browse services"
+              onClick={() => navigate('/services')}
               className="mt-4 min-h-touch rounded-chip text-left t press focus-visible:outline-none focus-visible:shadow-focus"
             >
               {/* A span, not CardEyebrow: that renders a <p>, which is not allowed in a button. */}
-              <span className="block text-eyebrow uppercase text-brand-ink">Join in</span>
+              <span className="block text-eyebrow uppercase text-brand-ink">Explore</span>
               <span className="mt-2 block text-title font-extrabold tracking-[-0.038em] text-ink">
-                Group buys
+                Services
               </span>
               <span className="mt-1.5 flex items-center gap-1.5 text-meta font-semibold text-ink-muted">
-                Open rounds
+                Ask or book
                 <Icon name="forward" size={15} strokeWidth={2.3} className="text-brand-ink" />
               </span>
             </button>
@@ -164,4 +135,3 @@ export function HomePage() {
     </main>
   );
 }
-

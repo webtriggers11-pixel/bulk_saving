@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MeResponse, Role } from '@bulk/shared';
 import { fetchMe } from '../auth/auth.api';
+import { fetchRounds } from '../rounds/rounds.api';
 import { useAuthStore } from '../auth/auth.store';
 import { HomePage } from './HomePage';
 import { signOutAfterTest } from '../../test/session';
@@ -15,7 +16,16 @@ vi.mock('../auth/auth.api', () => ({
   endSession: vi.fn().mockResolvedValue({ signedOut: true }),
 }));
 
+// FEAT-023: Home now reads the rounds list for its lead card.
+vi.mock('../rounds/rounds.api', () => ({
+  fetchRounds: vi.fn(),
+  fetchMyRounds: vi.fn(),
+  joinRound: vi.fn(),
+  updatePledge: vi.fn(),
+  leaveRound: vi.fn(),
+}));
 const fetchMeMock = vi.mocked(fetchMe);
+const fetchRoundsMock = vi.mocked(fetchRounds);
 
 function me(role: Role): MeResponse {
   return {
@@ -35,6 +45,7 @@ function me(role: Role): MeResponse {
 function renderAs(role: Role) {
   const profile = me(role);
   fetchMeMock.mockResolvedValue(profile);
+  fetchRoundsMock.mockResolvedValue([]);
   useAuthStore.setState({
     status: 'authenticated',
     accessToken: 'access',
@@ -69,5 +80,14 @@ describe('HomePage admin link', () => {
     renderAs('RESIDENT');
     await screen.findByRole('button', { name: 'Browse services' });
     expect(screen.queryByRole('button', { name: 'Admin dashboard' })).not.toBeInTheDocument();
+  });
+
+  it('leads with Group buys above the society and services tiles (FEAT-023)', async () => {
+    renderAs('RESIDENT');
+    const lead = await screen.findByTestId('group-buys-lead');
+    const society = screen.getByTestId('society-name');
+    // Document order: the lead card comes before the tiles.
+    expect(lead.compareDocumentPosition(society) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Browse services' })).toBeInTheDocument();
   });
 });

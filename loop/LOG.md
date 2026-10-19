@@ -1177,3 +1177,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 464/464, web 599/599, 3278 class tokens. No flakes (BUG-018's test included).
 - BUG-017 → done (per-device lifetime sessions, ADR-0034). BUG-018 → done (test-only).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-023 — T1–T2 built: Home leads with Group buys
+- `GroupBuysLead`: the accent surface now carries Group buys — live counts from the same polled `['rounds']` query the tab uses, up to three soonest-closing rounds as rows (service · closes-in · "You're in" · ₹/unit) deep-linking to `/rounds?join=<id>` (FEAT-021), "See all N group buys"; empty → "Nothing open right now" + "Ask for a service"; a failed rounds query degrades to the card without rows. Services becomes the second square tile ("Explore · Services · Ask or book"); `HomeSkeleton` mirrors the new geometry.
+- Guards hit on the way: `text-on-fill/80` refused by the accents contrast test (text on a fill is never faded) → full `text-on-fill`; the Skeleton `delay` union; a 1-day fixture reading "23h".
+- V1: gate exit 0 — backend 464/464, web 604/604 (+5), 3338 class tokens (+60).
+- By: agent (autonomous)
