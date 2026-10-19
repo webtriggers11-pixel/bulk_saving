@@ -970,3 +970,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Tests rejected first attempts: `.text-shimmer` collided with the Tailwind `text-` family → `.ink-shimmer`; `h-1 w-1` in button.tsx tripped the touch-floor scan → `size-1`; grouped reduced-motion selectors don't satisfy the fade-out guard → one block each; `Sparkles` had to join the BUG-007 primitive list; jsdom lacks PointerEvent → test polyfill.
 - V1: gate exit 0 — backend 396/396, web 511/511 (+32), 1642 class tokens.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-019 — T5 browser pass + T6 docs
+- Chrome at phone width as Asha (own tab, so the owner's tab was left alone): Aurora day (violet fills, beam on the lead card, pink sparkles on "Could save"), Ocean night (blue→cyan ring and ladder, aurora glow), Appearance with 7 two-tone swatches — Sunset chosen through the real picker → stored, applied after reload, Join fill rgb(194,65,12); press sparks 8 while flying, 0 after; `beam-spin` running. No console errors. Browser reset to Mono afterwards.
+- Restarted my own :5175 dev server first (Tailwind config changed — the stale-config trap from FEAT-017).
+- ADR-0031; DESIGN-SYSTEM.md (accents table, micro-interactions).
+- By: agent (autonomous)

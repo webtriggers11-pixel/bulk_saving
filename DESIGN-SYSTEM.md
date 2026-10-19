@@ -37,6 +37,30 @@ miss a token.
 State hues (error red, delivered green, offline amber, booked blue, the rating star)
 deliberately **do not** move with the palette. They are meanings, not decoration.
 
+### One look, seven accents (FEAT-019, ADR-0031) — supersedes the palette picker below
+
+`<html data-look="vercel" data-theme="mono" data-accent="ocean">`: the **look** is always
+Vercel (below); `mono` is its neutral base; the **accent** is a colour pair — `--brand` and
+its gradient partner `--brand-2` (+ deep/light/ink) by day and by night.
+
+| Accent | Pair | | Accent | Pair |
+|---|---|---|---|---|
+| Mono | black → grey | | Sunset | orange → pink |
+| Ocean | blue → cyan | | Forest | green → teal |
+| Aurora | violet → pink | | Lagoon | teal → cyan |
+| Bloom | pink → violet | | | |
+
+- Text sits on `brand`/`brand-deep` (≥4.5:1 with `on-fill`, tested per accent and scheme),
+  never on `brand-2` alone; `brand-2` is for gradients (ring, ladder fill, accent glow, aurora).
+- Utilities: `from-brand to-brand-2`, `fill-brand-2`, `bg-brand-2`.
+- Retired glass palettes migrate: teal → lagoon, indigo → aurora, ember → sunset.
+
+**Micro-interactions** (all named in `theme.css`, all off under reduced motion):
+spotlight (Card writes `--mx/--my`; the look paints an accent disc), `border-beam` (a light
+travelling the lead card's edge), `Sparkles` (three twinkling stars — `components/ui/sparkles.tsx`),
+`ink-shimmer` (a light through a headline figure; both stops are ≥4.5:1 ink), press sparks
+(primary `Button`, 8 sparks from the press point, rendered only while flying).
+
 ### Mono — the Vercel register (FEAT-017, ADR-0029) — the default
 
 `data-theme="mono"` is a fourth palette that also carries **geometry and type**: flat
