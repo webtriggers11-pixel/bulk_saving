@@ -85,5 +85,5 @@
 | FEAT-023 | Home leads with Group buys: the accent surface carries live open-round counts and up to three rounds deep-linking into the pledge sheet | specced | P1 | 2026-10-19 | — | loop/work/FEAT-023-home-leads-with-group-buys/ | ADR-0021, ADR-0022 |
 | CHORE-024 | Profile: the "This app" card is cluttered; one clean settings list with one row shape | triaged | P2 | 2026-10-19 | — | loop/work/CHORE-024-profile-clean-up/ | ADR-0021 |
 | BUG-018 | Flaky: OTP "awaited dispatch" test races a fixed 50ms sleep against Redis under the full suite (1 in ~5 gate runs) | in-progress | P2 | 2026-10-19 | — | loop/work/BUG-018-flaky-otp-awaited-dispatch-test/ | — |
-| FEAT-024 | Confirm before destructive actions: log out, leave a round, delete a rating, withdraw an ask, admin cancel/deactivate — one confirm sheet | triaged | P1 | 2026-10-19 | — | loop/work/FEAT-024-confirm-destructive-actions/ | ADR-0022 |
-| FEAT-025 | Server-side pagination on the list endpoints and the screens that read them | triaged | P1 | 2026-10-19 | — | loop/work/FEAT-025-server-side-pagination/ | ADR-0005 |
+| FEAT-024 | Confirm before destructive actions: log out, leave a round, delete a rating, withdraw an ask, admin cancel/deactivate — one confirm sheet | specced | P1 | 2026-10-19 | — | loop/work/FEAT-024-confirm-destructive-actions/ | ADR-0022 |
+| FEAT-025 | Server-side pagination on the list endpoints and the screens that read them | specced | P1 | 2026-10-19 | — | loop/work/FEAT-025-server-side-pagination/ | ADR-0005 |

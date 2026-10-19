@@ -1160,3 +1160,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — BUG-017 + BUG-018 — V1 PASS (run 2)
 - Gate exit 0 — backend 463/463 (run 1 had the BUG-018 flake), web 599/599, 3278 class tokens. BUG-018's fix (test-only) rode along; the flaky test now waits for the send instead of sleeping. V2 handed to the code-reviewer subagent.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 / FEAT-025 — specced
+- FEAT-024: one `ConfirmSheet` primitive on `Sheet`; log out (Home, Profile), leave a round, remove a rating, admin cancel round (migrated from its inline box). Deliberately NOT confirmed: withdraw an ask, deactivate, pledge count, notifications off (reversible in one tap).
+- FEAT-025: keyset pagination, one envelope `{ items, nextCursor, total }`, `limit` 1–50 default 20, on /rounds, /rounds/mine, /catalog, /admin/rounds (retires the silent 200 cap), /admin/services, /admin/vendors; web moves to `useInfiniteQuery` + an explicit "Show more". ADR-0035 at T1.
+- Order after BUG-017's V2/V3: FEAT-023 → CHORE-024 → FEAT-024 → FEAT-025.
+- By: agent (autonomous)
