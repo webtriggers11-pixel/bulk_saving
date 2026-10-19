@@ -73,7 +73,7 @@ export function StatCard({
           className={cn(
             'flex h-11 w-11 items-center justify-center rounded-control border',
             lead
-              ? 'border-white/40 bg-white/20 text-white'
+              ? 'border-on-fill/40 bg-on-fill/20 text-on-fill'
               : 'border-paper/90 bg-gradient-to-br from-paper/95 to-paper/55 text-brand-ink shadow-lift',
           )}
         >
@@ -84,7 +84,7 @@ export function StatCard({
         <p
           className={cn(
             'text-eyebrow uppercase',
-            lead ? 'text-white/75' : alert ? 'text-amber-ink' : 'text-brand-ink',
+            lead ? 'text-on-fill/75' : alert ? 'text-amber-ink' : 'text-brand-ink',
           )}
         >
           {label}
@@ -92,13 +92,13 @@ export function StatCard({
         <p
           className={cn(
             'num mt-1.5 text-[26px] font-extrabold leading-none tracking-[-0.045em]',
-            lead ? 'text-white' : 'text-ink',
+            lead ? 'text-on-fill' : 'text-ink',
           )}
         >
           {value}
         </p>
         {note && (
-          <p className={cn('mt-1.5 text-meta', lead ? 'text-white/75' : 'text-ink-muted')}>{note}</p>
+          <p className={cn('mt-1.5 text-meta', lead ? 'text-on-fill/75' : 'text-ink-muted')}>{note}</p>
         )}
       </div>
       {action}

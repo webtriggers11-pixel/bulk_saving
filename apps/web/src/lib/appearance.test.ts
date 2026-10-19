@@ -47,12 +47,12 @@ describe('appearance', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaults to following the system, and to teal', async () => {
+  it('defaults to following the system, and to Mono (FEAT-017)', async () => {
     mockMedia({ dark: true });
     const a = await load();
     a.initAppearance();
     expect(root().dataset.scheme).toBe('dark');
-    expect(root().dataset.theme).toBe('teal');
+    expect(root().dataset.theme).toBe('mono');
   });
 
   it('"system" follows the OS live — a phone going dark at sunset takes the app with it', async () => {
@@ -93,6 +93,14 @@ describe('appearance', () => {
     expect(root().dataset.theme).toBe('ember');
     localStorage.setItem(a.PALETTE_KEY, 'neon');
     a = await load();
+    a.initAppearance();
+    expect(root().dataset.theme).toBe('mono');
+  });
+
+  it('keeps a stored tinted palette — a device that chose Lagoon is not moved to Mono', async () => {
+    mockMedia();
+    localStorage.setItem('bulk:palette', 'teal');
+    const a = await load();
     a.initAppearance();
     expect(root().dataset.theme).toBe('teal');
   });

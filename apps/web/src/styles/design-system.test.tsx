@@ -134,11 +134,13 @@ describe('AC3 — a palette swap cannot change a layout', () => {
     const teal = markupUnder('teal');
     const indigo = markupUnder('indigo');
     const ember = markupUnder('ember');
+    const mono = markupUnder('mono');
 
     // If a component ever branches on the theme, this is where it shows up: the
     // palette is CSS, so the tree it paints must not know about it.
     expect(indigo).toEqual(teal);
     expect(ember).toEqual(teal);
+    expect(mono).toEqual(teal);
   });
 });
 
@@ -259,6 +261,7 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     ['teal', ":root,\n[data-theme='teal']"],
     ['indigo', "[data-theme='indigo']"],
     ['ember', "[data-theme='ember']"],
+    ['mono', "[data-theme='mono'] {"],
   ];
 
   it.each(PALETTES)('%s: body and secondary text clear 4.5:1 on the ground', (_name, selector) => {
@@ -298,9 +301,10 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
    * honest backdrop; state hues carry small text too, so they are checked as well.
    */
   const NIGHTS: Array<[string, string]> = [
-    ['teal', "html[data-scheme='dark']:not([data-theme='indigo']):not([data-theme='ember'])"],
+    ['teal', "html[data-scheme='dark']:not([data-theme='indigo']):not([data-theme='ember']):not([data-theme='mono'])"],
     ['indigo', "html[data-scheme='dark'][data-theme='indigo']"],
     ['ember', "html[data-scheme='dark'][data-theme='ember']"],
+    ['mono', "html[data-scheme='dark'][data-theme='mono'] {"],
   ];
   const sharedNight = () => palette("[data-scheme='dark'] {");
 
@@ -312,10 +316,13 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     }
   });
 
-  it.each(NIGHTS)('%s night: white on the accent fill still clears 4.5:1', (_name, selector) => {
+  it.each(NIGHTS)('%s night: the fill text (on-fill) on the accent fill still clears 4.5:1', (_name, selector) => {
+    // FEAT-017 (ADR-0029): Mono's night fill is near-white, so fill text is a token —
+    // white in the tinted nights, near-black in Mono's.
     const p = palette(selector);
-    expect(ratio(WHITE, p['--brand'])).toBeGreaterThanOrEqual(4.5);
-    expect(ratio(WHITE, p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
+    expect(p['--on-fill'], 'every night declares its fill text').toBeDefined();
+    expect(ratio(p['--on-fill'], p['--brand'])).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(p['--on-fill'], p['--brand-deep'])).toBeGreaterThanOrEqual(4.5);
   });
 
   it.each(NIGHTS)('%s night: the state hues (error, offline, delivered, booked) read on its surface', (_name, selector) => {
@@ -329,6 +336,7 @@ describe('AC7 — text clears WCAG AA in every palette', () => {
     const names = NIGHTS.map(([, selector]) => Object.keys(palette(selector)).sort());
     expect(names[1]).toEqual(names[0]);
     expect(names[2]).toEqual(names[0]);
+    expect(names[3]).toEqual(names[0]);
     expect(names[0]).toEqual(expect.arrayContaining(['--ground', '--paper', '--ink', '--brand-ink', '--brand']));
   });
 
@@ -346,14 +354,11 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
    * free pass: a new `white` in one of these files is a new decision, and should have to
    * say so here (V2 P2-6). Adding or removing one means editing the number.
    */
+  // FEAT-017 (ADR-0029): text and marks ON a fill now use `on-fill` (Mono's night fill is
+  // near-white), so the list is down to marks whose backdrop is not the active fill.
   const ACCENT_FILL_USES: Record<string, number> = {
-    'components/ui/button.tsx': 7, // primary + on-accent variants
-    'components/ui/monogram.tsx': 1,
-    'components/ui/stat.tsx': 6, // the lead stat sits on the accent surface
     'components/ui/switch.tsx': 1, // the knob is white in both schemes, like iOS
-    'features/home/HomePage.tsx': 8, // the hero card is the accent surface, and the brand mark
-    'features/admin/AdminLayout.tsx': 1, // the brand mark
-    'features/appearance/AppearanceSheet.tsx': 1, // the tick on a palette swatch
+    'features/appearance/AppearanceSheet.tsx': 1, // the tick on a swatch: always a day fill
   };
   // Every utility that can paint a colour, plus arbitrary white literals.
   const WHITE = /\b(?:bg|border|from|to|via|ring|divide|text|stroke|fill|shadow|outline|decoration|caret|accent|placeholder)-white\b|-\[(?:#fff(?:fff)?|white|rgb\(255[ ,_]+255[ ,_]+255)/gi;
@@ -390,6 +395,8 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
       'light:teal': ground(":root,\n[data-theme='teal']"),
       'light:indigo': ground("[data-theme='indigo'] {"),
       'light:ember': ground("[data-theme='ember'] {"),
+      'light:mono': ground("[data-theme='mono'] {"),
+      'dark:mono': ground("html[data-scheme='dark'][data-theme='mono'] {"),
       'dark:teal': ground("html[data-scheme='dark']:not([data-theme='indigo'])"),
       'dark:indigo': ground("html[data-scheme='dark'][data-theme='indigo']"),
       'dark:ember': ground("html[data-scheme='dark'][data-theme='ember']"),

@@ -884,3 +884,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 396/396, web 430/430 (58 files), 1606 class tokens. No flakes.
 - FEAT-016 → done.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-017 — OPENED: a Vercel-style "Mono" look, day and night
+- Owner: "UI/UX like Vercel components to look more appealing and cool in dark and white mode". ADR-0029: Mono is a fourth palette (ADR-0021's mechanism); radii and font become tokens so a palette can carry geometry; Mono's flat hairline surfaces are scoped overrides of the system classes; `on-fill` replaces literal white on accent fills (Mono's night fill is near-white); Mono is the new-device default. Default chosen autonomously (reversible by one constant).
+- By: agent (autonomous)
+
+## 2026-10-19 — FEAT-017 — T1–T4 built
+- Tokens: `--radius-*` and `--font-sans`/`--font-label` are CSS variables (tinted palettes keep their exact values, pinned by test); Tailwind reads them. Mono day + night colour blocks (Geist scale: #171717 ink, #666 soft, #fafafa / #0a0a0a ground, #111 night paper); every night now declares `--on-fill`; the teal-night selector gained `:not([data-theme='mono'])` (it would otherwise outrank Mono's night).
+- Mono look = one scoped section of `html[data-theme='mono'] .<system class>` overrides: flat paper + hairline surfaces, no card blur, inverted accent card, hairline-darkens hover, no sweep/sheen/halo/glide/glow, grid ground via `.ambient-ground` pseudo-elements, Geist 600/700 weights, Geist Mono micro-labels.
+- Codemod: 23 `white` utilities on fills → `on-fill` (button, stat, monogram, Home hero, admin mark). Allowlist now 2 (switch knob, swatch tick).
+- Mono is the default (appearance.ts + pre-paint script); stored palettes respected; Appearance lists 4 swatches.
+- V1: gate exit 0 — backend 396/396, web 442/442, 1607 class tokens. (Machine: global pnpm shim still broken; ran with a corepack shim on PATH + Node 24.22.0.)
+- By: agent (autonomous)

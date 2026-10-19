@@ -54,14 +54,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: [
-          'Plus Jakarta Sans',
-          'ui-sans-serif',
-          'system-ui',
-          '-apple-system',
-          'Segoe UI',
-          'sans-serif',
-        ],
+        // FEAT-017 (ADR-0029): the family is a token, so a palette can carry its own type.
+        sans: ['var(--font-sans)'],
       },
       fontSize: {
         eyebrow: ['10.5px', { lineHeight: '1.2', letterSpacing: '0.14em', fontWeight: '800' }],
@@ -78,12 +72,13 @@ export default {
         hero: ['48px', { lineHeight: '0.94', letterSpacing: '-0.058em' }],
       },
       borderRadius: {
-        chip: '12px',
-        control: '16px',
-        inset: '18px',
-        tile: '20px',
-        card: '24px',
-        sheet: '34px',
+        // FEAT-017 (ADR-0029): tokens, so Mono can tighten them (values in theme.css).
+        chip: 'var(--radius-chip)',
+        control: 'var(--radius-control)',
+        inset: 'var(--radius-inset)',
+        tile: 'var(--radius-tile)',
+        card: 'var(--radius-card)',
+        sheet: 'var(--radius-sheet)',
       },
       boxShadow: {
         hairline: '0 1px 0 rgb(255 255 255 / 0.9) inset',

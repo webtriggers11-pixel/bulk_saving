@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="teal" data-scheme="light">
+<html lang="en" data-theme="mono" data-scheme="light">
   <head>
     <meta charset="UTF-8" />
     <!-- FEAT-016: viewport-fit=cover lets the app draw under the notch and home bar;
@@ -10,37 +10,37 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- FEAT-016 (ADR-0028): apply the remembered scheme and palette BEFORE first paint,
          so a night user never sees a white flash. Mirrors lib/appearance.ts; storage may
-         be unavailable, in which case the system scheme and teal apply. -->
+         be unavailable, in which case the system scheme and Mono apply (FEAT-017). -->
     <script>
       (function () {
-        var d = document.documentElement, pref = 'system', pal = 'teal';
+        var d = document.documentElement, pref = 'system', pal = 'mono';
         try {
           pref = localStorage.getItem('bulk:scheme') || 'system';
-          pal = localStorage.getItem('bulk:palette') || 'teal';
+          pal = localStorage.getItem('bulk:palette') || 'mono';
         } catch (e) {}
         var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia &&
           window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (pal !== 'indigo' && pal !== 'ember') pal = 'teal';
+        if (pal !== 'teal' && pal !== 'indigo' && pal !== 'ember') pal = 'mono';
         d.setAttribute('data-scheme', dark ? 'dark' : 'light');
         d.setAttribute('data-theme', pal);
         // The status bar matches the ground from the first frame, not only once the app
         // module loads (FEAT-016 V2 P2-9). These are the --ground tokens in theme.css;
         // design-system.test.tsx fails if they drift.
         var GROUND = {
-          'light:teal': 'rgb(238, 242, 241)', 'light:indigo': 'rgb(239, 240, 248)', 'light:ember': 'rgb(246, 241, 236)',
-          'dark:teal': 'rgb(11, 20, 19)', 'dark:indigo': 'rgb(12, 13, 26)', 'dark:ember': 'rgb(20, 13, 10)'
+          'light:mono': 'rgb(250, 250, 250)', 'light:teal': 'rgb(238, 242, 241)', 'light:indigo': 'rgb(239, 240, 248)', 'light:ember': 'rgb(246, 241, 236)',
+          'dark:mono': 'rgb(10, 10, 10)', 'dark:teal': 'rgb(11, 20, 19)', 'dark:indigo': 'rgb(12, 13, 26)', 'dark:ember': 'rgb(20, 13, 10)'
         };
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', GROUND[(dark ? 'dark' : 'light') + ':' + pal]);
       })();
     </script>
-    <!-- FEAT-011: the design system's typeface. A CDN link rather than a bundled
+    <!-- FEAT-011: the design system's typeface; FEAT-017 adds Geist + Geist Mono for Mono. A CDN link rather than a bundled
          dependency (CLAUDE.md: dependencies need owner approval); the system sans
          fallback carries an offline first-visit without shifting layout. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist:wght@400..800&family=Geist+Mono:wght@500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="icon" type="image/png" href="/favicon.png" />

@@ -46,7 +46,7 @@ export function AdminLayout({
       <header className="sticky top-0 z-20 border-b border-paper/80 bg-gradient-to-b from-paper/70 to-paper/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
           <span className="order-1 flex items-center gap-2.5">
-            <span className="animate-breathe flex h-9 w-9 items-center justify-center rounded-chip paint-mono text-white shadow-accent">
+            <span className="animate-breathe flex h-9 w-9 items-center justify-center rounded-chip paint-mono text-on-fill shadow-accent">
               <Icon name="bolt" size={19} strokeWidth={1.9} />
             </span>
             <span className="text-body font-extrabold tracking-[-0.03em] text-ink">

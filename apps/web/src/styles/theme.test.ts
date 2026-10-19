@@ -28,7 +28,7 @@ function tokensOf(selector: string): Map<string, string> {
   return tokens;
 }
 
-const PALETTES = ['teal', 'indigo', 'ember'] as const;
+const PALETTES = ['teal', 'indigo', 'ember', 'mono'] as const;
 
 describe('design tokens', () => {
   it('declares the default palette on :root so an unset data-theme still renders', () => {
@@ -41,7 +41,7 @@ describe('design tokens', () => {
     expect(theirs).toEqual(teal);
   });
 
-  it.each(['indigo', 'ember'] as const)('palette %s re-tints — no value is shared with teal', (palette) => {
+  it.each(['indigo', 'ember', 'mono'] as const)('palette %s re-tints — no value is shared with teal', (palette) => {
     const teal = tokensOf(":root,\n[data-theme='teal']");
     const theirs = tokensOf(`[data-theme='${palette}']`);
     const identical = [...theirs].filter(([name, value]) => teal.get(name) === value);
@@ -67,7 +67,7 @@ describe('design tokens', () => {
   });
 
   it('themes by attribute, never by class — a palette swap cannot change a layout', () => {
-    expect(css).not.toMatch(/\.theme-(teal|indigo|ember)/);
+    expect(css).not.toMatch(/\.theme-(teal|indigo|ember|mono)/);
     for (const palette of PALETTES) {
       expect(css).toContain(`[data-theme='${palette}']`);
     }
@@ -87,6 +87,34 @@ describe('design tokens', () => {
       expect(css, `@keyframes ${name} is declared but never used`).toMatch(
         new RegExp(`animation:\\s*${name}\\b`),
       );
+    }
+  });
+
+  /**
+   * FEAT-017 (ADR-0029): radii and the sans family are tokens so a palette can carry a
+   * geometry. The tinted palettes must keep exactly the values they had as literals.
+   */
+  it('geometry and type are tokens, and the tinted palettes keep their values', () => {
+    const shared = css.slice(css.indexOf('/* geometry + type'));
+    for (const [name, px] of [
+      ['chip', 12], ['control', 16], ['inset', 18], ['tile', 20], ['card', 24], ['sheet', 34],
+    ] as const) {
+      expect(shared).toMatch(new RegExp(`--radius-${name}: ${px}px;`));
+    }
+    expect(shared).toMatch(/--font-sans: 'Plus Jakarta Sans'/);
+    const tailwind = readFileSync(join(process.cwd(), 'tailwind.config.js'), 'utf8');
+    expect(tailwind).toContain("card: 'var(--radius-card)'");
+    expect(tailwind).toContain("sans: ['var(--font-sans)']");
+  });
+
+  it('Mono tightens the geometry and sets Geist — and only Mono does', () => {
+    const mono = tokensOf("html[data-theme='mono'] {");
+    expect(mono.get('--radius-card')).toBe('12px');
+    expect(mono.get('--radius-control')).toBe('8px');
+    expect(mono.get('--font-sans')).toMatch(/^'Geist'/);
+    // No tinted palette redeclares geometry.
+    for (const palette of ['indigo', 'ember'] as const) {
+      expect([...tokensOf(`[data-theme='${palette}']`).keys()].some((k) => k.startsWith('--radius'))).toBe(false);
     }
   });
 });

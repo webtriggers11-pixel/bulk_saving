@@ -9,16 +9,17 @@ import { useSyncExternalStore } from 'react';
  * first paint (no flash of the wrong scheme); this module owns them after that.
  *
  * Storage is a per-device convenience: every read and write is guarded, and the app
- * renders correctly (system scheme, teal) when storage is unavailable.
+ * renders correctly (system scheme, Mono) when storage is unavailable.
  */
 
 export type SchemePreference = 'light' | 'dark' | 'system';
 export type Scheme = 'light' | 'dark';
-export type Palette = 'teal' | 'indigo' | 'ember';
+export type Palette = 'mono' | 'teal' | 'indigo' | 'ember';
 
 export const SCHEME_KEY = 'bulk:scheme';
 export const PALETTE_KEY = 'bulk:palette';
-export const PALETTES: readonly Palette[] = ['teal', 'indigo', 'ember'];
+/** Mono first: it is the default for a device that has not chosen (FEAT-017, ADR-0029). */
+export const PALETTES: readonly Palette[] = ['mono', 'teal', 'indigo', 'ember'];
 
 interface Appearance {
   preference: SchemePreference;
@@ -53,7 +54,7 @@ function asPreference(value: string | null): SchemePreference {
 }
 
 function asPalette(value: string | null): Palette {
-  return value === 'indigo' || value === 'ember' || value === 'teal' ? value : 'teal';
+  return value === 'indigo' || value === 'ember' || value === 'teal' || value === 'mono' ? value : 'mono';
 }
 
 function resolve(preference: SchemePreference): Scheme {

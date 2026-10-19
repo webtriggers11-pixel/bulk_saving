@@ -19,7 +19,7 @@ const SCHEME_OPTIONS = [
   { value: 'system', label: 'Match phone' },
 ];
 
-const PALETTE_NAMES: Record<Palette, string> = { teal: 'Lagoon', indigo: 'Dusk', ember: 'Ember' };
+const PALETTE_NAMES: Record<Palette, string> = { mono: 'Mono', teal: 'Lagoon', indigo: 'Dusk', ember: 'Ember' };
 
 /** "Dark · Dusk" — what the Appearance row says is set. */
 export function describeAppearance(preference: SchemePreference, palette: Palette): string {
@@ -69,7 +69,7 @@ export function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () 
           <span id="palette-label" className="term-label text-ink-soft">
             Colour
           </span>
-          <div role="radiogroup" aria-labelledby="palette-label" className="grid grid-cols-3 gap-3">
+          <div role="radiogroup" aria-labelledby="palette-label" className="grid grid-cols-4 gap-2.5">
             {PALETTES.map((p, index) => {
               const checked = p === palette;
               return (

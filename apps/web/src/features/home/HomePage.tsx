@@ -35,7 +35,7 @@ export function HomePage() {
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
       <header className="animate-rise flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="animate-breathe flex h-[38px] w-[38px] items-center justify-center rounded-chip paint-mono text-white shadow-accent">
+          <span className="animate-breathe flex h-[38px] w-[38px] items-center justify-center rounded-chip paint-mono text-on-fill shadow-accent">
             <Icon name="bolt" size={20} strokeWidth={1.9} />
           </span>
           <h1 className="text-headline font-extrabold text-ink">Bulk&nbsp;Saving</h1>
@@ -83,17 +83,17 @@ export function HomePage() {
           >
             <span
               aria-hidden="true"
-              className="animate-glide absolute -right-8 -top-12 h-48 w-48 rounded-full bg-white/40 blur-3xl"
+              className="animate-glide absolute -right-8 -top-12 h-48 w-48 rounded-full bg-on-fill/40 blur-3xl"
             />
-            <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-white/10">
+            <span aria-hidden="true" className="pointer-events-none absolute -bottom-11 -right-4 text-on-fill/10">
               <Icon name="services" size={170} strokeWidth={1.1} />
             </span>
-            <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-inset border border-white/40 bg-white/20 text-white">
+            <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-inset border border-on-fill/40 bg-on-fill/20 text-on-fill">
               <Icon name="services" size={25} strokeWidth={1.8} />
             </span>
             <div className="relative min-w-0 flex-1">
-              <p className="text-eyebrow uppercase text-white/75">Explore</p>
-              <h2 className="mt-1.5 text-headline font-extrabold leading-tight text-white">
+              <p className="text-eyebrow uppercase text-on-fill/75">Explore</p>
+              <h2 className="mt-1.5 text-headline font-extrabold leading-tight text-on-fill">
                 Services in
                 <br />
                 your society

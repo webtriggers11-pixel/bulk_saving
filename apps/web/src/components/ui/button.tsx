@@ -33,7 +33,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { size?: ButtonSize
  * prefers-reduced-motion (theme.css).
  */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'paint-brand text-white border border-white/20 shadow-accent sweep ripple',
+  primary: 'paint-brand text-on-fill border border-on-fill/20 shadow-accent sweep ripple',
   secondary:
     'paint-glass text-ink border border-paper/70 shadow-control sweep ripple',
   outline: 'paint-tint text-brand-ink border border-brand/30 ripple',
@@ -56,8 +56,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
 const TONES: Record<ButtonTone, Record<AccentVariant, string> | Record<string, never>> = {
   default: {},
   onAccent: {
-    secondary: 'paint-glass text-brand-ink border border-white/50 shadow-control sweep ripple',
-    ghost: 'border border-white/35 bg-white/15 text-white hover:bg-white/25',
+    secondary: 'paint-glass text-brand-ink border border-on-fill/50 shadow-control sweep ripple',
+    ghost: 'border border-on-fill/35 bg-on-fill/15 text-on-fill hover:bg-on-fill/25',
   },
 };
 
