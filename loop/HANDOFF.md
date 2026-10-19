@@ -3,7 +3,38 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-19)
+## Latest session (2026-10-19 evening → 2026-10-20)
+
+- **Closed (each with V2 + fixes and a V3 double run):** FEAT-020 (web push — T7 done: a real push through
+  FCM shown by the SW; accent re-sync verified), BUG-017 (one session per DEVICE: `sid` in the refresh token,
+  `refresh:<rid>:<sid>` + `sessions:<rid>`, pre-fix tokens migrate on first rotation, `POST /auth/sign-out`;
+  ADR-0034 amends ADR-0024; DEPLOY.md revocation updated), BUG-018 (flaky OTP test), FEAT-023 (Home leads
+  with Group buys: accent lead card, live counts, three soonest rounds deep-linking into the pledge sheet),
+  CHORE-024 (Profile: one settings list, one row shape), FEAT-024 (ConfirmSheet before log out / leave a
+  round / remove a rating / admin cancel; always closable, honest offline — three V2 rounds).
+- **Also closed:** FEAT-025 server-side pagination (ADR-0035: keyset pages on all six list endpoints,
+  `{ items, nextCursor, total }`, `limit` 1–50 default 20, bad input 400, the Prisma cursor + `skip` trap
+  handled, explicit "Show more" on every list, pickers walk all pages — three V2 rounds), BUG-019 phone
+  normalisation (ADR-0036; two V2 rounds — the second found the DEV server broken, see below).
+- **One trap worth remembering:** the web's first RUNTIME import from `@bulk/shared` (CommonJS, linked
+  outside node_modules) needs BOTH `build.commonjsOptions.include` (Rollup, caught by the gate) AND
+  `optimizeDeps.include` (the dev server, NOT caught by the gate — the owner's `vite` on :5173 served raw
+  CJS until the second was added). Building shared as ESM/dual would retire both (ADR-0036).
+- **Owner asks this session → where they landed:** lifetime login per device → BUG-017 (done); "Group buys
+  hidden on Home" → FEAT-023 (done); install card / clean Profile → CHORE-024 (done); confirmations →
+  FEAT-024 (done); server-side pagination → FEAT-025 (done). Found on the way: BUG-019 (done).
+- **Machine (this session):** global `pnpm` shim still broken → scratchpad wrapper `exec corepack pnpm "$@"`.
+  NEVER two gates at once — the backend test apps share Redis and the `bull-test` queue; a second process's
+  worker eats the first one's outbox jobs and a `service-asks` test fails with an empty SMS (looks like a
+  product bug; it is not). A detached worktree at `<scratchpad>/wt-review` (`git worktree add --detach`,
+  copy both `.env`s, `pnpm install --offline` ≈ 7s) gives the reviewer its own tree; its gate still counts
+  as THE gate. The Chrome automation window is full-screen and will not resize (the app is a 448px column
+  anyway). Preview :5175 serves `dist` from the last gate build; the installed SW needs
+  `registration.update()` + reload. Dev residents: +919999900201 (Blue Waters),
+  Ops admin +919999900209 via /admin/login. One-off: `git add -A` swept the owner's untracked FEATURES.md
+  into a BUG-017 commit — add by path.
+
+## Session before (2026-10-19, day)
 
 - **Closed:** FEAT-017 (Vercel Mono look), FEAT-018 (rounds: ladder, summary, invite, confetti, live clock),
   FEAT-019 (one Vercel look + 7 accent pairs + micro-interactions), FEAT-021 (service cards book in one tap),

@@ -1298,3 +1298,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3s taken: a hint under the phone field ("Use your 10-digit mobile number, or +country code and number." — `PHONE_HINT`, also the server-refusal message) with `aria-describedby`, shown only once something implausible is typed; `+91 (0) 98765 43210` (the business-card form) accepted — trunk 0 after 91 dropped; tests for the gating + hint (both pages), the `VALIDATION_ERROR` message, and the admin canonical display. Auth suites 29/29, normaliser 25/25.
 - Closing double gate running on main.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — FEAT-025 + BUG-019 — V3; CLOSED
+- V3 at 72aff5c: two back-to-back gate runs, both exit 0 and identical — backend 501/501, web 637/637, 3286 class tokens. No flakes.
+- FEAT-025 → done (keyset pages on every list, explicit "Show more", ADR-0035). BUG-019 → done (one canonical phone, ADR-0036).
+- Session total: FEAT-020, BUG-017, BUG-018, FEAT-023, CHORE-024, FEAT-024, FEAT-025, BUG-019 closed; ADR-0034/0035/0036 written. Open: BUG-014, CHORE-022, CHORE-023, CHORE-010/011/012/013 (unchanged).
+- By: agent (autonomous)

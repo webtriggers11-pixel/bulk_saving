@@ -1,6 +1,6 @@
 # BUG-019 — The phone number is stored exactly as typed: `9999900201` and `+919999900201` are two residents
 
-**Status:** in-progress · **Priority:** P2 · **Opened:** 2026-10-19 · **Reporter:** agent (FEAT-020 T7 browser pass)
+**Status:** done · **Priority:** P2 · **Opened:** 2026-10-19 · **Reporter:** agent (FEAT-020 T7 browser pass)
 
 ## Observed vs expected
 - **Observed:** the onboarding phone field accepts `9999900201`; `POST /auth/otp/request` and `/verify` use the string as-is (DTO: `/^\+?[0-9]{7,15}$/`), the OTP is stashed under `dev:last-otp:9999900201`, and `upsertVerified` keys the resident on `(societyId, phone)` — so the same person typed two ways becomes two residents, with two pledge histories and two push subscriptions. The field's placeholder suggests `+91 98765 43210`, the seed uses `+91…`.
@@ -19,8 +19,8 @@ ADR-0007 (phone + OTP) does not define a canonical phone form. Fixing adds one (
 
 ## Fix
 - **What:** `normalisePhone` in `@bulk/shared` (E.164, India default; ADR-0036); applied by `phoneOf(dto)` in `AuthController` at all six entry points; the DTO admits formatting characters and the normaliser decides; the web sends and shows the canonical form.
-- **Commit:** `fix(BUG-019): ...` (see LOG)
+- **Commits:** 4ed535d (fix), 45a9a8f (web tests), 2706e17 (V2: dev-server pre-bundling, stricter rules), 72aff5c (hint, +91 (0) form)
 - **Regression guard:** the integration test above; a unit test for the normaliser (spaces, dashes, `0` prefix, `+91`, 10 digits, non-Indian numbers passed through).
 
 ## Lesson
-none yet.
+A runtime import from `@bulk/shared` needs BOTH `build.commonjsOptions.include` (Rollup) and `optimizeDeps.include` (the dev server); the gate only sees the first. ADR-0036 says so.
