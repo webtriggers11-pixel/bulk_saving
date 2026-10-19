@@ -1,6 +1,6 @@
 # FEAT-024 — Confirm before destructive actions
 
-**Status:** specced · **Priority:** P1 · **Owner:** owner (requested) / agent · **Opened:** 2026-10-19
+**Status:** done · **Priority:** P1 · **Owner:** owner (requested) / agent · **Opened:** 2026-10-19
 
 ## Problem / Why
 
@@ -18,21 +18,21 @@ one confirmation shape today and it is not shared.
 
 ## Acceptance criteria
 
-- [ ] AC1 — One `ConfirmSheet` primitive (built on `Sheet`, ADR-0022): title, one line of
+- [x] AC1 — One `ConfirmSheet` primitive (built on `Sheet`, ADR-0022): title, one line of
       consequence, a danger confirm button with its own label ("Yes, log out"), a "Keep …"
       cancel; Escape/backdrop/cancel all back out; confirm runs the action and shows its
       pending label; an action error stays visible inside the sheet.
-- [ ] AC2 — Log out (Home header, Profile) → "Log out of this phone? You'll need a new code
+- [x] AC2 — Log out (Home header, Profile) → "Log out of this phone? You'll need a new code
       to sign in again." Confirm → `useSignOut`.
-- [ ] AC3 — Leave this round (pledge sheet) → "Leave this round? Your pledge of N units is
+- [x] AC3 — Leave this round (pledge sheet) → "Leave this round? Your pledge of N units is
       withdrawn and the price for everyone may change." Stacked on the pledge sheet (Sheet
       already stacks: the top one answers Escape/Tab).
-- [ ] AC4 — Remove a rating → "Remove your rating? The vendor's average will no longer
+- [x] AC4 — Remove a rating → "Remove your rating? The vendor's average will no longer
       include it."
-- [ ] AC5 — Admin: Cancel round moves from the inline box to `ConfirmSheet` with the same words.
-- [ ] AC6 — Not confirmed (deliberately, reversible in one tap): withdraw an ask, deactivate
+- [x] AC5 — Admin: Cancel round moves from the inline box to `ConfirmSheet` with the same words.
+- [x] AC6 — Not confirmed (deliberately, reversible in one tap): withdraw an ask, deactivate
       a service/vendor, change a pledge count, switch notifications off.
-- [ ] AC7 — Tests: ConfirmSheet (opens, cancels, confirms, pending, error), each call site
+- [x] AC7 — Tests: ConfirmSheet (opens, cancels, confirms, pending, error), each call site
       (the action runs ONLY after confirm; backing out runs nothing); gate green; V2; V3.
 
 ## Out of scope

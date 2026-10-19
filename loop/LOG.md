@@ -1274,3 +1274,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — BUG-019 — live probe
 - Live API (nest --watch, recompiled): `POST /auth/otp/request` with `"99999 00202"` → 200 and the dev stash key is `dev:last-otp:+919999900202`; `"12"` → 400 "phone must be a valid phone number." V2 queued behind the running double gate (bundled with FEAT-025 round 2).
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-024 — V3; CLOSED
+- V3 at e35bd56 (includes the round-3 P3): two back-to-back gate runs, both exit 0 and identical — backend 488/488, web 632/632, 3280 class tokens. No flakes.
+- FEAT-024 → done. Log out, leave a round, remove a rating and admin cancel all ask first through one ConfirmSheet; always closable; honest offline.
+- The same double run stands as FEAT-025's V3 IF its round 2 passes with no further change to the tree; otherwise it reruns.
+- By: agent (autonomous)
