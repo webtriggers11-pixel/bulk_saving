@@ -1112,3 +1112,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3: two back-to-back gate runs, both exit 0 and identical — backend 457/457, web 590/590, 1922 class tokens.
 - BUG-016 → done. Next: BUG-012 (the class gate pairs quotes across a file; it could not read HomePage at all).
 - By: agent (autonomous) + code-reviewer subagent (V2 rounds 1–2)
+
+## 2026-10-19 — BUG-012 — the class gate reads every file (TypeScript parser, not quote pairing)
+- Cause: `scripts/check-css-classes.mjs` found strings with a regex pairing quote characters across a WHOLE file; an apostrophe in a comment or JSX text shifted the pairing and the rest of the file was read as the wrong strings. It bit four times today (token count moved with no class change: 1615→1570, 1642→1623, 1703→2008, 1788→1922) and V2 measured HomePage at 0 of 32 class lists read.
+- Regression test first (`apps/web/src/styles/class-gate.test.ts`): an apostrophe in a comment / in JSX text must not hide the class lists after it — failed on the old extractor (moved verbatim into `scripts/class-lists.mjs`), passes on the new one.
+- Fix: `stringLiterals()` walks the TypeScript AST (StringLiteral + NoSubstitutionTemplateLiteral); the class-list filter is unchanged except that a capitalised token rules a string out ("Sign-in progress" — an aria-label the old extractor never reached). Types in `class-lists.d.mts`.
+- Result: the gate now inspects **3248** class tokens (was 1922 on the same code — verified by stashing the fix) and every one resolves: ~1300 previously unchecked tokens, no hidden broken class.
+- V1: gate exit 0 — backend 457/457, web 593/593.
+- By: agent (autonomous)

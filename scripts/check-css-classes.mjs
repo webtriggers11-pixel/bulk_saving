@@ -14,6 +14,7 @@
  * verify.sh after the build, because that is the only point where the answer exists.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { classLists } from './class-lists.mjs';
 import { join } from 'node:path';
 
 const WEB = join(process.cwd(), 'apps/web');
@@ -38,52 +39,6 @@ function sources(dir, out = []) {
     else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(path);
   }
   return out;
-}
-
-/** A token that looks like a utility or a system class, e.g. `bg-brand/20`, `h-[52px]`, `surface-glass`. */
-const CLASSY = /^-?[a-z][a-z0-9]*(?:[-:/.][a-z0-9[\]()%#.,_-]+)*$/i;
-
-/**
- * Prefixes that mean "this single word is a class, not a string". Needed because a
- * one-token literal like 'surface-glass' (the Card SURFACES map) is indistinguishable
- * from 'one-time-code' (an autocomplete value) without one of these.
- */
-/**
- * A ONE-token literal is only treated as a class when it is one the design system
- * owns. Tailwind's own families are hopeless to recognise in isolation — `my-rating`
- * looks exactly like a margin utility and `text` like a colour one — and every such
- * guess is a false failure that teaches people to disable the check. The bespoke
- * namespace is unambiguous, and it is where the bug this script exists for lived
- * (a variant map, and its sibling the Card surface map).
- */
-const SYSTEM_CLASS =
-  /^(?:surface-|paint-|skeleton|card-|halo|sheen|sweep|ripple|press|nudge|field|bar-fill|stagger|animate-|num$|t$|sr-only-text$)/;
-
-/**
- * A string literal counts as a class list when every token looks like a class. Prose
- * ("Loading rounds…"), bare words and format strings are excluded by the token shape;
- * a SINGLE token additionally has to start with a class-ish prefix, or 'one-time-code'
- * would be treated as a class. Deliberately not scoped to className attributes: the
- * `fill-*` bug lived in a variant map, and the Card surface map is one-token values.
- */
-function classLists(source) {
-  const lists = [];
-  // [, , quoted]: group 1 is the quote character, group 2 is the contents. Taking
-  // group 1 by mistake made this whole check pass vacuously — which is exactly the
-  // failure mode it exists to catch, so it now counts what it inspected (below).
-  for (const [, , quoted] of source.matchAll(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/gs)) {
-    if (quoted.includes('${') || quoted.includes('\n')) continue;
-    const tokens = quoted.trim().split(/\s+/).filter(Boolean);
-    if (tokens.length === 0) continue;
-    if (!tokens.every((t) => CLASSY.test(t))) continue;
-    if (tokens.length === 1) {
-      if (!SYSTEM_CLASS.test(tokens[0])) continue;
-    } else if (!tokens.some((t) => /[-:/[]/.test(t))) {
-      continue;
-    }
-    lists.push(tokens);
-  }
-  return lists;
 }
 
 /** Tailwind escapes these when it writes a selector. */
@@ -118,7 +73,7 @@ for (const file of sources(join(WEB, 'src'))) {
   // Admin is out of FEAT-011's scope but shares the stylesheet, so it is checked too:
   // a class that emits nothing is a defect wherever it lives.
   const source = readFileSync(file, 'utf8');
-  for (const tokens of classLists(source)) {
+  for (const tokens of classLists(source, file)) {
     inspected += tokens.length;
     for (const token of tokens) {
       if (hasRule(css, token)) continue;
