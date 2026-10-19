@@ -130,6 +130,15 @@ describe('AdminLoginPage', () => {
     expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
   });
 
+  it('a bare 10-digit admin number is sent as +91… (BUG-019)', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderAdminLogin();
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '09999900001' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+    expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
+  });
+
   it('explains NOT_AN_ADMIN in words a resident can act on, and signs nobody in', async () => {
     installFetch({
       ok: false,

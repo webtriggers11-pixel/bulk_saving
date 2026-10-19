@@ -39,8 +39,9 @@ function jsonResponse({ ok, status, body }: MockResponse) {
  * from the response entirely, so there is no toast to test any more.
  */
 function installFetch(verify: MockResponse, requestData: unknown = { requested: true }) {
-  const mock = vi.fn((input: RequestInfo | URL) => {
-    const url = String(input);
+  // `init` is received (and recorded by vi.fn) so a test can read the body it sent (BUG-019).
+  const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
+    const url = String(args[0]);
     if (url.endsWith('/auth/otp/request')) {
       return Promise.resolve(
         jsonResponse({ ok: true, status: 200, body: { success: true, data: requestData } }),
@@ -104,6 +105,26 @@ describe('OnboardingPage', () => {
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/verify'))).toBe(true);
     expect(useAuthStore.getState().accessToken).toBe('access-1');
+  });
+
+  it('sends a bare number in its canonical form, and shows that form back (BUG-019)', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '99999 00201' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+
+    const request = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/request'));
+    expect(JSON.parse(String(request?.[1]?.body))).toEqual({ inviteCode: 'AB12CD34', phone: '+919999900201' });
+    expect(screen.getByText('+919999900201')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
+    const verify = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
+    expect(JSON.parse(String(verify?.[1]?.body))).toMatchObject({ phone: '+919999900201' });
   });
 
   it('renders a friendly message when verify returns OTP_INVALID', async () => {
