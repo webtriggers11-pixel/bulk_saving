@@ -1288,3 +1288,4 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - BUG-019 P2 (no web test) was already closed in 45a9a8f; P3s taken: the admin page shows the canonical number; Send code is disabled until the number is plausible; `VALIDATION_ERROR`/`BAD_REQUEST` map to a phone-specific message; the normaliser refuses a leading 0 after `+`/`00`, a 10-digit Indian number not starting 6–9, and anything after `+91` that is not `[6-9]` + 9 digits (`00` + digits stays a legal international form); the integration test now also proves the resend budget is per canonical number (second spelling within 30s → 429).
 - Gate running on main; V2 round 3 for both next.
 - By: agent (autonomous) + code-reviewer subagent
+- Gate run 1 on the round-2 fixes died with `Segmentation fault: 11` two suites into the backend tests — CHORE-021's Node 24 GC crash, not a failure. Rerunning.
