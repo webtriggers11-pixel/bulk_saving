@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { unitLabelFor } from '../../lib/units';
-import type { ServiceDto } from '@bulk/shared';
+import type { RoundDto, ServiceDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon, type IconName } from '../../components/ui/icon';
 import { QueryErrorState } from '../../components/QueryState';
@@ -17,6 +17,10 @@ import { SearchField } from '../../components/ui/search-field';
 import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { CatalogSkeleton } from './CatalogSkeleton';
+import { useRounds } from '../rounds/useRounds';
+import { formatRupees } from '../rounds/formatPrice';
+import { formatCountdown } from '../rounds/formatCountdown';
+import { formatUnits } from '../../lib/units';
 
 /**
  * A service's glyph. The catalog carries an optional image; when it does not, this
@@ -59,8 +63,35 @@ function PriceLine({ service, className }: { service: ServiceDto; className?: st
   );
 }
 
+/**
+ * FEAT-021: whether this service can be booked right now. Booking means joining its open
+ * round (rounds are opened by an admin, ADR-0010), so the line says which round, at what
+ * price, how far along — or plainly that there is none yet.
+ * `undefined` = the rounds list has not loaded: say nothing rather than guess.
+ */
+function RoundStatus({ round, className }: { round: RoundDto | null | undefined; className?: string }) {
+  if (round === undefined) return null;
+  if (round === null) {
+    return (
+      <p className={cn('text-micro text-ink-soft', className)} data-testid="service-no-round">
+        No group buy open yet
+      </p>
+    );
+  }
+  return (
+    <p className={cn('flex items-center gap-2 text-meta font-bold text-brand-ink', className)} data-testid="service-round">
+      <span aria-hidden="true" className="animate-pulse-ring h-2 w-2 shrink-0 rounded-full bg-brand" />
+      <span className="min-w-0 flex-1">
+        Group buy open · {formatRupees(round.currentPrice)} now · {formatUnits(round.unitsCount, round.service)} in ·{' '}
+        {formatCountdown(round.deadline)}
+      </span>
+      <Icon name="forward" size={16} strokeWidth={2.2} className="nudge shrink-0" />
+    </p>
+  );
+}
+
 /** The lead service: a hero card with a watermark glyph and the price as a pill. */
-function ServiceHero({ service }: { service: ServiceDto }) {
+function ServiceHero({ service, round }: { service: ServiceDto; round?: RoundDto | null }) {
   const price = formatIndicativePrice(service.indicativePrice);
   return (
     <Card padding="none" className="col-span-2 overflow-hidden p-[22px]" data-testid="service-card">
@@ -91,12 +122,13 @@ function ServiceHero({ service }: { service: ServiceDto }) {
           {service.unitDescription}
         </p>
       )}
+      <RoundStatus round={round} className="relative mt-3.5" />
     </Card>
   );
 }
 
 /** A square tile — two of these sit beside each other under the hero. */
-function ServiceTile({ service }: { service: ServiceDto }) {
+function ServiceTile({ service, round }: { service: ServiceDto; round?: RoundDto | null }) {
   return (
     <Card padding="none" surface="solid" className="flex h-full flex-col p-[17px]" data-testid="service-card">
       <span className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-control border border-paper/80 bg-gradient-to-br from-brand-light/20 to-brand/5 text-brand-ink">
@@ -111,12 +143,13 @@ function ServiceTile({ service }: { service: ServiceDto }) {
           {service.unitDescription}
         </p>
       )}
+      <RoundStatus round={round} className="mt-2.5" />
     </Card>
   );
 }
 
 /** Everything past the third service: a wide row, so the rhythm stays a bento. */
-function ServiceRow({ service }: { service: ServiceDto }) {
+function ServiceRow({ service, round }: { service: ServiceDto; round?: RoundDto | null }) {
   return (
     <Card padding="none"
       surface="solid"
@@ -139,6 +172,7 @@ function ServiceRow({ service }: { service: ServiceDto }) {
         ) : (
           <p className="mt-1 text-micro text-ink-muted">{service.description}</p>
         )}
+        <RoundStatus round={round} className="mt-2" />
       </div>
       <PriceLine service={service} className="shrink-0 text-right text-[16px]" />
     </Card>
@@ -164,6 +198,15 @@ export function ServicesPage() {
   const { filters, setFilters, clear, activeCount, generation } = useUrlFilters(CATALOG_FILTER_KEYS, CATALOG_FILTER_VALIDATORS);
   const [search, setSearch] = useDebouncedSearch(filters.q, (q) => setFilters({ q }), generation);
   const query = useCatalog({ q: filters.q, category: filters.category });
+  // FEAT-021: the open rounds (already fetched and polled for the rounds screen), keyed by
+  // service slug. The soonest-closing one wins if a service ever has two.
+  const rounds = useRounds();
+  const openBySlug = new Map<string, RoundDto>();
+  for (const round of [...(rounds.data ?? [])].sort((a, b) => a.deadline.localeCompare(b.deadline))) {
+    if (!openBySlug.has(round.service.slug)) openBySlug.set(round.service.slug, round);
+  }
+  const openRoundFor = (service: ServiceDto): RoundDto | null | undefined =>
+    rounds.data ? (openBySlug.get(service.slug) ?? null) : undefined;
   const { data, isLoading, isPlaceholderData, refetch } = query;
   const failed = queryStalled(query);
 
@@ -235,17 +278,34 @@ export function ServicesPage() {
       {data && data.length > 0 && (
         <section aria-label="Available services" className="results" aria-busy={isPlaceholderData}>
           <ul className="stagger grid grid-cols-2 gap-3.5">
-            {data.map((service, index) => (
-              <li key={service.id} className={index === 1 || index === 2 ? '' : 'col-span-2'}>
-                {index === 0 ? (
-                  <ServiceHero service={service} />
+            {data.map((service, index) => {
+              const round = openRoundFor(service);
+              const card =
+                index === 0 ? (
+                  <ServiceHero service={service} round={round} />
                 ) : index <= 2 ? (
-                  <ServiceTile service={service} />
+                  <ServiceTile service={service} round={round} />
                 ) : (
-                  <ServiceRow service={service} />
-                )}
-              </li>
-            ))}
+                  <ServiceRow service={service} round={round} />
+                );
+              return (
+                <li key={service.id} className={index === 1 || index === 2 ? '' : 'col-span-2'}>
+                  {/* FEAT-021: a bookable service is one tap from its pledge sheet. */}
+                  {round ? (
+                    <Link
+                      to={`/rounds?join=${encodeURIComponent(round.id)}`}
+                      aria-label={`Book ${service.name} — join the open group buy`}
+                      className="block h-full rounded-card focus-visible:shadow-focus focus-visible:outline-none"
+                      data-testid={`book-${service.slug}`}
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    card
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

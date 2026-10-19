@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { RoundDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
@@ -14,6 +14,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Sheet } from '../../components/ui/sheet';
 import { Sparkles } from '../../components/ui/sparkles';
+import { Notice } from '../../components/ui/notice';
 import { formatClock, formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
@@ -86,12 +87,15 @@ function JoinControl({
   round,
   onSaved,
   onInvited,
+  startOpen = false,
 }: {
   round: RoundDto;
   onSaved: (saved: RoundDto) => void;
   onInvited: (message: string) => void;
+  /** FEAT-021: arrived from the catalog to book this round — the sheet opens at once. */
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const joined = round.myUnits > 0;
   // The writes live HERE, not in the sheet, so a pledge queued offline still says so on
   // the card after the sheet is closed (V2 P2-3).
@@ -365,10 +369,13 @@ function RoundCard({
   round,
   lead,
   onInvited,
+  requested = false,
 }: {
   round: RoundDto;
   lead: boolean;
   onInvited: (message: string) => void;
+  /** FEAT-021: the round the resident tapped in the catalog. */
+  requested?: boolean;
 }) {
   const progress = tierProgress(round);
   const liveCount = useCountUp(round.unitsCount);
@@ -416,7 +423,9 @@ function RoundCard({
     <Card padding="none"
       surface={lead ? 'glass' : 'solid'}
       // FEAT-019: the lead round gets the travelling border light.
-      className={cn('relative overflow-hidden p-[22px]', lead && 'border-beam')}
+      className={cn('relative overflow-hidden p-[22px]', lead && 'border-beam', requested && 'round-requested')}
+      // FEAT-021: the target of `/rounds?join=<id>`.
+      id={`round-${round.id}`}
       data-testid="round-card"
     >
       {lead && (
@@ -495,7 +504,7 @@ function RoundCard({
       )}
 
       <div className="mt-[17px] border-t border-line/10 pt-[17px]">
-        <JoinControl round={round} onSaved={onSaved} onInvited={onInvited} />
+        <JoinControl round={round} onSaved={onSaved} onInvited={onInvited} startOpen={requested} />
       </div>
     </Card>
   );
@@ -521,6 +530,24 @@ export function RoundsPage() {
   // on a ticking card, so it never went away (V2 P2-1).
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const dismissInvite = useCallback(() => setInviteMessage(null), []);
+
+  // FEAT-021: `/rounds?join=<id>` — arrived from a service card to book it. Read ONCE: the
+  // param is then dropped from the URL, so back and refresh do not reopen the sheet.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [requested] = useState(() => searchParams.get('join'));
+  useEffect(() => {
+    if (!requested || !data) return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
+    document.getElementById(`round-${requested}`)?.scrollIntoView?.({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+    setSearchParams(
+      (params) => {
+        params.delete('join');
+        return params;
+      },
+      { replace: true },
+    );
+  }, [requested, data, setSearchParams]);
+  const requestedGone = Boolean(requested && data && !data.some((round) => round.id === requested));
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 p-[22px]">
@@ -548,6 +575,12 @@ export function RoundsPage() {
         />
       )}
 
+      {requestedGone && (
+        <Notice tone="warn" data-testid="join-gone">
+          That group buy has closed or isn&apos;t open any more. Here is what is open now.
+        </Notice>
+      )}
+
       {data && data.length > 0 && <RoundsSummary rounds={data} />}
 
       {/* FEAT-020: the one contextual ask for notifications, once something is joined. */}
@@ -556,7 +589,13 @@ export function RoundsPage() {
       {data && data.length > 0 && (
         <section className="stagger flex flex-col gap-3.5" aria-label="Open rounds">
           {data.map((round, index) => (
-            <RoundCard key={round.id} round={round} lead={index === 0} onInvited={setInviteMessage} />
+            <RoundCard
+              key={round.id}
+              round={round}
+              lead={index === 0}
+              onInvited={setInviteMessage}
+              requested={round.id === requested}
+            />
           ))}
         </section>
       )}

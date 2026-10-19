@@ -1027,3 +1027,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-19 — BUG-013 — flaky admin-auth integration test (found during FEAT-021 V1)
 - A full gate failed `admin-auth.integration.spec` "signs an admin in…" (verify → 404); the suite passed 5/5 alone. Cause: `waitForSend` returned `lastCode` once ANY OTP send landed; admin-door sends are queued (ADR-0027), and a leftover job from an earlier suite on the same test queue could land first with another number's code. Fix (test only): `CapturingChannel.otps` records every send; `waitForSend(from, phone)` waits for THIS phone's code; the "nothing is sent" assertion now waits 300ms and checks this phone, instead of comparing a count synchronously against an asynchronous send. Pre-existing (FEAT-012/CHORE-017 era), not caused by FEAT-021.
 - By: agent (autonomous)
+
+## 2026-10-19 — FEAT-021 — T1, T2 built
+- Services: each card shows its open round (live dot · today's price · units in · closes in…) and the whole card is a link to `/rounds?join=<id>`; no open round → "No group buy open yet", not a link; nothing said until rounds load. Matched on service slug against the polled rounds list (no API change).
+- Rounds: `?join=<id>` read once → scrolls the round into view (smooth unless reduced motion), pulses an accent ring twice (`round-requested`), opens its pledge sheet; the param is then removed (replace) so back/refresh do not reopen it; an id that is not open → a notice and the open list.
+- 7 tests (services-to-booking.test.tsx). V1: gate exit 0 — backend 449/449, web 558/558, 1723 class tokens.
+- By: agent (autonomous)
