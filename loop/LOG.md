@@ -1244,3 +1244,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Live API (admin door, Ops admin): `/admin/rounds?limit=2` → 2 items, total 18, cursor; `&cursor=…` → the next 2, no repeat; `limit=0` → 400 "limit must not be less than 1"; `/admin/vendors?limit=3` → 3 of 7 with a next cursor.
 - Preview :5175: Rounds (summary Open 4 from `total`, 4 cards), My Requests (4), Services — 20 on the first page and **"Show 3 more services"**; tapping it appended the 3 (23 on screen) and the control went away. No alerts.
 - By: agent (autonomous)
+
+## 2026-10-19 — TRIAGE — BUG-019 phone not normalised
+- Seen during FEAT-020 T7: typing the number without `+91` makes a second resident. Triaged P2 with the failing test named; not started (FEAT-024/025 verification first).
+- By: agent (autonomous)
