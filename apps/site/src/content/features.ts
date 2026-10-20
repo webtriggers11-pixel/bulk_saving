@@ -204,6 +204,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-027',
+    title: 'Sign in with WhatsApp',
+    what: 'Tap Continue with WhatsApp, send the message it opens, tap the number you see on screen, and you are back in the app, signed in. On a laptop, scan a QR code with your phone. The SMS code stays as the fallback.',
+    why: 'WhatsApp already verified your number, and a message you start costs nothing. Three taps, nothing to type.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-013',
     title: 'Sign in once per phone',
     what: 'After the first code, this phone stays signed in. You can end a session from Profile.',

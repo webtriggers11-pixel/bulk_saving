@@ -83,6 +83,14 @@ describe('index.astro', () => {
     expect((html.match(/data-count-to="/g) ?? []).length).toBe(4);
   });
 
+  it('has the scroll story: four captions, a sticky scene with a HUD (T5c)', () => {
+    expect(html).toContain('data-story');
+    expect((html.match(/data-story-step/g) ?? []).length).toBe(4);
+    expect(html).toContain('data-story-scene');
+    for (const hud of ['data-hud-price', 'data-hud-units', 'data-hud-state', 'data-hud-fill']) expect(html).toContain(hud);
+    expect(html).toMatch(/data-story-target="10"/);
+  });
+
   it('offers all seven accents and a scheme switch', () => {
     for (const a of ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon']) {
       expect(html).toContain(`data-set-accent="${a}"`);

@@ -237,6 +237,7 @@ html.js .reveal.is-in {
 .scene::before {
   content: '';
   position: absolute;
+  z-index: 0;
   inset: -30% -10% auto;
   height: 60%;
   background:
@@ -245,4 +246,136 @@ html.js .reveal.is-in {
   filter: blur(10px);
   pointer-events: none;
   animation: aurora 16s ease-in-out infinite alternate;
+}
+
+/* ---- T5c: the cinematic layer (GSAP + Lenis) ---------------------------------------------- */
+
+/* SplitText pieces: words clip their rising characters; nothing shifts layout. */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* The scroll story: captions on the left scroll past a sticky scene on the right. */
+.story {
+  display: grid;
+  gap: 32px;
+}
+@media (min-width: 900px) {
+  .story {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 64px;
+    align-items: start;
+  }
+}
+.story__steps {
+  padding-block: 8vh;
+}
+@media (min-width: 900px) {
+  .story__steps .story__step {
+    min-height: 52vh;
+    align-content: center;
+    padding-block: 10vh;
+  }
+}
+.story__step h3,
+.story__step p {
+  transition:
+    opacity 500ms var(--ease-out-soft),
+    color 500ms var(--ease-out-soft);
+}
+html.gsap .story__step:not(.is-current) h3,
+html.gsap .story__step:not(.is-current) p {
+  opacity: 0.38;
+}
+html.gsap .story__step.is-current::before {
+  color: rgb(var(--on-fill));
+  background: rgb(var(--brand));
+  border-color: rgb(var(--brand));
+}
+.story__stage {
+  position: sticky;
+  top: 84px;
+}
+@media (max-width: 899px) {
+  .story__stage {
+    order: -1;
+    top: 68px;
+    z-index: 2;
+  }
+}
+.story__scene {
+  aspect-ratio: 16 / 11;
+}
+@media (max-width: 899px) {
+  .story__scene {
+    aspect-ratio: 4 / 3;
+  }
+}
+.story__after {
+  margin-top: 56px;
+}
+
+/* The HUD on the story scene: the live round in the corner. */
+.hud {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--hairline);
+  background-color: rgb(var(--paper) / 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 300px;
+}
+.hud__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.hud__units {
+  font-size: 0.8125rem;
+  color: rgb(var(--ink-muted));
+}
+.hud__price {
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.hud__price small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgb(var(--ink-muted));
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+.hud__track {
+  height: 5px;
+}
+.pill.is-closed {
+  color: rgb(var(--brand-ink));
+  border-color: rgb(var(--brand) / 0.5);
+}
+.pill.is-closed::before {
+  background: rgb(var(--brand));
+  animation: none;
+}
+
+/* The CSS entrance on the hero yields to GSAP when it runs. */
+html.gsap .hero__copy > * {
+  animation: none;
 }

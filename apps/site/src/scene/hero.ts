@@ -164,8 +164,11 @@ export function mountHero(root: HTMLElement) {
     const load = () =>
       import('./building')
         .then(({ mountBuilding }) => {
-          building = mountBuilding(sceneEl, units());
+          building = mountBuilding(sceneEl, units(), { flat: true, drift: true });
           sceneEl.classList.add('is-3d');
+          // motion.ts raises the towers (GSAP intro); without it, raise them now.
+          document.dispatchEvent(new CustomEvent('bulk:scene-ready', { detail: { el: sceneEl, building } }));
+          window.setTimeout(() => building?.setView({ rise: 1 }), 1200);
         })
         .catch(() => {
           /* the SVG stays */

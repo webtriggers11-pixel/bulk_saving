@@ -49,6 +49,15 @@ matches.
   install because the release was younger than its default minimum age; the repo sets no
   `minimumReleaseAge` of its own, so the line is a record, not a policy change.
 
+- **Dependencies added for T5c** (owner: "use GSAP, kens and much more animation 3d … use internet
+  to search"): `gsap` 3.15 (ScrollTrigger + SplitText, all plugins free since the Webflow acquisition,
+  per the package README) and `lenis` 1.3.27 (smooth scroll; it respects reduced motion by itself).
+  Wired as both READMEs document: `lenis.on('scroll', ScrollTrigger.update)`,
+  `gsap.ticker.add(t => lenis.raf(t * 1000))`, `gsap.ticker.lagSmoothing(0)`; every animation is
+  declared inside `gsap.matchMedia` with a reduced-motion branch that sets final states. "Kens" was
+  read as Lenis; a Ken Burns-style slow push-in on the hero scene was added as well, in case it meant
+  that. ScrollSmoother (GSAP's own) was not used: Lenis is what the owner named and it is lighter.
+
 ## Alternatives rejected
 
 - A page inside `apps/web` (React route): the PWA is gated by an invite code and ships a service

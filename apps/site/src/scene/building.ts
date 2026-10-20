@@ -27,12 +27,24 @@ import {
   WebGLRenderer,
 } from 'three';
 import { FLOOR_HEIGHT, SOCIETY, allWindows, lightingOrder, litSet } from './model';
+import type { View } from './story';
 import { prefersReducedMotion, readRgb } from './theme';
 
 export interface Building {
   setUnits(units: number): void;
+  /** Camera and rise targets; the loop eases toward them. */
+  setView(view: Partial<View>): void;
+  /** Where the camera rests when nothing drives it. */
+  readonly restView: View;
   burst(): void;
   dispose(): void;
+}
+
+export interface BuildingOptions {
+  /** Start with the towers flat on the plot (an intro will raise them). */
+  flat?: boolean;
+  /** A slow, continuous zoom drift on the resting view (the Ken Burns idea). */
+  drift?: boolean;
 }
 
 const GROUND_FLOOR = 0.3;
@@ -42,8 +54,12 @@ const LIGHT_FADE = 520;
 
 const rgb = (token: string) => new Color(...readRgb(token));
 
-export function mountBuilding(container: HTMLElement, initialUnits: number): Building {
+export function mountBuilding(container: HTMLElement, initialUnits: number, options: BuildingOptions = {}): Building {
   const reduced = prefersReducedMotion();
+  const restView: View = { yaw: 0, pitch: 0, zoom: 1, rise: 1 };
+  const target: View = { ...restView, rise: options.flat && !reduced ? 0 : 1 };
+  const current: View = { ...target };
+  const CAMERA = { x: 7.6, y: 6.4, z: 9.4 };
   const renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
@@ -51,12 +67,15 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(30, 1, 0.1, 80);
-  camera.position.set(7.6, 6.4, 9.4);
+  camera.position.set(CAMERA.x, CAMERA.y, CAMERA.z);
   camera.lookAt(0, 2.1, 0);
 
   const world = new Group();
   world.position.y = -0.35;
   scene.add(world);
+  /** Everything that rises from the plot (towers, windows, halos); the plot itself stays. */
+  const towers = new Group();
+  world.add(towers);
 
   // ---- materials, all from tokens ---------------------------------------------------------
   const paper = new MeshBasicMaterial();
@@ -106,19 +125,19 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     const h = GROUND_FLOOR + t.floors * FLOOR_HEIGHT;
     const body = new Mesh(new BoxGeometry(t.width, h, t.depth), faceMats);
     body.position.set(t.x, h / 2, t.z);
-    world.add(body);
-    world.add(outline(body));
+    towers.add(body);
+    towers.add(outline(body));
 
     const parapet = new Mesh(new BoxGeometry(t.width + 0.12, 0.09, t.depth + 0.12), faceMats);
     parapet.position.set(t.x, h + 0.045, t.z);
-    world.add(parapet);
-    world.add(outline(parapet));
+    towers.add(parapet);
+    towers.add(outline(parapet));
 
     if (i === 0) {
       const tank = new Mesh(new BoxGeometry(0.5, 0.42, 0.5), faceMats);
       tank.position.set(t.x + t.width / 2 - 0.5, h + 0.09 + 0.21, t.z - t.depth / 2 + 0.5);
-      world.add(tank);
-      world.add(outline(tank));
+      towers.add(tank);
+      towers.add(outline(tank));
     }
   });
 
@@ -148,8 +167,9 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     winMesh.setMatrixAt(i, proxy.matrix);
     glowMesh.setMatrixAt(i, proxy.matrix);
   });
-  world.add(glowMesh);
-  world.add(winMesh);
+  towers.add(glowMesh);
+  towers.add(winMesh);
+  towers.scale.y = Math.max(0.001, current.rise);
   const black = new Color(0, 0, 0);
 
   let units = initialUnits;
@@ -292,19 +312,35 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
 
+    // Ease the driven view (story / intro) toward its targets.
+    const ease = Math.min(1, dt * 5);
+    let viewMoving = false;
+    for (const key of ['yaw', 'pitch', 'zoom', 'rise'] as const) {
+      const d = target[key] - current[key];
+      if (Math.abs(d) > 0.0005) {
+        current[key] += d * ease;
+        viewMoving = true;
+      } else current[key] = target[key];
+    }
+    // The Ken Burns drift: a slow push-in and back on the resting view.
+    const drift = options.drift && !reduced ? 1 + 0.045 * (0.5 + 0.5 * Math.sin(now * 0.00012)) : 1;
     const idle = reduced ? 0 : Math.sin(now * 0.00035) * 0.11;
-    const targetYaw = idle + (reduced ? 0 : pointerX * 0.14);
-    const targetPitch = reduced ? 0 : -pointerY * 0.05;
+    const targetYaw = current.yaw + idle + (reduced ? 0 : pointerX * 0.14);
+    const targetPitch = current.pitch + (reduced ? 0 : -pointerY * 0.05);
     yaw += (targetYaw - yaw) * Math.min(1, dt * 4);
     pitch += (targetPitch - pitch) * Math.min(1, dt * 4);
     world.rotation.y = yaw;
     world.rotation.x = pitch;
+    towers.scale.y = Math.max(0.001, current.rise);
+    const k = 1 / (current.zoom * drift);
+    camera.position.set(CAMERA.x * k, CAMERA.y * k, CAMERA.z * k);
+    camera.lookAt(0, 2.1 * Math.min(1, current.rise + 0.3), 0);
 
     repaintWindows(false);
     stepSparks(now, dt);
     renderer.render(scene, camera);
 
-    const moving = !reduced || sparkStart >= 0 || changedAt.size > 0 || Math.abs(targetYaw - yaw) > 0.0005;
+    const moving = !reduced || viewMoving || sparkStart >= 0 || changedAt.size > 0 || Math.abs(targetYaw - yaw) > 0.0005;
     if (visible && (moving || settleFrames-- > 0)) raf = requestAnimationFrame(frame);
   }
   function wake() {
@@ -344,6 +380,12 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
       }
       wake();
     },
+    setView(view) {
+      Object.assign(target, view);
+      if (reduced) Object.assign(current, view);
+      wake();
+    },
+    restView,
     burst: () => burst(),
     dispose() {
       disposed = true;
