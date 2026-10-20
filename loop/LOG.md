@@ -1508,3 +1508,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at ebe4296 (committed tree, review worktree; each run waited for any other gate to end): two back-to-back gate runs, both exit 0 and identical — backend 557/557, web 665/665, site 50/50, 3439 class tokens, bundle guard green. No flakes — the BUG-022 test included.
 - BUG-021 → done (invite code gated on the client, hint only after a failed attempt, field-aware error wording, "Try again" on the WhatsApp step). BUG-022 → done (deterministic polling test; `confirmed` phase). Branch `feat/FEAT-027-whatsapp-tap-to-verify`, still unmerged by the owner's instruction. Review worktree removed.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V1 for T5e (worktree at 722ec70, 14:08–14:12): exit 0
+- Site 55/55 (lint, `astro check`, build), backend 557/557, web 665/665, class gate 3439. Fully green. The audience-panel fix (cad79c4: `.audience__panel[hidden] { display: none }` — the same class-vs-attribute trap as `.btn[hidden]`) landed after this run and is covered by V3.
+- By: agent (autonomous)
