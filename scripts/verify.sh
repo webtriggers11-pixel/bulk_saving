@@ -36,6 +36,9 @@ pnpm -r build
 echo "==> [verify] css classes (every class in apps/web must resolve to a rule)"
 node scripts/check-css-classes.mjs
 
+# FEAT-026 (ADR-0037): dev-only code (the OTP toast's fetch) must not reach the production bundle.
+node scripts/check-dev-only.mjs
+
 echo "==> [verify] test (all workspaces, one at a time)"
 # BUG-002: sequential so backend Jest (real DB/Redis) and web Vitest don't
 # starve each other for CPU and trip timeouts.
