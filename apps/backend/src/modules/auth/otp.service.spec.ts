@@ -278,6 +278,9 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'test' })).toBe(true);
       // The flag alone is NOT enough — production always refuses.
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'production' })).toBe(false);
+      // …and so does an UNSET NODE_ENV: default closed (FEAT-026 V2 P2).
+      expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true' })).toBe(false);
+      expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'true', NODE_ENV: 'staging' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'false', NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: '1', NODE_ENV: 'development' })).toBe(false);

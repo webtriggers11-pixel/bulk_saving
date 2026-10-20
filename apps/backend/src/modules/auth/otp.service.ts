@@ -50,7 +50,8 @@ export interface OtpRequestOutcome {
  * exist rather than being switched off.
  *
  * Both conditions still apply, because the stub could in principle be bound in a
- * deployed environment by mistake.
+ * deployed environment by mistake — and since FEAT-026 the NODE_ENV condition is an
+ * explicit `development`/`test`, never "anything but production".
  */
 export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   // Default CLOSED (FEAT-026 V2): an unset NODE_ENV is not "development" — a platform build

@@ -7,11 +7,13 @@ describe('DevOtpController', () => {
   const redis = { get: jest.fn(async () => '123456') } as unknown as RedisService;
   const controller = new DevOtpController(redis);
 
+  const from = (remoteAddress: string | undefined) => ({ socket: { remoteAddress } }) as unknown as Parameters<typeof controller.lastOtp>[0];
+
   it.each(['127.0.0.1', '::1', '::ffff:127.0.0.1'])('answers loopback %s', async (ip) => {
-    await expect(controller.lastOtp(ip, '+919999900201')).resolves.toEqual({ code: '123456' });
+    await expect(controller.lastOtp(from(ip), '+919999900201')).resolves.toEqual({ code: '123456' });
   });
 
-  it.each(['10.0.0.9', '192.168.1.20', '::ffff:192.168.1.20', ''])('refuses %j', async (ip) => {
-    await expect(controller.lastOtp(ip, '+919999900201')).rejects.toBeInstanceOf(ForbiddenException);
+  it.each(['10.0.0.9', '192.168.1.20', '::ffff:192.168.1.20', '', undefined])('refuses %j', async (ip) => {
+    await expect(controller.lastOtp(from(ip), '+919999900201')).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

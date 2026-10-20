@@ -96,7 +96,7 @@ function readDevOtp(phone) {
   if (!out || out === '' || out === '(nil)') {
     throw new Error(
       `no dev OTP in Redis for ${phone} (key dev:last-otp:${phone}, port ${port}). ` +
-        'Start the backend with OTP_DEV_LOG=true and make sure the stub SMS channel is bound.',
+        'Start the backend with OTP_DEV_LOG=true and NODE_ENV=development, and make sure the stub SMS channel is bound.',
     );
   }
   return out;

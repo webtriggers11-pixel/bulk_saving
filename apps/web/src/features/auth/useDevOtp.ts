@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { normalisePhone } from '@bulk/shared';
 
 /**
@@ -16,14 +16,21 @@ export function devOtpToastEnabled(): boolean {
 
 export function useDevOtp(): { code: string | null; fetchFor: (phone: string) => void; clear: () => void } {
   const [code, setCode] = useState<string | null>(null);
+  // A fetch outlives a clear (the retry loop runs up to ~3s): results from before the
+  // last clear/fetch are dropped, so an old number's code cannot reappear over a new one.
+  const generation = useRef(0);
   const fetchFor = useCallback((phone: string) => {
     if (!devOtpToastEnabled()) return;
     const canonical = normalisePhone(phone);
     if (!canonical) return;
+    const mine = ++generation.current;
     void import('./dev-otp.api').then(({ fetchDevOtp }) => fetchDevOtp(canonical)).then((found) => {
-      if (found) setCode(found);
+      if (found && generation.current === mine) setCode(found);
     });
   }, []);
-  const clear = useCallback(() => setCode(null), []);
+  const clear = useCallback(() => {
+    generation.current += 1;
+    setCode(null);
+  }, []);
   return { code, fetchFor, clear };
 }

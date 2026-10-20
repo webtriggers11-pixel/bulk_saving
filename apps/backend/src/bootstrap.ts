@@ -16,8 +16,9 @@ const LOCALHOST_ORIGIN = /^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$
  * Environments where an unset `CORS_ORIGINS` falls back to "any localhost port".
  * An ALLOWLIST, not a denylist: an unrecognised `NODE_ENV` (`prod`, `staging`,
  * a typo) gets no localhost fallback, so the fail-closed rule does not hinge on
- * spelling one string correctly. Unset is included — that is the documented
- * local-dev default (`apps/backend/.env` sets no NODE_ENV).
+ * spelling one string correctly. Unset is included for the CORS fallback only — the
+ * dev OTP echo (FEAT-026) requires an explicit NODE_ENV=development, which `.env.example`
+ * now sets.
  */
 const LOCALHOST_FALLBACK_ENVS = new Set([undefined, '', 'development', 'test']);
 

@@ -149,6 +149,35 @@ describe('AdminLoginPage', () => {
     expect(screen.getByTestId('admin-phone-hint')).toBeInTheDocument();
   });
 
+  it('DEV build: the queued code arrives as a top toast; "Use a different number" and a resend clear it (FEAT-026)', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('MODE', 'development');
+    let devCode = '409216';
+    const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/auth/admin/otp/request')) {
+        sentBodies.set('/auth/admin/otp/request', JSON.parse(String(init?.body)));
+        return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
+      }
+      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: devCode } } }));
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    renderAdminLogin();
+    await walkToCodeStep();
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('409216');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use a different number' }));
+    expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
+
+    devCode = '515151';
+    await walkToCodeStep();
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('515151');
+    fireEvent.click(screen.getByTestId('dev-otp-use'));
+    expect(screen.getByLabelText('6-digit code')).toHaveValue('515151');
+    vi.unstubAllEnvs();
+  });
+
   it('explains NOT_AN_ADMIN in words a resident can act on, and signs nobody in', async () => {
     installFetch({
       ok: false,

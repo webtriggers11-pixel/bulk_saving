@@ -49,6 +49,21 @@ describe('useDevOtp', () => {
     expect(apiMock).toHaveBeenCalledTimes(4);
   });
 
+  it('a result that lands after clear() is dropped (an old number cannot reappear)', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('MODE', 'development');
+    let release: (value: { code: string }) => void = () => undefined;
+    apiMock.mockImplementation(() => new Promise((resolve) => (release = resolve)));
+    const { result } = renderHook(() => useDevOtp());
+    act(() => result.current.fetchFor('+919999900001'));
+    act(() => result.current.clear());
+    await act(async () => {
+      release({ code: '111111' });
+      await Promise.resolve();
+    });
+    expect(result.current.code).toBeNull();
+  });
+
   it('outside a DEV build it never calls anything', () => {
     vi.stubEnv('DEV', false);
     const { result } = renderHook(() => useDevOtp());

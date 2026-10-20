@@ -1,4 +1,5 @@
-import { BadRequestException, Controller, ForbiddenException, Get, Ip, NotFoundException, Query } from '@nestjs/common';
+import { BadRequestException, Controller, ForbiddenException, Get, NotFoundException, Query, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { normalisePhone } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { RedisService } from '../../redis/redis.service';
@@ -20,10 +21,11 @@ export class DevOtpController {
   constructor(private readonly redis: RedisService) {}
 
   @Get('otp')
-  async lastOtp(@Ip() ip: string, @Query('phone') raw?: string): Promise<{ code: string }> {
+  async lastOtp(@Req() req: Pick<Request, 'socket'>, @Query('phone') raw?: string): Promise<{ code: string }> {
     // Nest listens on every interface and CORS stops browsers, not curl: this developer's
-    // own machine only (V2 P3). On-device LAN testing uses the production preview anyway.
-    if (!LOOPBACK.has(ip)) {
+    // own machine only (V2 P3). The SOCKET address, not `req.ip` — the latter honours proxy
+    // headers under TRUST_PROXY and could be told it is loopback (V2 r2 P3).
+    if (!LOOPBACK.has(req.socket.remoteAddress ?? '')) {
       throw new ForbiddenException({ code: ErrorCode.FORBIDDEN, message: 'The dev OTP route answers the local machine only.' });
     }
     const phone = typeof raw === 'string' ? normalisePhone(raw) : null;

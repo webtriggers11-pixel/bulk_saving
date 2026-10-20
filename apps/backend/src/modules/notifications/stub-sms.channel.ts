@@ -17,7 +17,7 @@ export const DEV_OTP_TTL_SECONDS = 120;
  *
  * It is also the ONLY place the raw OTP is exposed for local development
  * (CHORE-007, ADR-0020). Both the debug log line and the short-lived Redis copy are
- * gated on {@link devOtpEchoEnabled} (`OTP_DEV_LOG=true` AND not production).
+ * gated on {@link devOtpEchoEnabled} (`OTP_DEV_LOG=true` AND NODE_ENV explicitly development/test).
  *
  * Why here rather than on the API response, where CHORE-002 first put it: this
  * adapter is what a real SMS provider REPLACES. In production the binding in
