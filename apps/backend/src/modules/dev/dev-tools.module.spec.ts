@@ -8,5 +8,7 @@ describe('devToolsImports', () => {
     expect(devToolsImports({ OTP_DEV_LOG: 'true', NODE_ENV: 'production' })).toEqual([]);
     expect(devToolsImports({ OTP_DEV_LOG: 'false', NODE_ENV: 'development' })).toEqual([]);
     expect(devToolsImports({})).toEqual([]);
+    // Unset NODE_ENV is not development: default closed (V2 P2).
+    expect(devToolsImports({ OTP_DEV_LOG: 'true' })).toEqual([]);
   });
 });

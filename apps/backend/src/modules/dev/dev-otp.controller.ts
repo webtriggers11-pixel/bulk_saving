@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, NotFoundException, Query } from '@nestjs/common';
+import { BadRequestException, Controller, ForbiddenException, Get, Ip, NotFoundException, Query } from '@nestjs/common';
 import { normalisePhone } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { RedisService } from '../../redis/redis.service';
@@ -13,12 +13,19 @@ import { devOtpKey } from '../notifications/stub-sms.channel';
  * short-lived key the E2E harness reads (`dev:last-otp:<phone>`, 120s), and the auth
  * responses stay exactly as ADR-0020 left them — the code never rides on them.
  */
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
 @Controller('dev')
 export class DevOtpController {
   constructor(private readonly redis: RedisService) {}
 
   @Get('otp')
-  async lastOtp(@Query('phone') raw?: string): Promise<{ code: string }> {
+  async lastOtp(@Ip() ip: string, @Query('phone') raw?: string): Promise<{ code: string }> {
+    // Nest listens on every interface and CORS stops browsers, not curl: this developer's
+    // own machine only (V2 P3). On-device LAN testing uses the production preview anyway.
+    if (!LOOPBACK.has(ip)) {
+      throw new ForbiddenException({ code: ErrorCode.FORBIDDEN, message: 'The dev OTP route answers the local machine only.' });
+    }
     const phone = typeof raw === 'string' ? normalisePhone(raw) : null;
     if (!phone) {
       throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'phone must be a valid phone number.' });

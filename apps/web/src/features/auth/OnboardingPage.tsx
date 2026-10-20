@@ -36,6 +36,8 @@ export function OnboardingPage() {
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
     mutationFn: () => requestOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim() }),
+    // A resend must not keep showing the previous code while the new one is fetched.
+    onMutate: () => devOtp.clear(),
     onSuccess: () => {
       setStep('otp');
       devOtp.fetchFor(phone);

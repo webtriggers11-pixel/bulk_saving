@@ -53,8 +53,10 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
   return (
     <div
       className={cn(
-        'pointer-events-none fixed inset-x-0 z-50 flex justify-center p-4',
-        placement === 'top' ? 'top-0 pt-[max(env(safe-area-inset-top),16px)]' : 'bottom-0',
+        // Axis paddings, not `p-4` + a `pt-*` override: the same element must not carry a
+        // shorthand and one of its sides (BUG-007's rule), whichever placement wins.
+        'pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4 pb-4',
+        placement === 'top' ? 'top-0 pt-[max(env(safe-area-inset-top),16px)]' : 'bottom-0 pt-4',
       )}
       data-placement={placement}
     >

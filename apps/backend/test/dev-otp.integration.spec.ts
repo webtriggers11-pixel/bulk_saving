@@ -31,6 +31,9 @@ describe('GET /dev/otp (integration, needs Redis)', () => {
       await request(app.getHttpServer()).get('/dev/otp').query({ phone: randomPhone() }).expect(404);
       await request(app.getHttpServer()).get('/dev/otp').query({ phone: 'abc' }).expect(400);
       await request(app.getHttpServer()).get('/dev/otp').expect(400);
+      // supertest connects over loopback and dev trusts no proxy header, so a spoofed
+      // X-Forwarded-For changes nothing here; the non-loopback refusal is unit-tested.
+      await request(app.getHttpServer()).get('/dev/otp').set('X-Forwarded-For', '10.0.0.9').query({ phone }).expect(200);
       await redis.del(devOtpKey(phone));
     } finally {
       await app.close();

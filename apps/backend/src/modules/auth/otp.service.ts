@@ -53,7 +53,9 @@ export interface OtpRequestOutcome {
  * deployed environment by mistake.
  */
 export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.OTP_DEV_LOG === 'true' && env.NODE_ENV !== 'production';
+  // Default CLOSED (FEAT-026 V2): an unset NODE_ENV is not "development" — a platform build
+  // that forgot it must not get the echo, the stash or the dev route.
+  return env.OTP_DEV_LOG === 'true' && (env.NODE_ENV === 'development' || env.NODE_ENV === 'test');
 }
 
 /** Result of verifying an OTP. */

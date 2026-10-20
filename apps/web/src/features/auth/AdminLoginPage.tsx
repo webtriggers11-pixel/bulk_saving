@@ -37,6 +37,8 @@ export function AdminLoginPage() {
   const devOtp = useDevOtp();
   const requestMutation = useMutation({
     mutationFn: () => requestAdminOtp({ phone: normalisePhone(phone) ?? phone.trim() }),
+    // A resend must not keep showing the previous code while the new one is fetched.
+    onMutate: () => devOtp.clear(),
     onSuccess: () => {
       setStep('code');
       devOtp.fetchFor(phone);
@@ -212,7 +214,7 @@ export function AdminLoginPage() {
               </Button>
             </p>
             <p className="mt-4 text-center text-caption font-medium text-ink-muted">
-              <Button variant="link" onClick={() => setStep('phone')}>
+              <Button variant="link" onClick={() => { setStep('phone'); devOtp.clear(); }}>
                 Use a different number
               </Button>
             </p>

@@ -91,6 +91,7 @@ describe('OnboardingPage', () => {
   afterEach(() => {
     onlineManager.setOnline(true);
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('requests an OTP after invite + phone, then verifies and authenticates', async () => {
@@ -180,7 +181,6 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByTestId('dev-otp-use'));
     expect(screen.getByLabelText('6-digit code')).toHaveValue('654321');
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
-    vi.unstubAllEnvs();
   });
 
   it('DEV build without the dev route (404): no toast, nothing else changes', async () => {
@@ -201,7 +201,6 @@ describe('OnboardingPage', () => {
     await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
-    vi.unstubAllEnvs();
   });
 
   it('renders a friendly message when verify returns OTP_INVALID', async () => {

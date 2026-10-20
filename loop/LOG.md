@@ -1332,3 +1332,4 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
   - P3 taken: the route answers loopback only (127.0.0.1 / ::1; 403 otherwise — unit-tested; dev trusts no proxy header); the admin door's "Use a different number" and both doors' resend clear the toast first; `vi.unstubAllEnvs` moved to `afterEach`; the toast's padding is per-axis (no `p-4` + `pt-*` on one element — BUG-007's rule).
 - Alone: backend dev/otp suites 34/34, web auth + toast + class-conflicts 47/47. Gate running.
 - By: agent (autonomous) + code-reviewer subagent
+- V1 (round-1 fixes): gate exit 0 — backend 511/511 (+7), web 643/643, 3293 class tokens, bundle guard passes.
