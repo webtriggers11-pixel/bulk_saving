@@ -349,6 +349,10 @@ These are not single features but are true across the product and belong in a
 
 ## 6. Not yet / do not claim
 
+> Internal guardrail. Since 2026-10-20 the public website (FEAT-028, T5e) shows a forward
+> Now / Next / Later roadmap instead of this table, for a financier audience; the table stays
+> here so copy never claims any of it as shipped.
+
 | Item | Status | Say on the website |
 |------|--------|--------------------|
 | WhatsApp round updates | planned fast-follow behind the same channel interface | "SMS today, WhatsApp next" |
