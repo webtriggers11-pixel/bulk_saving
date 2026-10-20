@@ -74,11 +74,16 @@ describe('WhatsAppSignIn', () => {
 
   it('the SMS fallback is always one tap away; a start error is shown; offline is honest', () => {
     const onUseSms = vi.fn();
-    render(<WhatsAppSignIn login={login({ phase: 'idle' }, { startError: new Error('Server down'), queuedOffline: true })} onUseSms={onUseSms} phoneLike />);
+    const l = login({ phase: 'idle' }, { startError: new Error('Server down'), queuedOffline: true });
+    render(<WhatsAppSignIn login={l} onUseSms={onUseSms} phoneLike />);
     fireEvent.click(screen.getByRole('button', { name: 'Use an SMS code instead' }));
     expect(onUseSms).toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent('Server down');
     expect(screen.getByTestId('whatsapp-offline')).toBeInTheDocument();
+    // BUG-021: a failed start is not a dead end.
+    fireEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    expect(l.reset).toHaveBeenCalledTimes(1);
+    expect(l.start).toHaveBeenCalledTimes(2); // once on mount, once on Try again
     // Vitest runs with MODE=test: the dev panel never renders here (ADR-0037's gate).
     expect(screen.queryByTestId('dev-whatsapp-panel')).toBeNull();
   });

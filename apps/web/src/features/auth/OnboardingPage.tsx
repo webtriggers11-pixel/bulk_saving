@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { messageFromError, PHONE_HINT } from './error-messages';
+import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
 import { useAuthMethods } from './useAuthMethods';
@@ -32,6 +32,12 @@ export function OnboardingPage() {
 
   const [step, setStep] = useState<Step>('invite');
   const [inviteCode, setInviteCode] = useState('');
+  // BUG-021: a code that cannot be right never reaches the server. The hint appears only
+  // when someone tries to continue with one (owner: "give error in invite code only if it's
+  // wrong") — never while they are still typing.
+  const inviteWellFormed = INVITE_CODE_SHAPE.test(inviteCode);
+  const [inviteTried, setInviteTried] = useState(false);
+  const inviteImplausible = inviteTried && !inviteWellFormed;
   const [phone, setPhone] = useState('');
   // Typed something, but not yet a number the server will accept.
   const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
@@ -75,7 +81,11 @@ export function OnboardingPage() {
 
   function submitInvite(event: FormEvent) {
     event.preventDefault();
-    if (inviteCode.trim().length === 0) return;
+    if (!inviteWellFormed) {
+      setInviteTried(true);
+      return;
+    }
+    setInviteTried(false);
     setStep(methods.whatsapp ? 'choose' : 'phone');
   }
 
@@ -158,8 +168,14 @@ export function OnboardingPage() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               className="num text-center"
+              aria-describedby={inviteImplausible ? 'invite-hint' : undefined}
             />
-            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.trim().length === 0}>
+            {inviteImplausible && (
+              <p id="invite-hint" className="mt-2 text-caption text-ink-muted" data-testid="invite-hint">
+                {INVITE_HINT}
+              </p>
+            )}
+            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.length === 0}>
               Continue
               <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
             </Button>

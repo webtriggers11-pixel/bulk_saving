@@ -76,7 +76,16 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
         {phoneLike ? 'Send the ready-made message, then tap the number below in our reply.' : 'Scan with your phone, send the ready-made message, then tap the number below in our reply.'}
       </p>
 
-      {startError && <Notice tone="error">{messageFromError(startError)}</Notice>}
+      {startError && (
+        <>
+          <Notice tone="error">{messageFromError(startError)}</Notice>
+          {/* BUG-021: a failed start is not a dead end. */}
+          <Button variant="secondary" className="mt-3 w-full" onClick={() => { reset(); start(); }}>
+            Try again
+            <Icon name="refresh" size={18} strokeWidth={2.2} />
+          </Button>
+        </>
+      )}
       {queuedOffline && (
         <Notice tone="warn" data-testid="whatsapp-offline">
           {OFFLINE_QUEUED_TEXT}

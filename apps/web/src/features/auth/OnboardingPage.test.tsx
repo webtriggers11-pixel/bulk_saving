@@ -318,6 +318,22 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
     expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument();
   });
 
+  it('a short invite code never reaches the server; the hint appears only when Continue is tried with it (BUG-021)', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'BLUE00' } });
+    // Still typing: no error yet (owner: "give error in invite code only if it's wrong").
+    expect(screen.queryByTestId('invite-hint')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByTestId('invite-hint')).toHaveTextContent('8 letters and numbers');
+    expect(screen.getByLabelText('Invite code')).toBeInTheDocument(); // stayed on the step
+    expect(mock.mock.calls.filter(([url]) => !String(url).endsWith('/auth/methods'))).toHaveLength(0);
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'BLUE0002' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByTestId('invite-hint')).toBeNull();
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+  });
+
   it('when the server does not offer WhatsApp, the invite code leads straight to the phone step', async () => {
     installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
     renderOnboarding();
