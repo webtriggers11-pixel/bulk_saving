@@ -1156,7 +1156,7 @@ html[data-scheme='dark'] .icon-btn__sun {
   position: relative;
   z-index: 1;
 }
-.svc--leaving {
+.wall > .svc--leaving {
   z-index: 0;
   pointer-events: none;
 }

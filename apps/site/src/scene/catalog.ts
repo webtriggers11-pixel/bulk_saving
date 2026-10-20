@@ -35,8 +35,10 @@ export function mountCatalog(root: HTMLElement) {
 
   const applyFilter = () => {
     const keep = new Set(filterCatalog(items, filter).map((i) => i.el));
-    const state = reduced ? null : Flip.getState(cards);
+    // Measured BEFORE getState: getState interrupts a running Flip (jumping its height tween
+    // to the end), so after it the wall would already stand at the old target, not where it is.
     const h0 = wall.offsetHeight;
+    const state = reduced ? null : Flip.getState(cards);
     cards.forEach((el) => (el.style.display = keep.has(el) ? '' : 'none'));
     if (state) {
       // BUG-023: only the leavers go absolute, so the grid keeps sizing itself from the cards
@@ -53,12 +55,9 @@ export function mountCatalog(root: HTMLElement) {
           els.forEach((el) => el.classList.add('svc--leaving'));
           return gsap.to(els, { opacity: 0, scale: 0.96, duration: 0.2, onComplete: () => els.forEach((el) => el.classList.remove('svc--leaving')) });
         },
-        onComplete: () => {
-          gsap.set(wall, { clearProps: 'height' });
-          ScrollTrigger.refresh();
-        },
+        onComplete: () => ScrollTrigger.refresh(),
       });
-      tl.fromTo(wall, { height: h0 }, { height: h1, duration: 0.55, ease: 'power2.inOut', overwrite: true, clearProps: 'height' }, 0);
+      tl.fromTo(wall, { height: h0 }, { height: h1, duration: 0.55, ease: 'power2.inOut', clearProps: 'height' }, 0);
     }
     const n = keep.size;
     if (count) {

@@ -23,7 +23,12 @@ describe('catalog Flip keeps the wall in flow (BUG-023)', () => {
   it('the wall is positioned and leavers stack under the movers', () => {
     expect(rule('.wall')).toMatch(/position:\s*relative/);
     expect(rule('.wall > .svc')).toMatch(/z-index:\s*1/);
-    expect(rule('.svc--leaving')).toMatch(/z-index:\s*0/);
+    // Same specificity as the rule above and later in the sheet, or the cascade keeps z-index 1.
+    expect(rule('.wall > .svc--leaving')).toMatch(/z-index:\s*0/);
+    expect(css.indexOf('.wall > .svc--leaving')).toBeGreaterThan(css.indexOf('.wall > .svc {'));
     expect(src).toMatch(/svc--leaving/);
+  });
+  it('the old height is read before getState (which ends a running Flip and its height tween)', () => {
+    expect(src.indexOf('const h0 = wall.offsetHeight')).toBeLessThan(src.indexOf('Flip.getState(cards)'));
   });
 });

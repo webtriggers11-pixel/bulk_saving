@@ -1571,3 +1571,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Failing test first (catalog.flip.test.ts, 3/3 red), then: `absoluteOnLeave: true` instead of `absolute: true`; the wall tweens `height` h0 → h1 on the Flip timeline (overwrite, clearProps), `ScrollTrigger.refresh()` on complete; `.wall { position: relative }`, cards `z-index: 1`, `.svc--leaving` under them with pointer events off. Measured in Chrome: the gap between the wall and the Updates section is a constant 739px through All → Vehicle and back; no inline styles left behind.
 - V1 17:02:27–17:03:39, exit 0: site 61/61, backend 557/557, web 665/665. BUG-023 → in-review.
 - By: agent (autonomous)
+
+## 2026-10-20 — BUG-023 — V2 PASS-conditional → taken
+- V2 (code-reviewer subagent, worktree at bcb12b7; its gate exit 0: site 61, backend 557, web 665). Verified `absoluteOnLeave`/`onLeave` semantics in gsap/Flip.js, the refresh need, reduced motion unchanged, state clean after a triple click.
+- P2 `h0` was read AFTER `Flip.getState`, which ends a running Flip (and its height tween) → on a rapid re-click the wall snapped to the previous target (1450 → 456px in a frame) → `h0` now read before getState. P2 `.svc--leaving { z-index: 0 }` lost the cascade to `.wall > .svc { z-index: 1 }` → `.wall > .svc--leaving`. P3 redundant second clearProps and `overwrite: true` → removed. The test now pins the selector order and the h0/getState order. Re-measured in Chrome: leaver z-index 0; height continuous across clicks 100 ms apart (1345 → 1345, 1144 → 1144); no inline styles or classes left after 1.5 s.
+- By: agent (autonomous) + code-reviewer subagent
