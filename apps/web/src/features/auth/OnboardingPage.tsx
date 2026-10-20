@@ -171,7 +171,7 @@ export function OnboardingPage() {
               aria-describedby={inviteImplausible ? 'invite-hint' : undefined}
             />
             {inviteImplausible && (
-              <p id="invite-hint" className="mt-2 text-caption text-ink-muted" data-testid="invite-hint">
+              <p id="invite-hint" role="alert" className="mt-2 text-caption text-ink-muted" data-testid="invite-hint">
                 {INVITE_HINT}
               </p>
             )}

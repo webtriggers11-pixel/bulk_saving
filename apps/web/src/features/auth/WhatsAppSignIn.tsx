@@ -129,6 +129,11 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
                   <Icon name="offline" size={15} strokeWidth={2.2} />
                   Waiting for a connection…
                 </>
+              ) : view.phase === 'confirmed' ? (
+                <>
+                  <Icon name="check" size={15} strokeWidth={2.2} className="text-brand-ink" />
+                  You're in — one moment…
+                </>
               ) : view.phase === 'awaiting_confirm' ? (
                 <>
                   <Icon name="check" size={15} strokeWidth={2.2} className="text-brand-ink" />

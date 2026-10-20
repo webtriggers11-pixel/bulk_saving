@@ -35,25 +35,28 @@ describe('useWhatsAppLogin', () => {
   });
 
   it('polls pending → awaiting_confirm → confirmed, signs in once and drops the request from the cache', async () => {
-    statusMock
-      .mockResolvedValueOnce({ status: 'pending' })
-      .mockResolvedValueOnce({ status: 'awaiting_confirm' })
-      .mockResolvedValue(confirmed);
+    // BUG-022: the test advances the server's answer only after it has SEEN the previous
+    // phase, so no transition can slip between two waitFor checks whatever the machine load.
+    let answer: WaStatusResponse = { status: 'pending' };
+    statusMock.mockImplementation(async () => answer);
     const onSignedIn = vi.fn<(r: AuthResult) => void>();
     const { client, Wrapper } = wrapper();
     const { result } = renderHook(() => useWhatsAppLogin(async () => session, onSignedIn, 20), { wrapper: Wrapper });
     expect(result.current.view.phase).toBe('idle');
     act(() => result.current.start());
-    // Generous (BUG-002's rule): under a full gate beside another process the interval
-    // timers are starved; the other session's V1 saw this time out at 5 s once.
+    await waitFor(() => expect(result.current.view.phase).toBe('pending'), { timeout: 15_000 });
+    await waitFor(() => expect(statusMock).toHaveBeenCalled(), { timeout: 15_000 });
+    answer = { status: 'awaiting_confirm' };
     await waitFor(() => expect(result.current.view.phase).toBe('awaiting_confirm'), { timeout: 15_000 });
+    answer = confirmed;
     await waitFor(() => expect(onSignedIn).toHaveBeenCalledTimes(1), { timeout: 15_000 });
+    expect(result.current.view.phase).toBe('confirmed');
     expect(onSignedIn.mock.calls[0][0]).toEqual({ accessToken: 'access-wa', refreshToken: 'refresh-wa', resident: confirmed.resident });
     expect(client.getQueryData(['auth', 'wa', 'status', session.requestId])).toBeUndefined();
     expect(statusMock).toHaveBeenCalledWith(session.requestId);
     // Settled: no more polling after a terminal answer.
     const calls = statusMock.mock.calls.length;
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    await new Promise((resolve) => setTimeout(resolve, 120));
     expect(statusMock.mock.calls.length).toBe(calls);
     expect(onSignedIn).toHaveBeenCalledTimes(1);
   });

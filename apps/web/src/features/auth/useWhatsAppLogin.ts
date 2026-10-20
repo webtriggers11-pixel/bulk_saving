@@ -10,7 +10,7 @@ export const WA_POLL_MS = 2_000;
 export type WaView =
   | { phase: 'idle' }
   | { phase: 'starting' }
-  | { phase: 'pending' | 'awaiting_confirm'; session: WaStartResponse }
+  | { phase: 'pending' | 'awaiting_confirm' | 'confirmed'; session: WaStartResponse }
   | { phase: 'denied'; session: WaStartResponse; reason: 'WRONG_NUMBER' | 'NOT_AN_ADMIN' }
   | { phase: 'expired'; session: WaStartResponse };
 
@@ -66,6 +66,7 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
   else if (!session) view = { phase: 'idle' };
   else if (data?.status === 'denied') view = { phase: 'denied', session, reason: data.reason };
   else if (data?.status === 'expired' || expiredByClock) view = { phase: 'expired', session };
+  else if (data?.status === 'confirmed' || handedOver === requestId) view = { phase: 'confirmed', session };
   else view = { phase: data?.status === 'awaiting_confirm' ? 'awaiting_confirm' : 'pending', session };
 
   return {

@@ -47,6 +47,10 @@ describe('WhatsAppSignIn', () => {
 
     rerender(<WhatsAppSignIn login={login({ phase: 'awaiting_confirm', session }, { stalled: true })} onUseSms={vi.fn()} phoneLike />);
     expect(screen.getByTestId('whatsapp-status')).toHaveTextContent('Waiting for a connection…');
+
+    // BUG-022: the instant between the tokens arriving and the navigation says so.
+    rerender(<WhatsAppSignIn login={login({ phase: 'confirmed', session })} onUseSms={vi.fn()} phoneLike />);
+    expect(screen.getByTestId('whatsapp-status')).toHaveTextContent("You're in — one moment…");
   });
 
   it('on a laptop: a QR of the same link and a link for WhatsApp Web; no Open button', async () => {
