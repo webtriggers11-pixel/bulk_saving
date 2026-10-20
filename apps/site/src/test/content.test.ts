@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { catalog, features, featuresIn, internalFeatures, notYet, sections } from '../content/features';
+import { audiences, catalog, features, featuresIn, internalFeatures, roadmap, sections } from '../content/features';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const registry = readFileSync(`${here}/../../../../loop/REGISTRY.md`, 'utf8');
@@ -56,7 +56,16 @@ describe('features.ts against loop/REGISTRY.md', () => {
       expect(f.why.length, f.id).toBeLessThanOrEqual(220);
       expect(f.what + f.why, `${f.id} mentions internals`).not.toMatch(/\b(Prisma|BullMQ|Redis|Postgres|JWT|DTO|NestJS)\b/);
     }
-    for (const n of notYet) expect(n.say.length).toBeLessThanOrEqual(120);
+    for (const r of roadmap) expect(r.what.length).toBeLessThanOrEqual(220);
+  });
+
+  it('roadmap and audiences are complete and positive', () => {
+    expect(roadmap.filter((r) => r.when === 'Now').length).toBeGreaterThan(0);
+    expect(roadmap.filter((r) => r.when === 'Next').length).toBeGreaterThan(0);
+    expect(roadmap.filter((r) => r.when === 'Later').length).toBeGreaterThan(0);
+    expect(audiences.map((a) => a.key)).toEqual(['residents', 'societies', 'vendors', 'operator']);
+    for (const a of audiences) expect(a.points.length).toBe(3);
+    for (const r of roadmap) expect(r.what, r.title).not.toMatch(/\b(not in v1|non-goal|do not|never)\b/i);
   });
 
   it('the catalog ticker names the 23 seeded services across six categories', () => {

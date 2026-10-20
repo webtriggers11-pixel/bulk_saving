@@ -16,7 +16,7 @@ beforeAll(async () => {
   html = decode(await container.renderToString(Index, { request: new Request('https://bulksaving.example/') }));
 });
 
-const SECTION_IDS = [...sections.map((s) => s.id), 'staples', 'not-yet'];
+const SECTION_IDS = ['overview', ...sections.map((s) => s.id), 'staples', 'calculator', 'roadmap'];
 
 describe('index.astro', () => {
   it('carries the app’s html attributes', () => {
@@ -99,6 +99,17 @@ describe('index.astro', () => {
     expect((html.match(/data-ask="/g) ?? []).length).toBe(18);
     expect(html).toMatch(/<dialog class="sheet"[^>]*data-sheet/);
     expect(html).toContain('closes in 2d 4h');
+  });
+
+  it('is financier-ready: overview, audiences, calculator, roadmap; no negatives (T5e)', () => {
+    expect(html).toContain('id="overview"');
+    expect((html.match(/data-audience-tab="/g) ?? []).length).toBe(4);
+    expect((html.match(/data-audience-panel="/g) ?? []).length).toBe(4);
+    expect((html.match(/<input type="range" data-calc="/g) ?? []).length).toBe(6);
+    expect((html.match(/data-calc-out="/g) ?? []).length).toBeGreaterThanOrEqual(7);
+    expect(html).toContain('id="roadmap"');
+    expect(html).not.toContain('What is not here yet');
+    expect(html).not.toMatch(/Not in v1|non-goal|No gateway, no vendor app, no chat/);
   });
 
   it('offers all seven accents and a scheme switch', () => {

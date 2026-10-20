@@ -1330,3 +1330,290 @@ html[data-scheme='dark'] .icon-btn__sun {
   text-align: center;
   font-weight: 600;
 }
+
+/* ---- T5e: financier-ready — overview, audiences, calculator, roadmap --------------------- */
+.trio3 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  counter-reset: none;
+}
+@media (max-width: 759px) {
+  .trio3 {
+    grid-template-columns: 1fr;
+  }
+}
+.big {
+  padding: 22px 20px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.big__n {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: rgb(var(--on-fill));
+  background: rgb(var(--brand));
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.big h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.big p {
+  color: rgb(var(--ink-muted));
+  text-wrap: pretty;
+}
+.flow {
+  margin: 0;
+  padding: 18px 18px 14px;
+  display: grid;
+  gap: 10px;
+  color: rgb(var(--ink));
+}
+.flow__svg {
+  width: 100%;
+  height: auto;
+  font-family: var(--font-sans);
+}
+.flow__node rect {
+  fill: rgb(var(--paper));
+  stroke: var(--hairline-strong);
+}
+.flow__node text {
+  fill: rgb(var(--ink));
+  font-size: 15px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.flow__node text.flow__sub,
+.flow__svg > text.flow__sub {
+  fill: rgb(var(--ink-muted));
+  font-size: 11px;
+  font-weight: 400;
+  text-anchor: middle;
+}
+.flow__node--accent rect {
+  fill: rgb(var(--brand));
+  stroke: rgb(var(--brand));
+}
+.flow__node--accent text {
+  fill: rgb(var(--on-fill));
+}
+.flow__node--op rect {
+  fill: rgb(var(--line) / 0.04);
+}
+.flow__line {
+  fill: none;
+  stroke: rgb(var(--brand-ink));
+  stroke-width: 1.6;
+  color: rgb(var(--brand-ink));
+  stroke-dasharray: 6 5;
+  animation: flow-dash 1.6s linear infinite;
+}
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+.facts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+.fact {
+  display: grid;
+  gap: 4px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--hairline);
+}
+.fact strong {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.fact span {
+  font-size: 0.875rem;
+  color: rgb(var(--ink-muted));
+  text-wrap: pretty;
+}
+.audience {
+  display: grid;
+  gap: 12px;
+}
+.audience__tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.audience__tabs .chip[aria-selected='true'] {
+  color: rgb(var(--on-fill));
+  background: rgb(var(--brand));
+  border-color: rgb(var(--brand));
+}
+.audience__panel {
+  padding: 20px 22px;
+  display: grid;
+  gap: 10px;
+}
+.audience__panel h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.audience__panel ul {
+  display: grid;
+  gap: 8px;
+  color: rgb(var(--ink-muted));
+}
+.audience__panel li {
+  padding-left: 14px;
+  position: relative;
+  text-wrap: pretty;
+}
+.audience__panel li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+.why h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-bottom: 14px;
+}
+.why__grid {
+  display: grid;
+  gap: 16px 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 639px) {
+  .why__grid,
+  .facts {
+    grid-template-columns: 1fr;
+  }
+}
+.why__grid strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.why__grid p {
+  color: rgb(var(--ink-muted));
+  font-size: 0.9375rem;
+  text-wrap: pretty;
+}
+
+/* the calculator */
+.calc {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .calc {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    gap: 32px;
+    align-items: start;
+  }
+}
+.calc__inputs {
+  padding: 8px 20px;
+  display: grid;
+}
+.calc__row {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hairline);
+}
+.calc__row:first-child {
+  border-top: 0;
+}
+.calc__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9375rem;
+  color: rgb(var(--ink-muted));
+}
+.calc__label output {
+  color: rgb(var(--ink));
+  font-weight: 600;
+}
+input[type='range'] {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: none;
+  accent-color: rgb(var(--brand));
+  cursor: pointer;
+}
+.calc__outputs {
+  display: grid;
+  gap: 12px;
+}
+.calc__hero {
+  padding: 24px 24px 22px;
+  display: grid;
+  gap: 8px;
+}
+.calc__k {
+  font-size: 0.9375rem;
+  opacity: 0.9;
+}
+.calc__big {
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* the roadmap */
+.road {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 759px) {
+  .road {
+    grid-template-columns: 1fr;
+  }
+}
+.road__col {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.road__when {
+  font-size: 0.875rem;
+}
+.road__items {
+  display: grid;
+  gap: 10px;
+}
+.road__item {
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+.road__item strong {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.road__item p {
+  color: rgb(var(--ink-muted));
+  font-size: 0.9375rem;
+  text-wrap: pretty;
+}

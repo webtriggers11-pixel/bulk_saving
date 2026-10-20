@@ -306,14 +306,21 @@ export const internalFeatures: ReadonlySet<string> = new Set(['FEAT-026']);
 export const featuresIn = (section: SectionId): Feature[] =>
   features.filter((f) => f.section === section);
 
-/** Things the product does NOT do yet. The site says so rather than hiding it. */
-export const notYet: { item: string; state: string; say: string }[] = [
-  { item: 'WhatsApp round updates', state: 'Planned next', say: 'SMS today, WhatsApp next.' },
-  { item: 'Paying inside the app', state: 'Not in v1', say: 'You pay the vendor directly; we track it.' },
-  { item: 'A vendor app', state: 'Not in v1', say: 'The operator coordinates with vendors offline.' },
-  { item: 'In-app chat', state: 'Not in v1', say: 'Support runs over phone and WhatsApp.' },
-  { item: 'Grocery baskets and fresh produce', state: 'Pilot is staples only', say: 'Single products in fixed packs, one delivery to the gate.' },
-  { item: 'Recurring plans and warranties', state: 'A v2 idea', say: 'Own the relationship, not just the first job.' },
+/** What comes next, in order. Shipped work stays in the sections above; this is the road ahead. */
+export const roadmap: { when: 'Now' | 'Next' | 'Later'; title: string; what: string }[] = [
+  { when: 'Now', title: 'First societies live', what: 'Phone sign-in, the catalog, group-buy rounds, SMS and push, ratings, the operator dashboard, and a bulk-staples pilot are built and verified.' },
+  { when: 'Next', title: 'WhatsApp round updates', what: 'Round alerts over WhatsApp where societies already live. Sign-in with WhatsApp is done; the channel follows behind the same notification interface.' },
+  { when: 'Next', title: 'More services, more societies', what: 'The catalog is data, not code: the operator adds a service and switches it on per society. The platform is multi-tenant from day one.' },
+  { when: 'Later', title: 'Recurring plans and warranty', what: 'Own the relationship, not just the first job: a quarterly pest-control or pre-summer AC plan, with the vendor accountable through us.' },
+  { when: 'Later', title: 'Vendor tools and new cities', what: 'A vendor-side view and regional operators once the pilot proves fill rates and ratings in one city.' },
+];
+
+/** Who gains what. One short panel per audience. */
+export const audiences: { key: string; label: string; title: string; points: string[] }[] = [
+  { key: 'residents', label: 'Residents', title: 'Cheaper, trusted, zero organising', points: ['Pay the pooled price, not the single-customer price: about ₹300 less on a ₹1,000 AC service.', 'One tap to join; the deadline and the vendor are handled.', 'A rating on every job keeps vendors honest.'] },
+  { key: 'societies', label: 'Societies', title: 'A service the committee can offer', points: ['An invite code brings every flat in; every price is the society’s own.', 'Pooled demand gets one vendor visit instead of forty, and one delivery to the gate for staples.', 'Nothing to run: the operator opens rounds and books the work.'] },
+  { key: 'vendors', label: 'Vendors', title: 'Ten jobs at one address', points: ['No per-job acquisition cost, no scattered travel: a filled round is a day’s work in one building.', 'A negotiated price for guaranteed volume.', 'Ratings build a track record that wins the next round.'] },
+  { key: 'operator', label: 'The platform', title: 'Demand first, supply by negotiation', points: ['Residents signal demand before anyone buys; the operator negotiates with that number in hand.', 'A commission on each pooled job; no inventory, no payment risk in the pilot.', 'Defensibility is execution: vendor relationships, ratings, and recurring plans.'] },
 ];
 
 /** The demo round in the hero. Prices are per unit; the tiers are the app's own shape. */

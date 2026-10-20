@@ -1,0 +1,20 @@
+---
+import Section from './Section.astro';
+import { roadmap } from '../content/features';
+const groups = ['Now', 'Next', 'Later'] as const;
+---
+
+<Section id="roadmap" title="Where it goes from here" lede="Shipped, next, and later. The pilot proves fill rates and ratings in one city; the platform is already built to multiply.">
+  <ol class="road">
+    {groups.map((g) => (
+      <li class="road__col">
+        <h3 class="road__when"><span class:list={['pill', { 'pill--live': g === 'Now' }]}>{g}</span></h3>
+        <ul class="road__items">
+          {roadmap.filter((r) => r.when === g).map((r) => (
+            <li class="surface card-hover road__item"><strong>{r.title}</strong><p>{r.what}</p></li>
+          ))}
+        </ul>
+      </li>
+    ))}
+  </ol>
+</Section>
