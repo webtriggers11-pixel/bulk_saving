@@ -181,3 +181,13 @@ Images are immutable, so redeploy the previous tag. **Migrations are not automat
 reversible**: every migration so far is additive, so an older API runs against a newer schema,
 but that is a property of the current history rather than a guarantee. Check before relying
 on it.
+
+## 8. The product website (`apps/site`, FEAT-027)
+
+A static site, separate from the API and the PWA. `pnpm --filter site build` writes
+`apps/site/dist/` — plain HTML, CSS, and two JS chunks (the page, and the lazy Three.js
+scene). Serve that folder from any static host (nginx, a CDN, GitHub Pages); nothing runs
+server-side. Set the real domain in `apps/site/astro.config.mjs` (`site`) before the first
+deploy: it feeds the canonical and Open Graph URLs. The site reads the same localStorage
+keys as the app (`bulk:scheme`, `bulk:palette`), so hosting it on the app's origin gives a
+signed-in resident their own colour; on another origin it simply defaults to Mono.
