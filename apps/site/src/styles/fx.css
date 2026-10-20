@@ -322,9 +322,11 @@ html.gsap .story__step.is-current::before {
   .story__steps {
     padding-block: 2vh 0;
   }
+  /* Gap ≤ the readable band (stage bottom → the 85% line, ≈ 45vh − text) so a lit caption
+     never slides under the stage before the next one takes over. */
   .story__steps .story__step {
     min-height: 0;
-    padding: 0 0 38vh;
+    padding: 0 0 24vh;
   }
 }
 .story__scene {

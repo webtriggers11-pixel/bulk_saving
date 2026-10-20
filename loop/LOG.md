@@ -1521,3 +1521,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Environment note from the reviewer, kept for the next pass: a daemonised `astro dev` in a worktree lost its optimised deps while a gate's Vitest ran → gsap/lenis 504, Base script silent; check `html.gsap` before trusting a browser pass.
 - Alone: typecheck 0, lint clean, 58/58, build OK.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — FEAT-028 — phone captions measured after the round-3 fix; gap trimmed
+- 390×740 iframe, driven through Lenis: with a 38vh gap the lit caption slid under the stage for the last ~23% of each step (box 381px vs a 292px readable band). Gap → 24vh (box ≈ band): at 11 positions across the track the lit caption's heading sits between the stage bottom and the 85% line in 8, and 2–25px under the stage only at the very end of a step. The sheet: a click in a row gap targets `.sheet__in` and keeps it open; a backdrop click closes it; the subtitle carries the card's ticking deadline.
+- By: agent (autonomous)
