@@ -1395,3 +1395,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Tests: 34 (ticker ≥ 2×20 items, 9 reveal sections, 4 count-ups, 23 services / 6 categories). Typecheck 0, lint clean, build OK: page 5.6 kB + fx 4.9 kB + CSS 23.8 kB; the lazy Three chunk 538 kB.
 - Browser (dark Ocean, light Mono): beam travelling the round card, halos on lit windows, grid floor, shimmer on ₹1,000, count-up 14 / 3 / ₹41,300 / 4.5, the reveal caught mid-circle on the scheme switch; no console errors.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-027 — registry row for the product website set to FEAT-028
+- The concurrent session's renumber (c24b709) left its REGISTRY row reading `FEAT-027`; the folder, LOG and ADR-0039 already say FEAT-028. One token changed on that row so the registry has one FEAT-027 again. Nothing else of theirs touched.
+- Gate note: the main tree carries that session's UNCOMMITTED site work (apps/site/*.astro), whose `page.test.ts` currently fails — so this item's V1 run 2 in the main tree failed in the `site` workspace, not in backend/web (backend 556/556 and the web suites were green in run 1 apart from the two design guards since fixed). V1 is therefore being run on the COMMITTED tree in the review worktree.
+- By: agent (autonomous)
