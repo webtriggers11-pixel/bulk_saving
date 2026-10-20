@@ -5,6 +5,11 @@
 
 ## Latest session (2026-10-20, the product website — FEAT-028, `apps/site`, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
 
+- **CHORE-025 closed (after FEAT-028):** owner saw "lot of empty spaces" — a mini card in every story step (desktop only;
+  on phones a card pushed the caption under the sticky stage, V2 caught it), sticky side columns (Trust/Phone mocks, Look,
+  calculator outputs), a second "Now" roadmap card (WhatsApp sign-in), 38vh captions, 88px sections. V1/V2/V3 green
+  (de9001f, identical double run). The dev server on :4321 is still up for the owner.
+
 - **FEAT-028 closed** (owner, in order: "create new folder in apps using astro … beautiful product website … 3d animation … same
   theme consistency, SPA is fine" → "make it creative and fancy as per theme" → "use GSAP, kens and much more animation 3d …
   use internet to search" → "Browse, ask, book … better UI/UX with fancy style" → "show this to my financiers … remove unwanted

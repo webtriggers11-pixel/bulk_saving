@@ -1556,3 +1556,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (code-reviewer subagent, worktree at ecb517a; its gate exit 0: site 58, backend 557, web 665). Verified: sticky columns pin at 90px through their rows at 1920 and 1000 wide and are static on phones; the scrub, the cards' light-up and the joiner stagger on desktop; valid markup; tokens; CoolBreeze and the SMS wording traced to the seed and the real template.
 - P2 on phones the cards made each caption ~500px, so its text slid under the stage before the next caption took over (undoing f997827) → the cards are desktop-only (`display: none` under 900px; the phone keeps the sticky scene as its visual; markup and the page test unchanged). P3 the joiner stagger survived reduced motion (`transition-delay`) → the global reduced-motion block now zeroes delays too. P3 `.msg--sm` gets a redundant second fade from the reveal batch — harmless, left.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — CHORE-025 — V3; CLOSED
+- V3 at de9001f (worktree, no other gate running): two back-to-back runs, 15:04:01–15:04:55 and 15:04:55–15:05:52, both exit 0 and identical — site 58/58, backend 557/557, web 665/665, class gate 3439. No flakes.
+- CHORE-025 → done. The website's desktop columns no longer run empty: a mini card in every story step (desktop), sticky side columns beside the long lists, two "Now" roadmap cards, 38vh captions and 88px sections. Phones keep the sticky scene as the story's visual.
+- By: agent (autonomous)
