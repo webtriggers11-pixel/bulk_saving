@@ -1145,9 +1145,20 @@ html[data-scheme='dark'] .icon-btn__sun {
   opacity: 0.75;
 }
 .wall {
+  position: relative;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+/* BUG-023: during a filter Flip the leavers are absolute (out of flow) and fade out; they
+   stack under the cards sliding into their places, never over them. */
+.wall > .svc {
+  position: relative;
+  z-index: 1;
+}
+.svc--leaving {
+  z-index: 0;
+  pointer-events: none;
 }
 .svc {
   display: grid;

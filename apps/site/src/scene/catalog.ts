@@ -3,17 +3,19 @@
  * cards slide to their new places, leavers fade); open rounds tick their deadline every
  * minute; "Ask for this" toggles with a count and a sparkle; an open card's button opens
  * the pledge sheet (a native <dialog>: focus trap and Escape for free) whose stepper reprices
- * through the app's tier rule. Reduced motion: instant layout, no sparkles.
+ * through the app's tier rule. Reduced motion: instant layout, no sparkles. The wall holds
+ * its height through the Flip (BUG-023) so the page below never jumps.
  */
 import { gsap } from 'gsap';
 import { Flip } from 'gsap/Flip';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { catalog, type Category } from '../content/features';
 import { askLabel, closesIn, filterCatalog, sheetFor, toggleAsk, type Filter } from './catalogModel';
 import { rupees } from './model';
 import { sparkles } from './fx';
 import { prefersReducedMotion } from './theme';
 
-gsap.registerPlugin(Flip);
+gsap.registerPlugin(Flip, ScrollTrigger);
 
 export function mountCatalog(root: HTMLElement) {
   const reduced = prefersReducedMotion();
@@ -34,16 +36,29 @@ export function mountCatalog(root: HTMLElement) {
   const applyFilter = () => {
     const keep = new Set(filterCatalog(items, filter).map((i) => i.el));
     const state = reduced ? null : Flip.getState(cards);
+    const h0 = wall.offsetHeight;
     cards.forEach((el) => (el.style.display = keep.has(el) ? '' : 'none'));
     if (state) {
-      Flip.from(state, {
+      // BUG-023: only the leavers go absolute, so the grid keeps sizing itself from the cards
+      // that stay; the wall tweens its own height from the old layout to the new one on the
+      // same timeline, so the sections below glide instead of jumping up over the cards.
+      const h1 = wall.offsetHeight;
+      const tl = Flip.from(state, {
         duration: 0.55,
         ease: 'power2.inOut',
         stagger: 0.015,
-        absolute: true,
+        absoluteOnLeave: true,
         onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.4 }),
-        onLeave: (els) => gsap.to(els, { opacity: 0, scale: 0.96, duration: 0.25 }),
+        onLeave: (els) => {
+          els.forEach((el) => el.classList.add('svc--leaving'));
+          return gsap.to(els, { opacity: 0, scale: 0.96, duration: 0.2, onComplete: () => els.forEach((el) => el.classList.remove('svc--leaving')) });
+        },
+        onComplete: () => {
+          gsap.set(wall, { clearProps: 'height' });
+          ScrollTrigger.refresh();
+        },
       });
+      tl.fromTo(wall, { height: h0 }, { height: h1, duration: 0.55, ease: 'power2.inOut', overwrite: true, clearProps: 'height' }, 0);
     }
     const n = keep.size;
     if (count) {

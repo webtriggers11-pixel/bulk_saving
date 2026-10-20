@@ -1561,3 +1561,13 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at de9001f (worktree, no other gate running): two back-to-back runs, 15:04:01–15:04:55 and 15:04:55–15:05:52, both exit 0 and identical — site 58/58, backend 557/557, web 665/665, class gate 3439. No flakes.
 - CHORE-025 → done. The website's desktop columns no longer run empty: a mini card in every story step (desktop), sticky side columns beside the long lists, two "Now" roadmap cards, 38vh captions and 88px sections. Phones keep the sticky scene as the story's visual.
 - By: agent (autonomous)
+
+## 2026-10-20 — BUG-023 — OPENED (triage → reproduced)
+- Owner: "Browse, ask, book … when I click on tabs it overlaps and then goes". Measured in Chrome: `Flip.from(state, { absolute: true })` takes every card out of flow, the wall goes 456 → 0px, the Updates section rides up 456px over the flying cards for ~0.6s and snaps back. Leavers also fade on top of the movers.
+- Report: loop/work/BUG-023-catalog-flip-collapses-wall/report.md. Failing test first: apps/site/src/scene/catalog.flip.test.ts (source-pinned; node has no layout engine).
+- By: agent (autonomous)
+
+## 2026-10-20 — BUG-023 — fixed; V1 PASS
+- Failing test first (catalog.flip.test.ts, 3/3 red), then: `absoluteOnLeave: true` instead of `absolute: true`; the wall tweens `height` h0 → h1 on the Flip timeline (overwrite, clearProps), `ScrollTrigger.refresh()` on complete; `.wall { position: relative }`, cards `z-index: 1`, `.svc--leaving` under them with pointer events off. Measured in Chrome: the gap between the wall and the Updates section is a constant 739px through All → Vehicle and back; no inline styles left behind.
+- V1 17:02:27–17:03:39, exit 0: site 61/61, backend 557/557, web 665/665. BUG-023 → in-review.
+- By: agent (autonomous)
