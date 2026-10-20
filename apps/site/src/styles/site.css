@@ -1463,6 +1463,9 @@ html[data-scheme='dark'] .icon-btn__sun {
   display: grid;
   gap: 10px;
 }
+.audience__panel[hidden] {
+  display: none;
+}
 .audience__panel h3 {
   font-size: 1.125rem;
   font-weight: 600;
