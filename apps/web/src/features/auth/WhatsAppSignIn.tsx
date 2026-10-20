@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { Notice } from '../../components/ui/notice';
@@ -57,9 +57,13 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
   const session = 'session' in view ? view.session : null;
   const qr = useQrDataUrl(session?.waLink ?? null, !phoneLike);
 
+  // Start once on mount. A ref, because StrictMode runs effects twice in development and
+  // a second start would spend a second request (and a second code) for nothing.
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     if (view.phase === 'idle') start();
-    // Start once on mount; `start` is stable for the mutation's lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
