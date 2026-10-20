@@ -1547,3 +1547,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Each story step now carries a mini card in the app's own vocabulary: (1) the round card with the three-tier mini ladder, (2) your pledge with a stepper and the confirming SMS, (3) ten neighbour monograms that pop in staggered as the step lights plus the 9-of-10 ladder, (4) "Closed · met · 11 ACs", the vendor booked (CoolBreeze AC Services from the demo seed) and a 4.6 star row; dim until the step is current (always shown without JS). Desktop captions 52vh → 38vh, section padding 104 → 88px. `.sticky-col` (≥900px, top 90px) on the Trust and Phone mocks, the Look column and the calculator outputs. Roadmap "Now" gains "Sign in with WhatsApp" (done) so the column holds two cards like the others; the Next card no longer repeats it.
 - Tests: page asserts 4 step cards, 10 joiners, ≥4 sticky columns (58 total). Typecheck 0, lint clean, build OK. Browser (zoomed desktop): cards in the steps, mocks sticky (`position: sticky`), two Now cards, no console errors.
 - By: agent (autonomous)
+
+## 2026-10-20 — CHORE-025 — V1 (worktree at ecb517a, 14:54–14:55): exit 0
+- Site 58/58, backend 557/557, web 665/665, class gate 3439. V2 (code-reviewer subagent) running.
+- By: agent (autonomous)
