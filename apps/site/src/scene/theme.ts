@@ -76,6 +76,19 @@ export const setAccent = (accent: Accent) => {
 
 /** Wire every switch on the page. Idempotent. */
 export const mountThemeControls = () => {
+  // No stored choice means "system": follow the OS if it changes while the page is open.
+  try {
+    if (!localStorage.getItem('bulk:scheme') && typeof matchMedia === 'function') {
+      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (localStorage.getItem('bulk:scheme')) return;
+        document.documentElement.setAttribute('data-scheme', e.matches ? 'dark' : 'light');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', GROUND[e.matches ? 'dark' : 'light']);
+        document.dispatchEvent(new CustomEvent('bulk:theme'));
+      });
+    }
+  } catch {
+    /* storage blocked: the pre-paint choice stands */
+  }
   document.querySelectorAll<HTMLElement>('[data-toggle-scheme]').forEach((el) => {
     el.addEventListener('click', (e) => {
       const r = el.getBoundingClientRect();

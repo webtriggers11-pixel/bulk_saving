@@ -287,15 +287,13 @@ export const features: Feature[] = [
     section: 'operators',
     status: 'done',
   },
-  {
-    id: 'FEAT-026',
-    title: 'A developer mode for demos',
-    what: 'In a local development build, the one-time code appears on screen as a toast. The route and the code path do not exist in a production build, and the release gate fails if they do.',
-    why: 'Faster demos and testing without ever weakening production sign-in.',
-    section: 'operators',
-    status: 'done',
-  },
 ];
+
+/**
+ * Done work that is deliberately NOT on the site: internal tooling a visitor gains nothing
+ * from (FEATURES.md: "do not mention"). The content test exempts exactly these.
+ */
+export const internalFeatures: ReadonlySet<string> = new Set(['FEAT-026']);
 
 export const featuresIn = (section: SectionId): Feature[] =>
   features.filter((f) => f.section === section);

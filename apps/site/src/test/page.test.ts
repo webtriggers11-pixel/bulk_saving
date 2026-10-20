@@ -40,11 +40,14 @@ describe('index.astro', () => {
     }
   });
 
-  it('every nav link resolves to a section on the page', () => {
+  it('every nav link resolves to a section, and every section has a nav link (AC5)', () => {
     const hrefs = [...html.matchAll(/<a [^>]*href="#([^"]+)"/g)].map((m) => m[1]!);
     expect(hrefs.length).toBeGreaterThan(5);
     const ids = new Set([...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!));
     for (const h of hrefs) expect(ids.has(h), `#${h}`).toBe(true);
+    const nav = html.match(/<nav class="nav__links"[\s\S]*?<\/nav>/)?.[0] ?? '';
+    for (const id of SECTION_IDS) expect(nav, `nav link for #${id}`).toContain(`href="#${id}"`);
+    expect(html).toMatch(/<section[^>]*id="hero"/);
   });
 
   it('shows every shipped feature exactly once, with its what and why', () => {

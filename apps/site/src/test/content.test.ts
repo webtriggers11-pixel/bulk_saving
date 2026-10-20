@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { catalog, features, featuresIn, notYet, sections } from '../content/features';
+import { catalog, features, featuresIn, internalFeatures, notYet, sections } from '../content/features';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const registry = readFileSync(`${here}/../../../../loop/REGISTRY.md`, 'utf8');
@@ -21,13 +21,14 @@ describe('features.ts against loop/REGISTRY.md', () => {
     expect(registryFeats.size).toBeGreaterThan(20);
   });
 
-  it('every FEAT the site names exists in the registry', () => {
+  it('every FEAT the site names exists in the registry, and internal ones are not named', () => {
     for (const f of features) expect(registryFeats.has(f.id), f.id).toBe(true);
+    for (const f of features) expect(internalFeatures.has(f.id), `${f.id} is internal tooling`).toBe(false);
   });
 
-  it('every done FEAT in the registry (except this site itself) appears on the site', () => {
+  it('every done FEAT in the registry appears on the site, except the site itself and internal tooling', () => {
     const missing = [...registryFeats]
-      .filter(([id, status]) => status.startsWith('done') && id !== 'FEAT-028')
+      .filter(([id, status]) => status.startsWith('done') && id !== 'FEAT-028' && !internalFeatures.has(id))
       .map(([id]) => id)
       .filter((id) => !features.some((f) => f.id === id));
     expect(missing).toEqual([]);

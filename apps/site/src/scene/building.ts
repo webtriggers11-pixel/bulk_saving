@@ -157,6 +157,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
   /** When each window last changed, for the short colour fade. */
   const changedAt = new Map<number, number>();
   const tmp = new Color();
+  const tmp2 = new Color();
 
   function repaintWindows(all: boolean) {
     const now = performance.now();
@@ -177,7 +178,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
       }
       winMesh.setColorAt(i, tmp);
       // The halo is the window's colour at a fraction, black when unlit (additive = nothing).
-      glowMesh.setColorAt(i, isLit ? tmp.clone().multiplyScalar(0.35) : black);
+      glowMesh.setColorAt(i, isLit ? tmp2.copy(tmp).multiplyScalar(0.35) : black);
       dirty = true;
     }
     if (dirty && winMesh.instanceColor) winMesh.instanceColor.needsUpdate = true;
@@ -292,8 +293,8 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     last = now;
 
     const idle = reduced ? 0 : Math.sin(now * 0.00035) * 0.11;
-    const targetYaw = idle + pointerX * 0.14;
-    const targetPitch = -pointerY * 0.05;
+    const targetYaw = idle + (reduced ? 0 : pointerX * 0.14);
+    const targetPitch = reduced ? 0 : -pointerY * 0.05;
     yaw += (targetYaw - yaw) * Math.min(1, dt * 4);
     pitch += (targetPitch - pitch) * Math.min(1, dt * 4);
     world.rotation.y = yaw;
@@ -352,6 +353,13 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
       container.removeEventListener('pointermove', onPointer);
       container.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('bulk:theme', onTheme);
+      scene.traverse((o) => {
+        const m = o as Mesh;
+        m.geometry?.dispose?.();
+        const mat = m.material as { dispose?: () => void } | { dispose?: () => void }[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((x) => x.dispose?.());
+        else mat?.dispose?.();
+      });
       renderer.dispose();
       renderer.domElement.remove();
     },

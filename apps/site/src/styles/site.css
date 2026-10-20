@@ -461,12 +461,6 @@ html[data-scheme='dark'] .icon-btn__sun {
   color: rgb(var(--ink-soft));
   font-size: 0.875rem;
 }
-.hero__facts strong {
-  display: block;
-  color: rgb(var(--ink));
-  font-weight: 600;
-  font-size: 1.0625rem;
-}
 
 .demo {
   display: grid;
@@ -990,7 +984,6 @@ html[data-scheme='dark'] .icon-btn__sun {
 }
 .cta p {
   margin-top: 8px;
-  opacity: 0.85;
   max-width: 48ch;
 }
 .cta .btn--primary {

@@ -171,10 +171,12 @@ All 26 shipped features (FEAT-001 to FEAT-026) appear below.
   Sent by scalable workers with retry, rate limiting, exact-once delivery and
   automatic pruning of dead devices.
 - **How it is used:** Resident turns on notifications from Profile or when joining;
-  the phone buzzes "Your AC round just unlocked ₹700".
+  the phone buzzes "Closing tomorrow: AC servicing, 9 of 10 ACs" or "Closed and met:
+  11 ACs at ₹700". The events are the round's own: joined, closing soon, closed, vendor
+  assigned, delivered, cancelled, and a round opening for a service you asked for.
 - **Why:** Installed users deserve the app-like channel, and a burst (200
   participants × 3 devices) must fan out in parallel without double-sends.
-- **Website angle:** "Your phone buzzes the moment the price drops."
+- **Website angle:** "Your phone buzzes the moment the round closes."
 
 ---
 

@@ -35,7 +35,7 @@ const svgWindows = wins
   });
 ---
 
-<section class="wrap hero" aria-labelledby="hero-title">
+<section class="wrap hero" id="hero" aria-labelledby="hero-title">
   <div class="hero__copy">
     <h1 class="display" id="hero-title">Your whole society, one price.</h1>
     <p class="lede">
@@ -47,17 +47,17 @@ const svgWindows = wins
       <a class="btn btn--ghost" href="#operators">Bring it to your society</a>
     </div>
     <dl class="hero__facts">
-      <div><strong class="figure ink-shimmer">{rupees(single)} → {rupees(best)}</strong><dt class="sr">Example</dt><dd>one AC service, alone vs pooled</dd></div>
-      <div><strong class="figure">0</strong><dt class="sr">Coordination</dt><dd>minutes spent organising</dd></div>
-      <div><strong class="figure">1 tap</strong><dt class="sr">Effort</dt><dd>to pledge, change, or leave</dd></div>
+      <div><dt class="figure ink-shimmer">{rupees(single)} → {rupees(best)}</dt><dd>one AC service, alone vs pooled</dd></div>
+      <div><dt class="figure">0</dt><dd>minutes spent organising</dd></div>
+      <div><dt class="figure">1 tap</dt><dd>to pledge, change, or leave</dd></div>
     </dl>
   </div>
 
   <div class="demo" data-hero>
-    <div class="scene" data-scene aria-label="A society building whose windows light up as neighbours join">
+    <div class="scene" data-scene role="img" aria-label="A society building whose windows light up as neighbours join">
       <span class="pill pill--live scene__tag">Open round</span>
       <span class="scene__count" data-count>{startUnits} of {target} {unitPlural}</span>
-      <svg class="scene__fallback" viewBox={`0 0 420 ${H}`} role="img" aria-hidden="true">
+      <svg class="scene__fallback" viewBox={`0 0 420 ${H}`} aria-hidden="true">
         <line class="edge" x1="20" y1={H - 20} x2="400" y2={H - 20}></line>
         {towers.map((t) => (
           <g>
@@ -117,16 +117,11 @@ const svgWindows = wins
 </div>
 
 <style>
-  .sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  dl div {
-    position: relative;
+  dt {
+    display: block;
+    color: rgb(var(--ink));
+    font-weight: 600;
+    font-size: 1.0625rem;
   }
   dd {
     margin: 0;

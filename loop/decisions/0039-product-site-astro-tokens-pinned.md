@@ -39,6 +39,16 @@ matches.
    `three`, `@types/three`; the lint/test toolchain matches `apps/web` (eslint 9, typescript-eslint,
    vitest 3).
 
+## Amendments (same work item, after V2)
+
+- §5: the site runs **Vitest 5** (not 3): Vitest 3 bundles Vite 6 while Astro 7 bundles Vite 8, and
+  `getViteConfig` then fails to typecheck. Vitest 5 declares Vite ^8 as a peer. `apps/web` stays on 3.
+- §4: the scene loads **after the page is idle** (`requestIdleCallback`, 1.2 s timeout), not "when the
+  canvas is in view" — the hero is the first thing on the page, so in-view is always true at load.
+- `pnpm-workspace.yaml` gained `minimumReleaseAgeExclude: [astro@7.4.1]`, written by pnpm 11 at
+  install because the release was younger than its default minimum age; the repo sets no
+  `minimumReleaseAge` of its own, so the line is a record, not a policy change.
+
 ## Alternatives rejected
 
 - A page inside `apps/web` (React route): the PWA is gated by an invite code and ships a service

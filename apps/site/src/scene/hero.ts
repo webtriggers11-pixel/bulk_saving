@@ -106,7 +106,8 @@ export function mountHero(root: HTMLElement) {
     } else {
       mine.textContent = '';
     }
-    join.disabled = myUnits > 0;
+    // Joining past the target would read "12 of 10"; the demo stops at the best price.
+    join.disabled = myUnits > 0 || u + MY_UNITS > target;
     join.textContent = myUnits > 0 ? `You're in with ${myUnits} ${noun(myUnits)}` : `Join with ${MY_UNITS} ${noun(MY_UNITS)}`;
     invite.disabled = !next;
     reset.hidden = u === startUnits;
