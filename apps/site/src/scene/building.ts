@@ -10,8 +10,10 @@ import {
   Color,
   EdgesGeometry,
   Float32BufferAttribute,
+  GridHelper,
   Group,
   InstancedMesh,
+  AdditiveBlending,
   LineBasicMaterial,
   LineSegments,
   Mesh,
@@ -63,6 +65,8 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
   const edge = new LineBasicMaterial({ transparent: true, opacity: 0.55 });
   const plot = new LineBasicMaterial({ transparent: true, opacity: 0.22 });
   const win = new MeshBasicMaterial({ toneMapped: false });
+  // A soft halo behind each lit window: additive, so an unlit (black) halo adds nothing.
+  const glow = new MeshBasicMaterial({ toneMapped: false, transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false });
   const sparkMat = new PointsMaterial({ size: 0.075, transparent: true, opacity: 0, depthWrite: false });
 
   const colours = { brand: new Color(), brand2: new Color(), unlit: new Color() };
@@ -78,11 +82,18 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     paperTop.color.copy(pap.clone().lerp(line, 0.025));
     edge.color.copy(ink);
     plot.color.copy(ink);
+    gridMat.color.copy(ink);
     sparkMat.color.copy(colours.brand2);
     repaintWindows(true);
   };
 
-  // ---- the plot ---------------------------------------------------------------------------
+  // ---- the plot: the app's faint grid ground, drawn in 3D, and its outline ---------------
+  const grid = new GridHelper(7.4, 14);
+  const gridMat = grid.material as LineBasicMaterial;
+  gridMat.transparent = true;
+  gridMat.opacity = 0.08;
+  grid.position.y = 0.0005;
+  world.add(grid);
   const plotLines = new LineSegments(new EdgesGeometry(new PlaneGeometry(7.4, 7.4)), plot);
   plotLines.rotation.x = -Math.PI / 2;
   plotLines.position.y = 0.001;
@@ -121,6 +132,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
   const windows = allWindows();
   const order = lightingOrder(windows.length);
   const winMesh = new InstancedMesh(new PlaneGeometry(0.3, 0.23), win, windows.length);
+  const glowMesh = new InstancedMesh(new PlaneGeometry(0.62, 0.5), glow, windows.length);
   const proxy = new Object3D();
   windows.forEach((w, i) => {
     const t = SOCIETY[w.tower]!;
@@ -134,8 +146,11 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
     }
     proxy.updateMatrix();
     winMesh.setMatrixAt(i, proxy.matrix);
+    glowMesh.setMatrixAt(i, proxy.matrix);
   });
+  world.add(glowMesh);
   world.add(winMesh);
+  const black = new Color(0, 0, 0);
 
   let units = initialUnits;
   let lit = litSet(order, units);
@@ -161,9 +176,12 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
         changedAt.delete(i);
       }
       winMesh.setColorAt(i, tmp);
+      // The halo is the window's colour at a fraction, black when unlit (additive = nothing).
+      glowMesh.setColorAt(i, isLit ? tmp.clone().multiplyScalar(0.35) : black);
       dirty = true;
     }
     if (dirty && winMesh.instanceColor) winMesh.instanceColor.needsUpdate = true;
+    if (dirty && glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
   }
 
   // ---- sparks ------------------------------------------------------------------------------
@@ -179,16 +197,19 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
   const tall = SOCIETY[0]!;
   const top = GROUND_FLOOR + tall.floors * FLOOR_HEIGHT + 0.2;
 
-  function burst() {
+  /** A burst from the roof (a tier unlocked) or a small rise from a window (a flat joined). */
+  function burst(at?: { x: number; y: number; z: number; count: number }) {
     if (reduced) return;
+    const n = at ? Math.min(SPARKS, at.count) : SPARKS;
     for (let i = 0; i < SPARKS; i++) {
+      const live = i < n;
       const a = Math.random() * Math.PI * 2;
-      const r = 0.6 + Math.random() * 1.6;
-      sparkPos[i * 3] = tall.x + (Math.random() - 0.5) * 0.6;
-      sparkPos[i * 3 + 1] = top;
-      sparkPos[i * 3 + 2] = tall.z + (Math.random() - 0.5) * 0.6;
+      const r = at ? 0.15 + Math.random() * 0.35 : 0.6 + Math.random() * 1.6;
+      sparkPos[i * 3] = (at ? at.x : tall.x) + (Math.random() - 0.5) * (at ? 0.2 : 0.6);
+      sparkPos[i * 3 + 1] = live ? (at ? at.y : top) : -50;
+      sparkPos[i * 3 + 2] = (at ? at.z : tall.z) + (Math.random() - 0.5) * (at ? 0.2 : 0.6);
       sparkVel[i * 3] = Math.cos(a) * r;
-      sparkVel[i * 3 + 1] = 1.8 + Math.random() * 2.2;
+      sparkVel[i * 3 + 1] = at ? 0.9 + Math.random() * 0.9 : 1.8 + Math.random() * 2.2;
       sparkVel[i * 3 + 2] = Math.sin(a) * r;
     }
     sparkGeo.attributes.position!.needsUpdate = true;
@@ -306,12 +327,23 @@ export function mountBuilding(container: HTMLElement, initialUnits: number): Bui
       units = next;
       lit = litSet(order, units);
       const now = performance.now();
+      let first: number | null = null;
       for (let i = 0; i < windows.length; i++) {
-        if (before.has(i) !== lit.has(i)) changedAt.set(i, now);
+        if (before.has(i) !== lit.has(i)) {
+          changedAt.set(i, now);
+          if (first === null && lit.has(i)) first = i;
+        }
+      }
+      // A few sparks rise from the first window that just lit: a flat joined.
+      if (first !== null && sparkStart < 0 && units > 0) {
+        const m = new Object3D();
+        winMesh.getMatrixAt(first, m.matrix);
+        m.matrix.decompose(m.position, m.quaternion, m.scale);
+        burst({ x: m.position.x, y: m.position.y, z: m.position.z, count: 14 });
       }
       wake();
     },
-    burst,
+    burst: () => burst(),
     dispose() {
       disposed = true;
       if (raf) cancelAnimationFrame(raf);

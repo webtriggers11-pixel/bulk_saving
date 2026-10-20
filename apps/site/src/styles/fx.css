@@ -1,0 +1,248 @@
+/*
+ * FEAT-028: the app's micro-interactions (FEAT-019, ADR-0031), carried over by name —
+ * spotlight, border beam, sparkles, shimmer text, press sparks, the circular scheme reveal
+ * (FEAT-016, ADR-0028) — plus the site's own: a section reveal, a tilt on the phone mocks,
+ * a services ticker, count-up tiles. Every animation is named so the reduced-motion block
+ * in site.css stops it; nothing here moves layout.
+ */
+
+/* (a) Spotlight: a soft disc of the accent follows the pointer across a card. */
+@media (hover: hover) {
+  .card-hover:hover {
+    background-image: radial-gradient(
+      300px circle at var(--mx, 50%) var(--my, 0%),
+      rgb(var(--brand) / 0.08),
+      transparent 65%
+    );
+  }
+}
+
+/* (b) Border beam: a short light travelling round the lead card's edge. */
+@property --beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+.border-beam {
+  position: relative;
+}
+.border-beam::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg 290deg,
+    rgb(var(--brand-2)) 330deg,
+    rgb(var(--brand)) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: beam-spin 7s linear infinite;
+}
+
+/* (c) Sparkles: three small stars that twinkle around a number worth celebrating. */
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(90deg);
+    opacity: 1;
+  }
+}
+.sparkles {
+  position: relative;
+  display: inline-block;
+}
+.sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  color: rgb(var(--brand-2));
+  pointer-events: none;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.sparkle svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+.sparkle:nth-child(1) {
+  top: -8px;
+  left: -10px;
+}
+.sparkle:nth-child(2) {
+  top: -10px;
+  right: -12px;
+  animation-delay: 0.8s;
+}
+.sparkle:nth-child(3) {
+  bottom: -8px;
+  right: 30%;
+  animation-delay: 1.6s;
+  width: 7px;
+  height: 7px;
+}
+.sparkles:not(.is-on) .sparkle {
+  display: none;
+}
+
+/* (d) Shimmer text: a light passing through a figure. Both stops clear 4.5:1. */
+@keyframes shimmer-text {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.ink-shimmer {
+  background-image: linear-gradient(100deg, rgb(var(--ink)) 35%, rgb(var(--brand-ink)) 50%, rgb(var(--ink)) 65%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+/* (e) Press sparks: a primary button throws a few sparks from where it was pressed. */
+@keyframes press-spark {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0);
+    opacity: 0;
+  }
+}
+.spark-host {
+  position: relative;
+  overflow: visible;
+}
+.press-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand-2));
+  pointer-events: none;
+  animation: press-spark 620ms var(--ease-out-soft) forwards;
+}
+
+/* (f) The scheme reveal: a circle growing from the switch (View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* (g) Section reveal: once, as a section first enters. Hidden only when JS is there to
+   show it again (the `.js` class), so the page reads without scripts. */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms var(--ease-entrance),
+    transform 700ms var(--ease-entrance);
+}
+html.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* (h) Tilt: the phone mocks lean toward the pointer. */
+.tilt {
+  transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 500ms var(--ease-out-soft);
+  will-change: transform;
+}
+
+/* (i) Ticker: the catalog, passing by. Masked edges; pauses on hover. */
+.ticker {
+  --gap: 12px;
+  display: flex;
+  gap: var(--gap);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  padding-block: 6px;
+}
+.ticker__track {
+  display: flex;
+  gap: var(--gap);
+  flex-shrink: 0;
+  min-width: 100%;
+  animation: ticker 48s linear infinite;
+}
+.ticker:hover .ticker__track {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+.ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--hairline);
+  background: rgb(var(--paper));
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: rgb(var(--ink-muted));
+}
+.ticker__item i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+
+/* (j) A lit-price moment: the fill glows for a beat when a tier unlocks. */
+@keyframes unlock-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--brand) / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(var(--brand) / 0);
+  }
+}
+.ladder__track.is-unlock {
+  animation: unlock-glow 900ms var(--ease-out-soft);
+}
+
+/* (k) The scene's frame picks up an accent halo at the top, like the app's lead card. */
+.scene::before {
+  content: '';
+  position: absolute;
+  inset: -30% -10% auto;
+  height: 60%;
+  background:
+    radial-gradient(ellipse 45% 55% at 25% 0%, rgb(var(--brand) / 0.14), transparent 70%),
+    radial-gradient(ellipse 45% 55% at 78% 0%, rgb(var(--brand-2) / 0.14), transparent 70%);
+  filter: blur(10px);
+  pointer-events: none;
+  animation: aurora 16s ease-in-out infinite alternate;
+}

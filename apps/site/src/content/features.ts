@@ -324,3 +324,30 @@ export const demoRound = {
   /** Neighbours already in when the page loads. */
   startUnits: 3,
 };
+
+/** The catalog as seeded (FEAT-002 + FEAT-014): 23 services across six categories. */
+export const catalog: { name: string; category: string }[] = [
+  { name: 'AC servicing', category: 'Appliances' },
+  { name: 'RO water purifier service', category: 'Appliances' },
+  { name: 'Washing machine service', category: 'Appliances' },
+  { name: 'Kitchen chimney cleaning', category: 'Appliances' },
+  { name: 'Geyser service', category: 'Appliances' },
+  { name: 'Pest control', category: 'Home Care' },
+  { name: 'Deep cleaning', category: 'Home Care' },
+  { name: 'Bathroom wash', category: 'Home Care' },
+  { name: 'Sofa shampooing', category: 'Home Care' },
+  { name: 'Termite treatment', category: 'Home Care' },
+  { name: 'Bed bug treatment', category: 'Home Care' },
+  { name: 'Mattress cleaning', category: 'Home Care' },
+  { name: 'Painting', category: 'Renovation' },
+  { name: 'Pre-monsoon waterproofing', category: 'Renovation' },
+  { name: 'Water tank cleaning', category: 'Utilities' },
+  { name: 'Inverter battery check', category: 'Utilities' },
+  { name: 'Mosquito mesh fitting', category: 'Utilities' },
+  { name: 'Doorstep car wash', category: 'Vehicle' },
+  { name: 'Car interior detailing', category: 'Vehicle' },
+  { name: 'Bike service', category: 'Vehicle' },
+  { name: 'Basmati rice, 25 kg', category: 'Bulk Staples' },
+  { name: 'Sunflower oil, 15 L', category: 'Bulk Staples' },
+  { name: 'Whole wheat atta, 10 kg', category: 'Bulk Staples' },
+];

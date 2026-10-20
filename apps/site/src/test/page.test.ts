@@ -74,6 +74,12 @@ describe('index.astro', () => {
     expect((html.match(/data-w="\d+"/g) ?? []).length).toBeGreaterThan(30);
   });
 
+  it('has the services ticker, section reveals, and count-up tiles', () => {
+    expect((html.match(/class="ticker__item"/g) ?? []).length).toBeGreaterThanOrEqual(2 * 20);
+    expect((html.match(/<section class="section reveal"/g) ?? []).length).toBe(SECTION_IDS.length);
+    expect((html.match(/data-count-to="/g) ?? []).length).toBe(4);
+  });
+
   it('offers all seven accents and a scheme switch', () => {
     for (const a of ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon']) {
       expect(html).toContain(`data-set-accent="${a}"`);

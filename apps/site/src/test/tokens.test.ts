@@ -84,10 +84,13 @@ describe('contrast in both schemes (AC6)', () => {
 });
 
 describe('site.css never invents a colour (DESIGN-SYSTEM.md)', () => {
-  const css = readFileSync(new URL('../styles/site.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = ['site.css', 'fx.css']
+    .map((f) => readFileSync(new URL(`../styles/${f}`, import.meta.url), 'utf8'))
+    .join('\n')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
   it('has no hex colours, named colours or literal rgb() outside tokens', () => {
-    // `#000` inside a mask-image gradient is a mask alpha, not a colour (the app does the same).
-    const stripped = css.replace(/mask-image:[^;]+;/g, '');
+    // `#000` inside a mask gradient is a mask alpha, not a colour (the app does the same).
+    const stripped = css.replace(/(-webkit-)?mask(-image)?:[^;]+;/g, '');
     expect(stripped.match(/#[0-9a-f]{3,8}\b/gi) ?? []).toEqual([]);
     // a colour KEYWORD, not `white-space` or `--state-green`
     expect(stripped.match(/(?<![-\w])(white|black|red|blue|green|gray|grey)(?![-\w])/g) ?? []).toEqual([]);

@@ -26,11 +26,43 @@ export const currentAccent = (): Accent => {
   return (ACCENTS as readonly string[]).includes(a ?? '') ? (a as Accent) : 'mono';
 };
 
-export const setScheme = (scheme: Scheme) => {
-  document.documentElement.setAttribute('data-scheme', scheme);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', GROUND[scheme]);
-  store('bulk:scheme', scheme);
-  document.dispatchEvent(new CustomEvent('bulk:theme'));
+export interface RevealOrigin {
+  x: number;
+  y: number;
+}
+
+/**
+ * The app's night-mode gesture (FEAT-016, ADR-0028): the new scheme grows as a circle from
+ * the switch, via View Transitions. Without the API, with reduced motion, or with no origin
+ * the change is instant.
+ */
+const withReveal = (change: () => void, origin?: RevealOrigin) => {
+  const doc = document as Document & { startViewTransition?: (update: () => void) => { ready: Promise<void> } };
+  if (!origin || !doc.startViewTransition || prefersReducedMotion()) {
+    change();
+    return;
+  }
+  const radius = Math.hypot(Math.max(origin.x, innerWidth - origin.x), Math.max(origin.y, innerHeight - origin.y));
+  const transition = doc.startViewTransition(change);
+  void transition.ready
+    .then(() => {
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${origin.x}px ${origin.y}px)`, `circle(${radius}px at ${origin.x}px ${origin.y}px)`] },
+        { duration: 520, easing: 'cubic-bezier(0.22, 0.8, 0.28, 1)', pseudoElement: '::view-transition-new(root)' },
+      );
+    })
+    .catch(() => {
+      /* a skipped transition still applied the change */
+    });
+};
+
+export const setScheme = (scheme: Scheme, origin?: RevealOrigin) => {
+  withReveal(() => {
+    document.documentElement.setAttribute('data-scheme', scheme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', GROUND[scheme]);
+    store('bulk:scheme', scheme);
+    document.dispatchEvent(new CustomEvent('bulk:theme'));
+  }, origin);
 };
 
 export const setAccent = (accent: Accent) => {
@@ -45,7 +77,11 @@ export const setAccent = (accent: Accent) => {
 /** Wire every switch on the page. Idempotent. */
 export const mountThemeControls = () => {
   document.querySelectorAll<HTMLElement>('[data-toggle-scheme]').forEach((el) => {
-    el.addEventListener('click', () => setScheme(currentScheme() === 'dark' ? 'light' : 'dark'));
+    el.addEventListener('click', (e) => {
+      const r = el.getBoundingClientRect();
+      const origin = e.detail === 0 ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: e.clientX, y: e.clientY };
+      setScheme(currentScheme() === 'dark' ? 'light' : 'dark', origin);
+    });
   });
   document.querySelectorAll<HTMLElement>('[data-set-accent]').forEach((el) => {
     el.setAttribute('aria-pressed', String(el.dataset.setAccent === currentAccent()));

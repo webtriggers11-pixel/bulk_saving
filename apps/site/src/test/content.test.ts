@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { features, featuresIn, notYet, sections } from '../content/features';
+import { catalog, features, featuresIn, notYet, sections } from '../content/features';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const registry = readFileSync(`${here}/../../../../loop/REGISTRY.md`, 'utf8');
@@ -56,5 +56,11 @@ describe('features.ts against loop/REGISTRY.md', () => {
       expect(f.what + f.why, `${f.id} mentions internals`).not.toMatch(/\b(Prisma|BullMQ|Redis|Postgres|JWT|DTO|NestJS)\b/);
     }
     for (const n of notYet) expect(n.say.length).toBeLessThanOrEqual(120);
+  });
+
+  it('the catalog ticker names the 23 seeded services across six categories', () => {
+    expect(catalog.length).toBe(23);
+    expect(new Set(catalog.map((c) => c.category)).size).toBe(6);
+    expect(new Set(catalog.map((c) => c.name)).size).toBe(23);
   });
 });

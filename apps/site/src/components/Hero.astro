@@ -3,7 +3,7 @@
  * The hero: the claim on the left, the society on the right. The round card under the scene
  * is the app's own round card (title, price, ladder, meta, actions). hero.ts drives it.
  */
-import { demoRound } from '../content/features';
+import { catalog, demoRound } from '../content/features';
 import { SOCIETY, FLOOR_HEIGHT, allWindows, rupees } from '../scene/model';
 
 const { tiers, service, unitPlural, closesIn, startUnits } = demoRound;
@@ -47,7 +47,7 @@ const svgWindows = wins
       <a class="btn btn--ghost" href="#operators">Bring it to your society</a>
     </div>
     <dl class="hero__facts">
-      <div><strong class="figure">{rupees(single)} → {rupees(best)}</strong><dt class="sr">Example</dt><dd>one AC service, alone vs pooled</dd></div>
+      <div><strong class="figure ink-shimmer">{rupees(single)} → {rupees(best)}</strong><dt class="sr">Example</dt><dd>one AC service, alone vs pooled</dd></div>
       <div><strong class="figure">0</strong><dt class="sr">Coordination</dt><dd>minutes spent organising</dd></div>
       <div><strong class="figure">1 tap</strong><dt class="sr">Effort</dt><dd>to pledge, change, or leave</dd></div>
     </dl>
@@ -71,13 +71,13 @@ const svgWindows = wins
       </svg>
     </div>
 
-    <div class="surface round">
+    <div class="surface round card-hover border-beam">
       <div class="round__top">
         <div>
           <div class="round__title">{service}</div>
           <div class="round__meta"><span>Blue Waters Society</span><span>closes in {closesIn}</span></div>
         </div>
-        <div class="round__price figure"><span data-price>{rupees(single)}</span><small>per AC</small></div>
+        <div class="round__price figure"><span class="ink-shimmer" data-price>{rupees(single)}</span><small>per AC</small></div>
       </div>
 
       <div class="ladder" aria-label="Price ladder">
@@ -103,6 +103,18 @@ const svgWindows = wins
     </div>
   </div>
 </section>
+
+<div class="wrap" style="padding-bottom: 8px">
+  <div class="ticker" aria-label="Services in the catalog">
+    {[0, 1].map((copy) => (
+      <div class="ticker__track" aria-hidden={copy === 1 ? 'true' : undefined}>
+        {catalog.map((c) => (
+          <span class="ticker__item"><i aria-hidden="true"></i>{c.name}<span class="soft">{c.category}</span></span>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
 
 <style>
   .sr {

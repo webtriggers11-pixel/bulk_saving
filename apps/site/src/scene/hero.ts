@@ -16,6 +16,7 @@ import {
   unlocked,
 } from './model';
 import type { Building } from './building';
+import { sparkles } from './fx';
 
 const MY_UNITS = 2;
 
@@ -61,6 +62,8 @@ export function mountHero(root: HTMLElement) {
     throw e;
   }
   const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-step]'));
+  const track = root.querySelector<HTMLElement>('.ladder__track');
+  const stars = sparkles(hint);
   const svgWindows = Array.from(root.querySelectorAll<SVGElement>('[data-w]'));
 
   const { tiers, unit, unitPlural, startUnits } = demoRound;
@@ -91,9 +94,11 @@ export function mountHero(root: HTMLElement) {
       const more = next.units - u;
       hint.textContent = `${more} more ${noun(more)} to unlock ${rupees(next.price)}`;
       hint.classList.remove('is-unlocked');
+      stars.off();
     } else {
       hint.textContent = 'Best price unlocked for everyone';
       hint.classList.add('is-unlocked');
+      stars.on();
     }
     if (myUnits > 0) {
       const save = savingPerUnit(tiers, u) * myUnits;
@@ -115,6 +120,11 @@ export function mountHero(root: HTMLElement) {
       price.classList.remove('flash');
       void price.offsetWidth;
       price.classList.add('flash');
+      if (track) {
+        track.classList.remove('is-unlock');
+        void track.offsetWidth;
+        track.classList.add('is-unlock');
+      }
     }
   }
 

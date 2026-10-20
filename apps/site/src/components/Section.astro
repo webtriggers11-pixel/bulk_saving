@@ -7,7 +7,7 @@ interface Props {
 const { id, title, lede } = Astro.props;
 ---
 
-<section class="section" id={id} aria-labelledby={`${id}-title`}>
+<section class="section reveal" id={id} aria-labelledby={`${id}-title`}>
   <div class="wrap">
     <header class="section__head">
       <h2 id={`${id}-title`}>{title}</h2>

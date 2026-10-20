@@ -6,6 +6,7 @@
  */
 import '../styles/tokens.css';
 import '../styles/site.css';
+import '../styles/fx.css';
 
 interface Props {
   title: string;
@@ -109,7 +110,9 @@ const nav = [
 
     <script>
       import { mountThemeControls } from '../scene/theme';
+      import { mountFx } from '../scene/fx';
       mountThemeControls();
+      mountFx();
     </script>
   </body>
 </html>
