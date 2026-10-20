@@ -1427,3 +1427,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Not taken: POST instead of GET for status (the requestId is random, single-use within 3 min and never logged by this app; a path secret in a proxy log is noted in the ADR's revisit list by implication of no-store — revisit if an edge proxy logs paths).
 - Alone: WhatsApp integration suites 13/13, web auth 53/53, typecheck + lint clean. V3 double gate next, on the committed tree in the worktree, after the other session's running gate ends.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — FEAT-028 — V3 runs 1–2 (worktree at 9cbbf66): run 1 exit 0, run 2 exit 1 → BUG-020 triaged, V3 repeated
+- Run 1 (13:08–13:09): exit 0 — backend 556/556, web 662/662, site 34/34, class gate 3434. Run 2 (13:09–13:10): backend 555/556 — every case of `GET /dev/otp (integration)` failed with an unhandled ioredis "Connection is closed" raised through a BullMQ Worker at teardown; site 34/34 and web unchanged. Different results between runs = flaky → **BUG-020** triaged (P2, report in its folder). Another session's gate was active in the same minutes (1afe10a landed at 13:0x), the shared-Redis family. V3 is being repeated (runs 3–4) before close.
+- By: agent (autonomous)
