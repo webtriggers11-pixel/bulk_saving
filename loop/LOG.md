@@ -1324,3 +1324,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `grep dev/otp apps/web/dist/assets/*.js` → 1 hit: `Boolean(import.meta.env.DEV) && …` did not fold, so the dead branch (and its URL) shipped — inert, but not what AC2 promised. Fix: the fetch moved to `dev-otp.api.ts`, reached only through a dynamic `import()` behind the folded constant, so Rollup emits neither the call nor the chunk; `scripts/check-dev-only.mjs` now runs in the gate after the build and fails on `dev/otp` or `fetchDevOtp` in any built asset ("production bundle carries no dev OTP path"). Auth suites 34/34; gate queued behind the running V2 (worktree at 550249d, which still has the old shape — its finding, if raised, is already closed here).
 - By: agent (autonomous)
 - V1 (dd7297b): gate exit 0 — backend 504/504, web 643/643, 3290 class tokens, and the new step "production bundle carries no dev OTP path" passes.
+
+## 2026-10-20 — FEAT-026 — V2 round 1 FAIL → fixed (1×P1 already closed, 1×P2, P3s)
+- V2 (independent, worktree at 550249d; gate exit 0, 504/643, 3290; 3 mutations all caught): FAIL.
+  - P1 the production bundle carried the `/dev/otp` call as an inert dead branch (the constant was folded inside a helper the call site called) — found independently here minutes earlier and already closed in dd7297b (dynamic `import()` behind the folded constant + `check-dev-only.mjs` in the gate).
+  - P2 default-OPEN with NODE_ENV unset: `devOtpEchoEnabled` accepted "not production"; a platform build that forgets NODE_ENV would get the echo, the stash and the route. Fix: the echo needs an explicit `development`/`test` (unit case added; `.env.example` says so; `.env` already had `NODE_ENV=development`). AC1 and ADR-0037 reworded.
+  - P3 taken: the route answers loopback only (127.0.0.1 / ::1; 403 otherwise — unit-tested; dev trusts no proxy header); the admin door's "Use a different number" and both doors' resend clear the toast first; `vi.unstubAllEnvs` moved to `afterEach`; the toast's padding is per-axis (no `p-4` + `pt-*` on one element — BUG-007's rule).
+- Alone: backend dev/otp suites 34/34, web auth + toast + class-conflicts 47/47. Gate running.
+- By: agent (autonomous) + code-reviewer subagent

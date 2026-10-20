@@ -10,7 +10,7 @@ the shipped path. The owner wants the convenience back, in dev only.
 ## Acceptance criteria
 - [ ] AC1 — `GET /dev/otp?phone=<any spelling>` returns `{ code }` from the stub channel's stash
       (`dev:last-otp:<canonical phone>`, 120s) or 404. The route's MODULE is registered only when
-      `OTP_DEV_LOG=true` and `NODE_ENV !== 'production'` — otherwise the route does not exist
+      `OTP_DEV_LOG=true` and `NODE_ENV` is explicitly `development`/`test` (default closed) — otherwise the route does not exist
       (404 like any unknown path). The auth request/verify responses are unchanged in every environment.
 - [ ] AC2 — The web, in a DEV build only (`import.meta.env.DEV`; the production bundle carries no
       call), asks that route after a successful "Send code" (retrying briefly — the admin door's
