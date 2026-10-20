@@ -151,7 +151,9 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
               <Icon name="refresh" size={18} strokeWidth={2.2} />
             </Button>
           ) : phoneLike ? (
-            <Button className="mt-[22px] w-full" onClick={() => window.open(session.waLink, '_blank', 'noopener')} data-testid="whatsapp-open">
+            // A new context, so the app (and its requestId) stays put while WhatsApp opens; where a
+            // standalone PWA refuses `window.open` (iOS), fall back to navigating (V2 P3).
+            <Button className="mt-[22px] w-full" onClick={() => { if (!window.open(session.waLink, '_blank', 'noopener')) window.location.href = session.waLink; }} data-testid="whatsapp-open">
               <Icon name="chat" size={18} strokeWidth={2.2} />
               Open WhatsApp
             </Button>

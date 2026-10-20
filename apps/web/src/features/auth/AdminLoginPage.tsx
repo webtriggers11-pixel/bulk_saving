@@ -113,7 +113,7 @@ export function AdminLoginPage() {
                 label === step ? 'w-[52px]' : 'w-[34px]',
               ].join(' ')}
             >
-              {index <= (step === 'code' ? 1 : 0) && (
+              {index <= (step === 'phone' ? 0 : 1) && (
                 <span className="bar-fill block h-full w-full rounded-full bg-gradient-to-r from-brand-deep to-brand-light shadow-glow" />
               )}
             </li>

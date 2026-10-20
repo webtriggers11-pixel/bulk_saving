@@ -4,9 +4,9 @@ import type { DevWaPrompt } from './useDevWhatsApp';
 const ATTEMPTS = [0, 300, 600, 1200];
 
 /**
- * DEV ONLY (FEAT-027): reached only through a dynamic `import()` behind a build-time constant
- * in `useDevWhatsApp`, so a production bundle does not contain this module at all (checked by
- * `scripts/check-dev-only.mjs`).
+ * DEV ONLY (FEAT-027): reached only from `useDevWhatsApp`, behind a build-time constant that
+ * folds to false in production, so no production chunk contains this module — CHECKED by
+ * `scripts/check-dev-only.mjs`, which is what actually guarantees it.
  */
 export function devWhatsAppInbound(body: { from: string; text: string; name?: string }): Promise<{ handled: true }> {
   return apiRequest<{ handled: true }>('/dev/whatsapp/inbound', { method: 'POST', body, auth: false });

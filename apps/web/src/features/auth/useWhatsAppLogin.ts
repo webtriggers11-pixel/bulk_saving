@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthResult, WaStartResponse, WaStatusResponse } from '@bulk/shared';
 import { queryStalled } from '../../lib/offline';
@@ -29,11 +29,15 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
   const startMutation = useMutation({ mutationFn: start });
   const session = startMutation.data ?? null;
   const requestId = session?.requestId ?? null;
+  // Set the moment the tokens are handed over, so the observer stops before the page
+  // unmounts — otherwise a re-render between sign-in and navigation rebuilt the query and
+  // asked once more (V2 P3).
+  const [handedOver, setHandedOver] = useState<string | null>(null);
 
   const statusQuery = useQuery({
     queryKey: ['auth', 'wa', 'status', requestId],
     queryFn: () => fetchWhatsAppStatus(requestId as string),
-    enabled: requestId !== null,
+    enabled: requestId !== null && handedOver !== requestId,
     retry: false,
     refetchInterval: (query) => (terminal(query.state.data) ? false : pollMs),
     refetchIntervalInBackground: true,
@@ -48,6 +52,7 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
   useEffect(() => {
     if (!requestId || !data || data.status !== 'confirmed' || handed.current === requestId) return;
     handed.current = requestId;
+    setHandedOver(requestId);
     const { status: _status, ...result } = data;
     void _status;
     client.removeQueries({ queryKey: ['auth', 'wa'] });
@@ -68,6 +73,7 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
     start: () => startMutation.mutate(),
     reset: () => {
       client.removeQueries({ queryKey: ['auth', 'wa'] });
+      setHandedOver(null);
       startMutation.reset();
     },
     startError: startMutation.isError ? startMutation.error : null,

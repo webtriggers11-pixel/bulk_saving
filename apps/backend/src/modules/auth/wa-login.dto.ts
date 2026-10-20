@@ -8,3 +8,9 @@ export class WaStartDto implements WaStartBody {
   @Matches(INVITE_CODE, { message: 'inviteCode must be 8 uppercase alphanumeric characters.' })
   inviteCode!: string;
 }
+
+/**
+ * `POST /auth/admin/wa/start` takes nothing. An explicit empty class, so the global
+ * `whitelist` pipe strips whatever a caller sends rather than a bare `@Body()` ignoring it.
+ */
+export class AdminWaStartDto {}

@@ -1,6 +1,7 @@
 import { Controller, Get, Headers, HttpCode, HttpStatus, NotFoundException, Post, Query, Req, Res, UnauthorizedException, Logger } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ErrorCode } from '../../common/error-codes';
 import { whatsAppCloudConfig } from '../whatsapp/whatsapp.config';
 import { WaLoginService } from './wa-login.service';
@@ -12,6 +13,10 @@ import { verifyMetaSignature } from './wa-webhook.signature';
  * app secret there is nothing to verify against, and an unverifiable webhook is not a
  * webhook — it is a way to claim "a message arrived from +91…".
  */
+// V2 P2: Meta delivers messages AND sent/delivered/read statuses (several per login) from a
+// small pool of addresses; the global 120/min throttler would answer 429, Meta would retry and,
+// sustained, disable the subscription. This door is authenticated by the HMAC, not by rate.
+@SkipThrottle()
 @Controller('webhooks/whatsapp')
 export class WaWebhookController {
   private readonly logger = new Logger(WaWebhookController.name);

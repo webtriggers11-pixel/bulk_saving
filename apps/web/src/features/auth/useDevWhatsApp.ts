@@ -9,8 +9,11 @@ export interface DevWaPrompt {
 }
 
 /**
- * DEV ONLY (FEAT-027; ADR-0037's gates): the same build-time constant as the dev OTP toast,
- * so the production bundle never contains the simulator — asserted by `check-dev-only.mjs`.
+ * DEV ONLY (FEAT-027; ADR-0037's gates): the same build-time constant as the dev OTP toast.
+ * What keeps the simulator out of the production bundle is this constant FOLDING to false
+ * everywhere it is read (the panel is never rendered, so its module tree is dropped) — the
+ * dynamic `import()` only keeps the dev API out of the main chunk in a DEV build. The real
+ * line of defence is `scripts/check-dev-only.mjs` reading the built assets (V2 mutation c).
  */
 export function devWhatsAppPanelEnabled(): boolean {
   return import.meta.env.DEV && import.meta.env.MODE !== 'test';

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   HttpCode,
   HttpException,
@@ -15,7 +16,7 @@ import {
 import type { AuthMethods, WaStartResponse, WaStatusResponse } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { SocietiesService } from '../societies/societies.service';
-import { WaStartDto } from './wa-login.dto';
+import { AdminWaStartDto, WaStartDto } from './wa-login.dto';
 import { WaLoginService, type WaStartOutcome } from './wa-login.service';
 
 /**
@@ -53,11 +54,14 @@ export class WaLoginController {
    */
   @Post('auth/admin/wa/start')
   @HttpCode(HttpStatus.OK)
-  async startAdmin(@Ip() clientIp: string, @Headers('user-agent') userAgent?: string): Promise<WaStartResponse> {
+  async startAdmin(@Body() _dto: AdminWaStartDto, @Ip() clientIp: string, @Headers('user-agent') userAgent?: string): Promise<WaStartResponse> {
+    void _dto;
     return this.unwrap(await this.wa.start({ door: 'admin', clientIp, userAgent }));
   }
 
+  // The one GET that can carry tokens: never cacheable (V2 P3).
   @Get('auth/wa/status/:requestId')
+  @Header('Cache-Control', 'no-store')
   status(@Param('requestId') requestId: string): Promise<WaStatusResponse> {
     return this.wa.status(requestId);
   }

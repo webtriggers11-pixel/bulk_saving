@@ -6,7 +6,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { RedisService } from '../src/redis/redis.service';
 import { ErrorCode } from '../src/common/error-codes';
 import { signMetaBody } from '../src/modules/auth/wa-webhook.signature';
-import { WA_START_CLIENT_HOURLY_MAX } from '../src/modules/auth/wa-login.service';
+import { WA_ATTACH_PHONE_HOURLY_MAX, WA_START_CLIENT_HOURLY_MAX } from '../src/modules/auth/wa-login.service';
 import { CapturingChannel, CapturingWhatsAppSender, createTestApp, randomInviteCode, randomPhone } from './helpers/test-app';
 
 const ENV = {
@@ -223,10 +223,29 @@ describe('Sign in with WhatsApp (integration, needs DB + Redis)', () => {
     await redis.del(`wa:code:${code}`, `wa:req:${requestId}`); // aged out
     await webhook(textMessage(waId(phone), whatsAppLoginMessage(code))).expect(200);
     expect((await status(requestId).expect(200)).body.data).toEqual({ status: 'expired' });
-    const foreign = textMessage(waId(phone), whatsAppLoginMessage(code));
+    // A LIVE request, delivered for another phone-number id on the same account: not ours.
+    const live = (await start().expect(200)).body.data;
+    const foreign = textMessage(waId(phone), whatsAppLoginMessage(live.code));
     (foreign.entry[0].changes[0].value.metadata as { phone_number_id: string }).phone_number_id = '999';
     await webhook(foreign).expect(200);
+    expect((await status(live.requestId).expect(200)).body.data).toEqual({ status: 'pending' });
     expect(sender.sent).toHaveLength(0);
+  });
+
+  it('a phone may attach to a limited number of requests per hour; re-sends and redeliveries cost nothing (AC3)', async () => {
+    const phone = randomPhone();
+    const started = [] as Array<{ requestId: string; code: string }>;
+    for (let i = 0; i <= WA_ATTACH_PHONE_HOURLY_MAX; i += 1) started.push((await start().expect(200)).body.data);
+    for (const [i, s] of started.entries()) {
+      await webhook(textMessage(waId(phone), whatsAppLoginMessage(s.code))).expect(200);
+      const expected = i < WA_ATTACH_PHONE_HOURLY_MAX ? 'awaiting_confirm' : 'pending';
+      expect((await status(s.requestId).expect(200)).body.data).toEqual({ status: expected });
+    }
+    expect(sender.to(phone)).toHaveLength(WA_ATTACH_PHONE_HOURLY_MAX);
+    // Re-sending to an already-attached request is not an attach and spends nothing.
+    await webhook(textMessage(waId(phone), whatsAppLoginMessage(started[0].code))).expect(200);
+    expect(sender.to(phone)).toHaveLength(WA_ATTACH_PHONE_HOURLY_MAX);
+    await redis.del(`wa:attach:${phone}`);
   });
 
   it('unknown and malformed request ids answer alike', async () => {

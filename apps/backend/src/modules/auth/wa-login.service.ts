@@ -1,5 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { Resident } from '@prisma/client';
 import { normalisePhone, whatsAppLoginMessage, WA_LOGIN_TTL_SECONDS, type WaStartResponse, type WaStatusResponse } from '@bulk/shared';
 import { RedisService } from '../../redis/redis.service';
 import { redactPhone } from '../notifications/notification-channel';
@@ -169,14 +170,17 @@ export class WaLoginService {
     const code = `BS-${found[1].toUpperCase()}`;
     const requestId = await this.redis.get(this.codeKey(code));
     if (!requestId) return; // unknown or expired code: silence, identical for every caller
-    const attaches = (await this.redis.eval(HOURLY_LUA, 1, `wa:attach:${phone}`, String(HOUR_SECONDS))) as number;
-    if (attaches > WA_ATTACH_PHONE_HOURLY_MAX) {
+    // The attach budget (ADR-0038 §5): checked here, SPENT only by a real attach below — a
+    // re-sent message to an already-attached request, or a redelivery, costs nothing (V2 P3).
+    const attachKey = `wa:attach:${phone}`;
+    if (Number((await this.redis.get(attachKey)) ?? '0') >= WA_ATTACH_PHONE_HOURLY_MAX) {
       this.logger.warn(`WhatsApp sign-in: ${redactPhone(phone)} exceeded the attach budget`);
       return;
     }
     const key = this.reqKey(requestId);
     const attached = (await this.redis.eval(ATTACH_LUA, 1, key, phone, profileName ?? '')) as number;
     if (attached !== 1) return; // already attached, decided or gone
+    await this.redis.eval(HOURLY_LUA, 1, attachKey, String(HOUR_SECONDS));
     const [device, options] = await this.redis.hmget(key, 'device', 'options');
     const numbers = (options ?? '').split(',').filter(Boolean);
     try {
@@ -225,10 +229,11 @@ export class WaLoginService {
       default:
         return { status: 'expired' }; // never existed, gone, or already consumed — one answer
     }
-    const consumed = (await this.redis.eval(CONSUME_LUA, 1, key)) as number;
-    if (consumed !== 1) return { status: 'expired' };
-
+    // The database work comes BEFORE the consume (V2 P3): a Prisma hiccup here leaves the
+    // confirmation in place for the next poll instead of losing it; only token issue follows
+    // the consume, so tokens can still be minted once and once only.
     const phone = record.phone;
+    let resident: Resident;
     if (record.door === 'admin') {
       // ADR-0023: the role is decided here and only here. The browser that started this
       // request is the only party that can see the answer, and it sees it only after the
@@ -238,13 +243,14 @@ export class WaLoginService {
         await this.redis.hset(key, { status: 'denied', reason: 'NOT_AN_ADMIN' });
         return { status: 'denied', reason: 'NOT_AN_ADMIN' };
       }
-      const verified = await this.residents.markVerified(admin);
-      const tokens = await this.auth.issueTokens(verified);
-      return { status: 'confirmed', ...tokens, resident: toResidentDto(verified) };
+      resident = await this.residents.markVerified(admin);
+    } else {
+      // societyId was bound from the invite code at START (ADR-0003) — never from anything the
+      // WhatsApp side said. The profile name is a default for a NEW resident only.
+      resident = await this.residents.upsertVerifiedDefaultName(record.societyId, phone, record.profileName || null);
     }
-    // societyId was bound from the invite code at START (ADR-0003) — never from anything the
-    // WhatsApp side said. The profile name is a default for a NEW resident only.
-    const resident = await this.residents.upsertVerifiedDefaultName(record.societyId, phone, record.profileName || null);
+    const consumed = (await this.redis.eval(CONSUME_LUA, 1, key)) as number;
+    if (consumed !== 1) return { status: 'expired' };
     const tokens = await this.auth.issueTokens(resident);
     return { status: 'confirmed', ...tokens, resident: toResidentDto(resident) };
   }
