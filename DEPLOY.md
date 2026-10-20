@@ -81,6 +81,8 @@ web image.
 
 ## 2a. Sign in with WhatsApp ("Tap to verify")
 
+> Step-by-step runbook with links (test number today, production later, troubleshooting): `WHATSAPP-SETUP.md`.
+
 The resident sends *us* a pre-filled WhatsApp message; we reply with a number-match prompt;
 the browser collects the usual tokens. User-initiated conversations are free, so this costs
 ₹0 per login (ADR-0038). It is **off** until all five variables are set — a partial set

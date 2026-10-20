@@ -1451,3 +1451,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Alone: typecheck 0, lint clean, 41/41 (+7 story), build OK: page+GSAP+Lenis 143 kB min (≈45 kB gz) in the Base chunk, Three 539 kB lazy, CSS 25.9 kB.
 - Browser (dev :4321, light Mono): chars split (26), `html.lenis`, both scenes mount; driven through Lenis to 20/45/70/90% of the track → "Opening 0 of 10 ₹1,000" flat towers → step 2 "3 of 10" camera in → step 3 "9 of 10 ₹800" on the orbit → step 4 "Closed · met 10 of 10 ₹700". No console errors.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-027 — WHATSAPP-SETUP.md (owner: "give me md files in that add links and steps to fix this")
+- Root runbook: cost table, the 30-minute Meta test-number + tunnel path, the production checklist (business verification, display name, System User token, Live mode, Graph version), a symptom → fix table, and where the code lives. Linked from DEPLOY.md §2a.
+- By: agent (autonomous)
