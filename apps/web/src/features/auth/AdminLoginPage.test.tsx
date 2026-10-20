@@ -237,7 +237,7 @@ describe('AdminLoginPage — sign in with WhatsApp', () => {
     await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('82'));
     expect(bodies.get('/auth/admin/wa/start')).toEqual({});
     await waitFor(() => expect(screen.getByTestId('whatsapp-status')).toHaveTextContent('Message received'));
-    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 6_000 });
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 15_000 });
     expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
   });
 

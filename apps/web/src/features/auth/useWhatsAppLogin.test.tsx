@@ -44,8 +44,10 @@ describe('useWhatsAppLogin', () => {
     const { result } = renderHook(() => useWhatsAppLogin(async () => session, onSignedIn, 20), { wrapper: Wrapper });
     expect(result.current.view.phase).toBe('idle');
     act(() => result.current.start());
-    await waitFor(() => expect(result.current.view.phase).toBe('awaiting_confirm'));
-    await waitFor(() => expect(onSignedIn).toHaveBeenCalledTimes(1));
+    // Generous (BUG-002's rule): under a full gate beside another process the interval
+    // timers are starved; the other session's V1 saw this time out at 5 s once.
+    await waitFor(() => expect(result.current.view.phase).toBe('awaiting_confirm'), { timeout: 15_000 });
+    await waitFor(() => expect(onSignedIn).toHaveBeenCalledTimes(1), { timeout: 15_000 });
     expect(onSignedIn.mock.calls[0][0]).toEqual({ accessToken: 'access-wa', refreshToken: 'refresh-wa', resident: confirmed.resident });
     expect(client.getQueryData(['auth', 'wa', 'status', session.requestId])).toBeUndefined();
     expect(statusMock).toHaveBeenCalledWith(session.requestId);
@@ -61,14 +63,14 @@ describe('useWhatsAppLogin', () => {
     const { Wrapper } = wrapper();
     const { result } = renderHook(() => useWhatsAppLogin(async () => session, vi.fn(), 20), { wrapper: Wrapper });
     act(() => result.current.start());
-    await waitFor(() => expect(result.current.view.phase).toBe('denied'));
+    await waitFor(() => expect(result.current.view.phase).toBe('denied'), { timeout: 15_000 });
     expect(result.current.view).toMatchObject({ phase: 'denied', reason: 'NOT_AN_ADMIN', session });
     act(() => result.current.reset());
     await waitFor(() => expect(result.current.view.phase).toBe('idle'));
 
     statusMock.mockReset().mockResolvedValue({ status: 'expired' });
     act(() => result.current.start());
-    await waitFor(() => expect(result.current.view.phase).toBe('expired'));
+    await waitFor(() => expect(result.current.view.phase).toBe('expired'), { timeout: 15_000 });
   });
 
   it('treats a request past its own expiry as expired even if the server still says pending', async () => {

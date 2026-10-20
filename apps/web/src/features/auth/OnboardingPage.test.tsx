@@ -299,7 +299,7 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
     fireEvent.click(screen.getByTestId('continue-whatsapp'));
     await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('47'));
     expect(sent.get('/auth/wa/start')).toEqual({ inviteCode: 'AB12CD34' });
-    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 6_000 });
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 15_000 });
     expect(useAuthStore.getState().accessToken).toBe('access-1');
   });
 

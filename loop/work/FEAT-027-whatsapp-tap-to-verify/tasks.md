@@ -6,4 +6,6 @@
 - [x] T4 Web: methods, WhatsApp step on both doors, polling, QR on laptops (`qrcode`), dev panel, bundle guard, tests — depends: T2
 - [x] T5 Browser pass on a DEV server through the simulator (resident + admin + wrong button + expiry) — depends: T3, T4
 - [x] T6 V2 independent review; fixes — depends: T5
-- [ ] T7 V3 double run; close; handoff — depends: T6
+- [x] T7 V3 double run; close; handoff — depends: T6
+
+- V3 at 1afe10a: two back-to-back gate runs in the review worktree, both exit 0 and identical — backend 557/557, web 662/662, site 34/34, 3434 class tokens, bundle guard green. Closed.

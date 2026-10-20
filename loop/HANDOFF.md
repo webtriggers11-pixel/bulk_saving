@@ -3,7 +3,44 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-19 evening → 2026-10-20 early)
+## Latest session (2026-10-20, WhatsApp sign-in — branch `feat/FEAT-027-whatsapp-tap-to-verify`, NOT merged)
+
+- **FEAT-027 closed on its own branch** (owner: "on different branch i want this feat and i want to test is this work or
+  not … create new branch and do this and check"; later "for testing use my number - 8419997952"). "Tap to verify": the
+  resident sends a pre-filled WhatsApp message to the business number; the signed webhook ties the sender's number to the
+  browser's request; the business replies with three number buttons (one matches the screen); the right tap confirms; the
+  browser polls `GET /auth/wa/status/:requestId` and gets the usual lifetime-session JWTs. Both doors; SMS OTP unchanged
+  as the fallback; ADR-0038. V2 PASS-conditional (4 P2s landed, 11 P3s taken) and a V3 double run (backend 557/557,
+  web 662/662, site 34/34, bundle guard green).
+- **How to try it NOW (no Meta account):** the owner's API on :3000 is in STUB mode (`OTP_DEV_LOG=true`, no `WHATSAPP_*`),
+  so any DEV web server shows "Continue with WhatsApp" and a "DEV ONLY · Simulate WhatsApp" panel on the step: type a
+  number (the owner's +91 84199 97952 works), "Send the login message as this number", tap a button in the shown reply.
+  Resident door with BLUE0002, admin door with +919999900209 — both done in Chrome this session. Not on the :5175 preview
+  (production bundle: no simulator, by design — and `/auth/methods` is still true there, so the button shows but the real
+  WhatsApp side is a dead number `910000000000`; that preview is a production build pointed at a stub-mode API).
+- **How to try it with REAL WhatsApp (owner's job, ~30 min):** DEPLOY.md §2a — a Meta app in development mode gives a free
+  test number + a 24 h token; set the five `WHATSAPP_*` vars (test number as `WHATSAPP_BUSINESS_NUMBER`), expose :3000
+  with `cloudflared tunnel --url http://localhost:3000` (or ngrok), register `https://<tunnel>/webhooks/whatsapp` with
+  the verify token, add +91 84199 97952 as a verified recipient, restart the API, open the PWA on that phone. Business
+  verification (BRIEF R1) is what makes it production.
+- **Known residuals (ADR-0038):** three buttons = 1-in-3 per lured message, bounded by 5 attaches/hour/phone (revisit:
+  typed 2-digit reply); polling at 2 s is 30/min per browser under the global 120/min per address (ADR-0020's ceiling,
+  not this item); status is a GET with the requestId in the path (`no-store`; move to POST if an edge proxy logs paths).
+- **Two sessions shared this checkout and branch today.** The other one built the product website (FEAT-028, `apps/site`,
+  ADR-0039; it renumbered itself after both took FEAT-027/ADR-0038 — I fixed its stale REGISTRY row). Its uncommitted
+  `apps/site` edits broke `pnpm -r test` in the main tree for a while, so FEAT-027's V1/V3 ran on the COMMITTED tree in a
+  detached worktree. It triaged **BUG-020** (dev-otp integration spec: unhandled ioredis "Connection is closed" from a
+  BullMQ worker at teardown, 1 run in N, while gates overlapped) — that spec now boots `AppModule + DevToolsModule`
+  (DevToolsModule imports AuthModule since FEAT-027), i.e. two full apps in one file; the fix belongs to BUG-020 (close
+  the worker before the connection / swallow the teardown error). Its V1 also saw `useWhatsAppLogin` "polls pending →
+  …" time out at 5 s under a concurrent gate → those waits are now 15 s. Rule going forward: `ps aux | grep verify.sh`
+  before any gate; never two at once.
+- **Machine:** global `pnpm` shim still broken → scratchpad wrapper `exec corepack pnpm "$@"`; owner's API `nest start
+  --watch` on :3000 and Vite :5173 serve the working tree (so they already ran this branch); preview :5175 still up;
+  my Vite :5174 stopped; review worktree removed. Dev admin +919999900209, resident +919999900201 / BLUE0002.
+- **Open, unchanged:** BUG-014, CHORE-022 (owner), CHORE-023, CHORE-010/011/012/013; BUG-020 (other session's triage).
+
+## Session before (2026-10-19 evening → 2026-10-20 early)
 
 - **Closed (each with V2 + fixes and a V3 double run):** FEAT-020 (web push — T7 done: a real push through
   FCM shown by the SW; accent re-sync verified), BUG-017 (one session per DEVICE: `sid` in the refresh token,
