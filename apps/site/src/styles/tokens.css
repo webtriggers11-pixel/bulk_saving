@@ -1,5 +1,5 @@
 /*
- * FEAT-027 (ADR-0038 §2): the app's design tokens, copied VERBATIM from
+ * FEAT-028 (ADR-0039 §2): the app's design tokens, copied VERBATIM from
  * apps/web/src/styles/theme.css — the Mono palette (day and night), the seven accent pairs
  * (day and night) and the Vercel look's geometry, type and hairlines. `tokens.test.ts` parses
  * both files and fails on any (selector, variable) pair that differs. Edit the app's file

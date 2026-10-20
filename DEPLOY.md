@@ -21,7 +21,7 @@ When a provider is picked:
    to match registered templates before a real sender ID will carry them.
 4. The stub is also where the dev OTP affordance lives, so swapping it removes that too.
 
-**Sign in with WhatsApp (FEAT-027, ADR-0038) is the ₹0-per-login alternative**, and it needs
+**Sign in with WhatsApp (FEAT-028, ADR-0039) is the ₹0-per-login alternative**, and it needs
 no SMS provider — but it needs a Meta app. See §2a.
 
 Also worth deciding before real residents arrive: `Notification` has no `societyId`
@@ -83,7 +83,7 @@ web image.
 
 The resident sends *us* a pre-filled WhatsApp message; we reply with a number-match prompt;
 the browser collects the usual tokens. User-initiated conversations are free, so this costs
-₹0 per login (ADR-0038). It is **off** until all five variables are set — a partial set
+₹0 per login (ADR-0039). It is **off** until all five variables are set — a partial set
 refuses to boot:
 
 ```
@@ -182,7 +182,7 @@ reversible**: every migration so far is additive, so an older API runs against a
 but that is a property of the current history rather than a guarantee. Check before relying
 on it.
 
-## 8. The product website (`apps/site`, FEAT-027)
+## 8. The product website (`apps/site`, FEAT-028)
 
 A static site, separate from the API and the PWA. `pnpm --filter site build` writes
 `apps/site/dist/` — plain HTML, CSS, and two JS chunks (the page, and the lazy Three.js

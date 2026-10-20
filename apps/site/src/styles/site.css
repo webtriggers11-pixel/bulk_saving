@@ -1,5 +1,5 @@
 /*
- * FEAT-027: the site's own styles, on top of tokens.css. Every colour here is a token:
+ * FEAT-028: the site's own styles, on top of tokens.css. Every colour here is a token:
  * `rgb(var(--x))` or `rgb(var(--x) / a)`. Nothing invents a value (DESIGN-SYSTEM.md).
  * The register is the app's Vercel look (ADR-0029): paper, one-pixel hairlines, tight radii,
  * Geist; colour only as the accent pair (ADR-0031).

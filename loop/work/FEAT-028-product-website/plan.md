@@ -1,4 +1,4 @@
-# Plan FEAT-027 — Product website (`apps/site`)
+# Plan FEAT-028 — Product website (`apps/site`)
 
 **Derived from:** spec.md · **Approved by:** agent (autonomous, owner's standing direction) on 2026-10-20
 
@@ -9,7 +9,7 @@
   `src/components/`. Content in `src/content/features.ts` (typed, derived from FEATURES.md).
 - Tokens: `src/styles/tokens.css` — a verbatim subset of `apps/web/src/styles/theme.css` (mono
   palette day/night, seven accents day/night, Vercel radii/fonts/hairlines). `tokens.test.ts`
-  parses both with one small regex parser and compares block by block (ADR-0038 §2).
+  parses both with one small regex parser and compares block by block (ADR-0039 §2).
 - Theme attributes and pre-paint script mirror `apps/web/index.html` (same localStorage keys, so a
   resident who opens the site on the same origin as the app gets their colour; otherwise defaults).
 - 3D: `src/scene/model.ts` (pure: tiers, price for units, which windows light, spark on unlock),
@@ -31,7 +31,7 @@ the content test reads.
 
 ## New decisions required
 
-ADR-0038 — Astro static site in `apps/site`; tokens copied and pinned by test, not imported
+ADR-0039 — Astro static site in `apps/site`; tokens copied and pinned by test, not imported
 (Confidence High on the mechanism, Medium on Astro 7 API stability for the container test; Research
 depth: quick check of Astro 7 docs/types after install).
 

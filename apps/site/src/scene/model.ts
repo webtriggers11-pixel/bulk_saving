@@ -1,5 +1,5 @@
 /**
- * FEAT-027 (ADR-0038 §4): the demo round's arithmetic, pure so it is unit-tested and shared by
+ * FEAT-028 (ADR-0039 §4): the demo round's arithmetic, pure so it is unit-tested and shared by
  * the Three.js building, the SVG fallback and the ladder in the DOM. Mirrors the app's rule
  * (ADR-0010): the price is that of the highest tier whose unit threshold is met.
  */

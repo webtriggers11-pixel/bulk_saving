@@ -1,5 +1,5 @@
 /**
- * AC3 / ADR-0038 §3: the page can never sell what is not shipped. The registry is the oracle.
+ * AC3 / ADR-0039 §3: the page can never sell what is not shipped. The registry is the oracle.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -27,7 +27,7 @@ describe('features.ts against loop/REGISTRY.md', () => {
 
   it('every done FEAT in the registry (except this site itself) appears on the site', () => {
     const missing = [...registryFeats]
-      .filter(([id, status]) => status.startsWith('done') && id !== 'FEAT-027')
+      .filter(([id, status]) => status.startsWith('done') && id !== 'FEAT-028')
       .map(([id]) => id)
       .filter((id) => !features.some((f) => f.id === id));
     expect(missing).toEqual([]);

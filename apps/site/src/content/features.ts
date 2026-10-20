@@ -1,5 +1,5 @@
 /**
- * FEAT-027 (ADR-0038 §3): the site's copy of FEATURES.md. Every shipped feature, in the
+ * FEAT-028 (ADR-0039 §3): the site's copy of FEATURES.md. Every shipped feature, in the
  * visitor's words. `content.test.ts` reads loop/REGISTRY.md and fails if a done FEAT is
  * missing here, an ID here is unknown, or a "coming soon" item is actually done.
  */

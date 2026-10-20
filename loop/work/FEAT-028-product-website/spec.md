@@ -1,9 +1,9 @@
-# FEAT-027 — Product website (`apps/site`): Astro, one page, the app's own look, a 3D society that fills as neighbours join
+# FEAT-028 — Product website (`apps/site`): Astro, one page, the app's own look, a 3D society that fills as neighbours join
 
 **Status:** specced (autonomous — owner directed the loop to run without sign-off) · **Priority:** P1 · **Owner:** Vivek · **Opened:** 2026-10-20
 
 ("create new folder in apps using astro create beautiful product website to show peoples also add 3d
-animation for this product and all using same theme consistency SPA is fine") · **Decisions:** ADR-0038
+animation for this product and all using same theme consistency SPA is fine") · **Decisions:** ADR-0039
 (builds on ADR-0029 Mono look, ADR-0031 accent pairs)
 
 ## Problem / Why

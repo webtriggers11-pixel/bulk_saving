@@ -1,5 +1,5 @@
 /**
- * FEAT-027: the hero demo. One state (units pledged) drives the DOM ladder, the SVG fallback
+ * FEAT-028: the hero demo. One state (units pledged) drives the DOM ladder, the SVG fallback
  * and, when WebGL is available, the Three.js society. The arithmetic is model.ts.
  */
 import { demoRound } from '../content/features';

@@ -1378,3 +1378,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Found: the `[data-scheme='dark']` block was missing from tokens.css (night hairlines were black on near-black) → added from the app; `.btn[hidden]`; `.step` grid; `optimizeDeps.include: ['three']` (cold dev server 504 on the lazy chunk). All in the T1–T4 commit.
 - DEPLOY.md §8: how to host `apps/site/dist`, set `site` in astro.config first.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — RENUMBERED (was FEAT-027; ADR-0039, was ADR-0038)
+- Two sessions ran triage in the same tree within minutes: this item (product website) and "Sign in with WhatsApp" both took FEAT-027 and ADR-0038. The WhatsApp item's triage commit (16cf785) landed first, so it keeps the numbers; the website is now **FEAT-028 / ADR-0039** — folder, ADR file, registry row, FEATURES.md, DEPLOY.md and every code comment renamed. The three LOG entries above headed "FEAT-027 — OPENED / T1–T4 / T5" are this item's (append-only log, left as written); git history keeps the old-number commits. Lesson for triage: check `git log` and the registry for an uncommitted neighbour before taking the next ID when more than one session is active.
+- By: agent (autonomous)

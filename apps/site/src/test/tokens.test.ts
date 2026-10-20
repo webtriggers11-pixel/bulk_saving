@@ -1,5 +1,5 @@
 /**
- * AC2 / ADR-0038 §2: the site's tokens ARE the app's tokens. Every (selector, declaration) in
+ * AC2 / ADR-0039 §2: the site's tokens ARE the app's tokens. Every (selector, declaration) in
  * tokens.css must appear, with the same value, in apps/web/src/styles/theme.css; the accent
  * blocks must be complete; and the pairs the page relies on must meet WCAG contrast in both
  * schemes (AC6).

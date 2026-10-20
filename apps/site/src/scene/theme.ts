@@ -1,5 +1,5 @@
 /**
- * FEAT-027: scheme + accent switching, the app's contract (ADR-0028/0031): attributes on
+ * FEAT-028: scheme + accent switching, the app's contract (ADR-0028/0031): attributes on
  * <html>, the same localStorage keys, theme-color follows the ground. The pre-paint script in
  * Base.astro applies the stored choice before first paint; this module only changes it.
  */

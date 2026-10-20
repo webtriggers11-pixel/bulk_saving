@@ -1,5 +1,5 @@
 /**
- * FEAT-027 (ADR-0038 §4): the society in Three.js. Flat paper towers with ink edges, windows
+ * FEAT-028 (ADR-0039 §4): the society in Three.js. Flat paper towers with ink edges, windows
  * that light in the accent as units are pledged, a spark burst when a tier unlocks. Colours
  * are read from the CSS tokens, so the scene follows accent and scheme live. Loaded on demand
  * by hero.ts; the SVG fallback stands in without WebGL.

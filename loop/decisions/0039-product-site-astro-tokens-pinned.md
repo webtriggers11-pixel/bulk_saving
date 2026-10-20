@@ -1,8 +1,8 @@
-# ADR-0038: The product website is an Astro static site in `apps/site`; it shares the app's TOKENS (pinned by a test), not its components
+# ADR-0039: The product website is an Astro static site in `apps/site`; it shares the app's TOKENS (pinned by a test), not its components
 
 **Status:** Accepted · **Date:** 2026-10-20 · **Deciders:** Vivek ("create new folder in apps
 using astro … beautiful product website … 3d animation … same theme consistency, SPA is fine"),
-agent · **Work item:** FEAT-027 · **Builds on:** ADR-0029 (Mono look), ADR-0031 (accent pairs)
+agent · **Work item:** FEAT-028 · **Builds on:** ADR-0029 (Mono look), ADR-0031 (accent pairs)
 
 ## Confidence
 

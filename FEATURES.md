@@ -2,7 +2,7 @@
 
 > Source of truth for the product website and PR material. Every feature below is
 > shipped in the app (status from `loop/REGISTRY.md`, 2026-10-20) unless marked
-> otherwise. The website in `apps/site` is generated from this list (FEAT-027) and a
+> otherwise. The website in `apps/site` is generated from this list (FEAT-028) and a
 > test pins its content to the registry. Each entry gives **what it is**, **how it is used**, and **why it
 > exists**, plus the website section it belongs to. Do not claim anything on the
 > website that is listed under "Not yet / do not claim".
