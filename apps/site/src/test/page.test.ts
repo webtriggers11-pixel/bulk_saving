@@ -89,6 +89,10 @@ describe('index.astro', () => {
     expect(html).toContain('data-story-scene');
     for (const hud of ['data-hud-price', 'data-hud-units', 'data-hud-state', 'data-hud-fill']) expect(html).toContain(hud);
     expect(html).toMatch(/data-story-target="10"/);
+    // CHORE-025: a mini card in every step, sticky side columns beside long lists
+    expect((html.match(/class="step__card surface"/g) ?? []).length).toBe(4);
+    expect((html.match(/class="joiner"/g) ?? []).length).toBe(10);
+    expect((html.match(/sticky-col/g) ?? []).length).toBeGreaterThanOrEqual(4);
   });
 
   it('the catalog wall: 23 service cards, 7 chips, search, open rounds, asks, the pledge sheet (T5d)', () => {

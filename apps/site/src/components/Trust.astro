@@ -8,7 +8,7 @@ const s = sections.find((x) => x.id === 'trust')!;
 <Section id={s.id} title={s.title} lede={s.lede}>
   <div class="split split--flip">
     <FeatureList items={featuresIn('trust')} />
-    <div class="phone tilt" aria-hidden="true">
+    <div class="sticky-col"><div class="phone tilt" aria-hidden="true">
       <div class="phone__bar"><span>9:41</span><span>Ops</span></div>
       <div class="phone__title">Vendors</div>
       <div class="surface card">
@@ -28,6 +28,6 @@ const s = sections.find((x) => x.id === 'trust')!;
         <div class="card__row"><span class="card__meta">A-204 · 2 ACs · ₹1,400</span><span class="card__btn card__btn--on">Collected</span></div>
         <div class="card__row"><span class="card__meta">B-101 · 1 AC · ₹700</span><span class="card__btn">Mark collected</span></div>
       </div>
-    </div>
+    </div></div>
   </div>
 </Section>

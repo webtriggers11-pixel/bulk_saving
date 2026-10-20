@@ -286,9 +286,9 @@ html.js .reveal.is-in {
 }
 @media (min-width: 900px) {
   .story__steps .story__step {
-    min-height: 52vh;
+    min-height: 38vh;
     align-content: center;
-    padding-block: 10vh;
+    padding-block: 7vh;
   }
 }
 .story__step h3,

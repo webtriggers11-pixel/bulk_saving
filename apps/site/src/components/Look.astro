@@ -11,7 +11,7 @@ const names: Record<string, string> = {
 
 <Section id={s.id} title={s.title} lede={s.lede}>
   <div class="split">
-    <div style="display:grid; gap:24px">
+    <div class="sticky-col" style="display:grid; gap:24px">
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
         <div class="swatches" role="group" aria-label="Pick a colour pair for this page">
           {ACCENTS.map((a) => (
