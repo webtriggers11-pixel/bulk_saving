@@ -140,10 +140,10 @@ const storySection = (reduced: boolean) => {
     scrollTrigger: {
       trigger: section.querySelector('[data-story-track]') ?? section,
       // Desktop: captions sit beside the sticky scene, so the window is the middle of the
-      // viewport. Phone: the stage holds the top ~40%; the caption being read sits just
-      // under it, so the window starts there (V2 round 2: 92% lit the NEXT caption).
-      start: () => (innerWidth < 900 ? 'top 45%' : 'top 20%'),
-      end: () => (innerWidth < 900 ? 'bottom 45%' : 'bottom 80%'),
+      // viewport. Phone: a caption lights as its text enters near the bottom (85%) and stays
+      // lit while it travels up to the stage; the next one takes over as it enters (V2 r3).
+      start: () => (innerWidth < 900 ? 'top 85%' : 'top 20%'),
+      end: () => (innerWidth < 900 ? 'bottom 85%' : 'bottom 80%'),
       invalidateOnRefresh: true,
       scrub: 0.6,
       onUpdate: () => apply(progress.p),

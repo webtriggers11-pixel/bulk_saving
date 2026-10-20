@@ -1226,6 +1226,13 @@ html[data-scheme='dark'] .icon-btn__sun {
 .svc--open {
   background-image: linear-gradient(rgb(var(--brand) / 0.035), transparent 60%);
 }
+@media (hover: hover) {
+  .svc--open.card-hover:hover {
+    background-image:
+      radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgb(var(--brand) / 0.08), transparent 65%),
+      linear-gradient(rgb(var(--brand) / 0.035), transparent 60%);
+  }
+}
 .catalog__empty {
   padding: 24px 0;
 }
@@ -1235,7 +1242,7 @@ html[data-scheme='dark'] .icon-btn__sun {
   width: min(100%, 440px);
   max-width: 100%;
   margin: auto auto 0;
-  padding: 10px 20px 20px;
+  padding: 0;
   border: 1px solid var(--hairline);
   border-bottom: 0;
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
@@ -1246,7 +1253,13 @@ html[data-scheme='dark'] .icon-btn__sun {
   gap: 14px;
 }
 .sheet[open] {
+  display: block;
+}
+/* The content box: a click that lands on the <dialog> itself is on the backdrop (catalog.ts). */
+.sheet__in {
   display: grid;
+  gap: 14px;
+  padding: 10px 20px 20px;
 }
 .sheet::backdrop {
   background: rgb(var(--shadow-rgb) / 0.45);
@@ -1257,6 +1270,8 @@ html[data-scheme='dark'] .icon-btn__sun {
     margin: auto;
     border-bottom: 1px solid var(--hairline);
     border-radius: var(--radius-sheet);
+  }
+  .sheet__in {
     padding-top: 20px;
   }
   .sheet__grab {

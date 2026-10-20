@@ -84,6 +84,7 @@ const asked = catalog.filter((c) => c.asked).length;
     <p class="catalog__empty muted" data-catalog-empty hidden>No services match. <button class="btn btn--quiet" type="button" data-catalog-clear>Clear filters</button></p>
 
     <dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+      <div class="sheet__in">
       <div class="sheet__grab" aria-hidden="true"></div>
       <div class="sheet__head">
         <div>
@@ -111,6 +112,7 @@ const asked = catalog.filter((c) => c.asked).length;
       <p class="sheet__hint" data-sheet-hint>2 more AC units unlock ₹399 for everyone</p>
       <button class="btn btn--primary sheet__join" type="button" data-sheet-join>Join</button>
       <p class="muted small" style="text-align:center">A demo of the app's pledge sheet. Nothing is sent.</p>
+      </div>
     </dialog>
   </div>
 

@@ -1512,3 +1512,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-20 — FEAT-028 — V1 for T5e (worktree at 722ec70, 14:08–14:12): exit 0
 - Site 55/55 (lint, `astro check`, build), backend 557/557, web 665/665, class gate 3439. Fully green. The audience-panel fix (cad79c4: `.audience__panel[hidden] { display: none }` — the same class-vs-attribute trap as `.btn[hidden]`) landed after this run and is covered by V3.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V2 round 3 (T5d + round-2 fixes) PASS-conditional → taken
+- V2 (code-reviewer subagent, worktree at bfcbaf0; its gate: site 50/50, backend 557/557, web 664/665 = the WhatsApp flake; 3 of 4 mutations caught; round-2 fixes 1, 2, 3, 5 confirmed in the DOM — tilt + parallax compose, splits masked and reverted, live-progress mount, fallback raise gated).
+- P2-1 phone captions STILL misaligned: with 44vh caption boxes and the reading line at 45%, the lit caption sat behind the sticky stage for ~77% of each step → captions are now their text plus a 38vh bottom gap, and the window is `top 85%` → `bottom 85%` on phones: a caption lights as its text enters near the bottom and stays lit, under the stage, until the next one arrives.
+- P2-2 the pledge sheet closed on a click in its own padding or row gaps (`e.target === dialog`) → the content lives in `.sheet__in` (the dialog has no padding), so only a backdrop click targets the dialog.
+- P3s taken: the Join close-timer is cleared on reopen; `.svc--open.card-hover:hover` keeps the accent wash under the spotlight; the sheet's deadline reads the card's ticking text; **`catalog.seed.test.ts`** parses `apps/backend/prisma/seed.ts` (the five object rows and the eighteen tuples) and pins every card's price, unit nouns and category by slug — the mutation that survived (499 → 599) now fails; demo rounds must start at the seed price and end lower. catalogModel has 8 tests, not 9 as the T5d entry said. 58 tests.
+- Environment note from the reviewer, kept for the next pass: a daemonised `astro dev` in a worktree lost its optimised deps while a gate's Vitest ran → gsap/lenis 504, Base script silent; check `html.gsap` before trusting a browser pass.
+- Alone: typecheck 0, lint clean, 58/58, build OK.
+- By: agent (autonomous) + code-reviewer subagent

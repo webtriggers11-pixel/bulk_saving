@@ -349,6 +349,8 @@ export const CATEGORIES: Category[] = ['Appliances', 'Home Care', 'Renovation', 
 
 export interface CatalogItem {
   name: string;
+  /** The seed's slug (apps/backend/prisma/seed.ts); catalog.seed.test.ts pins price and nouns by it. */
+  slug: string;
   category: Category;
   /** Indicative price per unit, rupees. */
   price: number;
@@ -359,27 +361,27 @@ export interface CatalogItem {
 }
 
 export const catalog: CatalogItem[] = [
-  { name: 'AC servicing', category: 'Appliances', price: 499, unit: 'AC unit', units: 'AC units', round: { pledged: 6, target: 10, tiers: [{ units: 1, price: 499 }, { units: 5, price: 449 }, { units: 10, price: 399 }], hoursLeft: 52 } },
-  { name: 'RO water purifier service', category: 'Appliances', price: 399, unit: 'purifier', units: 'purifiers' },
-  { name: 'Washing machine service', category: 'Appliances', price: 449, unit: 'machine', units: 'machines', asked: 2 },
-  { name: 'Kitchen chimney cleaning', category: 'Appliances', price: 699, unit: 'chimney', units: 'chimneys' },
-  { name: 'Geyser service', category: 'Appliances', price: 349, unit: 'geyser', units: 'geysers', asked: 5 },
-  { name: 'Pest control', category: 'Home Care', price: 899, unit: 'flat', units: 'flats', asked: 4 },
-  { name: 'Deep cleaning', category: 'Home Care', price: 2499, unit: 'flat', units: 'flats', round: { pledged: 7, target: 12, tiers: [{ units: 1, price: 2499 }, { units: 6, price: 2199 }, { units: 12, price: 1999 }], hoursLeft: 100 } },
-  { name: 'Bathroom wash', category: 'Home Care', price: 599, unit: 'bathroom', units: 'bathrooms' },
-  { name: 'Sofa shampooing', category: 'Home Care', price: 249, unit: 'seat', units: 'seats', asked: 2 },
-  { name: 'Termite treatment', category: 'Home Care', price: 2999, unit: 'flat', units: 'flats', asked: 6 },
-  { name: 'Bed bug treatment', category: 'Home Care', price: 1499, unit: 'flat', units: 'flats' },
-  { name: 'Mattress cleaning', category: 'Home Care', price: 499, unit: 'mattress', units: 'mattresses' },
-  { name: 'Painting', category: 'Renovation', price: 3500, unit: 'room', units: 'rooms' },
-  { name: 'Pre-monsoon waterproofing', category: 'Renovation', price: 2499, unit: 'area', units: 'areas', asked: 3 },
-  { name: 'Water tank cleaning', category: 'Utilities', price: 799, unit: 'tank', units: 'tanks', round: { pledged: 3, target: 8, tiers: [{ units: 1, price: 799 }, { units: 4, price: 699 }, { units: 8, price: 599 }], hoursLeft: 30 } },
-  { name: 'Inverter battery check', category: 'Utilities', price: 299, unit: 'battery', units: 'batteries' },
-  { name: 'Mosquito mesh fitting', category: 'Utilities', price: 650, unit: 'window', units: 'windows', asked: 1 },
-  { name: 'Doorstep car wash', category: 'Vehicle', price: 399, unit: 'car', units: 'cars', round: { pledged: 5, target: 12, tiers: [{ units: 1, price: 399 }, { units: 6, price: 349 }, { units: 12, price: 299 }], hoursLeft: 20 } },
-  { name: 'Car interior detailing', category: 'Vehicle', price: 1499, unit: 'car', units: 'cars' },
-  { name: 'Bike service', category: 'Vehicle', price: 599, unit: 'bike', units: 'bikes', asked: 3 },
-  { name: 'Basmati rice, 25 kg', category: 'Bulk Staples', price: 2750, unit: 'bag', units: 'bags', round: { pledged: 14, target: 20, tiers: [{ units: 1, price: 2750 }, { units: 10, price: 2600 }, { units: 20, price: 2450 }], hoursLeft: 140 } },
-  { name: 'Sunflower oil, 15 L', category: 'Bulk Staples', price: 2100, unit: 'tin', units: 'tins' },
-  { name: 'Whole wheat atta, 10 kg', category: 'Bulk Staples', price: 480, unit: 'bag', units: 'bags', asked: 4 },
+  { name: 'AC servicing', slug: 'ac-servicing', category: 'Appliances', price: 499, unit: 'AC unit', units: 'AC units', round: { pledged: 6, target: 10, tiers: [{ units: 1, price: 499 }, { units: 5, price: 449 }, { units: 10, price: 399 }], hoursLeft: 52 } },
+  { name: 'RO water purifier service', slug: 'ro-service', category: 'Appliances', price: 399, unit: 'purifier', units: 'purifiers' },
+  { name: 'Washing machine service', slug: 'washing-machine-service', category: 'Appliances', price: 449, unit: 'machine', units: 'machines', asked: 2 },
+  { name: 'Kitchen chimney cleaning', slug: 'chimney-cleaning', category: 'Appliances', price: 699, unit: 'chimney', units: 'chimneys' },
+  { name: 'Geyser service', slug: 'geyser-service', category: 'Appliances', price: 349, unit: 'geyser', units: 'geysers', asked: 5 },
+  { name: 'Pest control', slug: 'pest-control', category: 'Home Care', price: 899, unit: 'flat', units: 'flats', asked: 4 },
+  { name: 'Deep cleaning', slug: 'deep-cleaning', category: 'Home Care', price: 2499, unit: 'flat', units: 'flats', round: { pledged: 7, target: 12, tiers: [{ units: 1, price: 2499 }, { units: 6, price: 2199 }, { units: 12, price: 1999 }], hoursLeft: 100 } },
+  { name: 'Bathroom wash', slug: 'bathroom-wash', category: 'Home Care', price: 599, unit: 'bathroom', units: 'bathrooms' },
+  { name: 'Sofa shampooing', slug: 'sofa-shampoo', category: 'Home Care', price: 249, unit: 'seat', units: 'seats', asked: 2 },
+  { name: 'Termite treatment', slug: 'termite-treatment', category: 'Home Care', price: 2999, unit: 'flat', units: 'flats', asked: 6 },
+  { name: 'Bed bug treatment', slug: 'bed-bug-treatment', category: 'Home Care', price: 1499, unit: 'flat', units: 'flats' },
+  { name: 'Mattress cleaning', slug: 'mattress-cleaning', category: 'Home Care', price: 499, unit: 'mattress', units: 'mattresses' },
+  { name: 'Painting', slug: 'painting', category: 'Renovation', price: 3500, unit: 'room', units: 'rooms' },
+  { name: 'Pre-monsoon waterproofing', slug: 'waterproofing', category: 'Renovation', price: 2499, unit: 'area', units: 'areas', asked: 3 },
+  { name: 'Water tank cleaning', slug: 'water-tank-cleaning', category: 'Utilities', price: 799, unit: 'tank', units: 'tanks', round: { pledged: 3, target: 8, tiers: [{ units: 1, price: 799 }, { units: 4, price: 699 }, { units: 8, price: 599 }], hoursLeft: 30 } },
+  { name: 'Inverter battery check', slug: 'inverter-battery-check', category: 'Utilities', price: 299, unit: 'battery', units: 'batteries' },
+  { name: 'Mosquito mesh fitting', slug: 'mosquito-mesh', category: 'Utilities', price: 650, unit: 'window', units: 'windows', asked: 1 },
+  { name: 'Doorstep car wash', slug: 'car-wash', category: 'Vehicle', price: 399, unit: 'car', units: 'cars', round: { pledged: 5, target: 12, tiers: [{ units: 1, price: 399 }, { units: 6, price: 349 }, { units: 12, price: 299 }], hoursLeft: 20 } },
+  { name: 'Car interior detailing', slug: 'car-interior-detailing', category: 'Vehicle', price: 1499, unit: 'car', units: 'cars' },
+  { name: 'Bike service', slug: 'bike-service', category: 'Vehicle', price: 599, unit: 'bike', units: 'bikes', asked: 3 },
+  { name: 'Basmati rice, 25 kg', slug: 'basmati-rice-25kg', category: 'Bulk Staples', price: 2750, unit: 'bag', units: 'bags', round: { pledged: 14, target: 20, tiers: [{ units: 1, price: 2750 }, { units: 10, price: 2600 }, { units: 20, price: 2450 }], hoursLeft: 140 } },
+  { name: 'Sunflower oil, 15 L', slug: 'sunflower-oil-15l', category: 'Bulk Staples', price: 2100, unit: 'tin', units: 'tins' },
+  { name: 'Whole wheat atta, 10 kg', slug: 'whole-wheat-atta-10kg', category: 'Bulk Staples', price: 480, unit: 'bag', units: 'bags', asked: 4 },
 ];

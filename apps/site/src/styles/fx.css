@@ -316,15 +316,15 @@ html.gsap .story__step.is-current::before {
     top: 68px;
     z-index: 2;
   }
-  /* The stage holds the top ~45% of a phone screen; each caption gets the rest, so the
-     story has room to scrub (one caption per screen, like the desktop column). */
+  /* The stage holds the top ~40% of a phone screen. A caption is its text plus a long
+     bottom gap, so the box lights as its text enters at the bottom (motion.ts: 85%) and stays
+     lit, readable under the stage, until the next caption's text arrives. */
   .story__steps {
-    padding-block: 4vh 10vh;
+    padding-block: 2vh 0;
   }
   .story__steps .story__step {
-    min-height: 44vh;
-    align-content: start;
-    padding-block: 6vh 4vh;
+    min-height: 0;
+    padding: 0 0 38vh;
   }
 }
 .story__scene {

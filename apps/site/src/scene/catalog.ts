@@ -117,6 +117,7 @@ export function mountCatalog(root: HTMLElement) {
   const join = $<HTMLButtonElement>('[data-sheet-join]');
   let current = -1;
   let units = 2;
+  let closeTimer = 0;
 
   const renderSheet = () => {
     const item = catalog[current];
@@ -131,10 +132,13 @@ export function mountCatalog(root: HTMLElement) {
   const openSheet = (i: number) => {
     const item = catalog[i];
     if (!item?.round) return;
+    clearTimeout(closeTimer);
     current = i;
     units = 2;
     if (title) title.textContent = item.name;
-    if (sub) sub.textContent = `${item.round.pledged} of ${item.round.target} ${item.units} · ${closesIn(item.round.hoursLeft)}`;
+    // The deadline as the card shows it now (it ticks), not as it was at load.
+    const closes = root.querySelector<HTMLElement>(`[data-service="${i}"] [data-closes]`)?.textContent ?? closesIn(item.round.hoursLeft);
+    if (sub) sub.textContent = `${item.round.pledged} of ${item.round.target} ${item.units} · ${closes}`;
     if (join) {
       join.disabled = false;
       join.textContent = 'Join';
@@ -163,6 +167,6 @@ export function mountCatalog(root: HTMLElement) {
     if (!item || !join) return;
     join.textContent = `You're in with ${units} ${units === 1 ? item.unit : item.units}`;
     join.disabled = true;
-    window.setTimeout(() => sheet.close(), 1100);
+    closeTimer = window.setTimeout(() => sheet.close(), 1100);
   });
 }
