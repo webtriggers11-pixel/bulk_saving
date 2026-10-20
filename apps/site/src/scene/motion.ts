@@ -51,12 +51,15 @@ const heroIntro = (reduced: boolean) => {
     gsap.set([title, ...copy, demo], { clearProps: 'all', opacity: 1 });
     return;
   }
-  const split = SplitText.create(title, { type: 'chars,words', charsClass: 'char', wordsClass: 'word' });
-  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  const split = SplitText.create(title, { type: 'chars,words', mask: 'words', charsClass: 'char', wordsClass: 'word' });
+  // Reverting restores the plain h1 (copy, find-in-page, no leftover layers).
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => split.revert() });
   tl.from(split.chars, { yPercent: 110, opacity: 0, filter: 'blur(8px)', duration: 0.9, stagger: { each: 0.018, from: 'start' } })
     .from(copy, { y: 18, opacity: 0, duration: 0.7, stagger: 0.08 }, '-=0.55')
     .from(demo, { y: 26, opacity: 0, scale: 0.98, duration: 0.9, ease: 'power2.out' }, '-=0.6');
-  // The towers rise once the scene has mounted (hero.ts announces it); if it already has, now.
+  // The towers rise once the scene mounts: hero.ts announces it on an idle callback, which
+  // always lands after this synchronous listener is attached. With no WebGL the event never
+  // fires and the listener simply stays idle.
   const raise = (b: Building) => {
     const v = { rise: 0 };
     gsap.to(v, { rise: 1, duration: 1.6, ease: 'expo.out', delay: 0.35, onUpdate: () => b.setView({ rise: v.rise }) });
@@ -81,6 +84,8 @@ const storySection = (reduced: boolean) => {
   let lastStep = -1;
   let lastClosed = false;
   const target = Number(section.dataset.storyTarget ?? 10);
+  /** Live scroll progress through the track (scrubbed below); the mount reads it too. */
+  const progress = { p: 0 };
 
   const apply = (progress: number) => {
     const s = storyAt(progress);
@@ -108,7 +113,8 @@ const storySection = (reduced: boolean) => {
       if (building) return;
       building = mountBuilding(sceneEl, 0, { flat: true });
       sceneEl.classList.add('is-3d');
-      apply(reduced ? 1 : 0);
+      // A fast scroller may already be mid-track when the chunk lands.
+      apply(reduced ? 1 : progress.p);
     });
   const io = new IntersectionObserver(
     (entries) => {
@@ -128,16 +134,16 @@ const storySection = (reduced: boolean) => {
     });
     return;
   }
-  const progress = { p: 0 };
   gsap.to(progress, {
     p: 1,
     ease: 'none',
     scrollTrigger: {
       trigger: section.querySelector('[data-story-track]') ?? section,
       // Desktop: captions sit beside the sticky scene, so the window is the middle of the
-      // viewport. Phone: the sticky stage holds the top ~45%, captions pass beneath it.
-      start: () => (innerWidth < 900 ? 'top 92%' : 'top 20%'),
-      end: () => (innerWidth < 900 ? 'bottom 98%' : 'bottom 80%'),
+      // viewport. Phone: the stage holds the top ~40%; the caption being read sits just
+      // under it, so the window starts there (V2 round 2: 92% lit the NEXT caption).
+      start: () => (innerWidth < 900 ? 'top 45%' : 'top 20%'),
+      end: () => (innerWidth < 900 ? 'bottom 45%' : 'bottom 80%'),
       invalidateOnRefresh: true,
       scrub: 0.6,
       onUpdate: () => apply(progress.p),
@@ -155,7 +161,7 @@ const reveals = (reduced: boolean) => {
     return;
   }
   heads.forEach((h) => {
-    const split = SplitText.create(h, { type: 'words', wordsClass: 'word' });
+    const split = SplitText.create(h, { type: 'words', mask: 'words', wordsClass: 'word' });
     gsap.from(split.words, {
       yPercent: 100,
       opacity: 0,
@@ -163,6 +169,7 @@ const reveals = (reduced: boolean) => {
       ease: 'power3.out',
       stagger: 0.04,
       scrollTrigger: { trigger: h, start: 'top 85%', once: true },
+      onComplete: () => split.revert(),
     });
   });
   ScrollTrigger.batch(rows, {
@@ -170,8 +177,10 @@ const reveals = (reduced: boolean) => {
     once: true,
     onEnter: (batch) => gsap.from(batch, { y: 22, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.06, overwrite: true }),
   });
+  // The offset rides on `--py`, which the `.tilt` transform consumes, so the pointer tilt and
+  // the scroll parallax compose instead of overwriting each other.
   mocks.forEach((m) => {
-    gsap.fromTo(m, { y: 40 }, { y: -40, ease: 'none', scrollTrigger: { trigger: m, start: 'top bottom', end: 'bottom top', scrub: 0.8 } });
+    gsap.fromTo(m, { '--py': '40px' }, { '--py': '-40px', ease: 'none', scrollTrigger: { trigger: m, start: 'top bottom', end: 'bottom top', scrub: 0.8 } });
   });
 };
 

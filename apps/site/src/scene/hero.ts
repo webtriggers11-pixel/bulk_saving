@@ -168,7 +168,8 @@ export function mountHero(root: HTMLElement) {
           sceneEl.classList.add('is-3d');
           // motion.ts raises the towers (GSAP intro); without it, raise them now.
           document.dispatchEvent(new CustomEvent('bulk:scene-ready', { detail: { el: sceneEl, building } }));
-          window.setTimeout(() => building?.setView({ rise: 1 }), 1200);
+          // motion.ts raises the towers when it runs (`html.gsap`); otherwise raise them here.
+          if (!document.documentElement.classList.contains('gsap')) window.setTimeout(() => building?.setView({ rise: 1 }), 400);
         })
         .catch(() => {
           /* the SVG stays */

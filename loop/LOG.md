@@ -1480,3 +1480,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1 (da441a3, review worktree, after the other session's gate ended): gate exit 0 — backend 557/557, web 665/665 (+3), site 41/41, 3439 class tokens, bundle guard green.
 - Chrome (:5174): typed `BLUE00` → no hint while typing; Continue → "An invite code is 8 letters and numbers, like AB12CD34." and the step stays; completed to `BLUE0002` + Enter → the choose step. V2 (independent) running.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V1 for T5d (worktree at 76d7441, 13:40–13:44): site/backend green, one foreign web flake
+- Site 50/50 (lint, `astro check`, build OK), backend 557/557, class gate 3439, web 664/665:  FAIL  src/features/auth/useWhatsAppLogin.test.tsx > useWhatsAppLogin > polls pending → awaiting_confirm → confirmed, signs in once and drop — the WhatsApp polling test (BUG-018 class; the other session widened its waits at 1afe10a and it still times out under the full suite, ~1 run in 3 today). Not site work; carried in HANDOFF.
+- By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V2 round 2 (T5c) PASS-conditional → both P2s and the P3s taken
+- V2 (code-reviewer subagent, worktree at 5ab11b4; its gate: site 41/41, backend 557/557, web 661/662 = the same WhatsApp flake; 4 mutations all caught; `bulkLenis` absent from the production bundle; SplitText 3.15 adds `aria-label` to the split h1 and `aria-hidden` to the chars — verified in the DOM).
+- P2-1 the scroll parallax (`gsap … y`) wrote an inline transform that silenced the pointer tilt and was eased by the tilt's `transition: transform` → the tilt angles are registered `@property` values that transition on their own, the parallax rides on `--py`, and one `.tilt` transform composes both.
+- P2-2 the hand-rolled `.word { overflow: hidden; padding .08em }` clipped descenders ("society," "price.") at line-height 1 → SplitText's own `mask: 'words'` (sized by the plugin) and the splits are **reverted on complete** (hero timeline and every h2 tween), which also drops the 26 `will-change` layers (P3) and restores copy/find-in-page.
+- P3s taken: the story scene mounts at the LIVE scroll progress (a fast scroller no longer snaps back to "Opening"); phone caption alignment — the trigger window is `top 45%` → `bottom 45%` under 900px (92% lit the next caption); hero.ts's fallback raise only runs when motion.ts is absent (no `html.gsap`); the scene-ready comment now says what the code does; the LOG size claim corrected: the Base chunk is 143 kB min / **53.7 kB gz** (not ≈45).
+- Alone: typecheck 0, lint clean, 50/50, build OK.
+- By: agent (autonomous) + code-reviewer subagent
