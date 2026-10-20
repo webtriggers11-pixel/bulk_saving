@@ -1050,6 +1050,7 @@ html[data-scheme='dark'] .icon-btn__sun {
   *::after {
     animation: none !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 }
 
@@ -1643,6 +1644,13 @@ input[type='range'] {
   .sticky-col {
     position: sticky;
     top: 90px;
+  }
+}
+/* Phones keep the sticky scene as the step's visual: a card there pushed the caption text
+   under the stage (V2). The cards fill the desktop column only. */
+@media (max-width: 899px) {
+  .step__card {
+    display: none;
   }
 }
 .step__card {

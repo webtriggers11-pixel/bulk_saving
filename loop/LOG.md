@@ -1551,3 +1551,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-20 — CHORE-025 — V1 (worktree at ecb517a, 14:54–14:55): exit 0
 - Site 58/58, backend 557/557, web 665/665, class gate 3439. V2 (code-reviewer subagent) running.
 - By: agent (autonomous)
+
+## 2026-10-20 — CHORE-025 — V2 PASS-conditional → taken
+- V2 (code-reviewer subagent, worktree at ecb517a; its gate exit 0: site 58, backend 557, web 665). Verified: sticky columns pin at 90px through their rows at 1920 and 1000 wide and are static on phones; the scrub, the cards' light-up and the joiner stagger on desktop; valid markup; tokens; CoolBreeze and the SMS wording traced to the seed and the real template.
+- P2 on phones the cards made each caption ~500px, so its text slid under the stage before the next caption took over (undoing f997827) → the cards are desktop-only (`display: none` under 900px; the phone keeps the sticky scene as its visual; markup and the page test unchanged). P3 the joiner stagger survived reduced motion (`transition-delay`) → the global reduced-motion block now zeroes delays too. P3 `.msg--sm` gets a redundant second fade from the reveal batch — harmless, left.
+- By: agent (autonomous) + code-reviewer subagent
