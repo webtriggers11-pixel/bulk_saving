@@ -124,7 +124,7 @@ const storySection = (reduced: boolean) => {
   if (reduced) {
     // No scrub: each caption, as it enters, sets the state for its step.
     steps.forEach((el, i) => {
-      ScrollTrigger.create({ trigger: el, start: 'top 70%', onEnter: () => apply((i + 0.9) / steps.length), onEnterBack: () => apply((i + 0.9) / steps.length) });
+      ScrollTrigger.create({ trigger: el, start: () => (innerWidth < 900 ? 'top 85%' : 'top 70%'), onEnter: () => apply((i + 0.9) / steps.length), onEnterBack: () => apply((i + 0.9) / steps.length) });
     });
     return;
   }
@@ -134,8 +134,11 @@ const storySection = (reduced: boolean) => {
     ease: 'none',
     scrollTrigger: {
       trigger: section.querySelector('[data-story-track]') ?? section,
-      start: 'top 20%',
-      end: 'bottom 80%',
+      // Desktop: captions sit beside the sticky scene, so the window is the middle of the
+      // viewport. Phone: the sticky stage holds the top ~45%, captions pass beneath it.
+      start: () => (innerWidth < 900 ? 'top 92%' : 'top 20%'),
+      end: () => (innerWidth < 900 ? 'bottom 98%' : 'bottom 80%'),
+      invalidateOnRefresh: true,
       scrub: 0.6,
       onUpdate: () => apply(progress.p),
     },

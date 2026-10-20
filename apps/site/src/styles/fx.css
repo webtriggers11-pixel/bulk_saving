@@ -310,6 +310,16 @@ html.gsap .story__step.is-current::before {
     top: 68px;
     z-index: 2;
   }
+  /* The stage holds the top ~45% of a phone screen; each caption gets the rest, so the
+     story has room to scrub (one caption per screen, like the desktop column). */
+  .story__steps {
+    padding-block: 4vh 10vh;
+  }
+  .story__steps .story__step {
+    min-height: 44vh;
+    align-content: start;
+    padding-block: 6vh 4vh;
+  }
 }
 .story__scene {
   aspect-ratio: 16 / 11;

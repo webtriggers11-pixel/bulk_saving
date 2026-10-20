@@ -1455,3 +1455,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-20 — FEAT-027 — WHATSAPP-SETUP.md (owner: "give me md files in that add links and steps to fix this")
 - Root runbook: cost table, the 30-minute Meta test-number + tunnel path, the production checklist (business verification, display name, System User token, Live mode, Graph version), a symptom → fix table, and where the code lives. Linked from DEPLOY.md §2a.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — T5c phone pass: the story had no scroll room under the sticky stage → fixed
+- At 390px the stage is sticky on top and the captions had no height, so the ScrollTrigger range (track top at 20% → bottom at 80%) was inverted and the HUD never left "Opening 0 of 10". Captions now get 44vh each on phones; the trigger window is `top 92%` → `bottom 98%` under 900px (captions pass beneath the stage), `invalidateOnRefresh`. Driven through Lenis in a same-origin 390px iframe: Opening → 5 of 10 ₹800 → 9 of 10 → Closed · met ₹700, scrollWidth 390.
+- By: agent (autonomous)
