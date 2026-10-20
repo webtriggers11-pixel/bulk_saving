@@ -1333,3 +1333,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Alone: backend dev/otp suites 34/34, web auth + toast + class-conflicts 47/47. Gate running.
 - By: agent (autonomous) + code-reviewer subagent
 - V1 (round-1 fixes): gate exit 0 — backend 511/511 (+7), web 643/643, 3293 class tokens, bundle guard passes.
+
+## 2026-10-20 — FEAT-026 — V2 round 2 PASS (conditional) → P2 + P3s taken
+- V2 round 2 (independent, worktree at fb000e0; gate run 1 segfaulted — CHORE-021 — run 2 exit 0, 511/643, 3293; bundle guard live: a non-folding condition or a static import fails it; 3 mutations caught, 2 not → P3s): PASS on landing the P2.
+- P2 `.env.example` never got the NODE_ENV line (my insertion was skipped because the OLD comment mentioned `NODE_ENV=production`) and still described the CHORE-002-era `devCode` → rewritten; `NODE_ENV=development` added; the smoke script's hint, the stub channel's, otp.service's, dev-tools' and bootstrap's "not production" wording all say "explicit development/test" now. `otp.service.spec` covers unset and unknown NODE_ENV.
+- P3s taken: the dev route reads the SOCKET address, not `req.ip` (proxy-header-proof under any TRUST_PROXY); `useDevOtp` drops a result that lands after `clear()` (generation counter — an old number's code cannot reappear over a new one; test); the admin door has a DEV toast test (arrives, cleared by "Use a different number", refetched on the next send, Use it fills).
+- Backend dev/otp suites 33/33 + otp.service spec; web auth 36/36. Double gate running (V1 and, unchanged, V3).
+- By: agent (autonomous) + code-reviewer subagent
