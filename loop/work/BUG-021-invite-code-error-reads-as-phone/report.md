@@ -1,6 +1,6 @@
 # BUG-021 — A malformed invite code reads as a phone-number error, and the WhatsApp step dead-ends on it
 
-**Status:** triaged · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** owner (screenshot: "Confirm it's you on WhatsApp … That doesn't look like a phone number. Use your 10-digit mobile number, or +country code and number." with only "Use an SMS code instead" below)
+**Status:** done (V3 2026-10-20) · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** owner (screenshot: "Confirm it's you on WhatsApp … That doesn't look like a phone number. Use your 10-digit mobile number, or +country code and number." with only "Use an SMS code instead" below)
 
 ## Observed vs expected
 
@@ -23,7 +23,7 @@ ADR-0036 (canonical phone) introduced the plausibility gate + hint pattern for t
 
 ## Fix
 
-- **Commit:** <filled below>
+- **Commit:** da441a3 (`fix(BUG-021)`), ebe4296 (V2 P3: live-region hint)
 - **Regression guard:** the three tests above.
 
 ## Lesson

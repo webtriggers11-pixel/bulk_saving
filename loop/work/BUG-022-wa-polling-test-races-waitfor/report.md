@@ -1,6 +1,6 @@
 # BUG-022 — `useWhatsAppLogin` polling test times out 1 run in N (3 sightings: FEAT-028's V1, a parallel vitest run, BUG-021's V2 gate)
 
-**Status:** triaged · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** agent (gate logs)
+**Status:** done (V3 2026-10-20) · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** agent (gate logs)
 
 ## Observed vs expected
 - **Observed:** `polls pending → awaiting_confirm → confirmed, signs in once …` fails with "expected 'pending' to be 'awaiting_confirm'" after 15 s, while the hook had in fact signed in.
@@ -17,6 +17,7 @@ Test: state transitions driven by a timer the test does not control. Hook: no `c
 BUG-002 / BUG-018's class (a test racing a timer). ADR-0038 unaffected.
 
 ## Fix
+- **Commit:** ebe4296 (`fix(BUG-022)`)
 - The mock answers from a variable the test advances only after it has observed the previous phase; `WaView` gains `confirmed` and the step says "You're in — one moment…".
 - **Regression guard:** the rewritten test; a new assertion that a `confirmed` payload renders the `confirmed` phase.
 

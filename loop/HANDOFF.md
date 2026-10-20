@@ -38,6 +38,13 @@
 - **Machine:** global `pnpm` shim still broken → scratchpad wrapper `exec corepack pnpm "$@"`; owner's API `nest start
   --watch` on :3000 and Vite :5173 serve the working tree (so they already ran this branch); preview :5175 still up;
   my Vite :5174 stopped; review worktree removed. Dev admin +919999900209, resident +919999900201 / BLUE0002.
+- **After close, two bugs on the same branch (owner screenshot + the flake the reviewers kept hitting):** BUG-021 — a short
+  invite code reached the server and its 400 read as a PHONE error on the WhatsApp step, with no retry → the invite step
+  lets only an 8-char code through, shows the invite hint only after a failed attempt (owner: "give error in invite code
+  only if it's wrong"), the mapper names the field from the server's message, the step has "Try again". BUG-022 — the
+  `useWhatsAppLogin` polling test raced `waitFor` (20 ms poll vs 50 ms look) and the hook had no `confirmed` phase → the
+  test now advances the server's answer itself; the step says "You're in — one moment…". Both V2-reviewed; V3 double run at
+  ebe4296: two identical green runs (backend 557/557, web 665/665, site 50/50). Setup runbook with Meta links: `WHATSAPP-SETUP.md`.
 - **Open, unchanged:** BUG-014, CHORE-022 (owner), CHORE-023, CHORE-010/011/012/013; BUG-020 (other session's triage).
 
 ## Session before (2026-10-19 evening → 2026-10-20 early)
