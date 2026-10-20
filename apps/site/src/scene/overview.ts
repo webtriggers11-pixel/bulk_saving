@@ -11,18 +11,25 @@ export function mountAudience(root: HTMLElement) {
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-audience-tab]'));
   const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-audience-panel]'));
   const show = (key: string) => {
-    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.audienceTab === key)));
+    tabs.forEach((t) => {
+      const on = t.dataset.audienceTab === key;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
     panels.forEach((p) => {
       const on = p.dataset.audiencePanel === key;
       p.hidden = !on;
       if (on && !prefersReducedMotion()) gsap.fromTo(p, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'transform' });
     });
   };
+  tabs.forEach((t, i) => (t.tabIndex = i === 0 ? 0 : -1));
   tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.audienceTab ?? '')));
   tabs.forEach((t, i) =>
     t.addEventListener('keydown', (e) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i + tabs.length - 1) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
+      if (j < 0) return;
+      e.preventDefault();
+      const next = tabs[j];
       next?.focus();
       show(next?.dataset.audienceTab ?? '');
     }),
@@ -47,9 +54,11 @@ export function mountCalculator(root: HTMLElement) {
     };
   };
 
-  const format = (key: string, n: number) => {
+  // Tweens pass fractional values; money and jobs are whole numbers on screen.
+  const format = (key: string, raw: number) => {
+    const n = Math.round(raw);
     if (key === 'jobs') return n.toLocaleString('en-IN');
-    if (key === 'pooledPrice' || key === 'savingPerJob' || key === 'perFlatSavings') return `₹${Math.round(n).toLocaleString('en-IN')}`;
+    if (key === 'pooledPrice' || key === 'savingPerJob' || key === 'perFlatSavings') return `₹${n.toLocaleString('en-IN')}`;
     return compactRupees(n);
   };
 

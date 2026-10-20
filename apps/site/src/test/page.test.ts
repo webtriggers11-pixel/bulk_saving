@@ -105,7 +105,7 @@ describe('index.astro', () => {
     expect(html).toContain('id="overview"');
     expect((html.match(/data-audience-tab="/g) ?? []).length).toBe(4);
     expect((html.match(/data-audience-panel="/g) ?? []).length).toBe(4);
-    expect((html.match(/<input type="range" data-calc="/g) ?? []).length).toBe(6);
+    expect((html.match(/<input [^>]*type="range"[^>]*data-calc="/g) ?? []).length).toBe(6);
     expect((html.match(/data-calc-out="/g) ?? []).length).toBeGreaterThanOrEqual(7);
     expect(html).toContain('id="roadmap"');
     expect(html).not.toContain('What is not here yet');

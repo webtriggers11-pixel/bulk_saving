@@ -308,7 +308,7 @@ export const featuresIn = (section: SectionId): Feature[] =>
 
 /** What comes next, in order. Shipped work stays in the sections above; this is the road ahead. */
 export const roadmap: { when: 'Now' | 'Next' | 'Later'; title: string; what: string }[] = [
-  { when: 'Now', title: 'First societies live', what: 'Phone sign-in, the catalog, group-buy rounds, SMS and push, ratings, the operator dashboard, and a bulk-staples pilot are built and verified.' },
+  { when: 'Now', title: 'Ready for the first societies', what: 'Phone sign-in, the catalog, group-buy rounds, SMS and push, ratings, the operator dashboard, and a bulk-staples pilot are built and verified; the first society goes live in the pilot.' },
   { when: 'Next', title: 'WhatsApp round updates', what: 'Round alerts over WhatsApp where societies already live. Sign-in with WhatsApp is done; the channel follows behind the same notification interface.' },
   { when: 'Next', title: 'More services, more societies', what: 'The catalog is data, not code: the operator adds a service and switches it on per society. The platform is multi-tenant from day one.' },
   { when: 'Later', title: 'Recurring plans and warranty', what: 'Own the relationship, not just the first job: a quarterly pest-control or pre-summer AC plan, with the vendor accountable through us.' },

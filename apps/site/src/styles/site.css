@@ -1402,14 +1402,13 @@ html[data-scheme='dark'] .icon-btn__sun {
 }
 .flow__node text {
   fill: rgb(var(--ink));
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 600;
   text-anchor: middle;
 }
-.flow__node text.flow__sub,
-.flow__svg > text.flow__sub {
+.flow__node text.flow__sub {
   fill: rgb(var(--ink-muted));
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 400;
   text-anchor: middle;
 }

@@ -1525,3 +1525,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-20 — FEAT-028 — phone captions measured after the round-3 fix; gap trimmed
 - 390×740 iframe, driven through Lenis: with a 38vh gap the lit caption slid under the stage for the last ~23% of each step (box 381px vs a 292px readable band). Gap → 24vh (box ≈ band): at 11 positions across the track the lit caption's heading sits between the stage bottom and the 85% line in 8, and 2–25px under the stage only at the very end of a step. The sheet: a click in a row gap targets `.sheet__in` and keeps it open; a backdrop click closes it; the subtitle carries the card's ticking deadline.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V2 round 4 (T5e + round-3 fixes) PASS-conditional → taken
+- V2 (code-reviewer subagent, worktree at 759abb9; its gate exit 0: site 58/58, backend 557/557, web 665/665, class gate 3439; 6 of 6 mutations caught incl. the seed test both ways; round-3 fixes 1–6 all confirmed in the DOM — captions 67–86% readable at 38vh, since trimmed to 24vh; sheet gap/backdrop; timer; hover wash; ticking subtitle; seed test). Truthfulness table: every number on the page traced to BRIEF.md / REGISTRY.md / seed.ts except three wordings, fixed below.
+- P2-1 "Now · First societies live" read as traction → "Ready for the first societies … the first society goes live in the pilot". P2-2 the calculator showed fractional rupees and jobs mid-tween → values rounded before formatting. P2-3 the money-flow SVG was illegible at 390px (7px glyphs) → labels 19/14 units, the long caption moved into the figcaption.
+- P3s taken: slider labels now point at their inputs (`for`/`id`); the audience tabs have a roving tabindex and Home/End; "ten flats pool" → "ten AC units pool" (thresholds count units); "4.0+ … holds every vendor to" → "the rating the pilot must average, the bar every vendor is measured against"; "vetted vendor" → "rated vendor"; "per flat" → "per flat averaged over every flat"; the registry row's folder column corrected; tasks.md "9 tests" → 8.
+- Alone: typecheck 0, lint clean, 58/58, build OK.
+- By: agent (autonomous) + code-reviewer subagent
