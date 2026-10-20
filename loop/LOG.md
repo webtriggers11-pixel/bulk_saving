@@ -1400,3 +1400,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The concurrent session's renumber (c24b709) left its REGISTRY row reading `FEAT-027`; the folder, LOG and ADR-0039 already say FEAT-028. One token changed on that row so the registry has one FEAT-027 again. Nothing else of theirs touched.
 - Gate note: the main tree carries that session's UNCOMMITTED site work (apps/site/*.astro), whose `page.test.ts` currently fails — so this item's V1 run 2 in the main tree failed in the `site` workspace, not in backend/web (backend 556/556 and the web suites were green in run 1 apart from the two design guards since fixed). V1 is therefore being run on the COMMITTED tree in the review worktree.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-027 — V1 PASS (committed tree, review worktree at 449a868)
+- Gate exit 0 — shared 32/32, backend 556/556 (+57 for this item), web 662/662 (+17), 3434 class tokens resolve, "production bundle carries no dev OTP or WhatsApp-simulator path". Main-tree run 2 had failed only in `apps/site` (the other session's uncommitted work).
+- Since then on the branch: registry row fix (c6f4a91) and a StrictMode guard so the WhatsApp step starts exactly once (44b0182; step suite 6/6, lint clean). V2 runs at 44b0182.
+- By: agent (autonomous)
