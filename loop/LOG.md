@@ -1532,3 +1532,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3s taken: slider labels now point at their inputs (`for`/`id`); the audience tabs have a roving tabindex and Home/End; "ten flats pool" → "ten AC units pool" (thresholds count units); "4.0+ … holds every vendor to" → "the rating the pilot must average, the bar every vendor is measured against"; "vetted vendor" → "rated vendor"; "per flat" → "per flat averaged over every flat"; the registry row's folder column corrected; tasks.md "9 tests" → 8.
 - Alone: typecheck 0, lint clean, 58/58, build OK.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — FEAT-028 — V3; CLOSED
+- V3 at 0de7347 (worktree, no other gate running): two back-to-back runs, 14:29:02–14:29:59 and 14:29:59–14:30:53, both exit 0 and identical — site 58/58 (lint, `astro check`, build), backend 557/557, web 665/665, class gate 3439, dev-only bundle guard. No flakes.
+- FEAT-028 → done. `apps/site`: an Astro 7 static one-page product website on the app's own tokens (pinned to `apps/web/src/styles/theme.css` by a test), content pinned to REGISTRY.md and the catalog pinned to the seed by tests, GSAP + Lenis, a Three.js society in the hero and a scroll-scrubbed 3D story, a living catalog wall with the app's pledge sheet, a financier-ready overview / savings calculator / roadmap, 58 tests, four independent review rounds (every P1/P2 taken). Serve: `pnpm --filter site dev` (:4321) or build + `preview`; host `apps/site/dist` anywhere static (DEPLOY.md §8); set `site` in astro.config before the first deploy.
+- Open for the owner: the item's history sits on `feat/FEAT-027-whatsapp-tap-to-verify` (not main) and its first commit swept the WhatsApp session's staged files (LOG, V2 round 1 P2-4); BUG-020 (dev-otp spec teardown race) stays triaged; the `feat/…` branch needs merging to main when the WhatsApp item is ready.
+- By: agent (autonomous)

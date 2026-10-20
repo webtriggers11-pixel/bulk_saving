@@ -1,6 +1,6 @@
 # FEAT-028 — Product website (`apps/site`): Astro, one page, the app's own look, a 3D society that fills as neighbours join
 
-**Status:** specced (autonomous — owner directed the loop to run without sign-off) · **Priority:** P1 · **Owner:** Vivek · **Opened:** 2026-10-20
+**Status:** done (2026-10-20; T5b–T5e added mid-build at the owner's direction; four V2 rounds; V3 identical double run at 0de7347) · **Priority:** P1 · **Owner:** Vivek · **Opened:** 2026-10-20
 
 ("create new folder in apps using astro create beautiful product website to show peoples also add 3d
 animation for this product and all using same theme consistency SPA is fine") · **Decisions:** ADR-0039
@@ -29,20 +29,20 @@ whose price ladder drops — the core mechanic made visible.
 
 ## Acceptance criteria (testable — this IS the definition of done)
 
-- [ ] AC1 — `apps/site` is a pnpm workspace (Astro, static output, one page `/` with anchor
+- [x] AC1 — `apps/site` is a pnpm workspace (Astro, static output, one page `/` with anchor
       navigation) with `lint`, `typecheck`, `build`, `test` scripts, picked up by
       `scripts/verify.sh` through `pnpm -r` with no gate change needed.
-- [ ] AC2 — **Theme consistency is a test.** `src/styles/tokens.css` declares the same `--brand`,
+- [x] AC2 — **Theme consistency is a test.** `src/styles/tokens.css` declares the same `--brand`,
       `--brand-2`, `--brand-deep`, `--brand-light`, `--brand-ink` for all seven accents by day and
       by night, Mono's ink/ground/paper by day and by night, the Vercel radii and font stacks, as
       `apps/web/src/styles/theme.css`; a Vitest test parses both files and fails on any drift.
       `<html>` carries `data-look="vercel" data-theme="mono" data-accent data-scheme` like the app;
       the pre-paint script reads the same `bulk:scheme` / `bulk:palette` keys.
-- [ ] AC3 — **Content is a test.** `src/content/features.ts` is derived from `FEATURES.md`; a test
+- [x] AC3 — **Content is a test.** `src/content/features.ts` is derived from `FEATURES.md`; a test
       asserts every `FEAT-NNN` with status `done` in `loop/REGISTRY.md` appears on the page, every
       ID the page names exists in the registry, and every item the page marks "coming soon" is NOT
       `done` (today: FEAT-020 web push). `FEATURES.md` is updated to include FEAT-023..026.
-- [ ] AC4 — **3D hero.** A Three.js scene of a society building (flat-shaded, ink edges, accent-lit
+- [x] AC4 — **3D hero.** A Three.js scene of a society building (flat-shaded, ink edges, accent-lit
       windows) that responds to a "Join" control: each pledge lights windows and advances a price
       ladder (₹1,000 → ₹800 → ₹700) with a spark burst on a tier unlock. Window and edge colours
       come from the CSS tokens so switching accent or scheme recolours the scene live. Under
@@ -50,17 +50,17 @@ whose price ladder drops — the core mechanic made visible.
       lights up on pledge. The scene module is lazy-loaded; the page renders fully without WebGL
       (a static SVG building stands in). The tier/lighting arithmetic lives in a pure module with
       unit tests.
-- [ ] AC5 — **The page.** Sections, in order, each with an `id` and a nav link: hero + demo; how a
+- [x] AC5 — **The page.** Sections, in order, each with an `id` and a nav link: hero + demo; how a
       group buy works; browse, ask, book; never miss a round; trust and accountability; built for a
       phone; a look you want to open (live accent swatches + scheme switch); for operators; bulk
       staples pilot; not yet (honesty); footer. A container-rendered test asserts every section id,
       that every nav href resolves to one, and that every shipped feature title is present.
-- [ ] AC6 — **Quality floor.** Responsive 360px → 1440px with a 16px gutter and no horizontal
+- [x] AC6 — **Quality floor.** Responsive 360px → 1440px with a 16px gutter and no horizontal
       scroll; visible focus rings; all text ≥ 4.5:1 on its surface in both schemes (asserted for the
       tokens the page uses); no literal `white`/`#fff` on an accent fill (uses `--on-fill`);
       every animation stops under reduced motion; `<title>`, description, OG tags, favicon.
-- [ ] AC7 — Browser pass at 390px and 1280px, light and dark, two accents; screenshots in the LOG.
-- [ ] AC8 — V1 gate, V2 by the code-reviewer subagent, V3 double run; LOG, REGISTRY, HANDOFF.
+- [x] AC7 — Browser pass at 390px and 1280px, light and dark, two accents; screenshots in the LOG.
+- [x] AC8 — V1 gate, V2 by the code-reviewer subagent, V3 double run; LOG, REGISTRY, HANDOFF.
 
 ## Out of scope (explicit, prevents gold-plating)
 

@@ -3,7 +3,37 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-20, WhatsApp sign-in — branch `feat/FEAT-027-whatsapp-tap-to-verify`, NOT merged)
+## Latest session (2026-10-20, the product website — FEAT-028, `apps/site`, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
+
+- **FEAT-028 closed** (owner, in order: "create new folder in apps using astro … beautiful product website … 3d animation … same
+  theme consistency, SPA is fine" → "make it creative and fancy as per theme" → "use GSAP, kens and much more animation 3d …
+  use internet to search" → "Browse, ask, book … better UI/UX with fancy style" → "show this to my financiers … remove unwanted
+  things, add positive product things, more interactive, good labels, get the idea in one go"). ADR-0039. Astro 7.4.1
+  static one page; the app's tokens copied into `src/styles/tokens.css` and PINNED to `apps/web/src/styles/theme.css` by a
+  test; content pinned to REGISTRY.md (every done FEAT on the page, internal FEAT-026 exempt, nothing unshipped sold) and the
+  23-service catalog pinned to `apps/backend/prisma/seed.ts` by slug; GSAP 3.15 + Lenis 1.3.27 (SplitText hero entrance,
+  scroll-scrubbed Three.js story in "How it works", reveals, parallax, Flip-filtered catalog wall with the app's pledge
+  sheet as a `<dialog>`, circular scheme reveal, border beam/spotlight/sparkles/shimmer); financier pass: Overview "in one
+  go" (mechanic, money flow, BRIEF numbers, who-gains-what tabs, why it holds), a six-slider savings calculator (commission
+  labelled illustrative), Now/Next/Later roadmap replacing the "not here yet" table. 58 tests; four V2 rounds (every P1/P2
+  taken; the phone-caption alignment took three rounds); V3 at 0de7347 identical double run (site 58, backend 557, web 665).
+- **Run it:** `pnpm --filter site dev` → http://127.0.0.1:4321/ (the dev server was left RUNNING for the owner; `pkill -f
+  'astro dev'` to stop). Production: `pnpm --filter site build` → `apps/site/dist` (static; DEPLOY.md §8; set `site` in
+  `astro.config.mjs` first). Dev builds expose `window.bulkLenis` for browser passes; production strips it (tested).
+- **Owner decisions pending:** (1) the whole item lives on the WhatsApp branch, not main — the other session had checked it
+  out and staged files before this item's first commit, which swept 33 of those files (`6e31938`); merge the branch to main
+  when the WhatsApp item is ready, history left as is. (2) `apps/site/astro.config.mjs` `site:` is a placeholder domain; the
+  CTA mailto is `hello@bulksaving.example`. (3) BUG-020 stays triaged (dev-otp spec teardown race under concurrent gates).
+- **Lessons recorded (memory + LOG):** two sessions in one tree — check `git log`/REGISTRY before taking an ID (both took
+  FEAT-027/ADR-0038; the site became FEAT-028/ADR-0039), stage by path and check `git branch --show-current` +
+  `git diff --cached` before committing, wait with the ANCHORED `pgrep -f '^bash scripts/verify.sh'` (the unanchored form
+  deadlocks two waiters), run gates in a detached worktree when the other session's WIP breaks the main tree, and a
+  daemonised `astro dev` can lose its optimised deps while a gate's Vitest runs (check `html.gsap` before a browser pass).
+  Astro: a dependency reached only by dynamic `import()` needs `optimizeDeps.include` or the cold dev server 504s.
+- **Machine:** global `pnpm` shim broken → scratchpad wrapper `exec corepack pnpm "$@"`; the owner's Chrome automation window
+  was 500px wide this afternoon (phone pass for free; desktop checked with `document.documentElement.style.zoom`).
+
+## Session before (2026-10-20, WhatsApp sign-in — branch `feat/FEAT-027-whatsapp-tap-to-verify`, NOT merged)
 
 - **FEAT-027 closed on its own branch** (owner: "on different branch i want this feat and i want to test is this work or
   not … create new branch and do this and check"; later "for testing use my number - 8419997952"). "Tap to verify": the
