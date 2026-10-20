@@ -1345,3 +1345,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 6dbe88b: two back-to-back gate runs, both exit 0 and identical — backend 512/512, web 645/645, 3293 class tokens, "production bundle carries no dev OTP path" both times. No flakes.
 - FEAT-026 → done. In a DEV build the OTP arrives as a top toast on both doors; the route exists only under OTP_DEV_LOG=true + explicit NODE_ENV=development/test, loopback only; the production bundle provably carries none of it (gate step).
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-027 — OPENED: product website (`apps/site`)
+- Owner: "create new folder in apps using astro create beautiful product website … add 3d animation … same theme consistency, SPA is fine". Triaged as FEAT-027 (P1). Spec/plan/tasks in `loop/work/FEAT-027-product-website/`. Astro 7.4.1 static, one page; Three.js hero (a society building that lights up as units are pledged); the app's tokens copied into the site and PINNED by a test against `apps/web/src/styles/theme.css`; content pinned by a test against REGISTRY.md so nothing unshipped is sold. ADR-0038 to follow with T1.
+- By: agent (autonomous)
+
+## 2026-10-20 — FEAT-027 — OPENED: sign in with WhatsApp ("Tap to verify")
+- Owner pasted the design ("Tap to verify reverses who sends the message") and asked: "on different branch i want this feat and i want to test is this work or not … create new branch and do this and check". Branch `feat/FEAT-027-whatsapp-tap-to-verify`. Spec/plan/tasks written; ADR-0038 to follow with T1.
+- Testing honesty up front: the real-WhatsApp leg needs a Meta app (business verification or Meta's free test number + a public HTTPS tunnel for the webhook), neither of which exists on this laptop. The flow is therefore proven three ways: SIGNED webhook payloads in the integration suite (the exact Meta shapes), a dev-only simulator in the browser (stub sender; the same service code the webhook calls), and the Cloud API client unit-tested against the documented request shape. DEPLOY.md will carry the 30-minute path to try it against real WhatsApp.
+- By: agent (autonomous)
