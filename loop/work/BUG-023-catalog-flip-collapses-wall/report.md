@@ -1,6 +1,6 @@
 # BUG-023 — Catalog chips: the section below jumps up over the cards while the filter animates, then drops back
 
-**Status:** in-review · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** owner ("Browse, ask, book … when I click on tabs it overlaps and then goes")
+**Status:** done (V3 2026-10-20) · **Priority:** P2 · **Opened:** 2026-10-20 · **Reporter:** owner ("Browse, ask, book … when I click on tabs it overlaps and then goes")
 
 ## Observed vs expected
 - **Observed:** clicking a category chip in "Browse, ask, book" makes the wall of cards collapse to 0px for the length of the Flip (0.55s + stagger). The "Updates" section slides up by the wall's height over the flying cards, then snaps back down when the Flip completes. The leaving cards also fade out on top of the cards sliding into their places.
@@ -18,7 +18,8 @@ ADR-0039 unaffected (GSAP Flip stays the mechanism).
 
 ## Fix
 - `absoluteOnLeave: true`; the wall's height tweens from the old to the new value on the same timeline, cleared on complete; `ScrollTrigger.refresh()` on complete so the reveals below re-measure; `.wall` is `position: relative`, cards `z-index: 1`, leavers `.svc--leaving` at `z-index: 0` with pointer events off.
-- **Regression guard:** `catalog.flip.test.ts`.
+- **Commits:** bcb12b7 (`fix(BUG-023)`), 77ce291 (V2: `h0` read before `getState`, which ends a running Flip and its height tween; `.wall > .svc--leaving` so the leaver rule wins the cascade).
+- **Regression guard:** `catalog.flip.test.ts` — source-pinned (node has no layout engine): it fails on `absolute: true`, on a missing wall height tween, on the wrong leaver selector order and on `h0` read after `getState`; it cannot see cascade outcomes, so a CSS specificity regression needs a browser check.
 
 ## Lesson
 `absolute: true` in Flip is for containers that size themselves; an auto-height grid needs `absoluteOnLeave` plus its own height tween.

@@ -1576,3 +1576,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (code-reviewer subagent, worktree at bcb12b7; its gate exit 0: site 61, backend 557, web 665). Verified `absoluteOnLeave`/`onLeave` semantics in gsap/Flip.js, the refresh need, reduced motion unchanged, state clean after a triple click.
 - P2 `h0` was read AFTER `Flip.getState`, which ends a running Flip (and its height tween) → on a rapid re-click the wall snapped to the previous target (1450 → 456px in a frame) → `h0` now read before getState. P2 `.svc--leaving { z-index: 0 }` lost the cascade to `.wall > .svc { z-index: 1 }` → `.wall > .svc--leaving`. P3 redundant second clearProps and `overwrite: true` → removed. The test now pins the selector order and the h0/getState order. Re-measured in Chrome: leaver z-index 0; height continuous across clicks 100 ms apart (1345 → 1345, 1144 → 1144); no inline styles or classes left after 1.5 s.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — BUG-023 — V3; CLOSED
+- V3 at 77ce291 (detached worktree, no other gate running): two back-to-back runs, 17:11:18–17:12:25 and 17:12:25–17:13:21, both exit 0 and identical — site 62/62, backend 557/557, web 665/665. No flakes.
+- BUG-023 → done. Catalog chips: the wall keeps its height through the Flip, the page below glides, leavers fade under the movers, rapid clicks stay continuous.
+- By: agent (autonomous)

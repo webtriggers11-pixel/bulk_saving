@@ -5,6 +5,7 @@
 
 ## Latest session (2026-10-20, the product website — FEAT-028, `apps/site`, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
 
+- **BUG-023 closed:** the catalog chips' Flip collapsed the wall (`absolute: true`) so the section below jumped over the cards. Now `absoluteOnLeave` + a wall height tween on the Flip timeline + leavers stacked under movers; `h0` must be read before `Flip.getState` (it ends a running Flip). Guard: `apps/site/src/scene/catalog.flip.test.ts`. V3 at 77ce291, two identical runs (site 62, backend 557, web 665).
 - **CHORE-025 closed (after FEAT-028):** owner saw "lot of empty spaces" — a mini card in every story step (desktop only;
   on phones a card pushed the caption under the sticky stage, V2 caught it), sticky side columns (Trust/Phone mocks, Look,
   calculator outputs), a second "Now" roadmap card (WhatsApp sign-in), 38vh captions, 88px sections. V1/V2/V3 green
