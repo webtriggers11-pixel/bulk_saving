@@ -25,7 +25,7 @@ function useQrDataUrl(link: string | null, wanted: boolean): string | null {
     }
     let live = true;
     void import('qrcode')
-      .then((qr) => qr.toDataURL(link, { margin: 1, width: 208, errorCorrectionLevel: 'M' }))
+      .then((qr) => qr.toDataURL(link, { margin: 2, width: 224, errorCorrectionLevel: 'M' }))
       .then((dataUrl) => {
         if (live) setUrl(dataUrl);
       })
@@ -91,9 +91,11 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
           {!phoneLike && (
             <div className="mt-4 flex flex-col items-center gap-3" data-testid="whatsapp-qr">
               {qr ? (
-                <img src={qr} width={208} height={208} alt="QR code — scan it with your phone's camera to open WhatsApp with the message ready" className="rounded-tile border border-paper/70 bg-white p-2" />
+                // The image carries its own white quiet zone (the scanner needs it in dark mode too), so no
+                // surface colour here — white belongs to accent fills only (FEAT-016 AC3).
+                <img src={qr} width={224} height={224} alt="QR code — scan it with your phone's camera to open WhatsApp with the message ready" className="rounded-tile border border-paper/70" />
               ) : (
-                <span className="block h-[224px] w-[224px] animate-pulse rounded-tile bg-line/10" aria-hidden="true" />
+                <span className="block h-[224px] w-[224px] animate-breathe rounded-tile bg-line/10" aria-hidden="true" />
               )}
               <a href={session.waLink} target="_blank" rel="noopener noreferrer" className="text-caption font-semibold text-brand-ink underline underline-offset-4">
                 Using WhatsApp on this computer? Open the chat
