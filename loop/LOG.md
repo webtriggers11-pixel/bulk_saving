@@ -1340,3 +1340,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3s taken: the dev route reads the SOCKET address, not `req.ip` (proxy-header-proof under any TRUST_PROXY); `useDevOtp` drops a result that lands after `clear()` (generation counter — an old number's code cannot reappear over a new one; test); the admin door has a DEV toast test (arrives, cleared by "Use a different number", refetched on the next send, Use it fills).
 - Backend dev/otp suites 33/33 + otp.service spec; web auth 36/36. Double gate running (V1 and, unchanged, V3).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-20 — FEAT-026 — V3; CLOSED
+- V3 at 6dbe88b: two back-to-back gate runs, both exit 0 and identical — backend 512/512, web 645/645, 3293 class tokens, "production bundle carries no dev OTP path" both times. No flakes.
+- FEAT-026 → done. In a DEV build the OTP arrives as a top toast on both doors; the route exists only under OTP_DEV_LOG=true + explicit NODE_ENV=development/test, loopback only; the production bundle provably carries none of it (gate step).
+- By: agent (autonomous)

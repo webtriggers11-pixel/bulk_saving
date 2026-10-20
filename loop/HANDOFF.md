@@ -3,7 +3,7 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-19 evening → 2026-10-20)
+## Latest session (2026-10-19 evening → 2026-10-20 early)
 
 - **Closed (each with V2 + fixes and a V3 double run):** FEAT-020 (web push — T7 done: a real push through
   FCM shown by the SW; accent re-sync verified), BUG-017 (one session per DEVICE: `sid` in the refresh token,
@@ -16,6 +16,13 @@
   `{ items, nextCursor, total }`, `limit` 1–50 default 20, bad input 400, the Prisma cursor + `skip` trap
   handled, explicit "Show more" on every list, pickers walk all pages — three V2 rounds), BUG-019 phone
   normalisation (ADR-0036; two V2 rounds — the second found the DEV server broken, see below).
+- **FEAT-026 (owner: "in dev mode otp send in toast msg in top")** — ADR-0037 amends ADR-0020: the code
+  never rides on the auth response; a `GET /dev/otp` route whose module exists only under
+  `OTP_DEV_LOG=true` + an explicit `NODE_ENV=development|test`, loopback callers only; the web reaches it
+  through a dynamic `import()` behind a build-time constant, and `scripts/check-dev-only.mjs` fails the gate
+  if any built asset contains it. Toast at the top, "DEV ONLY · Your code is 123456 · Use it" on both doors.
+  Works on a DEV server (:5173 / :5174) — NOT on the :5175 preview (a production build, by design).
+  Done: two V2 rounds (a dead branch in the bundle; default-open NODE_ENV) and a V3 double run.
 - **One trap worth remembering:** the web's first RUNTIME import from `@bulk/shared` (CommonJS, linked
   outside node_modules) needs BOTH `build.commonjsOptions.include` (Rollup, caught by the gate) AND
   `optimizeDeps.include` (the dev server, NOT caught by the gate — the owner's `vite` on :5173 served raw
