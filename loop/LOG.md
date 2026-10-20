@@ -1405,3 +1405,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Gate exit 0 — shared 32/32, backend 556/556 (+57 for this item), web 662/662 (+17), 3434 class tokens resolve, "production bundle carries no dev OTP or WhatsApp-simulator path". Main-tree run 2 had failed only in `apps/site` (the other session's uncommitted work).
 - Since then on the branch: registry row fix (c6f4a91) and a StrictMode guard so the WhatsApp step starts exactly once (44b0182; step suite 6/6, lint clean). V2 runs at 44b0182.
 - By: agent (autonomous)
+
+## 2026-10-20 — FEAT-028 — V1 (gate run at 693b46a, 12:59–13:00): exit 1 — the one failure is not this item's
+- Site: lint clean, `astro check` 0, build OK, Vitest 34/34. Backend 556/556. Class gate 3434 tokens. Web 661/662: the one failure is `src/features/auth/useWhatsAppLogin.test.tsx › polls pending → awaiting_confirm → confirmed` (timed out at 5050 ms, "expected 'pending' to be 'awaiting_confirm'") — the WhatsApp sign-in item (the other session's FEAT-027, committed at 68f1c1c, still in-progress), a polling test racing a timer under the full suite; same class as BUG-002/BUG-018. Not touched by this item; flagged to that session via HANDOFF rather than triaged here, since the item is still open.
+- By: agent (autonomous)
