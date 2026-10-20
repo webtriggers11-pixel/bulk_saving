@@ -694,3 +694,41 @@ export const normalisePhone = (raw: string): string | null => {
   if (digits.length < 7 || digits.length > 15) return null;
   return `+${digits}`;
 };
+
+// ─── Sign in with WhatsApp — "Tap to verify" (FEAT-027, ADR-0038) ────────────────────
+/** `GET /auth/methods`: which sign-in methods this server offers besides the SMS code. */
+export interface AuthMethods {
+  whatsapp: boolean;
+}
+
+/** `POST /auth/wa/start` body (resident door). The admin door's start takes no body. */
+export interface WaStartBody {
+  inviteCode: string;
+}
+
+/**
+ * A started WhatsApp sign-in. `requestId` is the browser's secret — the only thing that can
+ * collect tokens; `code` rides inside the WhatsApp message and is semi-public; `matchNumber`
+ * is what the person must tap in the reply.
+ */
+export interface WaStartResponse {
+  requestId: string;
+  code: string;
+  waLink: string;
+  matchNumber: number;
+  expiresAt: string;
+}
+
+export type WaLoginStatus = 'pending' | 'awaiting_confirm' | 'confirmed' | 'denied' | 'expired';
+
+/** `GET /auth/wa/status/:requestId`. `confirmed` carries the same payload as an OTP verify. */
+export type WaStatusResponse =
+  | { status: 'pending' | 'awaiting_confirm' | 'expired' }
+  | { status: 'denied'; reason: 'WRONG_NUMBER' | 'NOT_AN_ADMIN' }
+  | ({ status: 'confirmed' } & AuthResult);
+
+/** How long a WhatsApp sign-in request lives from start to the tap (seconds). */
+export const WA_LOGIN_TTL_SECONDS = 180;
+
+/** The pre-filled message. A `const`, like `normalisePhone` — the web imports it at runtime. */
+export const whatsAppLoginMessage = (code: string): string => `My Bulk Saving login code is ${code}`;

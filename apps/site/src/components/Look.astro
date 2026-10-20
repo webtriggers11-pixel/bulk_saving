@@ -1,0 +1,35 @@
+---
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { featuresIn, sections } from '../content/features';
+import { ACCENTS } from '../scene/theme';
+const s = sections.find((x) => x.id === 'look')!;
+const names: Record<string, string> = {
+  mono: 'Mono', ocean: 'Ocean', aurora: 'Aurora', bloom: 'Bloom', sunset: 'Sunset', forest: 'Forest', lagoon: 'Lagoon',
+};
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="split">
+    <div style="display:grid; gap:24px">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+        <div class="swatches" role="group" aria-label="Pick a colour pair for this page">
+          {ACCENTS.map((a) => (
+            <button class="swatch swatch--lg" type="button" data-set-accent={a} data-accent={a} aria-label={names[a]} title={names[a]}></button>
+          ))}
+        </div>
+        <button class="btn btn--ghost" type="button" data-toggle-scheme>Switch day and night</button>
+      </div>
+      <p class="muted small">These switches change this page the way Appearance changes the app. Your choice is remembered on this device.</p>
+      <div class="trio" aria-hidden="true">
+        {(['ocean', 'sunset', 'forest'] as const).map((a) => (
+          <div class="surface--accent card" data-accent={a}>
+            <div class="card__title">Could save ₹600</div>
+            <div class="card__meta" style="color: inherit; opacity: .85">2 ACs · best price unlocked</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <FeatureList items={featuresIn('look')} />
+  </div>
+</Section>

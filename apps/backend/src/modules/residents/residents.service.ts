@@ -21,6 +21,20 @@ export class ResidentsService {
   }
 
   /**
+   * The WhatsApp door's upsert (FEAT-027, ADR-0038): like {@link upsertVerified}, except the
+   * name is a DEFAULT — the WhatsApp profile name is used only when the row is being created,
+   * and never overwrites a name the resident chose.
+   */
+  upsertVerifiedDefaultName(societyId: string, phone: string, defaultName: string | null): Promise<Resident> {
+    const now = new Date();
+    return this.prisma.resident.upsert({
+      where: { societyId_phone: { societyId, phone } },
+      create: { societyId, phone, name: defaultName ? defaultName.slice(0, 80) : null, verifiedAt: now },
+      update: { verifiedAt: now },
+    });
+  }
+
+  /**
    * Stamp `verifiedAt` on an EXISTING resident (FEAT-012).
    *
    * The admin sign-in path's counterpart to `upsertVerified` — same effect on the row,

@@ -1,0 +1,20 @@
+---
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { featuresIn, sections } from '../content/features';
+const s = sections.find((x) => x.id === 'notify')!;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="split">
+    <ol class="msgs" aria-label="Example messages, in order">
+      <li class="msg"><time>Mon 10:02</time>You're in: 2 ACs in the AC servicing round at Blue Waters. 6 of 10 so far, ₹800 each. Closes Thu.</li>
+      <li class="msg msg--push"><time>Tue 18:40</time>Your round just unlocked ₹700. 10 of 10 ACs. Nothing to do; we'll book it.</li>
+      <li class="msg"><time>Wed 09:15</time>Closing tomorrow: AC servicing at Blue Waters. Change your pledge or bring a neighbour before 6 pm.</li>
+      <li class="msg"><time>Thu 18:01</time>Closed and met: 11 ACs, ₹700 each. The operator is booking the vendor.</li>
+      <li class="msg"><time>Fri 12:30</time>Vendor scheduled: CoolCare, Sat 10 am to 2 pm. Pay ₹1,400 to the technician after the job.</li>
+      <li class="msg"><time>Sat 14:10</time>Delivered. How did it go? Rate it in My Requests.</li>
+    </ol>
+    <FeatureList items={featuresIn('notify')} />
+  </div>
+</Section>

@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { configureApp } from '../src/bootstrap';
-import { RedisModule } from '../src/redis/redis.module';
+import { AppModule } from '../src/app.module';
 import { RedisService } from '../src/redis/redis.service';
 import { DevToolsModule } from '../src/modules/dev/dev-tools.module';
 import { devOtpKey } from '../src/modules/notifications/stub-sms.channel';
@@ -17,7 +17,9 @@ import { CapturingChannel, createTestApp, randomPhone } from './helpers/test-app
  */
 describe('GET /dev/otp (integration, needs Redis)', () => {
   it('with the module mounted: the stashed code for a phone in any spelling; 404 when none; 400 for garbage', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [RedisModule, DevToolsModule] }).compile();
+    // FEAT-027: DevToolsModule now imports AuthModule (for the WhatsApp simulator), so it is
+    // mounted beside the whole app rather than beside RedisModule alone.
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule, DevToolsModule] }).compile();
     const app: INestApplication = moduleRef.createNestApplication();
     configureApp(app);
     await app.init();

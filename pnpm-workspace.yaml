@@ -8,3 +8,6 @@ allowBuilds:
   prisma: true
   esbuild: true
   msgpackr-extract: true
+
+minimumReleaseAgeExclude:
+  - astro@7.4.1

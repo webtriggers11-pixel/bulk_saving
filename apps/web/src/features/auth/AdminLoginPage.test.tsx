@@ -208,3 +208,43 @@ describe('AdminLoginPage', () => {
     expect(screen.getByText(/for society administrators/i)).toBeInTheDocument();
   });
 });
+
+/** FEAT-027 (ADR-0038 §4): the admin door offers WhatsApp too; the role comes back with the tokens. */
+describe('AdminLoginPage — sign in with WhatsApp', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useAuthStore.getState().logout();
+  });
+
+  it('shows "Continue with WhatsApp" only when offered; it starts the admin request with no body and signs in on confirmation', async () => {
+    const session = { requestId: 'r'.repeat(43), code: 'BS-7KQ2MX', waLink: 'https://wa.me/9198?text=x', matchNumber: 82, expiresAt: new Date(Date.now() + 180_000).toISOString() };
+    const bodies = new Map<string, unknown>();
+    const statuses: unknown[] = [{ status: 'awaiting_confirm' }, { status: 'confirmed', ...authResult }];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (typeof init?.body === 'string') bodies.set(url.replace(/^.*(\/auth\/)/, '$1'), JSON.parse(init.body));
+        if (url.endsWith('/auth/methods')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { whatsapp: true } } }));
+        if (url.endsWith('/auth/admin/wa/start')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: session } }));
+        if (url.includes('/auth/wa/status/')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: statuses.length > 1 ? statuses.shift() : statuses[0] } }));
+        return Promise.reject(new Error(`unexpected fetch: ${url}`));
+      }),
+    );
+    renderAdminLogin();
+    const button = await screen.findByTestId('continue-whatsapp');
+    fireEvent.click(button);
+    await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('82'));
+    expect(bodies.get('/auth/admin/wa/start')).toEqual({});
+    await waitFor(() => expect(screen.getByTestId('whatsapp-status')).toHaveTextContent('Message received'));
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 6_000 });
+    expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
+  });
+
+  it('without the method, the phone form has no WhatsApp button', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderAdminLogin();
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('continue-whatsapp')).toBeNull());
+  });
+});

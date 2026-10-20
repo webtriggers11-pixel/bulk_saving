@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe, type NestApplicationOptions } from '@nestjs/common';
 import helmet from 'helmet';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { HttpExceptionFilter } from './common/http-exception.filter';
@@ -113,6 +113,13 @@ export function trustProxyFrom(env: NodeJS.ProcessEnv = process.env): number | s
   }
   return /^\d+$/.test(raw) ? Number(raw) : raw;
 }
+
+/**
+ * Options the app is CREATED with — `main.ts` and the test helper both pass these, for the
+ * same reason `configureApp` exists. `rawBody`: the WhatsApp webhook's signature is an HMAC
+ * of the bytes Meta sent (FEAT-027, ADR-0038); a re-serialised body would not verify.
+ */
+export const APP_OPTIONS: NestApplicationOptions = { rawBody: true };
 
 /**
  * The ONE place that applies the app's global wiring. `main.ts` and every test

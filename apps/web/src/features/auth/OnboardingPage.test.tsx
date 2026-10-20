@@ -240,7 +240,8 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     expect(await screen.findByTestId('onboarding-offline')).toHaveTextContent('reconnect');
-    expect(mock).not.toHaveBeenCalled();
+    // Nothing was SENT: the only call so far is the page asking which methods exist (FEAT-027).
+    expect(mock.mock.calls.filter(([url]) => !String(url).endsWith('/auth/methods'))).toHaveLength(0);
 
     act(() => {
       onlineManager.setOnline(true);
@@ -248,5 +249,81 @@ describe('OnboardingPage', () => {
     await waitFor(() =>
       expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/request'))).toBe(true),
     );
+  });
+});
+
+/** FEAT-027 (ADR-0038 §8): WhatsApp leads when the server offers it; the SMS code stays one tap away. */
+describe('OnboardingPage — sign in with WhatsApp', () => {
+  const session = {
+    requestId: 'r'.repeat(43),
+    code: 'BS-7KQ2MX',
+    waLink: 'https://wa.me/919876543210?text=x',
+    matchNumber: 47,
+    expiresAt: new Date(Date.now() + 180_000).toISOString(),
+  };
+
+  function installWhatsAppFetch(statuses: unknown[]) {
+    const sent = new Map<string, unknown>();
+    const queue = [...statuses];
+    const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (typeof init?.body === 'string') sent.set(url.replace(/^.*(\/auth\/)/, '$1'), JSON.parse(init.body));
+      if (url.endsWith('/auth/methods')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { whatsapp: true } } }));
+      if (url.endsWith('/auth/wa/start')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: session } }));
+      if (url.includes('/auth/wa/status/')) {
+        const next = queue.length > 1 ? queue.shift() : queue[0];
+        return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: next } }));
+      }
+      if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    return { mock, sent };
+  }
+
+  beforeEach(() => {
+    useAuthStore.getState().logout();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('after the invite code offers WhatsApp or an SMS code; WhatsApp starts a request for that invite code and signs in when confirmed', async () => {
+    const { sent } = installWhatsAppFetch([{ status: 'pending' }, { status: 'confirmed', ...authResult }]);
+    renderOnboarding();
+    // The method list arrives while the person types the invite code; the test waits for it.
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-whatsapp', 'on'));
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('continue-whatsapp'));
+    await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('47'));
+    expect(sent.get('/auth/wa/start')).toEqual({ inviteCode: 'AB12CD34' });
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 6_000 });
+    expect(useAuthStore.getState().accessToken).toBe('access-1');
+  });
+
+  it('"Use an SMS code instead" returns to the phone step, and Back from there returns to the choice', async () => {
+    installWhatsAppFetch([{ status: 'pending' }]);
+    renderOnboarding();
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-whatsapp', 'on'));
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('continue-whatsapp'));
+    await waitFor(() => expect(screen.getByTestId('whatsapp-sign-in')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Use an SMS code instead' }));
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument();
+  });
+
+  it('when the server does not offer WhatsApp, the invite code leads straight to the phone step', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    expect(screen.queryByTestId('continue-whatsapp')).toBeNull();
   });
 });

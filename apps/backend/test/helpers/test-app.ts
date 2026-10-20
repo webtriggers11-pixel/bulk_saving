@@ -2,9 +2,11 @@ import { randomBytes, randomInt } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
-import { configureApp } from '../../src/bootstrap';
+import { APP_OPTIONS, configureApp } from '../../src/bootstrap';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../../src/modules/notifications/notification-channel';
 import { PUSH_SENDER, type PushSender, type PushTarget } from '../../src/modules/push/push-sender';
+import { WHATSAPP_SENDER, type WaButton, type WhatsAppSender } from '../../src/modules/whatsapp/whatsapp-sender';
+import type { WhatsAppLoginMode } from '../../src/modules/whatsapp/whatsapp.config';
 
 /**
  * A notification channel that records what was "delivered" — the ONLY test hook
@@ -49,15 +51,18 @@ export class CapturingChannel implements NotificationChannel {
 export async function createTestApp(
   channel: CapturingChannel,
   pushSender: PushSender = new CapturingPushSender(),
+  waSender: WhatsAppSender = new CapturingWhatsAppSender('off'),
 ): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(NOTIFICATION_CHANNEL)
     .useValue(channel)
     .overrideProvider(PUSH_SENDER)
     .useValue(pushSender)
+    .overrideProvider(WHATSAPP_SENDER)
+    .useValue(waSender)
     .compile();
 
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication(APP_OPTIONS);
   configureApp(app);
   // BUG-014 probe (test-only): an intermittent 404 on a route that exists has hit two
   // gate runs. Record the method, path and the body actually sent, so the next one
@@ -91,6 +96,42 @@ export class CapturingPushSender implements PushSender {
 
   to(endpoint: string): Array<Record<string, unknown>> {
     return this.sent.filter((s) => s.endpoint === endpoint).map((s) => s.payload);
+  }
+}
+
+/**
+ * FEAT-027: a WhatsApp sender that records what the business "replied". `mode` decides
+ * whether the sign-in method is offered at all; the suite default is 'off' (like production
+ * without a Meta app), and the WhatsApp suite passes 'cloud'.
+ */
+export class CapturingWhatsAppSender implements WhatsAppSender {
+  public sent: Array<{ to: string; body: string; buttons: WaButton[] }> = [];
+  public failNext: Error | null = null;
+  readonly businessNumber: string | null;
+
+  constructor(readonly mode: WhatsAppLoginMode) {
+    this.businessNumber = mode === 'off' ? null : '919876543210';
+  }
+
+  async sendButtons(to: string, body: string, buttons: WaButton[]): Promise<void> {
+    this.record(to, body, buttons);
+  }
+
+  async sendText(to: string, body: string): Promise<void> {
+    this.record(to, body, []);
+  }
+
+  private record(to: string, body: string, buttons: WaButton[]): void {
+    if (this.failNext) {
+      const err = this.failNext;
+      this.failNext = null;
+      throw err;
+    }
+    this.sent.push({ to, body, buttons });
+  }
+
+  to(phone: string): Array<{ body: string; buttons: WaButton[] }> {
+    return this.sent.filter((s) => s.to === phone).map(({ body, buttons }) => ({ body, buttons }));
   }
 }
 

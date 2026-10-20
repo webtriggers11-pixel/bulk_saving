@@ -1,0 +1,29 @@
+---
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { featuresIn, sections } from '../content/features';
+const s = sections.find((x) => x.id === 'phone')!;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="split">
+    <FeatureList items={featuresIn('phone')} />
+    <div class="phone" aria-hidden="true">
+      <div class="phone__bar"><span>9:41</span><span>offline · showing what we last saw</span></div>
+      <div class="phone__title">Home</div>
+      <div class="surface--accent card">
+        <div class="card__row"><span class="card__title">3 group buys open</span><span class="pill" style="color: inherit; border-color: currentColor; opacity: .8">Blue Waters</span></div>
+        <div class="card__meta" style="color: inherit; opacity: .85">AC servicing closes in 3 days · Deep cleaning in 5 · Rice, 25 kg in 6</div>
+      </div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">Deep cleaning</span><span class="card__price figure">₹2,400</span></div>
+        <div class="card__row"><span class="card__meta">You: 2 rooms · 7 of 12 rooms</span><span class="card__btn">Change</span></div>
+      </div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">Add to home screen</span><span class="card__btn card__btn--on">Install</span></div>
+        <div class="card__meta">Opens like an app. No store, no update prompts.</div>
+      </div>
+      <div class="tabbar"><span class="is-on">Home</span><span>Services</span><span>Requests</span><span>Profile</span></div>
+    </div>
+  </div>
+</Section>

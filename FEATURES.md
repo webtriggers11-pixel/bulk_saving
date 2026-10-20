@@ -1,8 +1,9 @@
 # Bulk Saving — Product Features
 
 > Source of truth for the product website and PR material. Every feature below is
-> shipped in the app (status from `loop/REGISTRY.md`, 2026-10-19) unless marked
-> otherwise. Each entry gives **what it is**, **how it is used**, and **why it
+> shipped in the app (status from `loop/REGISTRY.md`, 2026-10-20) unless marked
+> otherwise. The website in `apps/site` is generated from this list (FEAT-027) and a
+> test pins its content to the registry. Each entry gives **what it is**, **how it is used**, and **why it
 > exists**, plus the website section it belongs to. Do not claim anything on the
 > website that is listed under "Not yet / do not claim".
 
@@ -40,15 +41,17 @@ sequence, not a list. Each section answers the question the visitor has at that 
 | 3 | Browse, ask, book | What can I get, and how fast? | FEAT-002, 014, 021, 022 |
 | 4 | Never miss a round | Will I know when to act? | FEAT-006, 020 |
 | 5 | Trust and accountability | Is the vendor any good? | FEAT-007, 009, 005 |
-| 6 | Built for a phone in a society | Is it painless to use? | FEAT-001, 008, 012, 013, 016 |
+| 6 | Built for a phone in a society | Is it painless to use? | FEAT-001, 008, 012, 013, 016, 023, 024 |
 | 7 | A look you want to open | Does it feel premium? | FEAT-011, 015, 017, 019 |
-| 8 | For operators (B2B / societies / RWAs) | Can I run this for my society? | FEAT-005, 014, 015, 022 |
+| 8 | For operators (B2B / societies / RWAs) | Can I run this for my society? | FEAT-005, 014, 015, 022, 025 |
 | 9 | Pilot: bulk staples | Is it only services? | FEAT-014 scope change |
 | 10 | Roadmap and honesty | What is not here yet? | Section 6 of this file |
 
 ---
 
 ## 3. Features, grouped by website section
+
+All 26 shipped features (FEAT-001 to FEAT-026) appear below.
 
 ### Section A — The core mechanic: group-buy rounds
 
@@ -162,7 +165,7 @@ sequence, not a list. Each section answers the question the visitor has at that 
   message is never sent for something that did not happen and never sent twice.
   SMS first because it reaches every phone in India without an app install.
 
-#### FEAT-020 · Web push notifications *(in progress, do not claim as shipped)*
+#### FEAT-020 · Web push notifications
 - **What:** Rich push notifications on the installed PWA, worded per event and
   coloured in the resident's chosen accent, that open the right screen when tapped.
   Sent by scalable workers with retry, rate limiting, exact-once delivery and
@@ -171,7 +174,7 @@ sequence, not a list. Each section answers the question the visitor has at that 
   the phone buzzes "Your AC round just unlocked ₹700".
 - **Why:** Installed users deserve the app-like channel, and a burst (200
   participants × 3 devices) must fan out in parallel without double-sends.
-- **Website angle:** describe as "coming soon" until the registry marks it done.
+- **Website angle:** "Your phone buzzes the moment the price drops."
 
 ---
 
@@ -281,6 +284,33 @@ sequence, not a list. Each section answers the question the visitor has at that 
 
 ---
 
+### Section G — Small things that make it feel finished
+
+#### FEAT-023 · Home leads with group buys
+- **What:** The Home screen opens on an accent card with live counts of open rounds and
+  the three rounds closing soonest, each one tap from its pledge sheet.
+- **Why:** The first screen must answer "what can I save on today?" before anything else.
+
+#### FEAT-024 · Confirm before destructive actions
+- **What:** Logging out, leaving a round, removing a rating, withdrawing an ask, and
+  admin cancel or deactivate all pass through one confirm sheet that is always closable
+  and honest when offline.
+- **Why:** A mis-tap must never cost a neighbour their place in a round.
+
+#### FEAT-025 · Server-side pagination
+- **What:** Every list loads a page at a time with an explicit "Show more"; pickers walk
+  all pages.
+- **Why:** Lists stay fast as societies and rounds grow; nothing is silently cut off.
+
+#### FEAT-026 · Dev mode shows the OTP as a toast
+- **What:** In a development build only, the one-time code arrives as a toast at the top
+  of the sign-in screen. The route and bundle path do not exist in production, and the
+  gate fails if they do.
+- **Why:** Faster demos and testing without ever weakening production sign-in.
+- **Website angle:** do not mention; internal tooling.
+
+---
+
 ## 4. Platform guarantees worth saying out loud
 
 These are not single features but are true across the product and belong in a
@@ -319,7 +349,6 @@ These are not single features but are true across the product and belong in a
 
 | Item | Status | Say on the website |
 |------|--------|--------------------|
-| Web push notifications (FEAT-020) | in progress | "Coming soon" |
 | WhatsApp round updates | planned fast-follow behind the same channel interface | "SMS today, WhatsApp next" |
 | Online payments (UPI / Razorpay) | explicit non-goal for v1 | "Pay the vendor directly; we track it" |
 | Vendor app or login | explicit non-goal for v1 | do not mention |
@@ -353,9 +382,13 @@ These are not single features but are true across the product and belong in a
 | FEAT-017 | Vercel-style Mono look | F | done |
 | FEAT-018 | Rounds that feel alive: ladder, countdown, invite, celebrate | A | done |
 | FEAT-019 | One look, seven accents, micro-interactions | F | done |
-| FEAT-020 | Web push notifications | C | in progress |
+| FEAT-020 | Web push notifications | C | done |
 | FEAT-021 | Service to booking in one tap | B | done |
 | FEAT-022 | "Ask for this service" | B | done |
+| FEAT-023 | Home leads with group buys | G | done |
+| FEAT-024 | Confirm before destructive actions | G | done |
+| FEAT-025 | Server-side pagination | G | done |
+| FEAT-026 | Dev-mode OTP toast (internal, not for the website) | G | done |
 
 Specs, plans and acceptance criteria for each: `loop/work/FEAT-NNN-*/`.
 Product scope and non-goals: `BRIEF.md`. Design tokens and look: `DESIGN-SYSTEM.md`.

@@ -1,0 +1,33 @@
+---
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { featuresIn, sections } from '../content/features';
+const s = sections.find((x) => x.id === 'book')!;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="split split--flip">
+    <FeatureList items={featuresIn('book')} />
+    <div class="phone" aria-hidden="true">
+      <div class="phone__bar"><span>9:41</span><span>Blue Waters</span></div>
+      <div class="phone__title">Services</div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">AC servicing</span><span class="pill pill--live">open</span></div>
+        <div class="card__row"><span class="card__meta">6 of 10 ACs · closes in 3 days</span><span class="card__price figure">₹800</span></div>
+      </div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">Pest control</span><span class="card__price figure">₹1,200</span></div>
+        <div class="card__row"><span class="card__meta">4 neighbours asked</span><span class="card__btn card__btn--on">Asked</span></div>
+      </div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">Water tank cleaning</span><span class="card__price figure">₹900</span></div>
+        <div class="card__row"><span class="card__meta">No group buy open yet</span><span class="card__btn">Ask for this</span></div>
+      </div>
+      <div class="surface card">
+        <div class="card__row"><span class="card__title">Rice, 25 kg</span><span class="card__price figure">₹1,450</span></div>
+        <div class="card__row"><span class="card__meta">Bulk staples · one delivery to the gate</span><span class="card__btn">Ask for this</span></div>
+      </div>
+      <div class="tabbar"><span>Home</span><span class="is-on">Services</span><span>Requests</span><span>Profile</span></div>
+    </div>
+  </div>
+</Section>

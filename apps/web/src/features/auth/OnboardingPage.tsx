@@ -7,6 +7,10 @@ import { useAuthStore } from './auth.store';
 import { messageFromError, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
+import { useAuthMethods } from './useAuthMethods';
+import { useWhatsAppLogin } from './useWhatsAppLogin';
+import { WhatsAppSignIn } from './WhatsAppSignIn';
+import { startWhatsAppLogin } from './wa.api';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -15,9 +19,12 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Notice } from '../../components/ui/notice';
 
-type Step = 'invite' | 'phone' | 'otp';
+/** FEAT-027: after the invite code, a choice — WhatsApp (when offered) or the SMS code. */
+type Step = 'invite' | 'choose' | 'whatsapp' | 'phone' | 'otp';
 
-const STEP_ORDER: Step[] = ['invite', 'phone', 'otp'];
+/** The progress bar's three beats: the code, the proof, the way in. */
+const STEP_ORDER = ['invite', 'verify', 'otp'] as const;
+const STEP_INDEX: Record<Step, number> = { invite: 0, choose: 1, whatsapp: 1, phone: 1, otp: 2 };
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -33,6 +40,15 @@ export function OnboardingPage() {
 
   // FEAT-026: in a DEV build, the code the stub channel "sent" arrives as a toast.
   const devOtp = useDevOtp();
+  // FEAT-027 (ADR-0038): sign in with WhatsApp, when this server offers it.
+  const methods = useAuthMethods();
+  const whatsApp = useWhatsAppLogin(
+    () => startWhatsAppLogin({ inviteCode }),
+    (result) => {
+      login({ accessToken: result.accessToken, refreshToken: result.refreshToken, resident: result.resident });
+      navigate('/', { replace: true });
+    },
+  );
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
     mutationFn: () => requestOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim() }),
@@ -60,7 +76,7 @@ export function OnboardingPage() {
   function submitInvite(event: FormEvent) {
     event.preventDefault();
     if (inviteCode.trim().length === 0) return;
-    setStep('phone');
+    setStep(methods.whatsapp ? 'choose' : 'phone');
   }
 
   function submitPhone(event: FormEvent) {
@@ -81,10 +97,10 @@ export function OnboardingPage() {
   // rejects — so "Sending…" / "Verifying…" hung forever on the app's front door.
   const queuedOffline = anyPaused(requestMutation, verifyMutation);
   const verifyError = verifyMutation.isError ? messageFromError(verifyMutation.error) : null;
-  const stepIndex = STEP_ORDER.indexOf(step);
+  const stepIndex = STEP_INDEX[step];
 
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden" data-whatsapp={methods.whatsapp ? 'on' : 'off'}>
       <DevOtpToast code={devOtp.code} onUse={setCode} onDismiss={devOtp.clear} />
       {/* /onboard renders outside the app shell (FEAT-008 AC2), so it brings its own
           ground — the primitive, not a second copy of it. */}
@@ -150,6 +166,29 @@ export function OnboardingPage() {
           </form>
         )}
 
+        {step === 'choose' && (
+          <div className="field" data-testid="onboarding-choose">
+            <h2 className="text-title font-extrabold text-ink">How would you like to sign in?</h2>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">WhatsApp is three taps and nothing to type. An SMS code works on any phone.</p>
+            <Button className="w-full" onClick={() => setStep('whatsapp')} data-testid="continue-whatsapp">
+              <Icon name="chat" size={18} strokeWidth={2.2} />
+              Continue with WhatsApp
+            </Button>
+            <Button variant="secondary" className="mt-3 w-full" onClick={() => setStep('phone')}>
+              Get an SMS code
+            </Button>
+            <p className="mt-4 text-center text-caption font-medium text-ink-muted">
+              <Button variant="link" onClick={() => setStep('invite')}>
+                Back
+              </Button>
+            </p>
+          </div>
+        )}
+
+        {step === 'whatsapp' && (
+          <WhatsAppSignIn login={whatsApp} onUseSms={() => { whatsApp.reset(); setStep('phone'); }} />
+        )}
+
         {step === 'phone' && (
           <form onSubmit={submitPhone} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
@@ -187,7 +226,7 @@ export function OnboardingPage() {
               <Button
                 variant="secondary"
                 className="w-[108px]"
-                onClick={() => setStep('invite')}
+                onClick={() => setStep(methods.whatsapp ? 'choose' : 'invite')}
                 disabled={requestMutation.isPending}
               >
                 Back

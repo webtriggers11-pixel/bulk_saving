@@ -124,6 +124,40 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   PUSH_RATE_PER_SECOND?: number;
+
+  /**
+   * Sign in with WhatsApp (FEAT-027, ADR-0038) — the Cloud API. All five or none: a partial
+   * set refuses to boot (`assertWhatsAppConfigComplete`), in every environment. None set +
+   * the dev echo on = stub mode (the dev simulator plays WhatsApp); none set otherwise = off.
+   */
+  @IsOptional()
+  @Matches(/^\d{5,32}$/, { message: 'WHATSAPP_PHONE_NUMBER_ID must be the numeric phone-number id from the Meta app.' })
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(SECRET_MIN_LENGTH, { message: `WHATSAPP_ACCESS_TOKEN must be at least ${SECRET_MIN_LENGTH} characters.` })
+  WHATSAPP_ACCESS_TOKEN?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(SECRET_MIN_LENGTH, { message: `WHATSAPP_APP_SECRET must be at least ${SECRET_MIN_LENGTH} characters.` })
+  WHATSAPP_APP_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(SECRET_MIN_LENGTH, { message: `WHATSAPP_VERIFY_TOKEN must be at least ${SECRET_MIN_LENGTH} characters.` })
+  WHATSAPP_VERIFY_TOKEN?: string;
+
+  /** The business number people message, as digits with the country code and no `+` (`wa.me/<this>`). */
+  @IsOptional()
+  @Matches(/^[1-9]\d{6,14}$/, { message: 'WHATSAPP_BUSINESS_NUMBER must be digits with the country code and no +, e.g. 919876543210.' })
+  WHATSAPP_BUSINESS_NUMBER?: string;
+
+  /** Graph API version for the Cloud API calls; defaults to the version the ADR was checked against. */
+  @IsOptional()
+  @Matches(/^v\d{1,3}\.\d{1,2}$/, { message: 'WHATSAPP_GRAPH_VERSION must look like v26.0.' })
+  WHATSAPP_GRAPH_VERSION?: string;
 }
 
 /**
@@ -144,8 +178,31 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
       .join('; ');
     throw new Error(`Invalid environment configuration: ${details}`);
   }
+  assertWhatsAppConfigComplete(validated);
   assertProductionSafe(validated);
   return validated;
+}
+
+/** The variables the Cloud API mode needs — together (FEAT-027, ADR-0038). */
+export const WHATSAPP_ENV_KEYS = [
+  'WHATSAPP_PHONE_NUMBER_ID',
+  'WHATSAPP_ACCESS_TOKEN',
+  'WHATSAPP_APP_SECRET',
+  'WHATSAPP_VERIFY_TOKEN',
+  'WHATSAPP_BUSINESS_NUMBER',
+] as const;
+
+/**
+ * All five or none, in EVERY environment. A webhook secret without a token (or the other way
+ * round) would be a sign-in method that half works: the button shows, the start succeeds and
+ * the reply never comes — a failure a resident experiences and nobody is told about.
+ */
+export function assertWhatsAppConfigComplete(env: Pick<EnvironmentVariables, (typeof WHATSAPP_ENV_KEYS)[number]>): void {
+  const present = WHATSAPP_ENV_KEYS.filter((key) => (env[key] ?? '').trim().length > 0);
+  if (present.length > 0 && present.length < WHATSAPP_ENV_KEYS.length) {
+    const missing = WHATSAPP_ENV_KEYS.filter((key) => !present.includes(key));
+    throw new Error(`Invalid environment configuration: WhatsApp sign-in needs all of ${WHATSAPP_ENV_KEYS.join(', ')} — missing ${missing.join(', ')}`);
+  }
 }
 
 /** Secrets shipped in `.env.example`. Never acceptable in production. */
