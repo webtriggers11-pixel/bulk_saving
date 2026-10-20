@@ -331,29 +331,48 @@ export const demoRound = {
   startUnits: 3,
 };
 
-/** The catalog as seeded (FEAT-002 + FEAT-014): 23 services across six categories. */
-export const catalog: { name: string; category: string }[] = [
-  { name: 'AC servicing', category: 'Appliances' },
-  { name: 'RO water purifier service', category: 'Appliances' },
-  { name: 'Washing machine service', category: 'Appliances' },
-  { name: 'Kitchen chimney cleaning', category: 'Appliances' },
-  { name: 'Geyser service', category: 'Appliances' },
-  { name: 'Pest control', category: 'Home Care' },
-  { name: 'Deep cleaning', category: 'Home Care' },
-  { name: 'Bathroom wash', category: 'Home Care' },
-  { name: 'Sofa shampooing', category: 'Home Care' },
-  { name: 'Termite treatment', category: 'Home Care' },
-  { name: 'Bed bug treatment', category: 'Home Care' },
-  { name: 'Mattress cleaning', category: 'Home Care' },
-  { name: 'Painting', category: 'Renovation' },
-  { name: 'Pre-monsoon waterproofing', category: 'Renovation' },
-  { name: 'Water tank cleaning', category: 'Utilities' },
-  { name: 'Inverter battery check', category: 'Utilities' },
-  { name: 'Mosquito mesh fitting', category: 'Utilities' },
-  { name: 'Doorstep car wash', category: 'Vehicle' },
-  { name: 'Car interior detailing', category: 'Vehicle' },
-  { name: 'Bike service', category: 'Vehicle' },
-  { name: 'Basmati rice, 25 kg', category: 'Bulk Staples' },
-  { name: 'Sunflower oil, 15 L', category: 'Bulk Staples' },
-  { name: 'Whole wheat atta, 10 kg', category: 'Bulk Staples' },
+/**
+ * The catalog as seeded (FEAT-002 + FEAT-014): 23 services across six categories, with the
+ * seed's indicative prices and unit nouns (FEAT-010). `round` marks a demo open round
+ * (units pledged, the target, its ladder, hours to the deadline); `asked` a demo count of
+ * neighbours who tapped "Ask for this" (FEAT-022). Both are illustrative states, not live data.
+ */
+export type Category = 'Appliances' | 'Home Care' | 'Renovation' | 'Utilities' | 'Vehicle' | 'Bulk Staples';
+export const CATEGORIES: Category[] = ['Appliances', 'Home Care', 'Renovation', 'Utilities', 'Vehicle', 'Bulk Staples'];
+
+export interface CatalogItem {
+  name: string;
+  category: Category;
+  /** Indicative price per unit, rupees. */
+  price: number;
+  unit: string;
+  units: string;
+  round?: { pledged: number; target: number; tiers: { units: number; price: number }[]; hoursLeft: number };
+  asked?: number;
+}
+
+export const catalog: CatalogItem[] = [
+  { name: 'AC servicing', category: 'Appliances', price: 499, unit: 'AC unit', units: 'AC units', round: { pledged: 6, target: 10, tiers: [{ units: 1, price: 499 }, { units: 5, price: 449 }, { units: 10, price: 399 }], hoursLeft: 52 } },
+  { name: 'RO water purifier service', category: 'Appliances', price: 399, unit: 'purifier', units: 'purifiers' },
+  { name: 'Washing machine service', category: 'Appliances', price: 449, unit: 'machine', units: 'machines', asked: 2 },
+  { name: 'Kitchen chimney cleaning', category: 'Appliances', price: 699, unit: 'chimney', units: 'chimneys' },
+  { name: 'Geyser service', category: 'Appliances', price: 349, unit: 'geyser', units: 'geysers', asked: 5 },
+  { name: 'Pest control', category: 'Home Care', price: 899, unit: 'flat', units: 'flats', asked: 4 },
+  { name: 'Deep cleaning', category: 'Home Care', price: 2499, unit: 'flat', units: 'flats', round: { pledged: 7, target: 12, tiers: [{ units: 1, price: 2499 }, { units: 6, price: 2199 }, { units: 12, price: 1999 }], hoursLeft: 100 } },
+  { name: 'Bathroom wash', category: 'Home Care', price: 599, unit: 'bathroom', units: 'bathrooms' },
+  { name: 'Sofa shampooing', category: 'Home Care', price: 249, unit: 'seat', units: 'seats', asked: 2 },
+  { name: 'Termite treatment', category: 'Home Care', price: 2999, unit: 'flat', units: 'flats', asked: 6 },
+  { name: 'Bed bug treatment', category: 'Home Care', price: 1499, unit: 'flat', units: 'flats' },
+  { name: 'Mattress cleaning', category: 'Home Care', price: 499, unit: 'mattress', units: 'mattresses' },
+  { name: 'Painting', category: 'Renovation', price: 3500, unit: 'room', units: 'rooms' },
+  { name: 'Pre-monsoon waterproofing', category: 'Renovation', price: 2499, unit: 'area', units: 'areas', asked: 3 },
+  { name: 'Water tank cleaning', category: 'Utilities', price: 799, unit: 'tank', units: 'tanks', round: { pledged: 3, target: 8, tiers: [{ units: 1, price: 799 }, { units: 4, price: 699 }, { units: 8, price: 599 }], hoursLeft: 30 } },
+  { name: 'Inverter battery check', category: 'Utilities', price: 299, unit: 'battery', units: 'batteries' },
+  { name: 'Mosquito mesh fitting', category: 'Utilities', price: 650, unit: 'window', units: 'windows', asked: 1 },
+  { name: 'Doorstep car wash', category: 'Vehicle', price: 399, unit: 'car', units: 'cars', round: { pledged: 5, target: 12, tiers: [{ units: 1, price: 399 }, { units: 6, price: 349 }, { units: 12, price: 299 }], hoursLeft: 20 } },
+  { name: 'Car interior detailing', category: 'Vehicle', price: 1499, unit: 'car', units: 'cars' },
+  { name: 'Bike service', category: 'Vehicle', price: 599, unit: 'bike', units: 'bikes', asked: 3 },
+  { name: 'Basmati rice, 25 kg', category: 'Bulk Staples', price: 2750, unit: 'bag', units: 'bags', round: { pledged: 14, target: 20, tiers: [{ units: 1, price: 2750 }, { units: 10, price: 2600 }, { units: 20, price: 2450 }], hoursLeft: 140 } },
+  { name: 'Sunflower oil, 15 L', category: 'Bulk Staples', price: 2100, unit: 'tin', units: 'tins' },
+  { name: 'Whole wheat atta, 10 kg', category: 'Bulk Staples', price: 480, unit: 'bag', units: 'bags', asked: 4 },
 ];

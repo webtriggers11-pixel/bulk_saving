@@ -115,9 +115,11 @@ const nav = [
       import { mountThemeControls } from '../scene/theme';
       import { mountFx } from '../scene/fx';
       import { mountMotion } from '../scene/motion';
+      import { mountCatalog } from '../scene/catalog';
       mountThemeControls();
       mountFx();
       mountMotion();
+      document.querySelectorAll<HTMLElement>('[data-catalog]').forEach(mountCatalog);
     </script>
   </body>
 </html>

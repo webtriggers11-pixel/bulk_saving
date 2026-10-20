@@ -91,6 +91,16 @@ describe('index.astro', () => {
     expect(html).toMatch(/data-story-target="10"/);
   });
 
+  it('the catalog wall: 23 service cards, 7 chips, search, open rounds, asks, the pledge sheet (T5d)', () => {
+    expect((html.match(/data-service="\d+"/g) ?? []).length).toBe(23);
+    expect((html.match(/data-chip="/g) ?? []).length).toBe(7);
+    expect(html).toContain('data-catalog-q');
+    expect((html.match(/data-open-sheet="/g) ?? []).length).toBe(5);
+    expect((html.match(/data-ask="/g) ?? []).length).toBe(18);
+    expect(html).toMatch(/<dialog class="sheet"[^>]*data-sheet/);
+    expect(html).toContain('closes in 2d 4h');
+  });
+
   it('offers all seven accents and a scheme switch', () => {
     for (const a of ['mono', 'ocean', 'aurora', 'bloom', 'sunset', 'forest', 'lagoon']) {
       expect(html).toContain(`data-set-accent="${a}"`);
