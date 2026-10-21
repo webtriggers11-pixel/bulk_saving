@@ -5,12 +5,14 @@ import type { NotificationChannel } from '../notifications/notification-channel'
 import { unsealOtp } from './otp-seal';
 import type { OtpSendJobData } from './otp-send.processor';
 import {
+  ADMIN_OTP_SCOPE,
   OtpService,
   OTP_MAX_ATTEMPTS,
   OTP_RESEND_HOURLY_MAX,
   OTP_RESEND_PHONE_HOURLY_MAX,
   OTP_VERIFY_FAIL_CLIENT_MAX,
   OTP_VERIFY_FAIL_PHONE_MAX,
+  devFixedOtp,
   devOtpEchoEnabled,
   ipBucket,
 } from './otp.service';
@@ -285,6 +287,44 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(devOtpEchoEnabled({ NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: '1', NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'TRUE', NODE_ENV: 'development' })).toBe(false);
+    });
+  });
+
+  // CHORE-026 (ADR-0040): one known code for every resident and admin, locally only.
+  describe('dev fixed OTP', () => {
+    afterEach(() => {
+      delete process.env.OTP_DEV_FIXED_CODE;
+      process.env.NODE_ENV = 'test';
+    });
+
+    it('devFixedOtp applies only with NODE_ENV=development and a 4–6 digit code', () => {
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'development' })).toBe('1111');
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: ' 123456 ', NODE_ENV: 'development' })).toBe('123456');
+      // test keeps random codes; production, staging and unset never get it.
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'test' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'production' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'staging' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111' })).toBeNull();
+      expect(devFixedOtp({ NODE_ENV: 'development' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '111', NODE_ENV: 'development' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: 'abcd', NODE_ENV: 'development' })).toBeNull();
+    });
+
+    it('in development every request sends the fixed code, and it verifies (resident and admin scopes)', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      process.env.NODE_ENV = 'development';
+      for (const scope of [societyId, ADMIN_OTP_SCOPE]) {
+        const phone = uniquePhone();
+        expect(await service.request(scope, phone)).toEqual({ result: 'SENT' });
+        expect(channel.lastCode).toBe('1111');
+        expect(await service.verify(scope, phone, '1111')).toBe('OK');
+      }
+    });
+
+    it('under NODE_ENV=test the variable is ignored — codes stay random 6 digits', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      await service.request(societyId, uniquePhone());
+      expect(channel.lastCode).toMatch(/^\d{6}$/);
     });
   });
 });

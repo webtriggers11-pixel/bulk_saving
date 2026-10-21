@@ -73,6 +73,11 @@ export class EnvironmentVariables {
   @IsString()
   OTP_DEV_LOG?: string;
 
+  /** DEV ONLY (CHORE-026, ADR-0040): every OTP is this code when NODE_ENV=development. */
+  @IsOptional()
+  @IsString()
+  OTP_DEV_FIXED_CODE?: string;
+
   /**
    * Comma-separated CORS allowlist (ADR-0014). Optional: unset in a dev/test
    * environment means "any localhost port"; unset anywhere else (production
@@ -246,6 +251,9 @@ export function assertProductionSafe(env: EnvironmentVariables): void {
   }
   if (env.OTP_DEV_LOG === 'true') {
     problems.push('OTP_DEV_LOG must not be enabled in production — it exposes one-time passcodes');
+  }
+  if (env.OTP_DEV_FIXED_CODE !== undefined && env.OTP_DEV_FIXED_CODE.trim() !== '') {
+    problems.push('OTP_DEV_FIXED_CODE must not be set in production — it makes every one-time passcode the same');
   }
   for (const [name, value] of [
     ['JWT_ACCESS_SECRET', env.JWT_ACCESS_SECRET],

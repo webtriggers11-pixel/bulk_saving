@@ -1581,3 +1581,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 77ce291 (detached worktree, no other gate running): two back-to-back runs, 17:11:18–17:12:25 and 17:12:25–17:13:21, both exit 0 and identical — site 62/62, backend 557/557, web 665/665. No flakes.
 - BUG-023 → done. Catalog chips: the wall keeps its height through the Flip, the page below glides, leavers fade under the movers, rapid clicks stay continuous.
 - By: agent (autonomous)
+
+## 2026-10-21 — CHORE-026 — OPENED; T1 done
+- Owner: "for development use otp always 1111 for everyuser and admin". ADR-0040: `OTP_DEV_FIXED_CODE` (4–6 digits) replaces the random code in `OtpService.request` (the one site both doors use) only when NODE_ENV is exactly `development`; ignored under `test`/unset/staging; `assertProductionSafe` refuses it. Verify DTOs accept `^\d{4,6}$`. Set to `1111` in the local `apps/backend/.env`; documented in `.env.example` and `.env.prod.example`.
+- V1 (main tree): backend 560/561. The one failure is `wa-login.integration.spec.ts` "switched off", which also fails at HEAD with this change stashed, because the local .env now holds the Meta test-number credentials (2026-10-21 live trial). Triaged as BUG-024. New tests: otp.service.spec (gate matrix, resident + admin scopes verify `1111`, test env stays random), env.validation.spec (production refusal), all green.
+- By: agent (autonomous)

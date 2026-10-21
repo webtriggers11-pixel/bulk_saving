@@ -11,7 +11,8 @@ const INVITE_CODE = /^[A-Z0-9]{8}$/;
 // BUG-019: formatting (spaces, dashes, brackets) is allowed in; `normalisePhone` in the
 // controller is the real check and the only thing that decides what is stored.
 const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
-const OTP_CODE = /^\d{6}$/;
+// CHORE-026: 4–6 digits — real codes are 6; a dev fixed code (OTP_DEV_FIXED_CODE) may be 4.
+const OTP_CODE = /^\d{4,6}$/;
 
 export class OtpRequestDto implements OtpRequestBody {
   @Matches(INVITE_CODE, { message: 'inviteCode must be 8 uppercase alphanumeric characters.' })
@@ -28,7 +29,7 @@ export class OtpVerifyDto implements OtpVerifyBody {
   @Matches(PHONE, { message: 'phone must be a valid phone number.' })
   phone!: string;
 
-  @Matches(OTP_CODE, { message: 'code must be exactly 6 digits.' })
+  @Matches(OTP_CODE, { message: 'code must be 4 to 6 digits.' })
   code!: string;
 
   @IsOptional()
@@ -52,7 +53,7 @@ export class AdminOtpVerifyDto implements AdminOtpVerifyBody {
   @Matches(PHONE, { message: 'phone must be a valid phone number.' })
   phone!: string;
 
-  @Matches(OTP_CODE, { message: 'code must be exactly 6 digits.' })
+  @Matches(OTP_CODE, { message: 'code must be 4 to 6 digits.' })
   code!: string;
 }
 

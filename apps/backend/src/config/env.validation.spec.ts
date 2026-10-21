@@ -52,6 +52,11 @@ describe('assertProductionSafe', () => {
     expect(() => assertProductionSafe(env({ OTP_DEV_LOG: 'true' }))).toThrow(/OTP_DEV_LOG/);
   });
 
+  it('refuses to start with a dev fixed OTP — every passcode would be the same (CHORE-026)', () => {
+    expect(() => assertProductionSafe(env({ OTP_DEV_FIXED_CODE: '1111' }))).toThrow(/OTP_DEV_FIXED_CODE/);
+    expect(() => assertProductionSafe(env({ OTP_DEV_FIXED_CODE: '' }))).not.toThrow();
+  });
+
   it('refuses a secret that is still an example value from this repository', () => {
     expect(() => assertProductionSafe(env({ JWT_ACCESS_SECRET: 'change-me-access-secret' }))).toThrow(
       /JWT_ACCESS_SECRET/,
