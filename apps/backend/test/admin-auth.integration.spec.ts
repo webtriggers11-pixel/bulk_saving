@@ -84,7 +84,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(requested.body).toEqual({ success: true, data: { requested: true } });
 
     const code = await waitForSend(sendsBefore, phone);
-    expect(code).toMatch(/^\d{6}$/);
+    expect(code).toMatch(/^\d{4}$/);
     expect(JSON.stringify(requested.body)).not.toContain(code);
 
     const verified = await server()
@@ -164,7 +164,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     const adminPhone = await makeAdmin();
 
     async function guessWithoutRequesting(phone: string) {
-      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '0000' });
       return { status: res.status, body: res.body };
     }
 
@@ -176,7 +176,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     // same for all three — because the admin door stores one for everybody.
     async function requestThenGuess(phone: string) {
       await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '0000' });
       return { status: res.status, body: res.body };
     }
 
@@ -192,7 +192,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     await server().post('/auth/admin/otp/request').send({ phone: unknown }).expect(200);
     const verify = await server()
       .post('/auth/admin/otp/verify')
-      .send({ phone: unknown, code: '123456' })
+      .send({ phone: unknown, code: '1234' })
       .expect(400);
     expect(verify.body.error.code).toBe(ErrorCode.OTP_INVALID);
 

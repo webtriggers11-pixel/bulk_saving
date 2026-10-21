@@ -15,23 +15,23 @@ describe('sealOtp / unsealOtp', () => {
   });
 
   it('round-trips, and the sealed form does not contain the code', () => {
-    const sealed = sealOtp('123456');
-    expect(sealed).not.toContain('123456');
-    expect(unsealOtp(sealed)).toBe('123456');
+    const sealed = sealOtp('1234');
+    expect(sealed).not.toContain('1234');
+    expect(unsealOtp(sealed)).toBe('1234');
   });
 
   it('seals the same code differently every time (random IV)', () => {
-    expect(sealOtp('123456')).not.toBe(sealOtp('123456'));
+    expect(sealOtp('1234')).not.toBe(sealOtp('1234'));
   });
 
   it('refuses a tampered payload rather than returning a wrong code', () => {
-    const sealed = Buffer.from(sealOtp('123456'), 'base64');
+    const sealed = Buffer.from(sealOtp('1234'), 'base64');
     sealed[sealed.length - 1] ^= 0xff;
     expect(() => unsealOtp(sealed.toString('base64'))).toThrow();
   });
 
   it('refuses a payload sealed under another secret', () => {
-    const sealed = sealOtp('123456');
+    const sealed = sealOtp('1234');
     process.env.OTP_HASH_SECRET = 'rotated';
     try {
       expect(() => unsealOtp(sealed)).toThrow();

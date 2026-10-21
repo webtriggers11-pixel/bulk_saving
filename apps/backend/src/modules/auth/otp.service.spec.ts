@@ -57,7 +57,7 @@ describe('OtpService (integration, needs Redis)', () => {
     const phone = uniquePhone();
     const result = await service.request(societyId, phone);
     expect(result.result).toBe('SENT');
-    expect(channel.lastCode).toMatch(/^\d{6}$/);
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
 
     const verify = await service.verify(societyId, phone, channel.lastCode as string);
     expect(verify).toBe('OK');
@@ -66,14 +66,14 @@ describe('OtpService (integration, needs Redis)', () => {
   it('wrong code returns INVALID', async () => {
     const phone = uniquePhone();
     await service.request(societyId, phone);
-    const wrong = channel.lastCode === '000000' ? '111111' : '000000';
+    const wrong = channel.lastCode === '0000' ? '2222' : '0000';
     expect(await service.verify(societyId, phone, wrong)).toBe('INVALID');
   });
 
   it('locks the OTP after the max failed attempts', async () => {
     const phone = uniquePhone();
     await service.request(societyId, phone);
-    const wrong = channel.lastCode === '000000' ? '111111' : '000000';
+    const wrong = channel.lastCode === '0000' ? '2222' : '0000';
 
     const results: string[] = [];
     for (let i = 0; i < OTP_MAX_ATTEMPTS; i += 1) {
@@ -91,7 +91,7 @@ describe('OtpService (integration, needs Redis)', () => {
 
   it('verifying with no outstanding OTP returns EXPIRED', async () => {
     const phone = uniquePhone();
-    expect(await service.verify(societyId, phone, '123456')).toBe('EXPIRED');
+    expect(await service.verify(societyId, phone, '1234')).toBe('EXPIRED');
   });
 
   it('rate-limits an immediate resend (1 / 30s)', async () => {
@@ -164,7 +164,7 @@ describe('OtpService (integration, needs Redis)', () => {
    */
   describe('failed guesses spend a budget, per door (ADR-0027)', () => {
     const at = (clientIp: string) => ({ clientIp });
-    const wrong = (code: string) => (code === '000000' ? '111111' : '000000');
+    const wrong = (code: string) => (code === '0000' ? '2222' : '0000');
 
     /**
      * One wrong guess against a fresh code, from `ip` — the per-code lock never trips.
@@ -252,7 +252,7 @@ describe('OtpService (integration, needs Redis)', () => {
       const phone = uniquePhone();
       await service.request(societyId, phone, at('198.51.100.7'));
       expect(await service.verify(societyId, phone, channel.lastCode as string, at('198.51.100.7'))).toBe('OK');
-      expect(await service.verify(societyId, phone, '123456', at('198.51.100.7'))).toBe('EXPIRED');
+      expect(await service.verify(societyId, phone, '1234', at('198.51.100.7'))).toBe('EXPIRED');
       expect(await redis.get(`otp:verify-fail:${societyId}:${phone}`)).toBeNull();
     });
   });
@@ -297,9 +297,11 @@ describe('OtpService (integration, needs Redis)', () => {
       process.env.NODE_ENV = 'test';
     });
 
-    it('devFixedOtp applies only with NODE_ENV=development and a 4–6 digit code', () => {
+    it('devFixedOtp applies only with NODE_ENV=development and a 4-digit code', () => {
       expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'development' })).toBe('1111');
-      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: ' 123456 ', NODE_ENV: 'development' })).toBe('123456');
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: ' 1234 ', NODE_ENV: 'development' })).toBe('1234');
+      // exactly 4 digits: a 6-digit value is ignored.
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '123456', NODE_ENV: 'development' })).toBeNull();
       // test keeps random codes; production, staging and unset never get it.
       expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'test' })).toBeNull();
       expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'production' })).toBeNull();
@@ -321,10 +323,10 @@ describe('OtpService (integration, needs Redis)', () => {
       }
     });
 
-    it('under NODE_ENV=test the variable is ignored — codes stay random 6 digits', async () => {
+    it('under NODE_ENV=test the variable is ignored — codes stay random 4 digits', async () => {
       process.env.OTP_DEV_FIXED_CODE = '1111';
       await service.request(societyId, uniquePhone());
-      expect(channel.lastCode).toMatch(/^\d{6}$/);
+      expect(channel.lastCode).toMatch(/^\d{4}$/);
     });
   });
 });

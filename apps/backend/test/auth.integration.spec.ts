@@ -47,7 +47,7 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
 
     expect(reqRes.body).toEqual({ success: true, data: { requested: true } });
     expect(JSON.stringify(reqRes.body)).not.toContain(channel.lastCode as string);
-    expect(channel.lastCode).toMatch(/^\d{6}$/);
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
 
     const code = channel.lastCode as string;
     const verifyRes = await request(app.getHttpServer())
@@ -208,7 +208,7 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
         .send({ inviteCode: society.inviteCode, phone })
         .expect(200);
 
-      expect(channel.lastCode).toMatch(/^\d{6}$/);
+      expect(channel.lastCode).toMatch(/^\d{4}$/);
       await request(app.getHttpServer())
         .post('/auth/otp/verify')
         .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })

@@ -26,10 +26,10 @@ describe('GET /dev/otp (integration, needs Redis)', () => {
     try {
       const phone = randomPhone(); // +91…
       const redis = app.get(RedisService);
-      await redis.set(devOtpKey(phone), '424242', 'EX', 30);
+      await redis.set(devOtpKey(phone), '4242', 'EX', 30);
       const bare = phone.replace(/^\+91/, '');
       const res = await request(app.getHttpServer()).get('/dev/otp').query({ phone: `${bare.slice(0, 5)} ${bare.slice(5)}` }).expect(200);
-      expect(res.body).toEqual({ success: true, data: { code: '424242' } });
+      expect(res.body).toEqual({ success: true, data: { code: '4242' } });
       await request(app.getHttpServer()).get('/dev/otp').query({ phone: randomPhone() }).expect(404);
       await request(app.getHttpServer()).get('/dev/otp').query({ phone: 'abc' }).expect(400);
       await request(app.getHttpServer()).get('/dev/otp').expect(400);
@@ -46,7 +46,7 @@ describe('GET /dev/otp (integration, needs Redis)', () => {
     const app = await createTestApp(new CapturingChannel());
     try {
       const phone = randomPhone();
-      await app.get(RedisService).set(devOtpKey(phone), '424242', 'EX', 30);
+      await app.get(RedisService).set(devOtpKey(phone), '4242', 'EX', 30);
       await request(app.getHttpServer()).get('/dev/otp').query({ phone }).expect(404);
       await app.get(RedisService).del(devOtpKey(phone));
     } finally {

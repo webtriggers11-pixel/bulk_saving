@@ -40,13 +40,13 @@ describe('OtpSendProcessor', () => {
 
   it('sends the unsealed code to an administrator', async () => {
     const { processor, job, sent } = setup(true);
-    await expect(processor.process(job('481516'))).resolves.toBeUndefined();
-    expect(sent).toEqual([{ phone: '+919800000001', code: '481516' }]);
+    await expect(processor.process(job('4815'))).resolves.toBeUndefined();
+    expect(sent).toEqual([{ phone: '+919800000001', code: '4815' }]);
   });
 
   it('sends nothing to a number that is not an administrator — the decision the request no longer makes', async () => {
     const { processor, job, sent } = setup(false);
-    await expect(processor.process(job('481516'))).resolves.toBeUndefined();
+    await expect(processor.process(job('4815'))).resolves.toBeUndefined();
     expect(sent).toEqual([]);
   });
 
@@ -54,7 +54,7 @@ describe('OtpSendProcessor', () => {
     const { processor, job } = setup(true, () => {
       throw new Error('malformed provider URL');
     });
-    await expect(processor.process(job('481516'))).rejects.toThrow('malformed provider URL');
+    await expect(processor.process(job('4815'))).rejects.toThrow('malformed provider URL');
   });
 
   it('returns nothing for the events stream to keep — a stored {sent} would mark admin numbers', async () => {
@@ -67,8 +67,8 @@ describe('OtpSendProcessor', () => {
     const { processor, job } = setup(true, async (_phone, code) => {
       throw new Error(`rejected body {"text":"Your code is ${code}"}`);
     });
-    const error = await processor.process(job('481516')).catch((err: Error) => err);
-    expect(String((error as Error).message)).not.toContain('481516');
+    const error = await processor.process(job('4815')).catch((err: Error) => err);
+    expect(String((error as Error).message)).not.toContain('4815');
     expect(String((error as Error).message)).toContain('******');
   });
 });

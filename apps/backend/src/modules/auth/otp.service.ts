@@ -63,14 +63,14 @@ export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean
  * DEV ONLY (CHORE-026, ADR-0040): the fixed OTP every resident and admin gets locally,
  * or null for a random one.
  *
- * `OTP_DEV_FIXED_CODE` (4–6 digits, e.g. `1111`) applies ONLY when NODE_ENV is exactly
+ * `OTP_DEV_FIXED_CODE` (4 digits, e.g. `1111`) applies ONLY when NODE_ENV is exactly
  * `development` — not `test`, so the suites keep exercising random codes, and not unset,
  * same default-closed rule as {@link devOtpEchoEnabled}. Production refuses the variable
  * at boot (`assertProductionSafe`).
  */
 export function devFixedOtp(env: NodeJS.ProcessEnv = process.env): string | null {
   const code = env.OTP_DEV_FIXED_CODE?.trim();
-  if (env.NODE_ENV !== 'development' || !code || !/^\d{4,6}$/.test(code)) return null;
+  if (env.NODE_ENV !== 'development' || !code || !/^\d{4}$/.test(code)) return null;
   return code;
 }
 
@@ -250,7 +250,7 @@ export class OtpService {
   }
 
   /**
-   * Generate + store a 6-digit OTP and dispatch it via the notification channel.
+   * Generate + store a 4-digit OTP (CHORE-026) and dispatch it via the notification channel.
    * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    *
    * `scopeId` is a key namespace, normally a society id.
@@ -316,7 +316,7 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    const code = devFixedOtp() ?? randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const code = devFixedOtp() ?? randomInt(0, 10_000).toString().padStart(4, '0');
     const key = this.otpKey(scopeId, phone);
     await this.redis
       .multi()

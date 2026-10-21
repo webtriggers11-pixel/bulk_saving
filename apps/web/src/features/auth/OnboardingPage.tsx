@@ -208,7 +208,7 @@ export function OnboardingPage() {
         {step === 'phone' && (
           <form onSubmit={submitPhone} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
-            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 6-digit code to verify it.</p>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 4-digit code to verify it.</p>
             <Label htmlFor="phone">Phone number</Label>
             <Input
               emphasis="primary"
@@ -268,7 +268,7 @@ export function OnboardingPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
-            <Label htmlFor="code">6-digit code</Label>
+            <Label htmlFor="code">4-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -277,8 +277,8 @@ export function OnboardingPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="123456"
-              maxLength={6}
+              placeholder="1234"
+              maxLength={4}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"
