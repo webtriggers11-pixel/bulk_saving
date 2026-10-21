@@ -1611,3 +1611,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-10-21 — FEAT-029 — OPENED (triage → planned)
 - Owner: "make this as prper pwa app". Audit: the app icon is a placeholder teal square (and the same file is the maskable icon); the manifest uses pre-Mono colours and has no id, shortcuts or screenshots; no iOS title or launch images; Google Fonts are uncached offline; install only lives under Profile. Spec, plan and tasks in loop/work/FEAT-029-proper-pwa/. No new dependency: `sharp` is already in the lockfile via Astro.
 - By: agent (autonomous)
+
+## 2026-10-21 — FEAT-029 — T1, T2, T3 done
+- T1 (43fcf20): `pwa-assets/mark.svg` → `scripts/gen-pwa-assets.mjs` (sharp through Astro, no new dependency) produces the any/maskable 192/512, apple-touch 180, favicons (32/64/SVG), shortcut icons and 9 iOS launch images; manifest in `src/pwa/manifest.ts` (`satisfies Partial<ManifestOptions>`); iOS title and launch links; Google Fonts runtime caching. `src/pwa/pwa.test.ts` (10). ADR-0041.
+- T2 (923959e): `InstallCard` on Home (Chromium prompt, or iOS Safari Share-sheet steps; dismissal per device). 8 tests.
+- T3 (38d66d5): screenshots captured from the real app via headless Chrome over CDP (seeded resident, dev `1111`): two narrow, one wide. Browser pass on the production preview (:5175): `Page.getAppManifest` errors [], `Page.getInstallabilityErrors` []. FOUND: the service worker never registered on /onboard (unregistered after 25 s), because `useRegisterSW` lived in UpdatePrompt, which only the resident AppShell renders; sign-in and /admin were never covered. Fixed: `ServiceWorkerProvider` at the root in main.tsx; UpdatePrompt reads its context. Re-check: SW active at 0 s, page controlled, caches = precache + google-fonts-css + google-fonts-files, offline relaunch of /onboard renders the app in Geist.
+- V1 at 923959e (worktree, no WHATSAPP_*): exit 0, site 62, backend 566, web 683.
+- By: agent (autonomous)
