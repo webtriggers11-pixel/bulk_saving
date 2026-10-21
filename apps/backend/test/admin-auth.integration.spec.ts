@@ -186,6 +186,23 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(guessedAdmin.body.error.code).toBe(ErrorCode.OTP_INVALID);
   });
 
+  // CHORE-026 V2 r2 P3-5: the dev fixed code passes the OTP check, never the admin check.
+  it('in development, 1111 on the admin door still refuses a number that is not an admin', async () => {
+    const before = { env: process.env.NODE_ENV, code: process.env.OTP_DEV_FIXED_CODE };
+    process.env.NODE_ENV = 'development';
+    process.env.OTP_DEV_FIXED_CODE = '1111';
+    try {
+      const res = await server().post('/auth/admin/otp/verify').send({ phone: randomPhone(), code: '1111' }).expect(403);
+      expect(res.body.error.code).toBe(ErrorCode.NOT_AN_ADMIN);
+      const admin = await server().post('/auth/admin/otp/verify').send({ phone: await makeAdmin(), code: '1111' }).expect(200);
+      expect(admin.body.data.resident.role).toBe('SUPER_ADMIN');
+    } finally {
+      process.env.NODE_ENV = before.env;
+      if (before.code === undefined) delete process.env.OTP_DEV_FIXED_CODE;
+      else process.env.OTP_DEV_FIXED_CODE = before.code;
+    }
+  });
+
   it('never creates a resident, however the admin door is poked (AC4)', async () => {
     const unknown = randomPhone();
     const before = await prisma.resident.count();
