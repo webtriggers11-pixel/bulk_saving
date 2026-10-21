@@ -8,10 +8,10 @@
 `UpdatePrompt.test.tsx` passed only because the stub forces `needRefresh: true`, a state the real configuration never produces.
 
 ## Expected
-A new build waits. Inside the app shell the resident sees "A new version is ready", and Reload activates it. On sign-in and admin the waiting worker takes over at the next launch.
+A new build waits. In the resident shell and the admin layout, "A new version is ready" appears and Reload activates it. On sign-in, the waiting worker takes over once every window of the app is closed.
 
 ## Failing test first
-`src/pwa/pwa.test.ts`: the registration mode is `'prompt'`, and the built worker config doesn't skip waiting. The config moves into `src/pwa/config.ts`, so the test reads what the build uses rather than a regex over vite.config.ts (V2 P2).
+`src/pwa/pwa.test.ts`: the registration mode is `'prompt'`. The built `dist/sw.js` was checked by hand (V2): no unconditional `skipWaiting()` or `clientsClaim`, only the SKIP_WAITING message handler. The config moves into `src/pwa/config.ts`, so the test reads what the build uses rather than a regex over vite.config.ts (V2 P2).
 
 ## Fix
 `registerType: 'prompt'`, exported from `src/pwa/config.ts` together with the runtime-caching rules.

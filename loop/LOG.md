@@ -1630,3 +1630,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P2 `orientation: portrait` would lock admin on tablets → `any`, plus `display_override`. P2, the runtime-caching guard was a regex over vite.config: the rules are now exported and called with API URLs. P2, the brittle main.tsx/AppShell source test: removed (the `registerCalls` test covers it).
 - P3s taken: iPhone Air launch image (10 sizes now); `GSA/` (the Google app) excluded from iOS Safari; the card is a labelled region; iOS copy mentions "⋯"; the gen script fails with a clear message when sharp is missing; the ADR notes navigate-existing and that the safe zone is not test-pinned. Not taken: dark-scheme launch images and a monochrome icon (nice-to-haves, noted).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-21 — BUG-025 + FEAT-029 — V2 round 2: PASS / PASS
+- V2 (code-reviewer subagent, worktree at 678b751, its gate exit 0: site 62, backend 566, web 687). It flipped REGISTER_TYPE back to 'autoUpdate' and saw the regression test fail. Built `dist/sw.js` has no bare skipWaiting or clientsClaim, only the SKIP_WAITING handler. Plugin source confirms onNeedRefresh on `waiting`.
+- P3s taken: `UpdatePrompt` also renders in AdminLayout (+ `AdminLayout.update.test.tsx`); ADR-0041, config.ts and the BUG-025 report now say "once every window is closed", note that Reload reloads the app's other tabs, and no longer claim a built-worker test. The InstallCard comment line is wrapped. Not taken: a root render test pinning the provider mount (covered by the T3 browser pass; noted).
+- By: agent (autonomous) + code-reviewer subagent

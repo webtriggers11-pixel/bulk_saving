@@ -8,8 +8,9 @@ import type { VitePWAOptions } from 'vite-plugin-pwa';
  * BUG-025: 'prompt', never 'autoUpdate'. autoUpdate builds the worker with skipWaiting +
  * clientsClaim and reloads the page when it activates, so `needRefresh` never fired and a
  * half-filled pledge, OTP or admin form was lost on every deploy. With 'prompt' a new build
- * waits: UpdatePrompt's Reload activates it in the app shell, and elsewhere it takes over at
- * the next launch.
+ * waits: UpdatePrompt's Reload activates it (resident shell and admin layout); otherwise it
+ * takes over once every window of the app is closed. Reload in one tab also reloads the
+ * other open tabs of the app (the plugin's `controlling` listener).
  */
 export const REGISTER_TYPE: VitePWAOptions['registerType'] = 'prompt';
 

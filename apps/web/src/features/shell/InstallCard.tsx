@@ -16,8 +16,8 @@ function dismissedBefore(): boolean {
 
 /**
  * Safari on iPhone/iPad — the one browser with no install prompt, where the steps are the
- * Share sheet. Other iOS browsers (CriOS, FxiOS, EdgiOS, the Google app) can't add to the home screen the same
- * way, so they get nothing rather than wrong steps. iPadOS reports a Mac UA with touch.
+ * Share sheet. Other iOS browsers (CriOS, FxiOS, EdgiOS, the Google app) can't add to the
+ * home screen the same way, so they get nothing rather than wrong steps. iPadOS reports a Mac UA with touch.
  */
 export function isIosSafari(nav: Navigator = navigator): boolean {
   const ua = nav.userAgent;

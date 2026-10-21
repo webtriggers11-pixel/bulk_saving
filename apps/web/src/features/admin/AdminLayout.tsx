@@ -7,6 +7,7 @@ import { Icon, type IconName } from '../../components/ui/icon';
 import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { scrollIntoRail } from '../../lib/scroll';
+import { UpdatePrompt } from '../shell/UpdatePrompt';
 
 const NAV_ITEMS: Array<{ to: string; label: string; end: boolean; icon: IconName }> = [
   { to: '/admin', label: 'Dashboard', end: true, icon: 'services' },
@@ -99,6 +100,9 @@ export function AdminLayout({
       </header>
 
       <main className="relative mx-auto flex max-w-6xl flex-col gap-6 px-5 py-7">
+        {/* BUG-025 V2: admins get the "new version" switch too, or a build waits until
+            every window of the app is closed. */}
+        <UpdatePrompt />
         <PageHeader title={title} subtitle={subtitle} action={action} />
         <ErrorBoundary resetKey={pathname} fallback={(reset) => <CrashCard onRetry={reset} />}>
           {children}
