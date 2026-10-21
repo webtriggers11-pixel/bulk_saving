@@ -3,7 +3,19 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-21, OTP length + dev `1111` — CHORE-026, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
+## Latest session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
+
+- **FEAT-029 closed** (owner: "make this as prper pwa app", "web app"). ADR-0041.
+  - **Icons:** `apps/web/pwa-assets/mark.svg` (the app's bolt) feeds `scripts/gen-pwa-assets.mjs`, which uses sharp through Astro, so no new dependency. It renders any/maskable 192/512, apple-touch 180, favicons, shortcut icons and 10 iOS launch images. Re-run it if the mark changes.
+  - **Manifest:** `src/pwa/manifest.ts` (Mono colours, id, shortcuts, screenshots captured from the real app, orientation any). SW settings are in `src/pwa/config.ts`.
+  - **Install card** on Home. **Font runtime caching** (no API caching).
+  - **Browser pass found:** the SW registered only inside the resident AppShell, so sign-in and /admin were never covered. It now registers in `ServiceWorkerProvider` at the root.
+  - V3 at 3c957d7: two identical runs, 21:03:34–21:04:29 and 21:04:29–21:05:22 (site 62, backend 566, web 689).
+- **BUG-025 closed** (found by FEAT-029 V2): `registerType: 'autoUpdate'` reloaded every open page on each deploy and the update prompt could never show. Now `'prompt'`, and UpdatePrompt renders in AppShell and AdminLayout. Verified in Chrome across two builds: the page stays, the prompt shows, and Reload activates the new build.
+- **CDP scripts** for screenshots, the install/offline check and the update flow are in the session scratchpad (`shots/capture.mjs`, `check.mjs`, `update.mjs`). They need the dev API on :3000 and a preview on :5175. Re-capture the screenshots if Home changes visibly.
+- **Not done (nice-to-have):** dark-scheme launch images, a monochrome icon, a root render test pinning the provider mount.
+
+## Earlier on 2026-10-21 (OTP length + dev `1111` — CHORE-026, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
 
 - **CHORE-026 closed** (owner, in order: "for development use otp always 1111 for everyuser and admin" → "only 4 digit" →
   "That code has expired. Request a new one. fix this" → chose **B** on the security trade-off). ADR-0040.

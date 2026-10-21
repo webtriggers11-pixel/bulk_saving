@@ -1635,3 +1635,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (code-reviewer subagent, worktree at 678b751, its gate exit 0: site 62, backend 566, web 687). It flipped REGISTER_TYPE back to 'autoUpdate' and saw the regression test fail. Built `dist/sw.js` has no bare skipWaiting or clientsClaim, only the SKIP_WAITING handler. Plugin source confirms onNeedRefresh on `waiting`.
 - P3s taken: `UpdatePrompt` also renders in AdminLayout (+ `AdminLayout.update.test.tsx`); ADR-0041, config.ts and the BUG-025 report now say "once every window is closed", note that Reload reloads the app's other tabs, and no longer claim a built-worker test. The InstallCard comment line is wrapped. Not taken: a root render test pinning the provider mount (covered by the T3 browser pass; noted).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-21 — FEAT-029 + BUG-025 — V3; CLOSED
+- V3 at 3c957d7 (detached worktree, .env without WHATSAPP_*, no other gate running): two back-to-back runs, 21:03:34–21:04:29 and 21:04:29–21:05:22, both exit 0 and identical: site 62/62, backend 566/566, web 689/689. No flakes. Logs: f29-v3-1.log and f29-v3-2.log in the session scratchpad.
+- FEAT-029 → done. BUG-025 → done.
+- By: agent (autonomous)
