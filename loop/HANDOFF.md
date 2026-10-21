@@ -3,7 +3,26 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-20, the product website — FEAT-028, `apps/site`, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
+## Latest session (2026-10-21, OTP length + dev `1111` — CHORE-026, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
+
+- **CHORE-026 closed** (owner, in order: "for development use otp always 1111 for everyuser and admin" → "only 4 digit" →
+  "That code has expired. Request a new one. fix this" → chose **B** on the security trade-off). ADR-0040.
+  - **Residents' OTPs are 4 digits.** An administrator's number gets **8 digits** through EITHER door: the admin door sends 8 to
+    every caller, and the society door asks `isAdminPhone` for every caller. Both DTOs accept `^(\d{4}|\d{8})$`. This
+    ships CHORE-022 option 1; its option 3 (alerting) is still open.
+  - **Dev:** `OTP_DEV_FIXED_CODE=1111` (in the local `apps/backend/.env`). When `NODE_ENV` is exactly `development`, every OTP
+    is `1111`, and `1111` verifies even with no OTP outstanding. Tests and production ignore it, and production refuses to
+    boot with it set. The admin-role check still runs after verify.
+  - V3 at b757edf: two identical runs, 20:36:10–20:37:07 and 20:37:07–20:38:01 (site 62, backend 566, web 665).
+- **Restart the dev API** to pick it up: `pnpm --filter backend dev`. The :3000 process was started from `dist/main` at 20:21.
+- **New/updated bugs:**
+  - BUG-024: `wa-login.integration.spec.ts` "switched off" fails whenever the local .env holds the Meta test credentials. Run
+    gates in a worktree whose .env has no `WHATSAPP_*` lines (`grep -v '^WHATSAPP_'`).
+  - BUG-014: hit again in V2 r2 (`POST /auth/admin/otp/request` → 404). The probe middleware stayed SILENT, so the 404 never
+    reached the test app. Look at supertest and the HTTP server, not Nest routing.
+- One node segfault (exit 139) mid-gate; a re-run was clean.
+
+## Previous session (2026-10-20, the product website — FEAT-028, `apps/site`, on branch `feat/FEAT-027-whatsapp-tap-to-verify`)
 
 - **BUG-023 closed:** the catalog chips' Flip collapsed the wall (`absolute: true`) so the section below jumped over the cards. Now `absoluteOnLeave` + a wall height tween on the Flip timeline + leavers stacked under movers; `h0` must be read before `Flip.getState` (it ends a running Flip). Guard: `apps/site/src/scene/catalog.flip.test.ts`. V3 at 77ce291, two identical runs (site 62, backend 557, web 665).
 - **CHORE-025 closed (after FEAT-028):** owner saw "lot of empty spaces" — a mini card in every story step (desktop only;

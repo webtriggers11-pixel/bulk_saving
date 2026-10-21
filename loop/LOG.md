@@ -1602,3 +1602,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P1-1, the 404 flake: this is BUG-014 (open since 2026-10-19, the same symptom on the same routes), not CHORE-026, which only added `length` to that call. New evidence added to BUG-014: the run's `[BUG-014 probe]` middleware logged NO 404 for that request, while it logged the expected `/auth/admin/wa/start` one. So the 404 never went through the test app's middleware, which points away from routing inside Nest and at the HTTP layer (supertest's ephemeral listener and the server instance). Logs: v2r2.log (fail) and v2r2b.log (pass) in the session scratchpad. Same handling as BUG-020 under FEAT-028: the flake is tracked in its own bug, and this item closes only on a clean V3 pair.
 - P3-1 (ADR text says budgets apply on verify): reworded. P3-3/P3-4 (cross-society admin length, promotion window): noted in ADR-0040. P3-5: new integration test, where dev `1111` on the admin door gives 403 NOT_AN_ADMIN for a stranger and 200 for an admin. P3-2 (resident label) left as the ADR accepts it.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-10-21 — CHORE-026 — V3; CLOSED
+- V3 at b757edf (detached worktree, .env without WHATSAPP_* per BUG-024, no other gate running): two back-to-back runs, 20:36:10–20:37:07 and 20:37:07–20:38:01, both exit 0 and identical: site 62/62, backend 566/566, web 665/665. No flakes. Logs: v3-1.log and v3-2.log in the session scratchpad.
+- CHORE-026 → done. Residents 4-digit OTPs, an admin's number 8 on both doors; dev `1111` for everyone, always verifies; production refuses the flag.
+- By: agent (autonomous)
