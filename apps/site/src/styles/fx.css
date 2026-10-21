@@ -1,0 +1,399 @@
+/*
+ * FEAT-028: the app's micro-interactions (FEAT-019, ADR-0031), carried over by name —
+ * spotlight, border beam, sparkles, shimmer text, press sparks, the circular scheme reveal
+ * (FEAT-016, ADR-0028) — plus the site's own: a section reveal, a tilt on the phone mocks,
+ * a services ticker, count-up tiles. Every animation is named so the reduced-motion block
+ * in site.css stops it; nothing here moves layout.
+ */
+
+/* (a) Spotlight: a soft disc of the accent follows the pointer across a card. */
+@media (hover: hover) {
+  .card-hover:hover {
+    background-image: radial-gradient(
+      300px circle at var(--mx, 50%) var(--my, 0%),
+      rgb(var(--brand) / 0.08),
+      transparent 65%
+    );
+  }
+}
+
+/* (b) Border beam: a short light travelling round the lead card's edge. */
+@property --beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+.border-beam {
+  position: relative;
+}
+.border-beam::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg 290deg,
+    rgb(var(--brand-2)) 330deg,
+    rgb(var(--brand)) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: beam-spin 7s linear infinite;
+}
+
+/* (c) Sparkles: three small stars that twinkle around a number worth celebrating. */
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(90deg);
+    opacity: 1;
+  }
+}
+.sparkles {
+  position: relative;
+  display: inline-block;
+}
+.sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  color: rgb(var(--brand-2));
+  pointer-events: none;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.sparkle svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+.sparkle:nth-child(1) {
+  top: -8px;
+  left: -10px;
+}
+.sparkle:nth-child(2) {
+  top: -10px;
+  right: -12px;
+  animation-delay: 0.8s;
+}
+.sparkle:nth-child(3) {
+  bottom: -8px;
+  right: 30%;
+  animation-delay: 1.6s;
+  width: 7px;
+  height: 7px;
+}
+.sparkles:not(.is-on) .sparkle {
+  display: none;
+}
+
+/* (d) Shimmer text: a light passing through a figure. Both stops clear 4.5:1. */
+@keyframes shimmer-text {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.ink-shimmer {
+  background-image: linear-gradient(100deg, rgb(var(--ink)) 35%, rgb(var(--brand-ink)) 50%, rgb(var(--ink)) 65%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+/* (e) Press sparks: a primary button throws a few sparks from where it was pressed. */
+@keyframes press-spark {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0);
+    opacity: 0;
+  }
+}
+.spark-host {
+  position: relative;
+  overflow: visible;
+}
+.press-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand-2));
+  pointer-events: none;
+  animation: press-spark 620ms var(--ease-out-soft) forwards;
+}
+
+/* (f) The scheme reveal: a circle growing from the switch (View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* (g) Section reveal: once, as a section first enters. Hidden only when JS is there to
+   show it again (the `.js` class), so the page reads without scripts. */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms var(--ease-entrance),
+    transform 700ms var(--ease-entrance);
+}
+html.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* (h) Tilt: the phone mocks lean toward the pointer. The angles are registered properties
+   so THEY transition, not the transform — the scroll parallax (motion.ts) writes `--py`
+   into the same transform every frame and must not be eased by a transition. */
+@property --rx {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --ry {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.tilt {
+  transform: perspective(1200px) translate3d(0, var(--py, 0px), 0) rotateX(var(--rx)) rotateY(var(--ry));
+  transition:
+    --rx 500ms var(--ease-out-soft),
+    --ry 500ms var(--ease-out-soft);
+}
+
+/* (i) Ticker: the catalog, passing by. Masked edges; pauses on hover. */
+.ticker {
+  --gap: 12px;
+  display: flex;
+  gap: var(--gap);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  padding-block: 6px;
+}
+.ticker__track {
+  display: flex;
+  gap: var(--gap);
+  flex-shrink: 0;
+  min-width: 100%;
+  animation: ticker 48s linear infinite;
+}
+.ticker:hover .ticker__track {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+.ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--hairline);
+  background: rgb(var(--paper));
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: rgb(var(--ink-muted));
+}
+.ticker__item i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+
+/* (j) A lit-price moment: the fill glows for a beat when a tier unlocks. */
+@keyframes unlock-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--brand) / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(var(--brand) / 0);
+  }
+}
+.ladder__track.is-unlock {
+  animation: unlock-glow 900ms var(--ease-out-soft);
+}
+
+/* (k) The scene's frame picks up an accent halo at the top, like the app's lead card. */
+.scene::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: -30% -10% auto;
+  height: 60%;
+  background:
+    radial-gradient(ellipse 45% 55% at 25% 0%, rgb(var(--brand) / 0.14), transparent 70%),
+    radial-gradient(ellipse 45% 55% at 78% 0%, rgb(var(--brand-2) / 0.14), transparent 70%);
+  filter: blur(10px);
+  pointer-events: none;
+  animation: aurora 16s ease-in-out infinite alternate;
+}
+
+/* ---- T5c: the cinematic layer (GSAP + Lenis) ---------------------------------------------- */
+
+/* SplitText pieces (SplitText's own `mask` wraps and sizes the clip; the split is reverted
+   when its tween completes, so none of this outlives the entrance). */
+.char {
+  display: inline-block;
+}
+
+/* The scroll story: captions on the left scroll past a sticky scene on the right. */
+.story {
+  display: grid;
+  gap: 32px;
+}
+@media (min-width: 900px) {
+  .story {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 64px;
+    align-items: start;
+  }
+}
+.story__steps {
+  padding-block: 8vh;
+}
+@media (min-width: 900px) {
+  .story__steps .story__step {
+    min-height: 38vh;
+    align-content: center;
+    padding-block: 7vh;
+  }
+}
+.story__step h3,
+.story__step p {
+  transition:
+    opacity 500ms var(--ease-out-soft),
+    color 500ms var(--ease-out-soft);
+}
+html.gsap .story__step:not(.is-current) h3,
+html.gsap .story__step:not(.is-current) p {
+  opacity: 0.38;
+}
+html.gsap .story__step.is-current::before {
+  color: rgb(var(--on-fill));
+  background: rgb(var(--brand));
+  border-color: rgb(var(--brand));
+}
+.story__stage {
+  position: sticky;
+  top: 84px;
+}
+@media (max-width: 899px) {
+  .story__stage {
+    order: -1;
+    top: 68px;
+    z-index: 2;
+  }
+  /* The stage holds the top ~40% of a phone screen. A caption is its text plus a long
+     bottom gap, so the box lights as its text enters at the bottom (motion.ts: 85%) and stays
+     lit, readable under the stage, until the next caption's text arrives. */
+  .story__steps {
+    padding-block: 2vh 0;
+  }
+  /* Gap ≤ the readable band (stage bottom → the 85% line, ≈ 45vh − text) so a lit caption
+     never slides under the stage before the next one takes over. */
+  .story__steps .story__step {
+    min-height: 0;
+    padding: 0 0 24vh;
+  }
+}
+.story__scene {
+  aspect-ratio: 16 / 11;
+}
+@media (max-width: 899px) {
+  .story__scene {
+    aspect-ratio: 4 / 3;
+  }
+}
+.story__after {
+  margin-top: 56px;
+}
+
+/* The HUD on the story scene: the live round in the corner. */
+.hud {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--hairline);
+  background-color: rgb(var(--paper) / 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 300px;
+}
+.hud__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.hud__units {
+  font-size: 0.8125rem;
+  color: rgb(var(--ink-muted));
+}
+.hud__price {
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.hud__price small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgb(var(--ink-muted));
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+.hud__track {
+  height: 5px;
+}
+.pill.is-closed {
+  color: rgb(var(--brand-ink));
+  border-color: rgb(var(--brand) / 0.5);
+}
+.pill.is-closed::before {
+  background: rgb(var(--brand));
+  animation: none;
+}
+
+/* The CSS entrance on the hero yields to GSAP when it runs. */
+html.gsap .hero__copy > * {
+  animation: none;
+}

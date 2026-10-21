@@ -15,4 +15,5 @@ declare module 'virtual:pwa-register/react' {
   export function setMockRegisterSW(next: { needRefresh?: boolean; offlineReady?: boolean }): void;
   export function resetMockRegisterSW(): void;
   export const updateServiceWorkerCalls: (boolean | undefined)[];
+  export const registerCalls: { count: number };
 }

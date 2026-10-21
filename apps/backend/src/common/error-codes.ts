@@ -34,6 +34,9 @@ export const ErrorCode = {
   ROUND_NOT_DELIVERED: 'ROUND_NOT_DELIVERED',
   // Web push (FEAT-020)
   PUSH_DISABLED: 'PUSH_DISABLED',
+  // Sign in with WhatsApp (FEAT-027, ADR-0038)
+  WHATSAPP_LOGIN_DISABLED: 'WHATSAPP_LOGIN_DISABLED',
+  WHATSAPP_WEBHOOK_SIGNATURE: 'WHATSAPP_WEBHOOK_SIGNATURE',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

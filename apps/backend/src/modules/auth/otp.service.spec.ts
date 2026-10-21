@@ -5,12 +5,14 @@ import type { NotificationChannel } from '../notifications/notification-channel'
 import { unsealOtp } from './otp-seal';
 import type { OtpSendJobData } from './otp-send.processor';
 import {
+  ADMIN_OTP_SCOPE,
   OtpService,
   OTP_MAX_ATTEMPTS,
   OTP_RESEND_HOURLY_MAX,
   OTP_RESEND_PHONE_HOURLY_MAX,
   OTP_VERIFY_FAIL_CLIENT_MAX,
   OTP_VERIFY_FAIL_PHONE_MAX,
+  devFixedOtp,
   devOtpEchoEnabled,
   ipBucket,
 } from './otp.service';
@@ -55,7 +57,7 @@ describe('OtpService (integration, needs Redis)', () => {
     const phone = uniquePhone();
     const result = await service.request(societyId, phone);
     expect(result.result).toBe('SENT');
-    expect(channel.lastCode).toMatch(/^\d{6}$/);
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
 
     const verify = await service.verify(societyId, phone, channel.lastCode as string);
     expect(verify).toBe('OK');
@@ -64,14 +66,14 @@ describe('OtpService (integration, needs Redis)', () => {
   it('wrong code returns INVALID', async () => {
     const phone = uniquePhone();
     await service.request(societyId, phone);
-    const wrong = channel.lastCode === '000000' ? '111111' : '000000';
+    const wrong = channel.lastCode === '0000' ? '2222' : '0000';
     expect(await service.verify(societyId, phone, wrong)).toBe('INVALID');
   });
 
   it('locks the OTP after the max failed attempts', async () => {
     const phone = uniquePhone();
     await service.request(societyId, phone);
-    const wrong = channel.lastCode === '000000' ? '111111' : '000000';
+    const wrong = channel.lastCode === '0000' ? '2222' : '0000';
 
     const results: string[] = [];
     for (let i = 0; i < OTP_MAX_ATTEMPTS; i += 1) {
@@ -89,7 +91,7 @@ describe('OtpService (integration, needs Redis)', () => {
 
   it('verifying with no outstanding OTP returns EXPIRED', async () => {
     const phone = uniquePhone();
-    expect(await service.verify(societyId, phone, '123456')).toBe('EXPIRED');
+    expect(await service.verify(societyId, phone, '1234')).toBe('EXPIRED');
   });
 
   it('rate-limits an immediate resend (1 / 30s)', async () => {
@@ -162,7 +164,7 @@ describe('OtpService (integration, needs Redis)', () => {
    */
   describe('failed guesses spend a budget, per door (ADR-0027)', () => {
     const at = (clientIp: string) => ({ clientIp });
-    const wrong = (code: string) => (code === '000000' ? '111111' : '000000');
+    const wrong = (code: string) => (code === '0000' ? '2222' : '0000');
 
     /**
      * One wrong guess against a fresh code, from `ip` — the per-code lock never trips.
@@ -250,7 +252,7 @@ describe('OtpService (integration, needs Redis)', () => {
       const phone = uniquePhone();
       await service.request(societyId, phone, at('198.51.100.7'));
       expect(await service.verify(societyId, phone, channel.lastCode as string, at('198.51.100.7'))).toBe('OK');
-      expect(await service.verify(societyId, phone, '123456', at('198.51.100.7'))).toBe('EXPIRED');
+      expect(await service.verify(societyId, phone, '1234', at('198.51.100.7'))).toBe('EXPIRED');
       expect(await redis.get(`otp:verify-fail:${societyId}:${phone}`)).toBeNull();
     });
   });
@@ -285,6 +287,85 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(devOtpEchoEnabled({ NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: '1', NODE_ENV: 'development' })).toBe(false);
       expect(devOtpEchoEnabled({ OTP_DEV_LOG: 'TRUE', NODE_ENV: 'development' })).toBe(false);
+    });
+  });
+
+  it('length: 4 digits by default, 8 when asked (an administrator\'s number, CHORE-026)', async () => {
+    await service.request(societyId, uniquePhone());
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
+    const phone = uniquePhone();
+    await service.request(societyId, phone, { length: 8 });
+    expect(channel.lastCode).toMatch(/^\d{8}$/);
+    expect(await service.verify(societyId, phone, channel.lastCode as string)).toBe('OK');
+  });
+
+  it('in development the fixed code wins over the admin length', async () => {
+    process.env.OTP_DEV_FIXED_CODE = '1111';
+    process.env.NODE_ENV = 'development';
+    try {
+      await service.request(ADMIN_OTP_SCOPE, uniquePhone(), { length: 8 });
+      expect(channel.lastCode).toBe('1111');
+    } finally {
+      delete process.env.OTP_DEV_FIXED_CODE;
+      process.env.NODE_ENV = 'test';
+    }
+  });
+
+  // CHORE-026 (ADR-0040): one known code for every resident and admin, locally only.
+  describe('dev fixed OTP', () => {
+    afterEach(() => {
+      delete process.env.OTP_DEV_FIXED_CODE;
+      process.env.NODE_ENV = 'test';
+    });
+
+    it('devFixedOtp applies only with NODE_ENV=development and a 4-digit code', () => {
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'development' })).toBe('1111');
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: ' 1234 ', NODE_ENV: 'development' })).toBe('1234');
+      // exactly 4 digits: a 6-digit value is ignored.
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '123456', NODE_ENV: 'development' })).toBeNull();
+      // test keeps random codes; production, staging and unset never get it.
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'test' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'production' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111', NODE_ENV: 'staging' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '1111' })).toBeNull();
+      expect(devFixedOtp({ NODE_ENV: 'development' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: '111', NODE_ENV: 'development' })).toBeNull();
+      expect(devFixedOtp({ OTP_DEV_FIXED_CODE: 'abcd', NODE_ENV: 'development' })).toBeNull();
+    });
+
+    it('in development every request sends the fixed code, and it verifies (resident and admin scopes)', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      process.env.NODE_ENV = 'development';
+      for (const scope of [societyId, ADMIN_OTP_SCOPE]) {
+        const phone = uniquePhone();
+        expect(await service.request(scope, phone)).toEqual({ result: 'SENT' });
+        expect(channel.lastCode).toBe('1111');
+        expect(await service.verify(scope, phone, '1111')).toBe('OK');
+      }
+    });
+
+    it('in development the fixed code verifies even with no request outstanding, and again after use', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      process.env.NODE_ENV = 'development';
+      const phone = uniquePhone();
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      expect(await service.verify(ADMIN_OTP_SCOPE, phone, '1111')).toBe('OK');
+      await service.request(societyId, phone);
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      // Any other code still goes through the real check.
+      expect(await service.verify(societyId, phone, '2222')).toBe('EXPIRED');
+    });
+
+    it('under NODE_ENV=test the variable is ignored — random codes, and 1111 is not a skeleton key', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      const phone = uniquePhone();
+      expect(await service.verify(societyId, phone, '1111')).toBe('EXPIRED');
+      await service.request(societyId, phone);
+      expect(channel.lastCode).toMatch(/^\d{4}$/);
+      if (channel.lastCode !== '1111') {
+        expect(await service.verify(societyId, phone, '1111')).toBe('INVALID');
+      }
     });
   });
 });

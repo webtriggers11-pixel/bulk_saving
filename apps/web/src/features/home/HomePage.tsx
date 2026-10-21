@@ -12,6 +12,7 @@ import { Card, CardEyebrow, CardTitle } from '../../components/ui/card';
 import { Monogram } from '../../components/ui/monogram';
 import { HomeSkeleton } from './HomeSkeleton';
 import { GroupBuysLead } from './GroupBuysLead';
+import { InstallCard } from '../shell/InstallCard';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -72,6 +73,9 @@ export function HomePage() {
           </Card>
 
           <GroupBuysLead />
+
+          {/* FEAT-029: the install ask, right under the core loop; renders nothing once installed. */}
+          <InstallCard />
 
           <Card padding="none" surface="tint" className="flex min-h-[168px] flex-col p-[18px]">
             {/* BUG-016: the two tiles share one shape — same icon box, an eyebrow each, content

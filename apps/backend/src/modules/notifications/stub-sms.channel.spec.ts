@@ -38,12 +38,12 @@ describe('StubSmsChannel', () => {
     const debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
 
     const channel = new StubSmsChannel(redisStub as unknown as RedisService);
-    await channel.sendOtp('+919812345678', '123456');
+    await channel.sendOtp('+919812345678', '1234');
 
     expect(logSpy).toHaveBeenCalledTimes(1);
     const logged = logSpy.mock.calls[0][0] as string;
     expect(logged).toContain('+XXXXXXXX5678');
-    expect(logged).not.toContain('123456');
+    expect(logged).not.toContain('1234');
     // No DEV-only debug leak when the flag is unset.
     expect(debugSpy).not.toHaveBeenCalled();
   });
@@ -54,10 +54,10 @@ describe('StubSmsChannel', () => {
     const debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
 
     const channel = new StubSmsChannel(redisStub as unknown as RedisService);
-    await channel.sendOtp('+919812345678', '654321');
+    await channel.sendOtp('+919812345678', '6543');
 
     expect(debugSpy).toHaveBeenCalledTimes(1);
-    expect(debugSpy.mock.calls[0][0] as string).toContain('654321');
+    expect(debugSpy.mock.calls[0][0] as string).toContain('6543');
   });
 
   it('generic send redacts the recipient', async () => {

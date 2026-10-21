@@ -12,7 +12,8 @@ const offenders = [];
 for (const file of readdirSync(dir)) {
   if (!file.endsWith('.js')) continue;
   const source = readFileSync(join(dir, file), 'utf8');
-  for (const needle of ['dev/otp', 'fetchDevOtp']) {
+  // FEAT-027: the WhatsApp simulator rides the same gate.
+  for (const needle of ['dev/otp', 'fetchDevOtp', 'dev/whatsapp', 'fetchDevWhatsAppPrompt']) {
     if (source.includes(needle)) offenders.push(`${file}: contains "${needle}"`);
   }
 }
@@ -20,4 +21,4 @@ if (offenders.length > 0) {
   console.error('==> [verify] dev-only code reached the production bundle:\n  ' + offenders.join('\n  '));
   process.exit(1);
 }
-console.log('==> [verify] production bundle carries no dev OTP path');
+console.log('==> [verify] production bundle carries no dev OTP or WhatsApp-simulator path');

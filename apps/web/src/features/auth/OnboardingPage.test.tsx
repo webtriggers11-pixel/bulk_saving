@@ -74,7 +74,7 @@ async function walkToOtpStep(mock: ReturnType<typeof installFetch>) {
   fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919876543210' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
-  await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
   expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/request'))).toBe(true);
 }
 
@@ -100,7 +100,7 @@ describe('OnboardingPage', () => {
 
     await walkToOtpStep(mock);
 
-    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
@@ -115,13 +115,13 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '99999 00201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
 
     const request = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/request'));
     expect(JSON.parse(String(request?.[1]?.body))).toEqual({ inviteCode: 'AB12CD34', phone: '+919999900201' });
     expect(screen.getByText('+919999900201')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     const verify = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
@@ -163,7 +163,7 @@ describe('OnboardingPage', () => {
     const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
       const url = String(args[0]);
       if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
-      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '654321' } } }));
+      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '6543' } } }));
       return Promise.reject(new Error(`unexpected fetch: ${url}`));
     });
     vi.stubGlobal('fetch', mock);
@@ -173,13 +173,13 @@ describe('OnboardingPage', () => {
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
-    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('654321');
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('6543');
     expect(screen.getByRole('status').parentElement).toHaveAttribute('data-placement', 'top');
     expect(screen.getByText('Dev only')).toBeInTheDocument();
     expect(mock.mock.calls.some(([url]) => String(url).includes('/dev/otp?phone=%2B919999900201'))).toBe(true);
 
     fireEvent.click(screen.getByTestId('dev-otp-use'));
-    expect(screen.getByLabelText('6-digit code')).toHaveValue('654321');
+    expect(screen.getByLabelText('4-digit code')).toHaveValue('6543');
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
   });
 
@@ -198,7 +198,7 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
   });
@@ -213,7 +213,7 @@ describe('OnboardingPage', () => {
 
     await walkToOtpStep(mock);
 
-    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '000000' } });
+    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '0000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
@@ -240,7 +240,8 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     expect(await screen.findByTestId('onboarding-offline')).toHaveTextContent('reconnect');
-    expect(mock).not.toHaveBeenCalled();
+    // Nothing was SENT: the only call so far is the page asking which methods exist (FEAT-027).
+    expect(mock.mock.calls.filter(([url]) => !String(url).endsWith('/auth/methods'))).toHaveLength(0);
 
     act(() => {
       onlineManager.setOnline(true);
@@ -248,5 +249,97 @@ describe('OnboardingPage', () => {
     await waitFor(() =>
       expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/request'))).toBe(true),
     );
+  });
+});
+
+/** FEAT-027 (ADR-0038 §8): WhatsApp leads when the server offers it; the SMS code stays one tap away. */
+describe('OnboardingPage — sign in with WhatsApp', () => {
+  const session = {
+    requestId: 'r'.repeat(43),
+    code: 'BS-7KQ2MX',
+    waLink: 'https://wa.me/919876543210?text=x',
+    matchNumber: 47,
+    expiresAt: new Date(Date.now() + 180_000).toISOString(),
+  };
+
+  function installWhatsAppFetch(statuses: unknown[]) {
+    const sent = new Map<string, unknown>();
+    const queue = [...statuses];
+    const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (typeof init?.body === 'string') sent.set(url.replace(/^.*(\/auth\/)/, '$1'), JSON.parse(init.body));
+      if (url.endsWith('/auth/methods')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { whatsapp: true } } }));
+      if (url.endsWith('/auth/wa/start')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: session } }));
+      if (url.includes('/auth/wa/status/')) {
+        const next = queue.length > 1 ? queue.shift() : queue[0];
+        return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: next } }));
+      }
+      if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    return { mock, sent };
+  }
+
+  beforeEach(() => {
+    useAuthStore.getState().logout();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('after the invite code offers WhatsApp or an SMS code; WhatsApp starts a request for that invite code and signs in when confirmed', async () => {
+    const { sent } = installWhatsAppFetch([{ status: 'pending' }, { status: 'confirmed', ...authResult }]);
+    renderOnboarding();
+    // The method list arrives while the person types the invite code; the test waits for it.
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-whatsapp', 'on'));
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('continue-whatsapp'));
+    await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('47'));
+    expect(sent.get('/auth/wa/start')).toEqual({ inviteCode: 'AB12CD34' });
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 15_000 });
+    expect(useAuthStore.getState().accessToken).toBe('access-1');
+  });
+
+  it('"Use an SMS code instead" returns to the phone step, and Back from there returns to the choice', async () => {
+    installWhatsAppFetch([{ status: 'pending' }]);
+    renderOnboarding();
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-whatsapp', 'on'));
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('continue-whatsapp'));
+    await waitFor(() => expect(screen.getByTestId('whatsapp-sign-in')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Use an SMS code instead' }));
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByTestId('onboarding-choose')).toBeInTheDocument();
+  });
+
+  it('a short invite code never reaches the server; the hint appears only when Continue is tried with it (BUG-021)', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'BLUE00' } });
+    // Still typing: no error yet (owner: "give error in invite code only if it's wrong").
+    expect(screen.queryByTestId('invite-hint')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByTestId('invite-hint')).toHaveTextContent('8 letters and numbers');
+    expect(screen.getByLabelText('Invite code')).toBeInTheDocument(); // stayed on the step
+    expect(mock.mock.calls.filter(([url]) => !String(url).endsWith('/auth/methods'))).toHaveLength(0);
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'BLUE0002' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByTestId('invite-hint')).toBeNull();
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+  });
+
+  it('when the server does not offer WhatsApp, the invite code leads straight to the phone step', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    expect(screen.queryByTestId('continue-whatsapp')).toBeNull();
   });
 });

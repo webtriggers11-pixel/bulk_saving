@@ -21,6 +21,20 @@ export class ResidentsService {
   }
 
   /**
+   * The WhatsApp door's upsert (FEAT-027, ADR-0038): like {@link upsertVerified}, except the
+   * name is a DEFAULT — the WhatsApp profile name is used only when the row is being created,
+   * and never overwrites a name the resident chose.
+   */
+  upsertVerifiedDefaultName(societyId: string, phone: string, defaultName: string | null): Promise<Resident> {
+    const now = new Date();
+    return this.prisma.resident.upsert({
+      where: { societyId_phone: { societyId, phone } },
+      create: { societyId, phone, name: defaultName ? defaultName.slice(0, 80) : null, verifiedAt: now },
+      update: { verifiedAt: now },
+    });
+  }
+
+  /**
    * Stamp `verifiedAt` on an EXISTING resident (FEAT-012).
    *
    * The admin sign-in path's counterpart to `upsertVerified` — same effect on the row,
@@ -62,6 +76,11 @@ export class ResidentsService {
       take: 2,
     });
     return admins.length === 1 ? admins[0] : null;
+  }
+
+  /** Does this number belong to any SUPER_ADMIN? Sizes its OTP (CHORE-026, ADR-0040). */
+  async isAdminPhone(phone: string): Promise<boolean> {
+    return (await this.prisma.resident.count({ where: { phone, role: 'SUPER_ADMIN' } })) > 0;
   }
 
   /** Fetch a resident by id — for the trusted authenticated-context path only. */

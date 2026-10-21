@@ -1,0 +1,34 @@
+---
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { featuresIn, sections } from '../content/features';
+const s = sections.find((x) => x.id === 'operators')!;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div style="display:grid; gap:40px">
+    <div aria-hidden="true" style="display:grid; gap:12px">
+      <div class="tiles">
+        <div class="surface tile card-hover"><strong class="figure" data-count-to="14">14</strong><span>rounds open</span></div>
+        <div class="surface tile card-hover"><strong class="figure" data-count-to="3">3</strong><span>closed, need a vendor</span></div>
+        <div class="surface tile card-hover"><strong class="figure" data-count-to="41300" data-prefix="₹">₹41,300</strong><span>to collect this week</span></div>
+        <div class="surface tile card-hover"><strong class="figure" data-count-to="4.5">4.5</strong><span>average rating, 30 days</span></div>
+      </div>
+      <div class="surface" style="padding: 6px 18px">
+        <div class="rows">
+          <div class="row"><div>Residents are asking for<small>per society and service, longest wait first</small></div><div class="small muted">Open a round</div></div>
+          <div class="row"><div>Pest control · Green Meadows<small>9 asked · waiting 12 days</small></div><span class="card__btn card__btn--on">Open</span></div>
+          <div class="row"><div>Water tank cleaning · Blue Waters<small>6 asked · waiting 8 days</small></div><span class="card__btn card__btn--on">Open</span></div>
+          <div class="row"><div>Atta, 10 kg · Blue Waters<small>4 asked · waiting 3 days</small></div><span class="card__btn">Open</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="split">
+      <div>
+        <h3 style="font-size:1.125rem; font-weight:600; letter-spacing:-0.015em; margin-bottom:10px">What the operator does</h3>
+        <p class="muted" style="max-width: 56ch">Sees demand across societies, opens rounds, negotiates with vendors offline, assigns the job at the unlocked price, marks it delivered, and ticks off each flat's payment. Manages the catalog per society and a short vendor list. Lean by design: a phone, this dashboard, and vendor relationships that compound.</p>
+      </div>
+      <FeatureList items={featuresIn('operators')} />
+    </div>
+  </div>
+</Section>

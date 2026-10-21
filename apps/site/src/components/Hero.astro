@@ -1,0 +1,134 @@
+---
+/**
+ * The hero: the claim on the left, the society on the right. The round card under the scene
+ * is the app's own round card (title, price, ladder, meta, actions). hero.ts drives it.
+ */
+import { catalog, demoRound } from '../content/features';
+import { SOCIETY, FLOOR_HEIGHT, allWindows, rupees } from '../scene/model';
+
+const { tiers, service, unitPlural, closesIn, startUnits } = demoRound;
+const target = tiers[tiers.length - 1]?.units ?? 0;
+const best = tiers[tiers.length - 1]?.price ?? 0;
+const single = tiers[0]?.price ?? 0;
+
+// The SVG fallback: the two towers' front faces, windows indexed like the 3D scene so the
+// same lighting order applies. Scene units → viewBox units (×40).
+const S = 40;
+const GROUND = 0.3;
+const wins = allWindows();
+const towers = SOCIETY.map((t, i) => {
+  const h = (GROUND + t.floors * FLOOR_HEIGHT) * S;
+  const w = t.width * S;
+  const x = 60 + (t.x + 1.1) * S * 1.35;
+  return { i, x, w, h, floors: t.floors, perFace: t.perFace, hasTank: i === 0 };
+});
+const H = 400;
+const svgWindows = wins
+  .map((w, idx) => ({ w, idx }))
+  .filter(({ w }) => w.face === 'front')
+  .map(({ w, idx }) => {
+    const t = towers[w.tower]!;
+    const cw = t.w / t.perFace;
+    const x = t.x + w.col * cw + cw / 2 - 5;
+    const y = H - 20 - (GROUND + (w.floor + 0.55) * FLOOR_HEIGHT) * S - 4;
+    return { idx, x, y };
+  });
+---
+
+<section class="wrap hero" id="hero" aria-labelledby="hero-title">
+  <div class="hero__copy">
+    <h1 class="display" id="hero-title">Your whole society, one price.</h1>
+    <p class="lede">
+      Bulk Saving pools what your neighbours already need, from AC servicing to a 25 kg pack of
+      rice, and books it as one job. The more flats join, the less everyone pays. You tap once.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="#how">See how a round works</a>
+      <a class="btn btn--ghost" href="#operators">Bring it to your society</a>
+    </div>
+    <dl class="hero__facts">
+      <div><dt class="figure ink-shimmer">{rupees(single)} → {rupees(best)}</dt><dd>one AC service, alone vs pooled</dd></div>
+      <div><dt class="figure">0</dt><dd>minutes spent organising</dd></div>
+      <div><dt class="figure">1 tap</dt><dd>to pledge, change, or leave</dd></div>
+    </dl>
+  </div>
+
+  <div class="demo" data-hero>
+    <div class="scene" data-scene role="img" aria-label="A society building whose windows light up as neighbours join">
+      <span class="pill pill--live scene__tag">Open round</span>
+      <span class="scene__count" data-count>{startUnits} of {target} {unitPlural}</span>
+      <svg class="scene__fallback" viewBox={`0 0 420 ${H}`} aria-hidden="true">
+        <line class="edge" x1="20" y1={H - 20} x2="400" y2={H - 20}></line>
+        {towers.map((t) => (
+          <g>
+            <rect class="body" x={t.x} y={H - 20 - t.h} width={t.w} height={t.h}></rect>
+            <rect class="edge" x={t.x} y={H - 20 - t.h} width={t.w} height={t.h}></rect>
+            <rect class="edge body" x={t.x - 3} y={H - 20 - t.h - 4} width={t.w + 6} height="4"></rect>
+            {t.hasTank && <rect class="edge body" x={t.x + t.w - 26} y={H - 20 - t.h - 22} width="18" height="18"></rect>}
+          </g>
+        ))}
+        {svgWindows.map((w) => <rect class="w" data-w={w.idx} x={w.x} y={w.y} width="10" height="8" rx="1"></rect>)}
+      </svg>
+    </div>
+
+    <div class="surface round card-hover border-beam">
+      <div class="round__top">
+        <div>
+          <div class="round__title">{service}</div>
+          <div class="round__meta"><span>Blue Waters Society</span><span>closes in {closesIn}</span></div>
+        </div>
+        <div class="round__price figure"><span class="ink-shimmer" data-price>{rupees(single)}</span><small>per AC</small></div>
+      </div>
+
+      <div class="ladder" aria-label="Price ladder">
+        <div class="ladder__track"><div class="ladder__fill" data-fill></div></div>
+        <ol class="ladder__steps">
+          {tiers.map((t, i) => (
+            <li class="ladder__step" data-step={i}>
+              <strong class="figure">{rupees(t.price)}</strong>
+              <span>{i === 0 ? 'alone' : `at ${t.units} ${unitPlural}`}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <p class="round__hint" data-hint aria-live="polite"></p>
+
+      <div class="round__actions">
+        <button class="btn btn--primary" type="button" data-join>Join with 2 ACs</button>
+        <button class="btn btn--ghost" type="button" data-invite>Invite a neighbour</button>
+        <button class="btn btn--quiet" type="button" data-reset hidden>Start over</button>
+      </div>
+      <p class="small muted" data-mine aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="padding-bottom: 8px">
+  <div class="ticker" aria-label="Services in the catalog">
+    {[0, 1].map((copy) => (
+      <div class="ticker__track" aria-hidden={copy === 1 ? 'true' : undefined}>
+        {catalog.map((c) => (
+          <span class="ticker__item"><i aria-hidden="true"></i>{c.name}<span class="soft">{c.category}</span></span>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  dt {
+    display: block;
+    color: rgb(var(--ink));
+    font-weight: 600;
+    font-size: 1.0625rem;
+  }
+  dd {
+    margin: 0;
+  }
+</style>
+
+<script>
+  import { mountHero } from '../scene/hero';
+  document.querySelectorAll<HTMLElement>('[data-hero]').forEach(mountHero);
+</script>

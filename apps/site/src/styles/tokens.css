@@ -1,0 +1,190 @@
+/*
+ * FEAT-028 (ADR-0039 §2): the app's design tokens, copied VERBATIM from
+ * apps/web/src/styles/theme.css — the Mono palette (day and night), the seven accent pairs
+ * (day and night) and the Vercel look's geometry, type and hairlines. `tokens.test.ts` parses
+ * both files and fails on any (selector, variable) pair that differs. Edit the app's file
+ * first, then mirror the change here. Values are space-separated RGB channels, as in the app,
+ * so one variable serves every alpha: `rgb(var(--brand) / 0.15)`.
+ */
+
+/* ---- Mono: the neutral base (ADR-0029) --------------------------------------------- */
+[data-theme='mono'] {
+  --brand: 23 23 23;
+  --brand-deep: 0 0 0;
+  --brand-light: 115 115 115;
+  --brand-ink: 23 23 23;
+  --ink: 23 23 23;
+  --ink-muted: 77 77 77;
+  --ink-soft: 102 102 102;
+  --ground: 250 250 250;
+  --ground-top: 255 255 255;
+  --shadow-rgb: 0 0 0;
+  --line: 0 0 0;
+  --brand-2: 115 115 115;
+}
+
+:root {
+  color-scheme: light;
+  --on-fill: 255 255 255;
+  --paper: 255 255 255;
+  --state-amber: 138 85 18;
+  --state-red: 163 35 24;
+  --state-green: 15 107 69;
+  --state-blue: 27 79 196;
+  --star: 232 169 22;
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --ease-entrance: cubic-bezier(0.22, 0.9, 0.26, 1);
+  --ease-press: cubic-bezier(0.3, 0.9, 0.4, 1);
+  --dur-press: 120ms;
+  --dur-hover: 340ms;
+  --dur-focus: 280ms;
+  --dur-entrance: 780ms;
+}
+
+/* ---- night (ADR-0028): hairlines turn light, state hues lift ----------------------- */
+[data-scheme='dark'] {
+  color-scheme: dark;
+  --sheen: rgb(255 255 255 / 0.08);
+  --shadow-rgb: 0 0 0;
+  --line: 255 255 255;
+  --state-amber: 242 184 92;
+  --state-red: 255 133 120;
+  --state-green: 86 214 154;
+  --state-blue: 132 168 255;
+  --star: 246 194 68;
+}
+
+html[data-scheme='dark'][data-theme='mono'] {
+  --brand: 237 237 237;
+  --brand-deep: 255 255 255;
+  --brand-light: 160 160 160;
+  --brand-ink: 237 237 237;
+  --ink: 237 237 237;
+  --ink-muted: 161 161 161;
+  --ink-soft: 143 143 143;
+  --ground: 10 10 10;
+  --ground-top: 10 10 10;
+  --paper: 17 17 17;
+  --on-fill: 10 10 10;
+  --brand-2: 160 160 160;
+}
+
+/* ---- accents (ADR-0031): seven PAIRS, --brand and its gradient partner --brand-2 ----- */
+[data-accent='mono'] {
+  --brand: 23 23 23;
+  --brand-2: 115 115 115;
+  --brand-deep: 0 0 0;
+  --brand-light: 115 115 115;
+  --brand-ink: 23 23 23;
+}
+[data-accent='ocean'] {
+  --brand: 0 92 210;
+  --brand-2: 6 182 212;
+  --brand-deep: 0 76 180;
+  --brand-light: 96 165 250;
+  --brand-ink: 0 92 210;
+}
+[data-accent='aurora'] {
+  --brand: 124 58 237;
+  --brand-2: 219 39 119;
+  --brand-deep: 91 33 182;
+  --brand-light: 167 139 250;
+  --brand-ink: 109 40 217;
+}
+[data-accent='bloom'] {
+  --brand: 190 24 93;
+  --brand-2: 124 58 237;
+  --brand-deep: 157 23 77;
+  --brand-light: 244 114 182;
+  --brand-ink: 190 24 93;
+}
+[data-accent='sunset'] {
+  --brand: 194 65 12;
+  --brand-2: 219 39 119;
+  --brand-deep: 154 52 18;
+  --brand-light: 251 146 60;
+  --brand-ink: 180 60 10;
+}
+[data-accent='forest'] {
+  --brand: 21 115 55;
+  --brand-2: 13 148 136;
+  --brand-deep: 22 101 52;
+  --brand-light: 74 222 128;
+  --brand-ink: 21 115 55;
+}
+[data-accent='lagoon'] {
+  --brand: 15 118 110;
+  --brand-2: 8 145 178;
+  --brand-deep: 10 84 76;
+  --brand-light: 45 212 191;
+  --brand-ink: 15 118 110;
+}
+html[data-scheme='dark'][data-accent='mono'] {
+  --brand: 237 237 237;
+  --brand-2: 160 160 160;
+  --brand-deep: 255 255 255;
+  --brand-light: 160 160 160;
+  --brand-ink: 237 237 237;
+}
+html[data-scheme='dark'][data-accent='ocean'] {
+  --brand: 82 168 255;
+  --brand-2: 34 211 238;
+  --brand-deep: 125 190 255;
+  --brand-light: 147 197 253;
+  --brand-ink: 125 190 255;
+}
+html[data-scheme='dark'][data-accent='aurora'] {
+  --brand: 167 139 250;
+  --brand-2: 244 114 182;
+  --brand-deep: 196 181 253;
+  --brand-light: 139 92 246;
+  --brand-ink: 196 181 253;
+}
+html[data-scheme='dark'][data-accent='bloom'] {
+  --brand: 244 114 182;
+  --brand-2: 192 132 252;
+  --brand-deep: 249 168 212;
+  --brand-light: 236 72 153;
+  --brand-ink: 249 168 212;
+}
+html[data-scheme='dark'][data-accent='sunset'] {
+  --brand: 251 146 60;
+  --brand-2: 244 114 182;
+  --brand-deep: 253 186 116;
+  --brand-light: 234 88 12;
+  --brand-ink: 253 186 116;
+}
+html[data-scheme='dark'][data-accent='forest'] {
+  --brand: 74 222 128;
+  --brand-2: 45 212 191;
+  --brand-deep: 134 239 172;
+  --brand-light: 22 163 74;
+  --brand-ink: 134 239 172;
+}
+html[data-scheme='dark'][data-accent='lagoon'] {
+  --brand: 45 212 191;
+  --brand-2: 103 232 249;
+  --brand-deep: 94 234 212;
+  --brand-light: 13 148 136;
+  --brand-ink: 94 234 212;
+}
+
+/* ---- the Vercel look (ADR-0029): geometry, type, hairlines ------------------------- */
+html[data-look='vercel'] {
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-inset: 8px;
+  --radius-tile: 10px;
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-label: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --hairline: rgb(var(--line) / 0.09);
+  --hairline-strong: rgb(var(--line) / 0.18);
+  --sheen: transparent;
+  background-image: none;
+}
+html[data-scheme='dark'][data-look='vercel'] {
+  --hairline: rgb(var(--line) / 0.11);
+  --hairline-strong: rgb(var(--line) / 0.22);
+}

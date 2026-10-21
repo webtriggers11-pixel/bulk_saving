@@ -77,7 +77,7 @@ function renderAdminLogin() {
 async function walkToCodeStep() {
   fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900001' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-  await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByLabelText('8-digit code')).toBeInTheDocument());
 }
 
 describe('AdminLoginPage', () => {
@@ -118,13 +118,13 @@ describe('AdminLoginPage', () => {
     // The body carries a phone and nothing else — no society, no invite code (ADR-0003).
     expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
 
-    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('8-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Open dashboard' }));
 
     await waitFor(() => expect(screen.getByText('Admin dashboard')).toBeInTheDocument());
     expect(sentBodies.get('/auth/admin/otp/verify')).toEqual({
       phone: '+919999900001',
-      code: '123456',
+      code: '1234',
     });
     expect(useAuthStore.getState().accessToken).toBe('access-admin');
     expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
@@ -135,7 +135,7 @@ describe('AdminLoginPage', () => {
     renderAdminLogin();
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '09999900001' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('8-digit code')).toBeInTheDocument());
     expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
     // The code step shows the canonical number back.
     expect(screen.getByText('+919999900001')).toBeInTheDocument();
@@ -152,7 +152,7 @@ describe('AdminLoginPage', () => {
   it('DEV build: the queued code arrives as a top toast; "Use a different number" and a resend clear it (FEAT-026)', async () => {
     vi.stubEnv('DEV', true);
     vi.stubEnv('MODE', 'development');
-    let devCode = '409216';
+    let devCode = '4092';
     const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/auth/admin/otp/request')) {
@@ -165,16 +165,16 @@ describe('AdminLoginPage', () => {
     vi.stubGlobal('fetch', mock);
     renderAdminLogin();
     await walkToCodeStep();
-    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('409216');
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('4092');
 
     fireEvent.click(screen.getByRole('button', { name: 'Use a different number' }));
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
 
-    devCode = '515151';
+    devCode = '5151';
     await walkToCodeStep();
-    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('515151');
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('5151');
     fireEvent.click(screen.getByTestId('dev-otp-use'));
-    expect(screen.getByLabelText('6-digit code')).toHaveValue('515151');
+    expect(screen.getByLabelText('8-digit code')).toHaveValue('5151');
     vi.unstubAllEnvs();
   });
 
@@ -190,7 +190,7 @@ describe('AdminLoginPage', () => {
     renderAdminLogin();
 
     await walkToCodeStep();
-    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('8-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Open dashboard' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
@@ -206,5 +206,45 @@ describe('AdminLoginPage', () => {
     // The request endpoint answers identically for everyone, so a resident who lands
     // here would otherwise wait for an SMS that is never sent.
     expect(screen.getByText(/for society administrators/i)).toBeInTheDocument();
+  });
+});
+
+/** FEAT-027 (ADR-0038 §4): the admin door offers WhatsApp too; the role comes back with the tokens. */
+describe('AdminLoginPage — sign in with WhatsApp', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useAuthStore.getState().logout();
+  });
+
+  it('shows "Continue with WhatsApp" only when offered; it starts the admin request with no body and signs in on confirmation', async () => {
+    const session = { requestId: 'r'.repeat(43), code: 'BS-7KQ2MX', waLink: 'https://wa.me/9198?text=x', matchNumber: 82, expiresAt: new Date(Date.now() + 180_000).toISOString() };
+    const bodies = new Map<string, unknown>();
+    const statuses: unknown[] = [{ status: 'awaiting_confirm' }, { status: 'confirmed', ...authResult }];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (typeof init?.body === 'string') bodies.set(url.replace(/^.*(\/auth\/)/, '$1'), JSON.parse(init.body));
+        if (url.endsWith('/auth/methods')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { whatsapp: true } } }));
+        if (url.endsWith('/auth/admin/wa/start')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: session } }));
+        if (url.includes('/auth/wa/status/')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: statuses.length > 1 ? statuses.shift() : statuses[0] } }));
+        return Promise.reject(new Error(`unexpected fetch: ${url}`));
+      }),
+    );
+    renderAdminLogin();
+    const button = await screen.findByTestId('continue-whatsapp');
+    fireEvent.click(button);
+    await waitFor(() => expect(screen.getByTestId('whatsapp-match-number')).toHaveTextContent('82'));
+    expect(bodies.get('/auth/admin/wa/start')).toEqual({});
+    await waitFor(() => expect(screen.getByTestId('whatsapp-status')).toHaveTextContent('Message received'));
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'), { timeout: 15_000 });
+    expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
+  });
+
+  it('without the method, the phone form has no WhatsApp button', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderAdminLogin();
+    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('continue-whatsapp')).toBeNull());
   });
 });

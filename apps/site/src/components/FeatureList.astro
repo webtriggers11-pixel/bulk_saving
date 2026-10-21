@@ -1,0 +1,24 @@
+---
+import type { Feature } from '../content/features';
+interface Props {
+  items: Feature[];
+}
+const { items } = Astro.props;
+---
+
+<ul class="feats">
+  {
+    items.map((f) => (
+      <li class="feat" data-feature={f.id}>
+        <h3>
+          {f.title}
+          {f.status === 'coming-soon' && <span class="pill">Coming soon</span>}
+        </h3>
+        <div class="feat__body">
+          <p>{f.what}</p>
+          <p class="feat__why">{f.why}</p>
+        </div>
+      </li>
+    ))
+  }
+</ul>

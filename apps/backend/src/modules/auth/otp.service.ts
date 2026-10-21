@@ -59,6 +59,30 @@ export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean
   return env.OTP_DEV_LOG === 'true' && (env.NODE_ENV === 'development' || env.NODE_ENV === 'test');
 }
 
+/**
+ * DEV ONLY (CHORE-026, ADR-0040): the fixed OTP every resident and admin gets locally,
+ * or null for a random one.
+ *
+ * `OTP_DEV_FIXED_CODE` (4 digits, e.g. `1111`) applies ONLY when NODE_ENV is exactly
+ * `development` — not `test`, so the suites keep exercising random codes, and not unset,
+ * same default-closed rule as {@link devOtpEchoEnabled}. Production refuses the variable
+ * at boot (`assertProductionSafe`).
+ */
+export function devFixedOtp(env: NodeJS.ProcessEnv = process.env): string | null {
+  const code = env.OTP_DEV_FIXED_CODE?.trim();
+  if (env.NODE_ENV !== 'development' || !code || !/^\d{4}$/.test(code)) return null;
+  return code;
+}
+
+/**
+ * OTP lengths (CHORE-026, ADR-0040): residents get 4 digits (owner: "only 4 digit"); an
+ * administrator's number gets 8 through EITHER door (CHORE-022), because the society door
+ * issues the account's own role and would otherwise be a 4-digit way into SUPER_ADMIN.
+ */
+export const OTP_LENGTH = 4;
+export const ADMIN_OTP_LENGTH = 8;
+export type OtpLength = typeof OTP_LENGTH | typeof ADMIN_OTP_LENGTH;
+
 /** Result of verifying an OTP. */
 export type OtpVerifyResult = 'OK' | 'INVALID' | 'EXPIRED' | 'LOCKED';
 
@@ -235,7 +259,7 @@ export class OtpService {
   }
 
   /**
-   * Generate + store a 6-digit OTP and dispatch it via the notification channel.
+   * Generate + store an OTP ({@link OTP_LENGTH} digits, or `options.length`) and dispatch it via the notification channel.
    * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    *
    * `scopeId` is a key namespace, normally a society id.
@@ -257,7 +281,7 @@ export class OtpService {
   async request(
     scopeId: string,
     phone: string,
-    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string } = {},
+    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string; length?: OtpLength } = {},
   ): Promise<OtpRequestOutcome> {
     // CHORE-016 (ADR-0027): the interval and hourly budgets are per (phone, client), so
     // one machine cannot spend an owner's budget; the ceiling below is per phone. Every
@@ -301,7 +325,8 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const length = options.length ?? OTP_LENGTH;
+    const code = devFixedOtp() ?? randomInt(0, 10 ** length).toString().padStart(length, '0');
     const key = this.otpKey(scopeId, phone);
     await this.redis
       .multi()
@@ -351,6 +376,14 @@ export class OtpService {
     // budgets are the same for every caller, so this says nothing about who owns the
     // phone. A wrong guess spends both budgets; a right one, or a verify with no code
     // outstanding (nothing to guess against), spends nothing. All in one atomic script.
+    // CHORE-026 (ADR-0040): in development the fixed code always verifies, whether or not
+    // a request is still outstanding — no "expired" for a code that never changes. Any
+    // outstanding OTP is consumed so a later request starts clean.
+    const fixed = devFixedOtp();
+    if (fixed !== null && code === fixed) {
+      await this.redis.del(this.otpKey(scopeId, phone));
+      return 'OK';
+    }
     const client = ipBucket(options.clientIp);
     return (await this.redis.eval(
       BUDGETED_VERIFY_LUA,

@@ -1,0 +1,122 @@
+---
+/**
+ * FEAT-028 T5d — "Browse, ask, book" as a living catalog wall: the real 23 services, chips
+ * and a search field that re-arrange the cards (GSAP Flip, the app's server filters mirrored
+ * for the demo), open rounds with a ticking deadline and a price ladder, "Ask for this" that
+ * really toggles, and a tap on an open card that opens the app's pledge sheet in-page.
+ * catalog.ts drives it; catalogModel.ts is the arithmetic.
+ */
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { CATEGORIES, catalog, featuresIn, sections, type Category } from '../content/features';
+import { askLabel, closesIn } from '../scene/catalogModel';
+import { priceFor, rupees } from '../scene/model';
+const s = sections.find((x) => x.id === 'book')!;
+
+// Category glyphs: the app's own 24-box stroke paths (apps/web/src/components/ui/icon.tsx)
+// for car, water and basket; the other three drawn in the same hand.
+const GLYPH: Record<Category, string> = {
+  Appliances: 'M13.6 2.6 4.8 13.4h6L10.4 21.4l8.8-10.8h-6z',
+  'Home Care': 'M12 3.4v3.2M12 17.4v3.2M3.4 12h3.2M17.4 12h3.2M6.2 6.2l2.2 2.2M15.6 15.6l2.2 2.2M17.8 6.2l-2.2 2.2M8.4 15.6l-2.2 2.2M12 9.6a2.4 2.4 0 1 1 0 4.8 2.4 2.4 0 0 1 0-4.8Z',
+  Renovation: 'M4.6 5.4h11.2a1 1 0 0 1 1 1v3.2a1 1 0 0 1-1 1H4.6a1 1 0 0 1-1-1V6.4a1 1 0 0 1 1-1ZM16.8 7.6h2.2a1 1 0 0 1 1 1v3.2l-7.6 1.8V16M12.4 16v4.6',
+  Utilities: 'M12 3.4c3.4 4.2 5.8 7.6 5.8 10.6a5.8 5.8 0 0 1-11.6 0c0-3 2.4-6.4 5.8-10.6ZM9.4 14.4a2.6 2.6 0 0 0 2.6 2.6',
+  Vehicle: 'M4.4 15.6V12l1.8-4.6a1.6 1.6 0 0 1 1.5-1h8.6a1.6 1.6 0 0 1 1.5 1l1.8 4.6v3.6a1 1 0 0 1-1 1H5.4a1 1 0 0 1-1-1ZM4.4 12h15.2M7.4 16.6v1.8M16.6 16.6v1.8',
+  'Bulk Staples': 'M3.6 9.6h16.8l-1.8 9.2a1.6 1.6 0 0 1-1.6 1.2H7a1.6 1.6 0 0 1-1.6-1.2zM8.4 9.6l2.4-5.4M15.6 9.6l-2.4-5.4M9.6 13.2v3.6M14.4 13.2v3.6',
+};
+const open = catalog.filter((c) => c.round).length;
+const asked = catalog.filter((c) => c.asked).length;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="catalog" data-catalog>
+    <div class="catalog__bar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 4a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6ZM20.2 20.2l-4.6-4.6"></path></svg>
+        <input type="search" placeholder="Search 23 services" aria-label="Search services" data-catalog-q autocomplete="off" />
+      </label>
+      <div class="chips" role="group" aria-label="Filter by category">
+        <button class="chip" type="button" data-chip="all" aria-pressed="true">All <span class="chip__n">{catalog.length}</span></button>
+        {CATEGORIES.map((c) => (
+          <button class="chip" type="button" data-chip={c} aria-pressed="false">{c} <span class="chip__n">{catalog.filter((i) => i.category === c).length}</span></button>
+        ))}
+      </div>
+    </div>
+
+    <p class="catalog__count muted small" data-catalog-count aria-live="polite">{catalog.length} services · {open} open rounds · {asked} with neighbours asking</p>
+
+    <ul class="wall" data-catalog-wall>
+      {catalog.map((c, i) => {
+        const r = c.round;
+        const now = r ? priceFor(r.tiers, r.pledged) : c.price;
+        const nextT = r ? r.tiers.find((t) => t.units > r.pledged) : undefined;
+        return (
+          <li
+            class:list={['svc surface card-hover', { 'svc--open border-beam': !!r, 'svc--asked': !r && !!c.asked }]}
+            data-service={i}
+            data-category={c.category}
+            data-name={c.name}
+            data-hours={r?.hoursLeft}
+          >
+            <div class="svc__top">
+              <span class="svc__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={GLYPH[c.category]}></path></svg></span>
+              <span class="svc__cat">{c.category}</span>
+              {r && <span class="pill pill--live">open</span>}
+            </div>
+            <h3 class="svc__name">{c.name}</h3>
+            <div class="svc__price figure">{rupees(now)}<small>per {c.unit}</small></div>
+            {r ? (
+              <div class="svc__round">
+                <div class="ladder__track"><div class="ladder__fill" style={`width:${Math.round((r.pledged / r.target) * 100)}%`}></div></div>
+                <div class="svc__meta"><span>{r.pledged} of {r.target} {c.units}</span><span data-closes>{closesIn(r.hoursLeft)}</span></div>
+                <p class="svc__hint">{nextT ? `${nextT.units - r.pledged} more ${nextT.units - r.pledged === 1 ? 'unlocks' : 'unlock'} ${rupees(nextT.price)}` : 'Best price unlocked'}</p>
+                <button class="btn btn--primary svc__cta" type="button" data-open-sheet={i}>Join this round</button>
+              </div>
+            ) : (
+              <div class="svc__ask">
+                <p class="svc__meta" data-ask-label={i}>{askLabel(c.asked ?? 0, false)}</p>
+                <button class="btn btn--ghost svc__cta" type="button" data-ask={i} aria-pressed="false">Ask for this</button>
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+    <p class="catalog__empty muted" data-catalog-empty hidden>No services match. <button class="btn btn--quiet" type="button" data-catalog-clear>Clear filters</button></p>
+
+    <dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+      <div class="sheet__in">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <div>
+          <h3 id="sheet-title" class="sheet__title" data-sheet-title>AC servicing</h3>
+          <p class="muted small" data-sheet-sub>6 of 10 AC units · closes in 2d 4h</p>
+        </div>
+        <button class="icon-btn" type="button" data-sheet-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6.4 6.4 11.2 11.2M17.6 6.4 6.4 17.6"></path></svg></button>
+      </div>
+      <div class="sheet__row">
+        <span class="sheet__label">How many?</span>
+        <div class="stepper" role="group" aria-label="Units">
+          <button type="button" data-sheet-dec aria-label="One less">−</button>
+          <output class="figure" data-sheet-units>2</output>
+          <button type="button" data-sheet-inc aria-label="One more">+</button>
+        </div>
+      </div>
+      <div class="sheet__row">
+        <span class="sheet__label">Price now</span>
+        <span class="figure" data-sheet-price>₹449 each</span>
+      </div>
+      <div class="sheet__row sheet__row--total">
+        <span class="sheet__label">You pay after the job</span>
+        <span class="figure sheet__total" data-sheet-total>₹898</span>
+      </div>
+      <p class="sheet__hint" data-sheet-hint>2 more AC units unlock ₹399 for everyone</p>
+      <button class="btn btn--primary sheet__join" type="button" data-sheet-join>Join</button>
+      <p class="muted small" style="text-align:center">A demo of the app's pledge sheet. Nothing is sent.</p>
+      </div>
+    </dialog>
+  </div>
+
+  <div class="story__after">
+    <FeatureList items={featuresIn('book')} />
+  </div>
+</Section>

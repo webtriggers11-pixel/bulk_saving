@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { configureApp } from './bootstrap';
+import { APP_OPTIONS, configureApp } from './bootstrap';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, APP_OPTIONS);
   configureApp(app);
   app.enableShutdownHooks();
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;

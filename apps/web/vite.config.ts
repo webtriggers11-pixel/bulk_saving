@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { MANIFEST } from './src/pwa/manifest';
+import { REGISTER_TYPE, RUNTIME_CACHING } from './src/pwa/config';
 
 export default defineConfig({
   // BUG-019: the web now imports a RUNTIME value from @bulk/shared (`normalisePhone`), not
@@ -17,30 +19,27 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'push-sw.js', 'push/*.png'],
-      // FEAT-020 (ADR-0032): the push + notificationclick handlers, loaded into the
-      // generated worker. Caching strategy unchanged (ADR-0015).
-      workbox: { importScripts: ['push-sw.js'] },
-      manifest: {
-        name: 'Bulk Saving',
-        short_name: 'BulkSaving',
-        description: 'Group buying for residential societies',
-        theme_color: '#0f766e',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
-        icons: [
-          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
+      registerType: REGISTER_TYPE,
+      includeAssets: [
+        'favicon.svg',
+        'favicon.png',
+        'favicon-32.png',
+        'apple-touch-icon.png',
+        'push-sw.js',
+        'push/*.png',
+        'shortcuts/*.png',
+        // Not precached: splash/ (iOS reads it once, at Add to Home Screen) and
+        // screenshots/ (only the browser's install sheet uses it).
+      ],
+      workbox: {
+        // FEAT-020 (ADR-0032): the push + notificationclick handlers, loaded into the
+        // generated worker.
+        importScripts: ['push-sw.js'],
+        // FEAT-029 (ADR-0041): Google Fonts only; the rules live in src/pwa/config.ts.
+        runtimeCaching: RUNTIME_CACHING,
       },
+      // FEAT-029: the manifest lives in src/pwa/manifest.ts, where pwa.test.ts reads it.
+      manifest: MANIFEST,
     }),
   ],
   test: {

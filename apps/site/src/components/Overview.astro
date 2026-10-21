@@ -1,0 +1,91 @@
+---
+/**
+ * FEAT-028 T5e — "In one go": what Bulk Saving is, for a visitor (or a financier) who reads
+ * one screen. The mechanic in three tiles, the money flow, the numbers from BRIEF.md, who
+ * gains what (a switcher), and why it holds. Everything here is the product; nothing is a
+ * projection except the calculator, which says so.
+ */
+import { audiences } from '../content/features';
+---
+
+<section class="section reveal" id="overview" aria-labelledby="overview-title">
+  <div class="wrap">
+    <header class="section__head">
+      <h2 id="overview-title">What Bulk Saving is, in one go</h2>
+      <p>A demand-aggregation platform for home services, scoped to one housing society at a time. Neighbours pool what they already need; a negotiated vendor does it as one job; everyone pays the bulk price.</p>
+    </header>
+
+    <ol class="trio3" aria-label="The mechanic">
+      <li class="surface card-hover big">
+        <span class="big__n figure">1</span>
+        <h3>Neighbours pool</h3>
+        <p>A round opens for one service in one society with a deadline. Residents pledge units in one tap: 2 ACs, 3 rooms, one 25 kg bag.</p>
+      </li>
+      <li class="surface card-hover big">
+        <span class="big__n figure">2</span>
+        <h3>The price drops</h3>
+        <p>Thresholds count units. Every pledge moves everyone down the ladder: ₹1,000 alone, ₹800 at five, ₹700 at ten.</p>
+      </li>
+      <li class="surface card-hover big">
+        <span class="big__n figure">3</span>
+        <h3>One job, one visit</h3>
+        <p>At the deadline the round closes itself. The operator books a rated vendor at the unlocked price; residents rate the work.</p>
+      </li>
+    </ol>
+
+    <div class="split" style="margin-top: 40px">
+      <figure class="flow surface" aria-label="How money and work flow">
+        <svg viewBox="0 0 640 200" class="flow__svg" aria-hidden="true">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"></path></marker>
+          </defs>
+          <g class="flow__node"><rect x="20" y="70" width="150" height="80" rx="12"></rect><text x="95" y="104">Residents</text><text x="95" y="126" class="flow__sub">pledge units</text></g>
+          <g class="flow__node flow__node--accent"><rect x="245" y="70" width="150" height="80" rx="12"></rect><text x="320" y="104">The round</text><text x="320" y="126" class="flow__sub">pooled, priced by tier</text></g>
+          <g class="flow__node"><rect x="470" y="70" width="150" height="80" rx="12"></rect><text x="545" y="104">Vendor</text><text x="545" y="126" class="flow__sub">one visit, bulk price</text></g>
+          <path class="flow__line" d="M170 110 H245" marker-end="url(#arr)"></path>
+          <path class="flow__line" d="M395 110 H470" marker-end="url(#arr)"></path>
+          <path class="flow__line flow__line--back" d="M545 150 V182 H95 V150" marker-end="url(#arr)"></path>
+          <g class="flow__node flow__node--op"><rect x="245" y="10" width="150" height="40" rx="10"></rect><text x="320" y="36">Operator</text></g>
+          <path class="flow__line" d="M320 50 V70" marker-end="url(#arr)"></path>
+        </svg>
+        <figcaption class="small muted">The job comes back to the society. The operator sees demand first, negotiates with the number in hand, books the work, and earns a commission on each pooled job. No inventory, no payment risk in the pilot: residents pay the vendor, the app tracks it.</figcaption>
+      </figure>
+
+      <div class="facts">
+        <div class="fact"><strong class="figure ink-shimmer">₹300</strong><span>saved on a ₹1,000 AC service when ten AC units pool, the brief's worked example</span></div>
+        <div class="fact"><strong class="figure">100–400</strong><span>flats in a typical urban society: dozens wanting the same service in the same season</span></div>
+        <div class="fact"><strong class="figure">23</strong><span>services live across six categories, from AC servicing to a 25 kg bag of rice</span></div>
+        <div class="fact"><strong class="figure">4.0+</strong><span>out of 5: the delivered-job rating the pilot must average, the bar every vendor is measured against</span></div>
+      </div>
+    </div>
+
+    <div class="audience" data-audience style="margin-top: 48px">
+      <div class="audience__tabs" role="tablist" aria-label="Who gains what">
+        {audiences.map((a, i) => (
+          <button class="chip" role="tab" type="button" data-audience-tab={a.key} aria-selected={i === 0 ? 'true' : 'false'} aria-controls={`aud-${a.key}`} id={`tab-${a.key}`}>{a.label}</button>
+        ))}
+      </div>
+      {audiences.map((a, i) => (
+        <div class="audience__panel surface" role="tabpanel" id={`aud-${a.key}`} aria-labelledby={`tab-${a.key}`} data-audience-panel={a.key} hidden={i !== 0}>
+          <h3>{a.title}</h3>
+          <ul>{a.points.map((p) => <li>{p}</li>)}</ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="why" style="margin-top: 40px">
+      <h3>Why it holds</h3>
+      <div class="why__grid">
+        <div><strong>The discount is real economics.</strong><p>Pooling removes the vendor's per-job acquisition and travel cost. The lower price is not a subsidy.</p></div>
+        <div><strong>Demand before supply.</strong><p>Residents ask and pledge before anyone buys; the operator negotiates with a number, not a hope.</p></div>
+        <div><strong>Trust is measured.</strong><p>Every delivered job is rated by the people who paid for it; vendors earn the next round.</p></div>
+        <div><strong>Built to multiply.</strong><p>Multi-tenant from the first line: a new society is an invite code; a new service is a row, not a release.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mountAudience } from '../scene/overview';
+  document.querySelectorAll<HTMLElement>('[data-audience]').forEach(mountAudience);
+</script>

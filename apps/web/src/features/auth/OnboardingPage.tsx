@@ -4,9 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { messageFromError, PHONE_HINT } from './error-messages';
+import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
+import { useAuthMethods } from './useAuthMethods';
+import { useWhatsAppLogin } from './useWhatsAppLogin';
+import { WhatsAppSignIn } from './WhatsAppSignIn';
+import { startWhatsAppLogin } from './wa.api';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -15,9 +19,12 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Notice } from '../../components/ui/notice';
 
-type Step = 'invite' | 'phone' | 'otp';
+/** FEAT-027: after the invite code, a choice — WhatsApp (when offered) or the SMS code. */
+type Step = 'invite' | 'choose' | 'whatsapp' | 'phone' | 'otp';
 
-const STEP_ORDER: Step[] = ['invite', 'phone', 'otp'];
+/** The progress bar's three beats: the code, the proof, the way in. */
+const STEP_ORDER = ['invite', 'verify', 'otp'] as const;
+const STEP_INDEX: Record<Step, number> = { invite: 0, choose: 1, whatsapp: 1, phone: 1, otp: 2 };
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -25,6 +32,12 @@ export function OnboardingPage() {
 
   const [step, setStep] = useState<Step>('invite');
   const [inviteCode, setInviteCode] = useState('');
+  // BUG-021: a code that cannot be right never reaches the server. The hint appears only
+  // when someone tries to continue with one (owner: "give error in invite code only if it's
+  // wrong") — never while they are still typing.
+  const inviteWellFormed = INVITE_CODE_SHAPE.test(inviteCode);
+  const [inviteTried, setInviteTried] = useState(false);
+  const inviteImplausible = inviteTried && !inviteWellFormed;
   const [phone, setPhone] = useState('');
   // Typed something, but not yet a number the server will accept.
   const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
@@ -33,6 +46,15 @@ export function OnboardingPage() {
 
   // FEAT-026: in a DEV build, the code the stub channel "sent" arrives as a toast.
   const devOtp = useDevOtp();
+  // FEAT-027 (ADR-0038): sign in with WhatsApp, when this server offers it.
+  const methods = useAuthMethods();
+  const whatsApp = useWhatsAppLogin(
+    () => startWhatsAppLogin({ inviteCode }),
+    (result) => {
+      login({ accessToken: result.accessToken, refreshToken: result.refreshToken, resident: result.resident });
+      navigate('/', { replace: true });
+    },
+  );
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
     mutationFn: () => requestOtp({ inviteCode, phone: normalisePhone(phone) ?? phone.trim() }),
@@ -59,8 +81,12 @@ export function OnboardingPage() {
 
   function submitInvite(event: FormEvent) {
     event.preventDefault();
-    if (inviteCode.trim().length === 0) return;
-    setStep('phone');
+    if (!inviteWellFormed) {
+      setInviteTried(true);
+      return;
+    }
+    setInviteTried(false);
+    setStep(methods.whatsapp ? 'choose' : 'phone');
   }
 
   function submitPhone(event: FormEvent) {
@@ -81,10 +107,10 @@ export function OnboardingPage() {
   // rejects — so "Sending…" / "Verifying…" hung forever on the app's front door.
   const queuedOffline = anyPaused(requestMutation, verifyMutation);
   const verifyError = verifyMutation.isError ? messageFromError(verifyMutation.error) : null;
-  const stepIndex = STEP_ORDER.indexOf(step);
+  const stepIndex = STEP_INDEX[step];
 
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden" data-whatsapp={methods.whatsapp ? 'on' : 'off'}>
       <DevOtpToast code={devOtp.code} onUse={setCode} onDismiss={devOtp.clear} />
       {/* /onboard renders outside the app shell (FEAT-008 AC2), so it brings its own
           ground — the primitive, not a second copy of it. */}
@@ -142,18 +168,47 @@ export function OnboardingPage() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               className="num text-center"
+              aria-describedby={inviteImplausible ? 'invite-hint' : undefined}
             />
-            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.trim().length === 0}>
+            {inviteImplausible && (
+              <p id="invite-hint" role="alert" className="mt-2 text-caption text-ink-muted" data-testid="invite-hint">
+                {INVITE_HINT}
+              </p>
+            )}
+            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.length === 0}>
               Continue
               <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
             </Button>
           </form>
         )}
 
+        {step === 'choose' && (
+          <div className="field" data-testid="onboarding-choose">
+            <h2 className="text-title font-extrabold text-ink">How would you like to sign in?</h2>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">WhatsApp is three taps and nothing to type. An SMS code works on any phone.</p>
+            <Button className="w-full" onClick={() => setStep('whatsapp')} data-testid="continue-whatsapp">
+              <Icon name="chat" size={18} strokeWidth={2.2} />
+              Continue with WhatsApp
+            </Button>
+            <Button variant="secondary" className="mt-3 w-full" onClick={() => setStep('phone')}>
+              Get an SMS code
+            </Button>
+            <p className="mt-4 text-center text-caption font-medium text-ink-muted">
+              <Button variant="link" onClick={() => setStep('invite')}>
+                Back
+              </Button>
+            </p>
+          </div>
+        )}
+
+        {step === 'whatsapp' && (
+          <WhatsAppSignIn login={whatsApp} onUseSms={() => { whatsApp.reset(); setStep('phone'); }} />
+        )}
+
         {step === 'phone' && (
           <form onSubmit={submitPhone} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
-            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 6-digit code to verify it.</p>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 4-digit code to verify it.</p>
             <Label htmlFor="phone">Phone number</Label>
             <Input
               emphasis="primary"
@@ -187,7 +242,7 @@ export function OnboardingPage() {
               <Button
                 variant="secondary"
                 className="w-[108px]"
-                onClick={() => setStep('invite')}
+                onClick={() => setStep(methods.whatsapp ? 'choose' : 'invite')}
                 disabled={requestMutation.isPending}
               >
                 Back
@@ -213,7 +268,7 @@ export function OnboardingPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
-            <Label htmlFor="code">6-digit code</Label>
+            <Label htmlFor="code">4-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -222,8 +277,9 @@ export function OnboardingPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="123456"
-              maxLength={6}
+              placeholder="1234"
+              // An administrator's number gets 8 digits here too (CHORE-026, ADR-0040).
+              maxLength={8}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"

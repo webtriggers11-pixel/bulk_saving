@@ -21,6 +21,9 @@ When a provider is picked:
    to match registered templates before a real sender ID will carry them.
 4. The stub is also where the dev OTP affordance lives, so swapping it removes that too.
 
+**Sign in with WhatsApp (FEAT-027, ADR-0038) is the ₹0-per-login alternative**, and it needs
+no SMS provider — but it needs a Meta app. See §2a.
+
 Also worth deciding before real residents arrive: `Notification` has no `societyId`
 (ADR-0013 amendment), and lifecycle SMS delivery is **at-least-once**, so a resident can
 occasionally receive a duplicate.
@@ -75,6 +78,48 @@ the global throttler; without it, every caller looks like the proxy and shares o
 
 `VITE_API_URL` is baked into the PWA at **build** time, so changing it means rebuilding the
 web image.
+
+## 2a. Sign in with WhatsApp ("Tap to verify")
+
+> Step-by-step runbook with links (test number today, production later, troubleshooting): `WHATSAPP-SETUP.md`.
+
+The resident sends *us* a pre-filled WhatsApp message; we reply with a number-match prompt;
+the browser collects the usual tokens. User-initiated conversations are free, so this costs
+₹0 per login (ADR-0038). It is **off** until all five variables are set — a partial set
+refuses to boot:
+
+```
+WHATSAPP_PHONE_NUMBER_ID   numeric id of the business number (Meta app → WhatsApp → API Setup)
+WHATSAPP_ACCESS_TOKEN      a System User token with whatsapp_business_messaging
+WHATSAPP_APP_SECRET        the app's App Secret — every webhook delivery is checked against it
+WHATSAPP_VERIFY_TOKEN      any random string; the same one goes in the webhook's "Verify token"
+WHATSAPP_BUSINESS_NUMBER   digits with the country code, no + (what wa.me/<number> opens)
+WHATSAPP_GRAPH_VERSION     optional, default v26.0
+```
+
+Then, in the Meta app's WhatsApp → Configuration: webhook callback URL
+`https://<api-host>/webhooks/whatsapp`, the verify token above, and subscribe to the
+**messages** field. The API answers the handshake itself (`GET` echoes `hub.challenge`), and
+refuses any `POST` whose `X-Hub-Signature-256` does not match the raw body under the App
+Secret. The webhook must be reachable from the internet over HTTPS — a Wi-Fi-only laptop
+cannot receive it without a tunnel.
+
+**Try it with real WhatsApp before business verification (about 30 minutes):** a Meta app in
+development mode comes with a free **test phone number** that can message up to five
+verified recipient numbers and receives webhooks like a real one. Use its phone-number id,
+the temporary access token (24 h — fine for a trial, never for production), the app secret,
+and the test number itself as `WHATSAPP_BUSINESS_NUMBER`. Expose the local API with a tunnel
+(`cloudflared tunnel --url http://localhost:3000` or `ngrok http 3000`) and register
+`https://<tunnel-host>/webhooks/whatsapp`. Add your own phone as a recipient in the Meta
+dashboard, open the PWA on it, and go through the three taps. Business verification, a
+display name and a production System User token are what turn this into the real thing
+(BRIEF R1).
+
+**Without a Meta app**, the whole flow still runs locally in stub mode (`OTP_DEV_LOG=true`,
+`NODE_ENV=development`, none of the five set): the DEV build shows a "Simulate WhatsApp"
+panel on the sign-in step that plays the phone's side against the same code the webhook
+calls. The production bundle carries none of that (gate step), and production can never be
+in stub mode (the dev echo is refused there).
 
 ## 3. Migrate, then start
 
@@ -138,3 +183,13 @@ Images are immutable, so redeploy the previous tag. **Migrations are not automat
 reversible**: every migration so far is additive, so an older API runs against a newer schema,
 but that is a property of the current history rather than a guarantee. Check before relying
 on it.
+
+## 8. The product website (`apps/site`, FEAT-028)
+
+A static site, separate from the API and the PWA. `pnpm --filter site build` writes
+`apps/site/dist/` — plain HTML, CSS, and two JS chunks (the page, and the lazy Three.js
+scene). Serve that folder from any static host (nginx, a CDN, GitHub Pages); nothing runs
+server-side. Set the real domain in `apps/site/astro.config.mjs` (`site`) before the first
+deploy: it feeds the canonical and Open Graph URLs. The site reads the same localStorage
+keys as the app (`bulk:scheme`, `bulk:palette`), so hosting it on the app's origin gives a
+signed-in resident their own colour; on another origin it simply defaults to Mono.

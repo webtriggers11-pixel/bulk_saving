@@ -1,4 +1,4 @@
-import { assertProductionSafe, validateEnv, type EnvironmentVariables } from './env.validation';
+import { assertProductionSafe, assertWhatsAppConfigComplete, validateEnv, type EnvironmentVariables } from './env.validation';
 
 /** A config that passes the base schema, so these tests isolate the production rules. */
 function env(overrides: Partial<EnvironmentVariables> = {}): EnvironmentVariables {
@@ -50,6 +50,11 @@ describe('assertProductionSafe', () => {
 
   it('refuses to start with the dev OTP flag on — it leaks passcodes into logs', () => {
     expect(() => assertProductionSafe(env({ OTP_DEV_LOG: 'true' }))).toThrow(/OTP_DEV_LOG/);
+  });
+
+  it('refuses to start with a dev fixed OTP — every passcode would be the same (CHORE-026)', () => {
+    expect(() => assertProductionSafe(env({ OTP_DEV_FIXED_CODE: '1111' }))).toThrow(/OTP_DEV_FIXED_CODE/);
+    expect(() => assertProductionSafe(env({ OTP_DEV_FIXED_CODE: '' }))).not.toThrow();
   });
 
   it('refuses a secret that is still an example value from this repository', () => {
@@ -136,5 +141,44 @@ describe('VAPID key format (FEAT-020 V2 P3)', () => {
     expect(() =>
       validateEnv({ ...base, VAPID_PUBLIC_KEY: 'B'.repeat(87), VAPID_PRIVATE_KEY: 'p'.repeat(43), VAPID_SUBJECT: 'mailto:a@b.co' }),
     ).not.toThrow();
+  });
+});
+
+/** FEAT-027 (ADR-0038): the five Cloud API variables come together or not at all — in every environment. */
+describe('WhatsApp sign-in configuration', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    JWT_ACCESS_SECRET: 'a-real-access-secret-value',
+    JWT_REFRESH_SECRET: 'a-real-refresh-secret-value',
+    OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
+  };
+  const full = {
+    WHATSAPP_PHONE_NUMBER_ID: '123456789012345',
+    WHATSAPP_ACCESS_TOKEN: 'EAAG-a-long-enough-test-token',
+    WHATSAPP_APP_SECRET: 'an-app-secret-0123456789',
+    WHATSAPP_VERIFY_TOKEN: 'a-verify-token-0123456789',
+    WHATSAPP_BUSINESS_NUMBER: '919876543210',
+  };
+
+  it('boots with none (off / stub) and with all five (cloud)', () => {
+    expect(() => validateEnv({ ...base })).not.toThrow();
+    expect(() => validateEnv({ ...base, ...full })).not.toThrow();
+    expect(() => validateEnv({ ...base, ...full, WHATSAPP_GRAPH_VERSION: 'v27.0' })).not.toThrow();
+  });
+
+  it('refuses a partial set, naming what is missing', () => {
+    const { WHATSAPP_VERIFY_TOKEN: _dropped, ...partial } = full;
+    void _dropped;
+    expect(() => validateEnv({ ...base, ...partial })).toThrow(/missing WHATSAPP_VERIFY_TOKEN/);
+    expect(() => assertWhatsAppConfigComplete({ ...full, WHATSAPP_APP_SECRET: '' })).toThrow(/WHATSAPP_APP_SECRET/);
+  });
+
+  it('refuses malformed values with a clear message', () => {
+    expect(() => validateEnv({ ...base, ...full, WHATSAPP_BUSINESS_NUMBER: '+919876543210' })).toThrow(/WHATSAPP_BUSINESS_NUMBER/);
+    expect(() => validateEnv({ ...base, ...full, WHATSAPP_PHONE_NUMBER_ID: 'abc' })).toThrow(/WHATSAPP_PHONE_NUMBER_ID/);
+    expect(() => validateEnv({ ...base, ...full, WHATSAPP_GRAPH_VERSION: '26' })).toThrow(/WHATSAPP_GRAPH_VERSION/);
+    expect(() => validateEnv({ ...base, ...full, WHATSAPP_APP_SECRET: 'short' })).toThrow(/WHATSAPP_APP_SECRET/);
   });
 });

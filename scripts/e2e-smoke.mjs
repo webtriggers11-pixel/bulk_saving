@@ -189,7 +189,7 @@ async function main() {
     const phone = phoneFor(4);
     const stale = await api('/auth/otp/verify', {
       method: 'POST',
-      body: { inviteCode: SOCIETY_A, phone, code: '000000' },
+      body: { inviteCode: SOCIETY_A, phone, code: '0000' },
     });
     check('verifying with no outstanding OTP is 400', stale.status === 400, `status ${stale.status}`);
     check('…and reports OTP_EXPIRED', stale.error?.code === 'OTP_EXPIRED', JSON.stringify(stale.error));
@@ -202,7 +202,7 @@ async function main() {
     // CHORE-007: the response carries the acknowledgement and NOTHING else.
     check('the request response never carries the code', JSON.stringify(requested.data) === '{"requested":true}', JSON.stringify(requested.data));
     const real = readDevOtp(phone);
-    const wrong = real === '000000' ? '111111' : '000000';
+    const wrong = real === '0000' ? '2222' : '0000';
     const verify = await api('/auth/otp/verify', {
       method: 'POST',
       body: { inviteCode: SOCIETY_A, phone, code: wrong },

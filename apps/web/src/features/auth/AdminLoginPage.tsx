@@ -7,6 +7,10 @@ import { useAuthStore } from './auth.store';
 import { messageFromError, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
+import { useAuthMethods } from './useAuthMethods';
+import { useWhatsAppLogin } from './useWhatsAppLogin';
+import { WhatsAppSignIn } from './WhatsAppSignIn';
+import { startAdminWhatsAppLogin } from './wa.api';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, anyPaused } from '../../lib/offline';
 import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
@@ -15,7 +19,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Notice } from '../../components/ui/notice';
 
-type Step = 'phone' | 'code';
+type Step = 'phone' | 'code' | 'whatsapp';
 
 /**
  * The admin door (FEAT-012, ADR-0023): a phone number and a code, and nothing else.
@@ -35,6 +39,13 @@ export function AdminLoginPage() {
   const [code, setCode] = useState('');
 
   const devOtp = useDevOtp();
+  // FEAT-027 (ADR-0038): the admin door over WhatsApp. The role is decided by the server at
+  // token time; this page learns it only with the tokens, like the OTP door.
+  const methods = useAuthMethods();
+  const whatsApp = useWhatsAppLogin(startAdminWhatsAppLogin, (result) => {
+    login({ accessToken: result.accessToken, refreshToken: result.refreshToken, resident: result.resident });
+    navigate('/admin', { replace: true });
+  });
   const requestMutation = useMutation({
     mutationFn: () => requestAdminOtp({ phone: normalisePhone(phone) ?? phone.trim() }),
     // A resend must not keep showing the previous code while the new one is fetched.
@@ -76,7 +87,7 @@ export function AdminLoginPage() {
   const queuedOffline = anyPaused(requestMutation, verifyMutation);
 
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden">
+    <main className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden" data-whatsapp={methods.whatsapp ? 'on' : 'off'}>
       <DevOtpToast code={devOtp.code} onUse={setCode} onDismiss={devOtp.clear} />
       <AmbientGround id="admin-login-grain" />
 
@@ -161,7 +172,20 @@ export function AdminLoginPage() {
                   : 'Send code'}
               <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
             </Button>
+            {methods.whatsapp && (
+              <>
+                <p className="my-4 text-center text-eyebrow uppercase text-ink-soft" aria-hidden="true">or</p>
+                <Button variant="secondary" className="w-full" onClick={() => setStep('whatsapp')} data-testid="continue-whatsapp">
+                  <Icon name="chat" size={18} strokeWidth={2.2} />
+                  Continue with WhatsApp
+                </Button>
+              </>
+            )}
           </form>
+        )}
+
+        {step === 'whatsapp' && (
+          <WhatsAppSignIn login={whatsApp} onUseSms={() => { whatsApp.reset(); setStep('phone'); }} />
         )}
 
         {step === 'code' && (
@@ -170,7 +194,7 @@ export function AdminLoginPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
-            <Label htmlFor="admin-code">6-digit code</Label>
+            <Label htmlFor="admin-code">8-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -179,8 +203,8 @@ export function AdminLoginPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="123456"
-              maxLength={6}
+              placeholder="12345678"
+              maxLength={8}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"

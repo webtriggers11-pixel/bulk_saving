@@ -1,0 +1,90 @@
+---
+/**
+ * "How a group buy works" is the scroll story (FEAT-028 T5c): the four steps on the left are
+ * lit one by one as you scroll; on the right a sticky second scene — camera orbit, towers
+ * rising, windows filling, the price in the HUD dropping, a burst when the deadline closes —
+ * is driven by story.ts from the same scroll position. Without JS the steps read as a list.
+ */
+import Section from './Section.astro';
+import FeatureList from './FeatureList.astro';
+import { demoRound, featuresIn, sections } from '../content/features';
+import { rupees } from '../scene/model';
+const s = sections.find((x) => x.id === 'how')!;
+const target = demoRound.tiers[demoRound.tiers.length - 1]?.units ?? 10;
+const single = demoRound.tiers[0]?.price ?? 0;
+const steps = [
+  { title: 'The operator opens a round', text: 'One service, one society, a deadline, and a price ladder negotiated with a vendor: ₹1,000 alone, ₹800 at 5 ACs, ₹700 at 10.', card: 'open' },
+  { title: 'You pledge what you need', text: 'Two ACs, three rooms, one 25 kg pack. One tap, and an SMS confirms it. Change or leave any time before the deadline.', card: 'pledge' },
+  { title: 'Neighbours join, the price drops', text: 'Every pledge moves the ladder for everyone. Share the round to the society group with one tap; the people you bring in lower your own price.', card: 'join' },
+  { title: 'The deadline closes it, a person books it', text: 'At the deadline the round closes on its own. The operator assigns the vendor at the unlocked price, the job gets done, and you rate it.', card: 'close' },
+] as const;
+const initials = ['AR', 'MJ', 'PI', 'RD', 'NK', 'VM', 'FK', 'KS', 'DM', 'AS'];
+const { tiers, service, unitPlural, closesIn } = demoRound;
+---
+
+<Section id={s.id} title={s.title} lede={s.lede}>
+  <div class="story" data-story data-story-target={target}>
+    <ol class="steps story__steps" data-story-track>
+      {steps.map((st) => (
+        <li class="step story__step" data-story-step>
+          <h3>{st.title}</h3>
+          <p>{st.text}</p>
+          <div class="step__card surface" aria-hidden="true">
+            {st.card === 'open' && (
+              <>
+                <div class="card__row"><span class="card__title">{service}</span><span class="pill pill--live">open</span></div>
+                <div class="card__meta">Blue Waters Society · closes in {closesIn}</div>
+                <ol class="mini-ladder">
+                  {tiers.map((t, i) => (
+                    <li><strong class="figure">{rupees(t.price)}</strong><span>{i === 0 ? 'alone' : `at ${t.units}`}</span></li>
+                  ))}
+                </ol>
+              </>
+            )}
+            {st.card === 'pledge' && (
+              <>
+                <div class="card__row"><span class="card__title">Your pledge</span><span class="pill">2 {unitPlural}</span></div>
+                <div class="stepper stepper--sm"><span>−</span><output class="figure">2</output><span>+</span></div>
+                <div class="msg msg--sm"><time>10:02</time>You're in: 2 ACs in the AC servicing round. 5 of 10 so far, ₹800 each.</div>
+              </>
+            )}
+            {st.card === 'join' && (
+              <>
+                <div class="card__row"><span class="card__title">Neighbours in</span><span class="card__meta">9 of 10</span></div>
+                <div class="joiners">
+                  {initials.map((n, i) => (
+                    <span class="joiner" style={`--i:${i}`}>{n}</span>
+                  ))}
+                </div>
+                <div class="ladder__track"><div class="ladder__fill" style="width:90%"></div></div>
+                <div class="card__meta">1 more AC unit unlocks ₹700 for everyone</div>
+              </>
+            )}
+            {st.card === 'close' && (
+              <>
+                <div class="card__row"><span class="card__title">Closed · met</span><span class="pill pill--live">11 {unitPlural}</span></div>
+                <div class="card__meta">CoolBreeze AC Services booked · Sat 10 am to 2 pm · ₹700 each</div>
+                <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span class="half">★</span><em class="figure">4.6</em></div>
+              </>
+            )}
+          </div>
+        </li>
+      ))}
+    </ol>
+    <div class="story__stage">
+      <div class="scene story__scene" data-story-scene role="img" aria-label="The same society, filling as the steps go by">
+        <div class="hud" aria-hidden="true">
+          <div class="hud__row">
+            <span class="pill pill--live" data-hud-state>Opening</span>
+            <span class="hud__units figure" data-hud-units>0 of {target}</span>
+          </div>
+          <div class="hud__price figure"><span data-hud-price>{rupees(single)}</span><small>per {demoRound.unit}</small></div>
+          <div class="ladder__track hud__track"><div class="ladder__fill" data-hud-fill></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="story__after">
+    <FeatureList items={featuresIn('how')} />
+  </div>
+</Section>

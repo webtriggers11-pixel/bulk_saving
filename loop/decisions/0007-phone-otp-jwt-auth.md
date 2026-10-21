@@ -37,7 +37,7 @@ leaked — without a paid SMS provider in v1.
 
 ## Decision
 
-- **OTP:** 6-digit, generated server-side, stored in Redis keyed by (societyId, phone)
+- **OTP:** 6-digit (now **4-digit**, see ADR-0040 / CHORE-026), generated server-side, stored in Redis keyed by (societyId, phone)
   with a 5-min TTL. Verify attempts (max 5) and resend limits (1/30s, 5/hour) enforced via
   Redis counters. OTP is **never** returned in a response or written to logs.
 - **Delivery:** via a `NotificationChannel` interface; v1 uses a **stub adapter** (logs in

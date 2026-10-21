@@ -1,21 +1,19 @@
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
+import { useServiceWorker } from './ServiceWorkerProvider';
 
 /**
- * Offers the waiting service worker (FEAT-008 AC9). `registerType: 'autoUpdate'`
- * installs a new build in the background; this makes the switch a deliberate tap
+ * Offers the waiting service worker (FEAT-008 AC9). `registerType: 'prompt'` (BUG-025)
+ * installs a new build in the background and leaves it waiting; this makes the switch a deliberate tap
  * so a resident is never refreshed out from under a half-filled pledge form.
+ * FEAT-029: the registration itself lives in ServiceWorkerProvider, at the root.
  */
 export function UpdatePrompt() {
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
-
-  if (!needRefresh) {
+  const sw = useServiceWorker();
+  if (!sw?.needRefresh) {
     return null;
   }
+  const { updateServiceWorker } = sw;
 
   return (
     <div

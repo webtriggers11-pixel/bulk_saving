@@ -17,10 +17,10 @@ describe('useDevOtp', () => {
   it('in a DEV build, asks the dev route for the canonical phone and exposes the code', async () => {
     vi.stubEnv('DEV', true);
     vi.stubEnv('MODE', 'development');
-    apiMock.mockResolvedValue({ code: '123456' });
+    apiMock.mockResolvedValue({ code: '1234' });
     const { result } = renderHook(() => useDevOtp());
     act(() => result.current.fetchFor('99999 00201'));
-    await waitFor(() => expect(result.current.code).toBe('123456'));
+    await waitFor(() => expect(result.current.code).toBe('1234'));
     expect(apiMock).toHaveBeenCalledWith('/dev/otp?phone=%2B919999900201', { auth: false });
     act(() => result.current.clear());
     expect(result.current.code).toBeNull();
@@ -30,13 +30,13 @@ describe('useDevOtp', () => {
     vi.stubEnv('DEV', true);
     vi.stubEnv('MODE', 'development');
     vi.useFakeTimers();
-    apiMock.mockRejectedValueOnce(new Error('404')).mockRejectedValueOnce(new Error('404')).mockResolvedValueOnce({ code: '777777' });
+    apiMock.mockRejectedValueOnce(new Error('404')).mockRejectedValueOnce(new Error('404')).mockResolvedValueOnce({ code: '7777' });
     const { result } = renderHook(() => useDevOtp());
     act(() => result.current.fetchFor('+919999900001'));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_300);
     });
-    expect(result.current.code).toBe('777777');
+    expect(result.current.code).toBe('7777');
     expect(apiMock).toHaveBeenCalledTimes(3);
 
     apiMock.mockReset().mockRejectedValue(new Error('404'));
@@ -58,7 +58,7 @@ describe('useDevOtp', () => {
     act(() => result.current.fetchFor('+919999900001'));
     act(() => result.current.clear());
     await act(async () => {
-      release({ code: '111111' });
+      release({ code: '1111' });
       await Promise.resolve();
     });
     expect(result.current.code).toBeNull();
