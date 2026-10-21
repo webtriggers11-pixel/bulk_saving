@@ -1607,3 +1607,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at b757edf (detached worktree, .env without WHATSAPP_* per BUG-024, no other gate running): two back-to-back runs, 20:36:10–20:37:07 and 20:37:07–20:38:01, both exit 0 and identical: site 62/62, backend 566/566, web 665/665. No flakes. Logs: v3-1.log and v3-2.log in the session scratchpad.
 - CHORE-026 → done. Residents 4-digit OTPs, an admin's number 8 on both doors; dev `1111` for everyone, always verifies; production refuses the flag.
 - By: agent (autonomous)
+
+## 2026-10-21 — FEAT-029 — OPENED (triage → planned)
+- Owner: "make this as prper pwa app". Audit: the app icon is a placeholder teal square (and the same file is the maskable icon); the manifest uses pre-Mono colours and has no id, shortcuts or screenshots; no iOS title or launch images; Google Fonts are uncached offline; install only lives under Profile. Spec, plan and tasks in loop/work/FEAT-029-proper-pwa/. No new dependency: `sharp` is already in the lockfile via Astro.
+- By: agent (autonomous)
