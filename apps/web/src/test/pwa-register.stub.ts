@@ -17,6 +17,8 @@ const defaultState: RegisterSWState = { needRefresh: false, offlineReady: false 
 
 let state: RegisterSWState = { ...defaultState };
 export const updateServiceWorkerCalls: (boolean | undefined)[] = [];
+/** How many times the hook ran a registration (FEAT-029: once, at the root). */
+export const registerCalls = { count: 0 };
 
 /** Set what `useRegisterSW` reports. Call inside a test before rendering. */
 export function setMockRegisterSW(next: Partial<RegisterSWState>): void {
@@ -27,6 +29,7 @@ export function setMockRegisterSW(next: Partial<RegisterSWState>): void {
 export function resetMockRegisterSW(): void {
   state = { ...defaultState };
   updateServiceWorkerCalls.length = 0;
+  registerCalls.count = 0;
 }
 
 const updateServiceWorker: UpdateFn = async (reloadPage) => {
@@ -38,6 +41,7 @@ export function useRegisterSW(): {
   offlineReady: [boolean, (value: boolean) => void];
   updateServiceWorker: UpdateFn;
 } {
+  registerCalls.count += 1;
   return {
     needRefresh: [state.needRefresh, (value: boolean) => setMockRegisterSW({ needRefresh: value })],
     offlineReady: [state.offlineReady, (value: boolean) => setMockRegisterSW({ offlineReady: value })],
