@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { MANIFEST } from './src/pwa/manifest';
+import { REGISTER_TYPE, RUNTIME_CACHING } from './src/pwa/config';
 
 export default defineConfig({
   // BUG-019: the web now imports a RUNTIME value from @bulk/shared (`normalisePhone`), not
@@ -18,7 +19,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: REGISTER_TYPE,
       includeAssets: [
         'favicon.svg',
         'favicon.png',
@@ -34,24 +35,8 @@ export default defineConfig({
         // FEAT-020 (ADR-0032): the push + notificationclick handlers, loaded into the
         // generated worker.
         importScripts: ['push-sw.js'],
-        // FEAT-029 (ADR-0041, amends ADR-0015's scope): Google Fonts only, so an installed
-        // app opened offline keeps its typeface. Still no API response is cached.
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'google-fonts-css' },
-          },
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-files',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
+        // FEAT-029 (ADR-0041): Google Fonts only; the rules live in src/pwa/config.ts.
+        runtimeCaching: RUNTIME_CACHING,
       },
       // FEAT-029: the manifest lives in src/pwa/manifest.ts, where pwa.test.ts reads it.
       manifest: MANIFEST,
