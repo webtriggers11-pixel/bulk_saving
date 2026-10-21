@@ -366,6 +366,14 @@ export class OtpService {
     // budgets are the same for every caller, so this says nothing about who owns the
     // phone. A wrong guess spends both budgets; a right one, or a verify with no code
     // outstanding (nothing to guess against), spends nothing. All in one atomic script.
+    // CHORE-026 (ADR-0040): in development the fixed code always verifies, whether or not
+    // a request is still outstanding — no "expired" for a code that never changes. Any
+    // outstanding OTP is consumed so a later request starts clean.
+    const fixed = devFixedOtp();
+    if (fixed !== null && code === fixed) {
+      await this.redis.del(this.otpKey(scopeId, phone));
+      return 'OK';
+    }
     const client = ipBucket(options.clientIp);
     return (await this.redis.eval(
       BUDGETED_VERIFY_LUA,

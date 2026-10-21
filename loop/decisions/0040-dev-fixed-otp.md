@@ -14,6 +14,7 @@ ADR-0037 sends the dev OTP to the browser as a toast. The owner wants something 
 ## Decisions
 0. **Every OTP is 4 digits** (owner: "only 4 digit"), real codes included: `randomInt(0, 10_000)`, zero-padded. A blind guess now has a 1-in-10,000 chance instead of 1-in-a-million. ADR-0027's budgets are unchanged (5 attempts per code, then the per-client and per-phone hourly fail caps, then the resend caps), so a targeted phone still sees only a few dozen guesses an hour at most. That is a deliberate trade for a shorter code, common for SMS OTP in India.
 1. When `OTP_DEV_FIXED_CODE` (exactly 4 digits) is set AND `NODE_ENV` is exactly `development`, `OtpService.request` uses it instead of a random code. The value is still stored only as an HMAC, and every budget, lock and TTL still applies.
+1a. In development, `verify` accepts the fixed code even when no OTP is outstanding (none requested, TTL passed, or already used), so it never answers "expired" for `1111` (owner: "That code has expired… fix this"). Any outstanding OTP is consumed. The account checks after verify (society membership, admin role) are unchanged.
 2. It does NOT apply under `test`. The suites keep random codes, so no test can pass by accident on a guessable code. Unset NODE_ENV, or any other value, also means off (default closed).
 3. `assertProductionSafe` refuses any non-empty value in production.
 4. The verify DTOs accept `^\d{4}$` only. The web inputs read "4-digit code" with `maxLength={4}`.

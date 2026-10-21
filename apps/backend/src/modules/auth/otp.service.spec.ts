@@ -323,10 +323,28 @@ describe('OtpService (integration, needs Redis)', () => {
       }
     });
 
-    it('under NODE_ENV=test the variable is ignored — codes stay random 4 digits', async () => {
+    it('in development the fixed code verifies even with no request outstanding, and again after use', async () => {
       process.env.OTP_DEV_FIXED_CODE = '1111';
-      await service.request(societyId, uniquePhone());
+      process.env.NODE_ENV = 'development';
+      const phone = uniquePhone();
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      expect(await service.verify(ADMIN_OTP_SCOPE, phone, '1111')).toBe('OK');
+      await service.request(societyId, phone);
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      expect(await service.verify(societyId, phone, '1111')).toBe('OK');
+      // Any other code still goes through the real check.
+      expect(await service.verify(societyId, phone, '2222')).toBe('EXPIRED');
+    });
+
+    it('under NODE_ENV=test the variable is ignored — random codes, and 1111 is not a skeleton key', async () => {
+      process.env.OTP_DEV_FIXED_CODE = '1111';
+      const phone = uniquePhone();
+      expect(await service.verify(societyId, phone, '1111')).toBe('EXPIRED');
+      await service.request(societyId, phone);
       expect(channel.lastCode).toMatch(/^\d{4}$/);
+      if (channel.lastCode !== '1111') {
+        expect(await service.verify(societyId, phone, '1111')).toBe('INVALID');
+      }
     });
   });
 });
