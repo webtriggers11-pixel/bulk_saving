@@ -11,8 +11,9 @@ export interface LaunchImage {
 }
 
 export const LAUNCH_IMAGES: readonly LaunchImage[] = [
-  { width: 1320, height: 2868, dw: 440, dh: 956, ratio: 3 }, // 16 Pro Max
-  { width: 1206, height: 2622, dw: 402, dh: 874, ratio: 3 }, // 16 Pro
+  { width: 1260, height: 2736, dw: 420, dh: 912, ratio: 3 }, // Air
+  { width: 1320, height: 2868, dw: 440, dh: 956, ratio: 3 }, // 16/17 Pro Max
+  { width: 1206, height: 2622, dw: 402, dh: 874, ratio: 3 }, // 16/17 Pro, 17
   { width: 1290, height: 2796, dw: 430, dh: 932, ratio: 3 }, // 14 Pro Max – 16 Plus
   { width: 1179, height: 2556, dw: 393, dh: 852, ratio: 3 }, // 14 Pro – 16
   { width: 1284, height: 2778, dw: 428, dh: 926, ratio: 3 }, // 12/13 Pro Max, 14 Plus

@@ -1618,3 +1618,15 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - T3 (38d66d5): screenshots captured from the real app via headless Chrome over CDP (seeded resident, dev `1111`): two narrow, one wide. Browser pass on the production preview (:5175): `Page.getAppManifest` errors [], `Page.getInstallabilityErrors` []. FOUND: the service worker never registered on /onboard (unregistered after 25 s), because `useRegisterSW` lived in UpdatePrompt, which only the resident AppShell renders; sign-in and /admin were never covered. Fixed: `ServiceWorkerProvider` at the root in main.tsx; UpdatePrompt reads its context. Re-check: SW active at 0 s, page controlled, caches = precache + google-fonts-css + google-fonts-files, offline relaunch of /onboard renders the app in Geist.
 - V1 at 923959e (worktree, no WHATSAPP_*): exit 0, site 62, backend 566, web 683.
 - By: agent (autonomous)
+
+## 2026-10-21 — BUG-025 — OPENED and fixed (found by FEAT-029 V2)
+- The update prompt could never appear. `registerType: 'autoUpdate'` builds the worker with skipWaiting and clientsClaim, and the client reloads on activation without ever calling onNeedRefresh. So every deploy reloaded the open page (since FEAT-008), and FEAT-029's root registration widened that to sign-in and admin. Report: loop/work/BUG-025-update-prompt-never-shows/report.md.
+- Failing test first: `pwa.test.ts` "waits for the resident" failed with expected 'autoUpdate' to be 'prompt'. The settings moved to `src/pwa/config.ts` so the test reads what the build uses. Fix: `REGISTER_TYPE = 'prompt'`. Green.
+- By: agent (autonomous)
+
+## 2026-10-21 — FEAT-029 — V2 PASS-conditional → taken
+- V2 (code-reviewer subagent, its own gate exit 0: site 62, backend 566, web 686; browser check: manifest and installability errors [], SW active on /onboard, offline relaunch fine; precache 27 entries / 600 KiB).
+- P1, the update prompt is dead under autoUpdate: triaged as BUG-025 and fixed above.
+- P2 `orientation: portrait` would lock admin on tablets → `any`, plus `display_override`. P2, the runtime-caching guard was a regex over vite.config: the rules are now exported and called with API URLs. P2, the brittle main.tsx/AppShell source test: removed (the `registerCalls` test covers it).
+- P3s taken: iPhone Air launch image (10 sizes now); `GSA/` (the Google app) excluded from iOS Safari; the card is a labelled region; iOS copy mentions "⋯"; the gen script fails with a clear message when sharp is missing; the ADR notes navigate-existing and that the safe zone is not test-pinned. Not taken: dark-scheme launch images and a monochrome icon (nice-to-haves, noted).
+- By: agent (autonomous) + code-reviewer subagent

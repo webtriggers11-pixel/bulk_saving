@@ -11,8 +11,14 @@ import { fileURLToPath } from 'node:url';
 import { LAUNCH_IMAGES } from '../src/pwa/launch-images.ts';
 
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
-const astro = createRequire(join(web, '../site/package.json')).resolve('astro/package.json');
-const sharp = createRequire(astro)('sharp');
+let sharp;
+try {
+  const astro = createRequire(join(web, '../site/package.json')).resolve('astro/package.json');
+  sharp = createRequire(astro)('sharp');
+} catch {
+  console.error('sharp not found: install apps/site dependencies first (`pnpm install`), it comes with Astro.');
+  process.exit(1);
+}
 
 const out = join(web, 'public');
 const PATH = readFileSync(join(web, 'pwa-assets/mark.svg'), 'utf8').match(/d="([^"]+)"/)[1];

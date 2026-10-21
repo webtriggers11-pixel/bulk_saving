@@ -16,13 +16,14 @@ function dismissedBefore(): boolean {
 
 /**
  * Safari on iPhone/iPad — the one browser with no install prompt, where the steps are the
- * Share sheet. Other iOS browsers (CriOS, FxiOS, EdgiOS) can't add to the home screen the same
+ * Share sheet. Other iOS browsers (CriOS, FxiOS, EdgiOS, the Google app) can't add to the home screen the same
  * way, so they get nothing rather than wrong steps. iPadOS reports a Mac UA with touch.
  */
 export function isIosSafari(nav: Navigator = navigator): boolean {
   const ua = nav.userAgent;
   const ios = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && nav.maxTouchPoints > 1);
-  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  // GSA: the Google app's in-app browser also says "Safari" (V2 P3).
+  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
 }
 
 /** iOS sets `navigator.standalone` when launched from the home screen. */
@@ -58,16 +59,22 @@ export function InstallCard() {
       padding="none"
       className="col-span-2 flex items-center gap-3.5 p-[18px]"
       data-testid="install-card"
+      role="region"
+      aria-labelledby="install-card-title"
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
+      <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
         <Icon name="install" size={20} strokeWidth={1.8} />
       </span>
       <p className="min-w-0 flex-1 text-meta text-ink-muted">
-        <span className="block font-extrabold text-ink">Install the app</span>
+        <span id="install-card-title" className="block font-extrabold text-ink">
+          Install the app
+        </span>
         {canInstall ? (
           'One tap from your home screen, full screen, with notifications.'
         ) : (
-          <span data-testid="install-card-ios">Tap Share, then &quot;Add to Home Screen&quot;.</span>
+          <span data-testid="install-card-ios">
+            Tap Share (under &quot;⋯&quot; on newer iPhones), then &quot;Add to Home Screen&quot;.
+          </span>
         )}
       </p>
       <div className="flex shrink-0 flex-col items-end gap-1">

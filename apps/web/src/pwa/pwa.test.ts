@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { GROUND_LIGHT, MANIFEST } from './manifest';
 import { LAUNCH_IMAGES } from './launch-images';
+import { REGISTER_TYPE, RUNTIME_CACHING } from './config';
 
 /**
  * FEAT-029 (ADR-0041): the installable-app contract. Every icon, launch image and shortcut
@@ -36,7 +37,8 @@ describe('PWA manifest (FEAT-029)', () => {
     expect(MANIFEST.start_url).toBe('/');
     expect(MANIFEST.scope).toBe('/');
     expect(MANIFEST.display).toBe('standalone');
-    expect(MANIFEST.orientation).toBe('portrait');
+    expect(MANIFEST.orientation).toBe('any');
+    expect(MANIFEST.display_override).toEqual(['standalone']);
     expect(MANIFEST.launch_handler).toEqual({ client_mode: 'navigate-existing' });
     expect(MANIFEST.categories.length).toBeGreaterThan(0);
   });
@@ -125,10 +127,35 @@ describe('index.html install tags (FEAT-029)', () => {
 });
 
 describe('service worker runtime caching (FEAT-029, ADR-0015 stands)', () => {
-  it('caches the two Google Fonts hosts and nothing else — no API response', () => {
-    const config = readFileSync(join(WEB, 'vite.config.ts'), 'utf8');
-    const origins = [...config.matchAll(/url\.origin === '([^']+)'/g)].map(([, origin]) => origin);
-    expect(origins).toEqual(['https://fonts.googleapis.com', 'https://fonts.gstatic.com']);
-    expect((config.match(/urlPattern:/g) ?? []).length).toBe(2);
+  const matches = (url: string) =>
+    RUNTIME_CACHING.filter((rule) =>
+      typeof rule.urlPattern === 'function'
+        ? rule.urlPattern({ url: new URL(url), request: new Request(url), event: new Event('fetch') as never, sameOrigin: false })
+        : false,
+    ).map((rule) => rule.options?.cacheName);
+
+  it('caches the two Google Fonts hosts', () => {
+    expect(matches('https://fonts.googleapis.com/css2?family=Geist')).toEqual(['google-fonts-css']);
+    expect(matches('https://fonts.gstatic.com/s/geist/v1/a.woff2')).toEqual(['google-fonts-files']);
+  });
+
+  it('caches no API response, same-origin or not', () => {
+    for (const url of [
+      'http://localhost:3000/rounds',
+      'https://api.bulksaving.in/me',
+      'http://localhost:5173/api/rounds',
+      'https://fonts.googleapis.com.evil.test/css',
+    ]) {
+      expect(matches(url), url).toEqual([]);
+    }
+    expect(RUNTIME_CACHING.every((rule) => typeof rule.urlPattern === 'function')).toBe(true);
+  });
+});
+
+describe('service worker updates (BUG-025)', () => {
+  it("waits for the resident: 'prompt', so UpdatePrompt's Reload is what activates a new build", () => {
+    // 'autoUpdate' makes the worker skipWaiting + clientsClaim and the client reload the page
+    // on activation; needRefresh never fires, and a half-filled form is lost on every deploy.
+    expect(REGISTER_TYPE).toBe('prompt');
   });
 });

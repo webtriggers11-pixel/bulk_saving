@@ -3,7 +3,7 @@
 **Status:** Accepted · **Date:** 2026-10-21 · **Deciders:** Vivek ("make this as prper pwa app", "web app"), agent · **Work item:** FEAT-029 · **Amends:** ADR-0015 (runtime caching scope)
 
 ## Confidence
-**Level:** High. Every manifest member and icon is pinned by `src/pwa/pwa.test.ts`: file exists, real pixel size from the PNG header, maskable and apple-touch icons opaque, launch-image media queries equal to the device pixels.
+**Level:** High. `src/pwa/pwa.test.ts` pins every manifest member and icon: the file exists, its real pixel size from the PNG header, maskable and apple-touch icons opaque, launch-image media queries equal to the device pixels, and the cache rules called with API URLs. The maskable safe zone itself is not tested; the generator's `markScale 0.42` is the only guard.
 
 ## Research depth
 **Quick check** of the manifest members (`id`, `launch_handler`, `shortcuts`, `screenshots.form_factor`), the maskable safe zone (an 80% circle), and the iOS `apple-touch-startup-image` media queries (device CSS size × DPR, portrait).
@@ -15,6 +15,8 @@ FEAT-008 made the app installable in principle, but its icon was a flat teal pla
 1. **One source mark, `apps/web/pwa-assets/mark.svg`** (the app's own bolt). `scripts/gen-pwa-assets.mjs` renders every PNG: `any` 192/512 (rounded tile), `maskable` 192/512 (full bleed, mark at 42%), apple-touch 180 (opaque), favicons 32/64 + SVG, shortcut icons 96, and iOS launch images for the iPhone sizes in `src/pwa/launch-images.ts`. The outputs are committed. The script uses `sharp` from the lockfile (Astro's optional dependency), resolved through Astro: **no new dependency**. If Astro ever drops sharp, only regeneration breaks.
 2. **The manifest is `src/pwa/manifest.ts`,** typed `satisfies Partial<ManifestOptions>`. The build and the tests read the same object. Colours are the Mono light ground, pinned to theme.css. It has three shortcuts (Group buys, Services, My requests) and three screenshots captured from the real app with seeded demo data.
 3. **Runtime caching: Google Fonts only.** CSS uses stale-while-revalidate; font files are cache-first for one year. ADR-0015's rule stands: no API response is cached, and a test asserts the only two origins. Splash images and screenshots are served, not precached.
+3a. **Updates wait (BUG-025).** `registerType: 'prompt'` (src/pwa/config.ts): a new build waits until UpdatePrompt's Reload, or the next launch. `autoUpdate` had been reloading every open page on each deploy since FEAT-008. Registration is one `ServiceWorkerProvider` at the root, so sign-in and /admin are covered too (found in the T3 browser pass).
+3b. **Orientation `any`, `display_override: ['standalone']`.** Portrait would lock the admin screens on an installed tablet and contradict the wide screenshot (V2 P2). `launch_handler: navigate-existing` means a shortcut tap navigates the open window. That is acceptable: the shortcuts are entry points, not mid-form actions.
 4. **The install card on Home** (`InstallCard`) appears while not standalone and installable: Chromium's held prompt, or iOS Safari's Share-sheet steps. "Not now" is remembered per device in localStorage, and storage failure means it simply shows again. Profile keeps its row.
 
 ## Consequences

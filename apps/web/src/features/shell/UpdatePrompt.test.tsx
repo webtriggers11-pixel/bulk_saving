@@ -1,6 +1,4 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { registerCalls, resetMockRegisterSW, setMockRegisterSW, updateServiceWorkerCalls } from 'virtual:pwa-register/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UpdatePrompt } from './UpdatePrompt';
@@ -47,10 +45,4 @@ describe('ServiceWorkerProvider (FEAT-029)', () => {
     expect(screen.queryByTestId('update-prompt')).not.toBeInTheDocument();
   });
 
-  it('main.tsx mounts the provider around the whole router, not inside AppShell', () => {
-    const main = readFileSync(join(process.cwd(), 'src/main.tsx'), 'utf8');
-    expect(main).toMatch(/<ServiceWorkerProvider>\s*<App \/>\s*<\/ServiceWorkerProvider>/);
-    const shell = readFileSync(join(process.cwd(), 'src/features/shell/AppShell.tsx'), 'utf8');
-    expect(shell).not.toContain('useRegisterSW');
-  });
 });

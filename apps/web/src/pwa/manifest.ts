@@ -18,7 +18,10 @@ export const MANIFEST = {
   start_url: '/',
   scope: '/',
   display: 'standalone',
-  orientation: 'portrait',
+  display_override: ['standalone'],
+  // Not 'portrait': installed on a tablet or Chromebook, the admin screens must rotate,
+  // and the manifest offers a wide screenshot (V2 P2).
+  orientation: 'any',
   theme_color: GROUND_LIGHT,
   background_color: GROUND_LIGHT,
   categories: ['shopping', 'lifestyle', 'utilities'],

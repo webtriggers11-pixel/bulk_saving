@@ -57,7 +57,7 @@ describe('InstallCard (FEAT-029)', () => {
   it('offers Install once Chromium hands over its prompt, and the button opens it', () => {
     render(<InstallCard />);
     const prompt = fireBeforeInstallPrompt();
-    expect(screen.getByTestId('install-card')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Install the app' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Install' }));
     expect(prompt).toHaveBeenCalledTimes(1);
   });
@@ -121,6 +121,7 @@ describe('InstallCard (FEAT-029)', () => {
     expect(isIosSafari(nav(IPAD_DESKTOP_UA, 5))).toBe(true);
     expect(isIosSafari(nav(IPAD_DESKTOP_UA, 0))).toBe(false); // a real Mac
     expect(isIosSafari(nav(CHROME_IPHONE))).toBe(false);
+    expect(isIosSafari(nav(SAFARI_IPHONE.replace('Mobile/15E148', 'Mobile/15E148 GSA/340.0')))).toBe(false); // Google app
     expect(isIosSafari(nav(ANDROID_CHROME))).toBe(false);
   });
 });
