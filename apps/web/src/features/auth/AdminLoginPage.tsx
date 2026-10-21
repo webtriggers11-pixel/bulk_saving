@@ -194,7 +194,7 @@ export function AdminLoginPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
             </p>
-            <Label htmlFor="admin-code">4-digit code</Label>
+            <Label htmlFor="admin-code">8-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -203,8 +203,8 @@ export function AdminLoginPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="1234"
-              maxLength={4}
+              placeholder="12345678"
+              maxLength={8}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"

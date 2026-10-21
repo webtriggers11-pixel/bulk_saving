@@ -84,7 +84,8 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(requested.body).toEqual({ success: true, data: { requested: true } });
 
     const code = await waitForSend(sendsBefore, phone);
-    expect(code).toMatch(/^\d{4}$/);
+    // CHORE-026 (ADR-0040): the admin door sends 8 digits, to every caller.
+    expect(code).toMatch(/^\d{8}$/);
     expect(JSON.stringify(requested.body)).not.toContain(code);
 
     const verified = await server()

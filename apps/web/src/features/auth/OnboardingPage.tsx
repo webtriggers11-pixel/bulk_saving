@@ -278,7 +278,8 @@ export function OnboardingPage() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="1234"
-              maxLength={4}
+              // An administrator's number gets 8 digits here too (CHORE-026, ADR-0040).
+              maxLength={8}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"

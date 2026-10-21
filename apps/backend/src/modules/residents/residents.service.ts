@@ -78,6 +78,11 @@ export class ResidentsService {
     return admins.length === 1 ? admins[0] : null;
   }
 
+  /** Does this number belong to any SUPER_ADMIN? Sizes its OTP (CHORE-026, ADR-0040). */
+  async isAdminPhone(phone: string): Promise<boolean> {
+    return (await this.prisma.resident.count({ where: { phone, role: 'SUPER_ADMIN' } })) > 0;
+  }
+
   /** Fetch a resident by id — for the trusted authenticated-context path only. */
   findById(id: string): Promise<Resident | null> {
     return this.prisma.resident.findUnique({ where: { id } });

@@ -74,6 +74,15 @@ export function devFixedOtp(env: NodeJS.ProcessEnv = process.env): string | null
   return code;
 }
 
+/**
+ * OTP lengths (CHORE-026, ADR-0040): residents get 4 digits (owner: "only 4 digit"); an
+ * administrator's number gets 8 through EITHER door (CHORE-022), because the society door
+ * issues the account's own role and would otherwise be a 4-digit way into SUPER_ADMIN.
+ */
+export const OTP_LENGTH = 4;
+export const ADMIN_OTP_LENGTH = 8;
+export type OtpLength = typeof OTP_LENGTH | typeof ADMIN_OTP_LENGTH;
+
 /** Result of verifying an OTP. */
 export type OtpVerifyResult = 'OK' | 'INVALID' | 'EXPIRED' | 'LOCKED';
 
@@ -250,7 +259,7 @@ export class OtpService {
   }
 
   /**
-   * Generate + store a 4-digit OTP (CHORE-026) and dispatch it via the notification channel.
+   * Generate + store an OTP ({@link OTP_LENGTH} digits, or `options.length`) and dispatch it via the notification channel.
    * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    *
    * `scopeId` is a key namespace, normally a society id.
@@ -272,7 +281,7 @@ export class OtpService {
   async request(
     scopeId: string,
     phone: string,
-    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string } = {},
+    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string; length?: OtpLength } = {},
   ): Promise<OtpRequestOutcome> {
     // CHORE-016 (ADR-0027): the interval and hourly budgets are per (phone, client), so
     // one machine cannot spend an owner's budget; the ceiling below is per phone. Every
@@ -316,7 +325,8 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    const code = devFixedOtp() ?? randomInt(0, 10_000).toString().padStart(4, '0');
+    const length = options.length ?? OTP_LENGTH;
+    const code = devFixedOtp() ?? randomInt(0, 10 ** length).toString().padStart(length, '0');
     const key = this.otpKey(scopeId, phone);
     await this.redis
       .multi()

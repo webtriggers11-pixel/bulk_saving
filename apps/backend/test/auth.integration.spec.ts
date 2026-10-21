@@ -37,6 +37,40 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
     await app.close();
   });
 
+  // CHORE-026 (ADR-0040): this door issues the account's own role, so an administrator's
+  // number gets an 8-digit code here too; residents get 4. Same response either way.
+  it("an administrator's number gets an 8-digit code through the society door", async () => {
+    const adminPhone = randomPhone();
+    await prisma.resident.create({ data: { societyId: society.id, phone: adminPhone, role: 'SUPER_ADMIN' } });
+
+    const adminReq = await request(app.getHttpServer())
+      .post('/auth/otp/request')
+      .send({ inviteCode: society.inviteCode, phone: adminPhone })
+      .expect(200);
+    expect(channel.lastCode).toMatch(/^\d{8}$/);
+    const adminCode = channel.lastCode as string;
+
+    const residentReq = await request(app.getHttpServer())
+      .post('/auth/otp/request')
+      .send({ inviteCode: society.inviteCode, phone: randomPhone() })
+      .expect(200);
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
+    expect(adminReq.body).toEqual(residentReq.body);
+
+    // A 4-digit guess at the admin's number is a wrong code, not a format error.
+    const guess = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode.slice(0, 4) })
+      .expect(400);
+    expect(guess.body.error.code).toBe('OTP_INVALID');
+
+    const ok = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode })
+      .expect(200);
+    expect(ok.body.data.resident.role).toBe('SUPER_ADMIN');
+  });
+
   it('request → verify issues tokens and never leaks the OTP', async () => {
     const phone = randomPhone();
 

@@ -290,6 +290,27 @@ describe('OtpService (integration, needs Redis)', () => {
     });
   });
 
+  it('length: 4 digits by default, 8 when asked (an administrator\'s number, CHORE-026)', async () => {
+    await service.request(societyId, uniquePhone());
+    expect(channel.lastCode).toMatch(/^\d{4}$/);
+    const phone = uniquePhone();
+    await service.request(societyId, phone, { length: 8 });
+    expect(channel.lastCode).toMatch(/^\d{8}$/);
+    expect(await service.verify(societyId, phone, channel.lastCode as string)).toBe('OK');
+  });
+
+  it('in development the fixed code wins over the admin length', async () => {
+    process.env.OTP_DEV_FIXED_CODE = '1111';
+    process.env.NODE_ENV = 'development';
+    try {
+      await service.request(ADMIN_OTP_SCOPE, uniquePhone(), { length: 8 });
+      expect(channel.lastCode).toBe('1111');
+    } finally {
+      delete process.env.OTP_DEV_FIXED_CODE;
+      process.env.NODE_ENV = 'test';
+    }
+  });
+
   // CHORE-026 (ADR-0040): one known code for every resident and admin, locally only.
   describe('dev fixed OTP', () => {
     afterEach(() => {

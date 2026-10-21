@@ -77,7 +77,7 @@ function renderAdminLogin() {
 async function walkToCodeStep() {
   fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900001' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-  await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByLabelText('8-digit code')).toBeInTheDocument());
 }
 
 describe('AdminLoginPage', () => {
@@ -118,7 +118,7 @@ describe('AdminLoginPage', () => {
     // The body carries a phone and nothing else — no society, no invite code (ADR-0003).
     expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
 
-    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('8-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Open dashboard' }));
 
     await waitFor(() => expect(screen.getByText('Admin dashboard')).toBeInTheDocument());
@@ -135,7 +135,7 @@ describe('AdminLoginPage', () => {
     renderAdminLogin();
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '09999900001' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('8-digit code')).toBeInTheDocument());
     expect(sentBodies.get('/auth/admin/otp/request')).toEqual({ phone: '+919999900001' });
     // The code step shows the canonical number back.
     expect(screen.getByText('+919999900001')).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('AdminLoginPage', () => {
     await walkToCodeStep();
     expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('5151');
     fireEvent.click(screen.getByTestId('dev-otp-use'));
-    expect(screen.getByLabelText('4-digit code')).toHaveValue('5151');
+    expect(screen.getByLabelText('8-digit code')).toHaveValue('5151');
     vi.unstubAllEnvs();
   });
 
@@ -190,7 +190,7 @@ describe('AdminLoginPage', () => {
     renderAdminLogin();
 
     await walkToCodeStep();
-    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('8-digit code'), { target: { value: '1234' } });
     fireEvent.click(screen.getByRole('button', { name: 'Open dashboard' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());

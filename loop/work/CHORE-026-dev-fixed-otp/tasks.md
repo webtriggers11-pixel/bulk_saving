@@ -3,5 +3,6 @@
 - [x] T1 ADR-0040 + `devFixedOtp()` in OtpService + production refusal + env files + tests
 - [x] T1b "only 4 digit": every OTP is 4 digits (generator, DTOs `^\d{4}$`, web inputs, tests)
 - [x] T1c "That code has expired… fix this": in development `1111` verifies with or without an outstanding request
+- [x] T1d Owner chose B: an administrator's number gets 8 digits through either door; residents 4; dev `1111` wins everywhere
 - [ ] T2 V2 (code-reviewer): round 1 PASS-conditional (P1-1: owner to confirm 4 digits for REAL codes; P2-1, P3-1, P3-3 taken)
 - [ ] T3 V3 two identical runs; close

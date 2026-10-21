@@ -34,7 +34,7 @@ import {
   OtpVerifyDto,
   RefreshDto,
 } from './auth.dto';
-import { ADMIN_OTP_SCOPE, OtpService } from './otp.service';
+import { ADMIN_OTP_LENGTH, ADMIN_OTP_SCOPE, OTP_LENGTH, OtpService } from './otp.service';
 
 /**
  * BUG-019: one canonical phone form before anything keys on it — the rate limiter, the OTP
@@ -69,7 +69,11 @@ export class AuthController {
       });
     }
     // societyId is derived from the invite code, never from the request body.
-    const outcome = await this.otp.request(society.id, phoneOf(dto), { clientIp });
+    // CHORE-026 (ADR-0040): this door issues the account's own role, so an administrator's
+    // number gets the admin-length code here too. Every caller takes the lookup; the
+    // response is the same either way.
+    const length = (await this.residents.isAdminPhone(phoneOf(dto))) ? ADMIN_OTP_LENGTH : OTP_LENGTH;
+    const outcome = await this.otp.request(society.id, phoneOf(dto), { clientIp, length });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
         { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
@@ -137,9 +141,11 @@ export class AuthController {
     //  - CHORE-017 (ADR-0027): this request no longer asks whether the number is an
     //    administrator AT ALL. It queues the code for everyone; the worker asks, after
     //    the response has gone. Nothing role-dependent is left on the request path.
+    // CHORE-026 (ADR-0040): 8 digits for EVERY caller here — no role lookup on this path.
     const outcome = await this.otp.request(ADMIN_OTP_SCOPE, phoneOf(dto), {
       dispatch: 'queued',
       clientIp,
+      length: ADMIN_OTP_LENGTH,
     });
     if (outcome.result === 'RATE_LIMITED') {
       throw new HttpException(
