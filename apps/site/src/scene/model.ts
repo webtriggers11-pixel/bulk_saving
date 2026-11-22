@@ -136,3 +136,41 @@ export const litCount = (units: number, total: number): number =>
 /** Which window indices are lit, as a Set, for `units`. */
 export const litSet = (order: readonly number[], units: number): Set<number> =>
   new Set(order.slice(0, litCount(units, order.length)));
+
+/* ---- FEAT-030: the hero you play with — name a flat, light the one that was tapped ------- */
+
+/** "A-604": tower letter, floor (1-based) then the window's column on that face. */
+export const flatLabel = (w: Win): string => {
+  const letter = String.fromCharCode(65 + w.tower);
+  const col = (w.face === 'front' ? 0 : 4) + w.col + 1;
+  return `${letter}-${w.floor + 1}${String(col).padStart(2, '0')}`;
+};
+
+/**
+ * A flat's windows: the tapped one first, then its same-floor, same-face neighbours nearest
+ * first, up to `size`. Stable for a given index.
+ */
+export const flatOf = (windows: readonly Win[], index: number, size = WINDOWS_PER_UNIT): number[] => {
+  const w = windows[index];
+  if (!w) return [];
+  const mates = windows
+    .map((x, i) => ({ x, i }))
+    .filter(({ x, i }) => i !== index && x.tower === w.tower && x.face === w.face && x.floor === w.floor)
+    .sort((a, b) => Math.abs(a.x.col - w.col) - Math.abs(b.x.col - w.col) || a.x.col - b.x.col)
+    .map(({ i }) => i);
+  return [index, ...mates].slice(0, size);
+};
+
+/**
+ * Move `indices` to sit right after the first `litN` entries of `order`, so the next unit
+ * lights exactly them. Already-lit indices stay where they are; the lit prefix never changes.
+ */
+export const promote = (order: readonly number[], litN: number, indices: readonly number[]): number[] => {
+  const n = Math.max(0, Math.min(order.length, litN));
+  const lit = order.slice(0, n);
+  const litHas = new Set(lit);
+  const pick = indices.filter((i, k) => !litHas.has(i) && order.includes(i) && indices.indexOf(i) === k);
+  const picked = new Set(pick);
+  const rest = order.slice(n).filter((i) => !picked.has(i));
+  return [...lit, ...pick, ...rest];
+};
