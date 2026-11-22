@@ -304,6 +304,22 @@ export const features: Feature[] = [
 
   // ---- for operators ----------------------------------------------------------------------
   {
+    id: 'FEAT-032',
+    title: 'A new society in two minutes',
+    what: 'The operator creates a society and gets its invite code, a QR poster ready to print, and an invitation message to paste into the society WhatsApp group. Scanning the QR opens the app with the code already filled in.',
+    why: 'Bringing a building on board should take a poster and a message, not a setup call.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
+    id: 'FEAT-033',
+    title: 'Every member, in one place',
+    what: 'Operators see every user across societies, search by name or number, rename someone, and grant or remove admin access, with guards against locking themselves out.',
+    why: 'Support starts with being able to find the person who is asking.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
     id: 'FEAT-025',
     title: 'Lists that stay fast',
     what: 'Every list loads a page at a time with an explicit Show more, across societies and rounds.',
