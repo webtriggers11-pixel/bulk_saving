@@ -1762,3 +1762,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Admin API: `GET /admin/residents/:id` (profile + every pledge), `active` on PATCH residents (self + last ACTIVE admin guarded; switching off revokes sessions) and PATCH societies, `status` filter on the users list. Last-admin guards now count ACTIVE admins.
 - Tests: `active-flags.integration.spec.ts` (5) + a unit test for switching off the last active admin. Admin integration suites 26/26, backend unit 249.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-034 + FEAT-035 — V1 + browser pass
+- V1 at 57fbc90 (worktree, no other gate): exit 0: site 62/62, backend 604/604, web 746/746. Before that, the `admin-dashboard` spec's pinned society shape needed `active` (FEAT-035), fixed.
+- Browser pass (branch build :3100/:5180, headless, signed in as +919999900209): desktop 1280: sidebar groups Overview/Onboarding/Group buys/Catalog; dashboard numbers (4 societies, 21 users, 2 admins, 0 open rounds), quick actions, newest societies/users. Users → Rohan (+919999900202) detail: profile, access, account switch, 3 pledges; switched off (badge "Switched off") → switched back on (restored). Phone 390: menu → drawer → Societies → drawer closed.
+- Found and fixed in the pass: the lead (dark) Societies tile's "Open" link was brand-ink on black (now on-fill ink); the drawer panel gets an opaque `bg-paper` under `surface-solid` (86% alpha in the non-Mono looks).
+- By: agent (autonomous)

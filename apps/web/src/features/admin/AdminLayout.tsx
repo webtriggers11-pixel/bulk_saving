@@ -122,7 +122,7 @@ function NavDrawer({ open, onClose, returnFocus }: { open: boolean; onClose: () 
         aria-modal="true"
         aria-label="Admin menu"
         id="admin-drawer"
-        className="animate-rise surface-solid absolute inset-y-0 left-0 flex w-[min(300px,85vw)] flex-col gap-6 px-4 pb-6 pt-5 shadow-nav"
+        className="animate-rise surface-solid bg-paper absolute inset-y-0 left-0 flex w-[min(300px,85vw)] flex-col gap-6 px-4 pb-6 pt-5 shadow-nav"
       >
         <div className="flex items-center justify-between">
           <Brand />

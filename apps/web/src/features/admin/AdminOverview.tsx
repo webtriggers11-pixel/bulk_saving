@@ -39,7 +39,12 @@ function Stats({ data }: { data: AdminOverviewDto }) {
           emphasis={index === 0 ? 'lead' : 'normal'}
           data-testid={tile.testId}
           action={
-            <Link to={tile.to} className="text-meta font-bold text-brand-ink underline" aria-label={`Open ${tile.label}`}>
+            // On the lead (dark) tile the brand ink disappears into the fill; use the on-fill ink there.
+            <Link
+              to={tile.to}
+              className={index === 0 ? 'text-meta font-bold text-on-fill underline' : 'text-meta font-bold text-brand-ink underline'}
+              aria-label={`Open ${tile.label}`}
+            >
               Open
             </Link>
           }
