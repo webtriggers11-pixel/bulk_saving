@@ -1730,3 +1730,22 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Branch build on :3100/:5180, headless 390×844, signed in as +919999900001 (the two seeded admins' local OTP send counters, which my own test runs had exhausted, were cleared in local Redis: `otp:resend:{hourly,ceiling}:admin-door:<phone>`). `/admin/users` lists 20 on page one; `?q=9999900202` finds Rohan; promote → Admin → demote → Resident (restored); removing Asha is refused in the sheet ("has 8 pledge(s)…"); own row: "You can't change your own access", remove disabled.
 - Note: `+919999900108` (seeded "Kabir Shah") now belongs to a real sign-in renamed "Web Triggers"; TEST_LOGINS.md's "Kabir" row is stale on this DB.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-033 — V2 (code-reviewer)
+- Gate (run by reviewer, a62585b, no other gate running): exit 0. site 62/62 (9 files), backend 593/593 (54 suites), web 731/731 (85 files, design-system.test 46/46); css-class scan 3684 tokens resolve; bundle OTP/simulator scan clean. BUG-027 did not recur.
+- Verdict: PASS (no P0/P1). Findings:
+  - P2 residents-admin.service.ts:70,91 — serializable tx aborts (P2034) and update/delete-vs-delete races (P2025) are not mapped, so they return a 500 instead of a 409/404. Concurrent mutual demotion is still safe (SSI aborts one), but the losing admin sees a 500. FEAT-032 V2 fixed this same class of race for societies.
+  - P2 residents-admin.service.ts:11,88 vs ADR-0044 §5 — the guard refuses any non-CANCELLED pledge (CLOSED_MET/ASSIGNED/DELIVERED/RATED), not just OPEN. Anyone who was ever in a completed group buy can never be removed, and the 409 says "They can leave the rounds first", which is impossible because `leave` needs an OPEN round. Either align the ADR and the copy, or narrow the guard.
+  - P3 residents-admin.integration.spec.ts:145-149 — "ends their sessions" passes even without revokeAllSessions, because refresh already 401s for a missing resident. The revoke call is untested. Deleted or demoted users keep their access token for up to JWT_ACCESS_TTL (documented in ADR §4).
+  - P3 AdminUsersPage.tsx:81-91 — the self Access radiogroup is not disabled or aria-disabled: chips are focusable, arrows move focus but don't select, and nothing is announced. :95 hardcodes "15 minutes" though the TTL is configurable.
+  - P3 residents-admin.service.ts:34 — q of "-" or " - " strips to an empty phone term, and `contains ''` matches every resident.
+  - P3 residents-admin.dto.ts:30 — @Transform(trim) is a no-op for storage (the pipe doesn't transform, so an API "  Bob " is stored untrimmed). This is a pre-existing project pattern; the web trims.
+  - P3 spec AC3 says 204, the code returns 200 {deleted:true} (matches societies). The confirm copy says ratings are deleted, but the live-pledge guard means rated residents can't be removed.
+- By: code-reviewer subagent
+
+## 2026-11-22 — FEAT-033 — V2 findings taken
+- P2 races: `update`/`remove` map a serializable abort (P2034) → 409 and a row deleted mid-write (P2025) → 404 (`raceOutcome`), unit-tested.
+- P2 delete guard: kept broad (any pledge in a non-cancelled round). Deleting would cascade away units, payments and ratings of closed/delivered rounds. The message and ADR-0044 §5 were wrong ("leave the rounds first" is impossible after close); both now say "deactivate them instead" (FEAT-035 delivers deactivate on this branch). Spec AC3 → 200 `{deleted:true}`; the confirm text no longer claims ratings are deleted.
+- P3 taken: revoke-on-remove asserted in a unit test (the integration 401 passed without it); a dash-only `q` no longer matches everyone (integration test); your own access is plain text, not a dead radio group; no hard-coded "15 minutes".
+- P3 not taken: "names not trimmed via the API". The integration test sends `  Farah K <tag> ` and asserts the trimmed name stored, so `whitelist: true` does apply the `@Transform`.
+- By: agent (autonomous)

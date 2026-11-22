@@ -130,11 +130,16 @@ describe('Residents admin API (integration, needs DB)', () => {
     await as(adminToken).patch(`/admin/residents/${asha.id}`, { role: 'RESIDENT' }).expect(200);
   });
 
+  it('a dash-only search does not match everyone (V2 P3)', async () => {
+    const res = (await as(adminToken).get(`/admin/residents?q=${encodeURIComponent(' - ')}&societyId=${green.id}`).expect(200)).body.data as Page<AdminResidentDto>;
+    expect(res.total).toBe(0);
+  });
+
   it('refuses to remove yourself, or someone with a live pledge; a cancelled round does not count', async () => {
     await as(adminToken).delete(`/admin/residents/${admin.id}`).expect(409);
     await pledge(asha, 'OPEN');
     const busy = await as(adminToken).delete(`/admin/residents/${asha.id}`).expect(409);
-    expect(busy.body.error.message).toMatch(/1 pledge/);
+    expect(busy.body.error.message).toMatch(/1 pledge.*deactivate them instead/);
     expect(await prisma.resident.findUnique({ where: { id: asha.id } })).not.toBeNull();
 
     await pledge(farah, 'CANCELLED');

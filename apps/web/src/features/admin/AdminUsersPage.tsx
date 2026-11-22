@@ -78,21 +78,28 @@ function EditUserSheet({ user, isSelf, onClose }: { user: AdminResidentDto; isSe
           <Field label="Name" id="edit-user-name">
             {(props) => <Input {...props} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}
           </Field>
-          <FilterChips
-            label="Access"
-            options={[
-              { value: Role.RESIDENT, label: 'Resident' },
-              { value: Role.SUPER_ADMIN, label: 'Admin (full access)' },
-            ]}
-            value={role}
-            onChange={(next) => {
-              if (!isSelf && isRole(next)) setRole(next as Role);
-            }}
-          />
+          {/* V2 P3: for yourself there is no control at all, so nothing focusable pretends to be one. */}
+          {isSelf ? (
+            <p className="text-meta font-bold text-ink" data-testid="self-access">
+              Access: {ROLE_LABEL[user.role]}
+            </p>
+          ) : (
+            <FilterChips
+              label="Access"
+              options={[
+                { value: Role.RESIDENT, label: 'Resident' },
+                { value: Role.SUPER_ADMIN, label: 'Admin (full access)' },
+              ]}
+              value={role}
+              onChange={(next) => {
+                if (isRole(next)) setRole(next as Role);
+              }}
+            />
+          )}
           <p className="text-meta text-ink-muted" data-testid="access-note">
             {isSelf
               ? "You can't change your own access. Ask another admin."
-              : 'Admins can manage every society, user, round, service and vendor. A change applies within 15 minutes.'}
+              : 'Admins can manage every society, user, round, service and vendor. A change takes effect the next time their session refreshes (within minutes).'}
           </p>
           <p className="text-meta text-ink-muted">
             {user.pledgeCount > 0
@@ -105,7 +112,7 @@ function EditUserSheet({ user, isSelf, onClose }: { user: AdminResidentDto; isSe
         open={confirmRemove}
         onClose={() => setConfirmRemove(false)}
         title={`Remove ${user.name ?? user.phone}?`}
-        consequence="They are signed out everywhere, and their account, ratings and service asks are deleted. They can join again with the invite code."
+        consequence="They are signed out everywhere and their account is deleted. They can join again with the invite code."
         confirmLabel="Yes, remove"
         pendingLabel="Removing…"
         busy={remove.isPending}

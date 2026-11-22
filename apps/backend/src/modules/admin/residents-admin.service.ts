@@ -1,6 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoundStatus } from '@prisma/client';
-import { Role, type AdminResidentDto, type AdminResidentsQuery, type Page, type UpdateResidentBody } from '@bulk/shared';
+import {
+  Role,
+  type AdminResidentDto,
+  type AdminResidentsQuery,
+  type Page,
+  type UpdateResidentBody,
+} from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { containsInsensitive, searchTerm } from '../../common/list-filters';
 import { pageArgs, pageOf } from '../../common/pagination';
@@ -8,7 +14,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 
 /** A pledge counts while its round is not cancelled: those are the rows a removal would orphan. */
-const LIVE_PLEDGE = { round: { status: { not: RoundStatus.CANCELLED } } } satisfies Prisma.RoundParticipantWhereInput;
+const LIVE_PLEDGE = {
+  round: { status: { not: RoundStatus.CANCELLED } },
+} satisfies Prisma.RoundParticipantWhereInput;
 
 export const RESIDENT_ROW = {
   society: { select: { id: true, name: true } },
@@ -30,13 +38,27 @@ export class ResidentsAdminService {
 
   async list(query: AdminResidentsQuery = {}): Promise<Page<AdminResidentDto>> {
     const q = searchTerm(query.q);
+    // V2 P3: a term that is all spaces/dashes leaves an empty phone fragment, which would match everyone.
+    const phoneTerm = q?.replace(/[\s-]/g, '') ?? '';
     const where: Prisma.ResidentWhereInput = {
-      ...(q ? { OR: [{ name: containsInsensitive(q) }, { phone: { contains: q.replace(/[\s-]/g, '') } }] } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: containsInsensitive(q) },
+              ...(phoneTerm ? [{ phone: { contains: phoneTerm } }] : []),
+            ],
+          }
+        : {}),
       ...(query.societyId ? { societyId: query.societyId } : {}),
       ...(query.role ? { role: query.role } : {}),
     };
     const [rows, total] = await Promise.all([
-      this.prisma.resident.findMany({ where, include: RESIDENT_ROW, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], ...pageArgs(query) }),
+      this.prisma.resident.findMany({
+        where,
+        include: RESIDENT_ROW,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        ...pageArgs(query),
+      }),
       this.prisma.resident.count({ where }),
     ]);
     return pageOf(rows, query, total, toResidentDto);
@@ -49,25 +71,34 @@ export class ResidentsAdminService {
    * other at once cannot both succeed.
    */
   async update(actorId: string, id: string, body: UpdateResidentBody): Promise<AdminResidentDto> {
-    return this.prisma.$transaction(async (tx) => {
-      const current = await tx.resident.findUnique({ where: { id } });
-      if (!current) throw notFound();
-      if (body.role !== undefined && body.role !== current.role) {
-        if (id === actorId) throw conflict('You cannot change your own role. Ask another admin.');
-        if (current.role === Role.SUPER_ADMIN && (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1) {
-          throw conflict('This is the last admin. Make someone else an admin first.');
-        }
-      }
-      const row = await tx.resident.update({
-        where: { id },
-        data: {
-          ...(body.name !== undefined ? { name: body.name } : {}),
-          ...(body.role !== undefined ? { role: body.role } : {}),
+    return this.prisma
+      .$transaction(
+        async (tx) => {
+          const current = await tx.resident.findUnique({ where: { id } });
+          if (!current) throw notFound();
+          if (body.role !== undefined && body.role !== current.role) {
+            if (id === actorId)
+              throw conflict('You cannot change your own role. Ask another admin.');
+            if (
+              current.role === Role.SUPER_ADMIN &&
+              (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1
+            ) {
+              throw conflict('This is the last admin. Make someone else an admin first.');
+            }
+          }
+          const row = await tx.resident.update({
+            where: { id },
+            data: {
+              ...(body.name !== undefined ? { name: body.name } : {}),
+              ...(body.role !== undefined ? { role: body.role } : {}),
+            },
+            include: RESIDENT_ROW,
+          });
+          return toResidentDto(row);
         },
-        include: RESIDENT_ROW,
-      });
-      return toResidentDto(row);
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      )
+      .catch(raceOutcome);
   }
 
   /**
@@ -77,21 +108,48 @@ export class ResidentsAdminService {
    */
   async remove(actorId: string, id: string): Promise<{ deleted: true }> {
     if (id === actorId) throw conflict('You cannot remove yourself.');
-    await this.prisma.$transaction(async (tx) => {
-      const current = await tx.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
-      if (!current) throw notFound();
-      if (current.role === Role.SUPER_ADMIN && (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1) {
-        throw conflict('This is the last admin and cannot be removed.');
-      }
-      const pledges = current._count.roundParticipations;
-      if (pledges > 0) {
-        throw conflict(`This resident has ${pledges} pledge(s) in group buys, so removing them would change those rounds. They can leave the rounds first.`);
-      }
-      await tx.resident.delete({ where: { id } });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    await this.prisma
+      .$transaction(
+        async (tx) => {
+          const current = await tx.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
+          if (!current) throw notFound();
+          if (
+            current.role === Role.SUPER_ADMIN &&
+            (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1
+          ) {
+            throw conflict('This is the last admin and cannot be removed.');
+          }
+          const pledges = current._count.roundParticipations;
+          if (pledges > 0) {
+            // V2 P2: any pledge outside a cancelled round blocks removal, closed and delivered ones
+            // included. Deleting would cascade away that round's units, payments and rating history
+            // (ADR-0044 §5). Deactivating keeps the history and still ends their access.
+            throw conflict(
+              `This resident has ${pledges} pledge(s) in group buys. Removing them would erase that history, so deactivate them instead.`,
+            );
+          }
+          await tx.resident.delete({ where: { id } });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      )
+      .catch(raceOutcome);
     await this.auth.revokeAllSessions(id);
     return { deleted: true };
   }
+}
+
+/**
+ * V2 P2: a race answers 404/409, never a 500. A serializable abort (P2034) means another
+ * admin changed the same rows mid-check; a missing row (P2025) means it was deleted between
+ * the read and the write.
+ */
+function raceOutcome(err: unknown): never {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2034')
+      throw conflict('Another admin changed this user at the same moment. Reload and try again.');
+    if (err.code === 'P2025') throw notFound();
+  }
+  throw err;
 }
 
 function notFound(): NotFoundException {

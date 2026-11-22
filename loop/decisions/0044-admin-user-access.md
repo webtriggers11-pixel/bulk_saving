@@ -17,7 +17,9 @@
 4. **Role changes** take effect at the next token refresh: refresh re-reads the role from the database, so within one `JWT_ACCESS_TTL_SECONDS`.
    Deleting a resident revokes all their sessions (`revokeAllSessions`).
 5. **Delete cascades** to that resident's pledges, ratings, asks, notifications and push devices (schema `onDelete: Cascade`). The confirm sheet says so.
-   Round unit counts are maintained by `RoundService`, so deleting a resident with a pledge in an OPEN round is refused (409). Withdraw first.
+   Deleting a resident with a pledge in any round that was not CANCELLED is refused (409): the cascade would bypass `RoundService`'s unit counts
+   and erase that round's payments and rating history. *(Amended by FEAT-033 V2: the first draft said "OPEN rounds only, withdraw first", but a closed
+   round can't be left, so that advice was impossible.)* Deactivating (ADR-0045) is the tool for a resident with history.
 
 ## Revisit trigger
 Society-level admins; or an audit-log requirement for admin actions.
