@@ -4,6 +4,7 @@ import type { Resident, Society } from '@prisma/client';
 import type { AdminResidentDetailDto, AdminResidentDto, AdminSocietyDetailDto, Page } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
+import { RedisService } from '../src/redis/redis.service';
 import { ErrorCode } from '../src/common/error-codes';
 import { CapturingChannel, createTestApp, randomInviteCode, randomPhone } from './helpers/test-app';
 
@@ -117,5 +118,79 @@ describe('Active flags (integration, needs DB)', () => {
     expect(res.body.error.code).toBe(ErrorCode.INVALID_INVITE_CODE);
     await asAdmin.patch(`/admin/societies/${society.id}`, { active: true }).expect(200);
     await api().post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone: randomPhone() }).expect(200);
+  });
+
+  async function waitForSend(from: number, phone: string): Promise<string> {
+    for (let i = 0; i < 200; i += 1) {
+      const mine = channel.otps.slice(from).filter((sent) => sent.phone === phone);
+      if (mine.length > 0) return mine[mine.length - 1].code;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`no OTP dispatched to ${phone} within 2s`);
+  }
+
+  it('V2 P1: a switched-off admin\'s still-valid token cannot switch itself back on, or do anything admin', async () => {
+    const other = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), role: 'SUPER_ADMIN', verifiedAt: new Date() } });
+    const otherToken = (await auth.issueTokens(other)).accessToken;
+    await asAdmin.patch(`/admin/residents/${other.id}`, { active: false }).expect(200);
+    // The JWT is still unexpired, but every admin route re-reads the row.
+    const back = await api().patch(`/admin/residents/${other.id}`).set('Authorization', `Bearer ${otherToken}`).send({ active: true });
+    expect(back.status).toBe(403);
+    expect(back.body.error.code).toBe(ErrorCode.ACCOUNT_DISABLED);
+    await api().patch(`/admin/residents/${admin.id}`).set('Authorization', `Bearer ${otherToken}`).send({ active: false }).expect(403);
+    await api().get('/admin/overview').set('Authorization', `Bearer ${otherToken}`).expect(403);
+    expect((await prisma.resident.findUniqueOrThrow({ where: { id: other.id } })).active).toBe(false);
+  });
+
+  it('a demoted admin\'s old token is refused on admin routes at once', async () => {
+    const other = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), role: 'SUPER_ADMIN', verifiedAt: new Date() } });
+    const otherToken = (await auth.issueTokens(other)).accessToken;
+    await asAdmin.patch(`/admin/residents/${other.id}`, { role: 'RESIDENT' }).expect(200);
+    const res = await api().get('/admin/residents').set('Authorization', `Bearer ${otherToken}`);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe(ErrorCode.FORBIDDEN);
+  });
+
+  it('switching off ends every stored session (revokeAllSessions ran)', async () => {
+    const r = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), role: 'RESIDENT', verifiedAt: new Date() } });
+    await auth.issueTokens(r);
+    await auth.issueTokens(r);
+    const redis = app.get(RedisService);
+    expect(await redis.smembers(`sessions:${r.id}`)).toHaveLength(2);
+    await asAdmin.patch(`/admin/residents/${r.id}`, { active: false }).expect(200);
+    expect(await redis.smembers(`sessions:${r.id}`)).toHaveLength(0);
+  });
+
+  it('the admin OTP door refuses a switched-off admin (ACCOUNT_DISABLED) after the right code', async () => {
+    const other = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), role: 'SUPER_ADMIN', active: false, verifiedAt: new Date() } });
+    const from = channel.otps.length;
+    await api().post('/auth/admin/otp/request').send({ phone: other.phone }).expect(200);
+    const code = await waitForSend(from, other.phone);
+    const res = await api().post('/auth/admin/otp/verify').send({ phone: other.phone, code });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe(ErrorCode.ACCOUNT_DISABLED);
+  });
+
+  it('a switched-off resident at the society door is refused before any profile write', async () => {
+    const r = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), name: 'Before', role: 'RESIDENT', active: false, verifiedAt: null } });
+    const res = await api().post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone: r.phone }).expect(200);
+    expect(res.body.data.requested).toBe(true);
+    const code = [...channel.otps].reverse().find((o) => o.phone === r.phone)?.code;
+    const verify = await api().post('/auth/otp/verify').send({ inviteCode: society.inviteCode, phone: r.phone, code, name: 'Renamed' });
+    expect(verify.status).toBe(403);
+    expect(verify.body.error.code).toBe(ErrorCode.ACCOUNT_DISABLED);
+    const after = await prisma.resident.findUniqueOrThrow({ where: { id: r.id } });
+    expect(after).toMatchObject({ name: 'Before', verifiedAt: null });
+  });
+
+  it("an inactive society's code also fails at verify (a code requested before the switch-off is useless)", async () => {
+    const phone = randomPhone();
+    await api().post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone }).expect(200);
+    const code = [...channel.otps].reverse().find((o) => o.phone === phone)?.code;
+    await asAdmin.patch(`/admin/societies/${society.id}`, { active: false }).expect(200);
+    const res = await api().post('/auth/otp/verify').send({ inviteCode: society.inviteCode, phone, code });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe(ErrorCode.INVALID_INVITE_CODE);
+    await asAdmin.patch(`/admin/societies/${society.id}`, { active: true }).expect(200);
   });
 });

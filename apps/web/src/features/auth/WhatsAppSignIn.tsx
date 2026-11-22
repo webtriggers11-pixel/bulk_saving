@@ -53,7 +53,7 @@ interface WhatsAppSignInProps {
  * button opens WhatsApp with the message ready; on a laptop a QR code carries the same link.
  */
 export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: WhatsAppSignInProps) {
-  const { view, start, reset, startError, queuedOffline, stalled } = login;
+  const { view, start, reset, startError, queuedOffline, stalled, refused } = login;
   const session = 'session' in view ? view.session : null;
   const qr = useQrDataUrl(session?.waLink ?? null, !phoneLike);
 
@@ -85,6 +85,11 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
             <Icon name="refresh" size={18} strokeWidth={2.2} />
           </Button>
         </>
+      )}
+      {refused && (
+        <Notice tone="error" data-testid="whatsapp-refused">
+          {messageFromError(refused)}
+        </Notice>
       )}
       {queuedOffline && (
         <Notice tone="warn" data-testid="whatsapp-offline">

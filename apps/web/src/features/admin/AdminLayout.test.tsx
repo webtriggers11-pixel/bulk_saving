@@ -61,4 +61,33 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Close menu' })[0]);
     expect(screen.queryByRole('dialog', { name: 'Admin menu' })).not.toBeInTheDocument();
   });
+
+  it('a re-render while open keeps focus where it is; the page behind does not scroll (V2)', () => {
+    const { rerender } = renderAt('/admin');
+    fireEvent.click(screen.getByTestId('admin-menu-button'));
+    const vendors = within(screen.getByRole('dialog', { name: 'Admin menu' })).getByRole('link', { name: 'Vendors' });
+    vendors.focus();
+    expect(document.body.style.overflow).toBe('hidden');
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={['/admin']}>
+          <Routes>
+            <Route path="*" element={<AdminLayout title="Page again">content</AdminLayout>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('Tab wraps inside the open drawer', () => {
+    renderAt('/admin');
+    fireEvent.click(screen.getByTestId('admin-menu-button'));
+    const drawer = screen.getByRole('dialog', { name: 'Admin menu' });
+    const focusable = [...drawer.querySelectorAll<HTMLElement>('a, button')];
+    focusable[focusable.length - 1].focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(focusable[0]);
+  });
 });

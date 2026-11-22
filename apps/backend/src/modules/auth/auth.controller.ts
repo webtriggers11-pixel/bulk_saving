@@ -114,6 +114,12 @@ export class AuthController {
       );
     }
 
+    // FEAT-035 V2 P3: a switched-off account is refused BEFORE the upsert, so it cannot rename
+    // itself or refresh `verifiedAt` on the way to the 403 that issueTokens would give.
+    const existing = await this.residents.findBySocietyAndPhone(society.id, phoneOf(dto));
+    if (existing && existing.active === false) {
+      throw new ForbiddenException({ code: ErrorCode.ACCOUNT_DISABLED, message: 'This account has been switched off. Ask your society admin.' });
+    }
     // societyId bound from the invite code — never trusted from the body (ADR-0003).
     const resident = await this.residents.upsertVerified(society.id, phoneOf(dto), dto.name);
     const tokens = await this.auth.issueTokens(resident);

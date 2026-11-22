@@ -91,8 +91,12 @@ export class ResidentsAdminService {
             if (await lastActiveAdmin())
               throw conflict('This is the last admin. Make someone else an admin first.');
           }
+          // V2 P1: no self change to `active` in either direction. Switching yourself back on was
+          // the hole: a switched-off admin's still-valid token could undo the switch-off.
+          if (body.active !== undefined && body.active !== current.active && id === actorId) {
+            throw conflict(body.active ? 'You cannot switch yourself back on. Ask another admin.' : 'You cannot switch yourself off.');
+          }
           if (body.active === false && current.active) {
-            if (id === actorId) throw conflict('You cannot switch yourself off.');
             if (await lastActiveAdmin())
               throw conflict('This is the last active admin and cannot be switched off.');
             switchedOff = true;

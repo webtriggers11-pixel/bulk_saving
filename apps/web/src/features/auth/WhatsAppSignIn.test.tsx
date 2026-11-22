@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { WaStartResponse } from '@bulk/shared';
+import { ApiError } from '../../lib/api';
 import { WhatsAppSignIn, isPhoneLike } from './WhatsAppSignIn';
 import type { useWhatsAppLogin } from './useWhatsAppLogin';
 
@@ -16,13 +17,23 @@ const session: WaStartResponse = {
 
 type Login = ReturnType<typeof useWhatsAppLogin>;
 function login(view: Login['view'], extra: Partial<Login> = {}): Login {
-  return { view, start: vi.fn(), reset: vi.fn(), startError: null, queuedOffline: false, stalled: false, ...extra };
+  return { view, start: vi.fn(), reset: vi.fn(), startError: null, queuedOffline: false, stalled: false, refused: null, ...extra };
 }
 
 /** FEAT-027 (ADR-0038 §8): the step shows the number, the steps and the live line. */
 describe('WhatsAppSignIn', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('a switched-off account gets the final answer, not a spinner (FEAT-035)', () => {
+    render(
+      <WhatsAppSignIn
+        login={login({ phase: 'pending', session }, { refused: new ApiError('ACCOUNT_DISABLED', 'off', 403) })}
+        onUseSms={() => undefined}
+      />,
+    );
+    expect(screen.getByTestId('whatsapp-refused')).toHaveTextContent('This account has been switched off');
   });
 
   it('starts on mount when idle', () => {

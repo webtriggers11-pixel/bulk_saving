@@ -15,4 +15,8 @@ describe('authErrorMessage — validation refusals', () => {
     // No server message at all: the phone is still the likeliest field on these doors.
     expect(authErrorMessage('BAD_REQUEST')).toContain(PHONE_HINT);
   });
+
+  it('names a switched-off account plainly (FEAT-035)', () => {
+    expect(authErrorMessage('ACCOUNT_DISABLED')).toMatch(/switched off/);
+  });
 });

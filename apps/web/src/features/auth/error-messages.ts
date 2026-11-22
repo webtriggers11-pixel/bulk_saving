@@ -33,6 +33,9 @@ export function authErrorMessage(code: string, serverMessage?: string): string {
       return /inviteCode/i.test(serverMessage ?? '')
         ? `That invite code isn't right. ${INVITE_HINT}`
         : `That doesn't look like a phone number. ${PHONE_HINT}`;
+    // FEAT-035 V2 P2: an admin switched this account off.
+    case 'ACCOUNT_DISABLED':
+      return 'This account has been switched off. Ask your society admin to switch it back on.';
     case 'UNAUTHORIZED':
     case 'TOKEN_REVOKED':
       return 'Your session has expired. Please sign in again.';

@@ -3,6 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthResult, WaStartResponse, WaStatusResponse } from '@bulk/shared';
 import { queryStalled } from '../../lib/offline';
 import { fetchWhatsAppStatus } from './wa.api';
+import { ApiError } from '../../lib/api';
+
+/** FEAT-035 V2 P2: the server refused this account outright; polling again cannot change that. */
+const isRefusal = (error: unknown): error is ApiError => error instanceof ApiError && error.code === 'ACCOUNT_DISABLED';
 
 /** How often the browser asks whether the tap happened. */
 export const WA_POLL_MS = 2_000;
@@ -39,7 +43,7 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
     queryFn: () => fetchWhatsAppStatus(requestId as string),
     enabled: requestId !== null && handedOver !== requestId,
     retry: false,
-    refetchInterval: (query) => (terminal(query.state.data) ? false : pollMs),
+    refetchInterval: (query) => (terminal(query.state.data) || isRefusal(query.state.error) ? false : pollMs),
     refetchIntervalInBackground: true,
   });
 
@@ -79,7 +83,9 @@ export function useWhatsAppLogin(start: () => Promise<WaStartResponse>, onSigned
     },
     startError: startMutation.isError ? startMutation.error : null,
     queuedOffline: startMutation.isPaused,
+    /** The account is switched off (FEAT-035): a final answer, not a stall. */
+    refused: isRefusal(statusQuery.error) ? statusQuery.error : null,
     /** The polling cannot reach the server (offline, or it is failing). */
-    stalled: requestId !== null && queryStalled(statusQuery),
+    stalled: requestId !== null && queryStalled(statusQuery) && !isRefusal(statusQuery.error),
   };
 }

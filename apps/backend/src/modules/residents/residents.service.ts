@@ -10,6 +10,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ResidentsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** The resident with this phone in this society, if any (FEAT-035). */
+  findBySocietyAndPhone(societyId: string, phone: string): Promise<Resident | null> {
+    return this.prisma.resident.findUnique({ where: { societyId_phone: { societyId, phone } } });
+  }
+
   /** Create the resident (or link the existing one) and mark the phone verified. */
   upsertVerified(societyId: string, phone: string, name?: string): Promise<Resident> {
     const now = new Date();

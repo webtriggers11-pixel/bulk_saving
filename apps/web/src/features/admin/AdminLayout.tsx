@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { CrashCard, ErrorBoundary } from '../../components/ErrorBoundary';
 import { SchemeToggle } from '../../components/ui/scheme-toggle';
@@ -106,9 +106,13 @@ function NavDrawer({ open, onClose, returnFocus }: { open: boolean; onClose: () 
       }
     };
     document.addEventListener('keydown', onKey);
+    // The page behind a modal drawer does not scroll (V2 P3).
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const back = returnFocus;
     return () => {
       document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
       back()?.focus();
     };
   }, [open, onClose, returnFocus]);
@@ -160,6 +164,10 @@ export function AdminLayout({
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
+  // Stable identities (V2 P2): the drawer's effect depends on these, and fresh arrows on every
+  // render re-ran it whenever the page re-rendered (a query landing), yanking focus to the top.
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuButtonEl = useCallback(() => menuButton.current, []);
   // Navigating (a link, Back, a redirect) always closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
   return (
@@ -190,7 +198,7 @@ export function AdminLayout({
           <SchemeToggle className="ml-auto" />
         </div>
       </header>
-      <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} returnFocus={() => menuButton.current} />
+      <NavDrawer open={menuOpen} onClose={closeMenu} returnFocus={menuButtonEl} />
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-7 lg:px-8">
         {/* BUG-025 V2: admins get the "new version" switch too, or a build waits until
