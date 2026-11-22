@@ -129,5 +129,6 @@ describe('AdminUserDetailPage (FEAT-035)', () => {
     expect(screen.queryByTestId('user-society-link')).not.toBeInTheDocument();
     expect(screen.getByTestId('platform-access')).toHaveTextContent("can't become a resident");
     expect(screen.queryByRole('radio', { name: 'Resident' })).not.toBeInTheDocument();
+    expect(screen.getByText(/can be removed. You can add them back from Users/)).toBeInTheDocument();
   });
 });

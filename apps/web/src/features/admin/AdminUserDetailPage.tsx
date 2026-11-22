@@ -170,7 +170,9 @@ function StatusCard({ user, isSelf }: { user: AdminResidentDetailDto; isSelf: bo
               ? "You can't remove yourself."
               : history > 0
                 ? `They have ${history} pledge(s) in group buys, so removing would erase that history. Switch them off instead.`
-                : 'No group-buy history, so they can be removed. They can join again with the invite code.'}
+                : user.society === null
+                  ? 'This platform admin can be removed. You can add them back from Users.'
+                  : 'No group-buy history, so they can be removed. They can join again with the invite code.'}
           </p>
         </div>
       </div>

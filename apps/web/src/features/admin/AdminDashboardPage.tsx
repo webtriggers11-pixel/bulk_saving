@@ -394,9 +394,9 @@ function AsksAlert() {
   return (
     // V2 P3-4: a labelled region with an action, not a live region (it is there at mount).
     <section aria-labelledby="asks-alert-title" data-testid="asks-alert" className="mb-6">
-      <Card surface="accent">
+      <Card surface="tint">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-amber-ink/15 text-amber-ink">
             <Icon name="bell" size={20} strokeWidth={2} />
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
