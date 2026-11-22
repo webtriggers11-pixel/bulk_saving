@@ -312,6 +312,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-036',
+    title: 'Admins are just admins',
+    what: 'An operator account belongs to no society. Operators add another admin with a phone number, and that person signs in at the admin page and runs every society from there.',
+    why: 'Running the platform shouldn\'t mean pretending to live in one of its societies.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
     id: 'FEAT-035',
     title: 'Switch off, don\'t delete',
     what: 'Each member has a page with their details and every group buy they joined. An operator can switch an account off, which signs it out everywhere and stops sign-in, or pause a whole society\'s invite code, and switch either back on later.',
