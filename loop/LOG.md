@@ -1749,3 +1749,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3 taken: revoke-on-remove asserted in a unit test (the integration 401 passed without it); a dash-only `q` no longer matches everyone (integration test); your own access is plain text, not a dead radio group; no hard-coded "15 minutes".
 - P3 not taken: "names not trimmed via the API". The integration test sends `  Farah K <tag> ` and asserts the trimmed name stored, so `whitelist: true` does apply the `@Transform`.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-032 + FEAT-033 — V3; CLOSED
+- Registry flipped to done and both added to the product site BEFORE V3 (FEAT-031's lesson). First V3 at ad9a4bb failed in typecheck, both runs identically (an invalid `exact` ByRole option in the FEAT-033 test from its V2 fix) → fixed at 3e11afa.
+- V3 at 3e11afa (review worktree, .env without WHATSAPP_*, no other gate): two back-to-back runs 13:26:19–13:27:34 and 13:27:34–13:28:52, both exit 0 and identical: site 62/62, backend 598/598, web 736/736. No flakes (BUG-027 did not recur). Logs: f3233-v3-1.log and f3233-v3-2.log in the session scratchpad.
+- FEAT-032 → done. FEAT-033 → done.
+- By: agent (autonomous)
