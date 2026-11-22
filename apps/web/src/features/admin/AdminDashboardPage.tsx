@@ -51,11 +51,11 @@ function PanelError({ subject, onRetry }: { subject: string; onRetry: () => void
   );
 }
 
-/** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
 /** FEAT-037: a recent request's row. Drawn with ::before (an amber bar and wash), because the
  * active look's `.surface-solid` background rules outrank utility classes on the row itself. */
+// V2 P2-2: `isolate` + `before:-z-10` put the wash above the row's surface but BEHIND its text.
 const RECENT_ROW =
-  'relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:border-l-4 before:border-amber-ink before:bg-amber-ink/10 before:content-[""]';
+  'relative isolate overflow-hidden before:-z-10 before:pointer-events-none before:absolute before:inset-0 before:border-l-4 before:border-amber-ink before:bg-amber-ink/10 before:content-[""]';
 
 const ASK_SORTS = [
   { value: '', label: 'Newest first' },
@@ -67,14 +67,15 @@ const ASK_SORTS = [
  * server's order) or most asked, kept in the URL. Requests from the last 24 h are tinted
  * and marked New; the single newest one says Newest.
  */
-function AsksCard({ asks }: { asks: AdminServiceAsk[] }) {
+function AsksCard({ asks, mostAsked }: { asks: AdminServiceAsk[]; mostAsked: AdminServiceAsk[] }) {
   const [params, setParams] = useSearchParams();
   const sort = params.get('asks') === 'most' ? 'most' : '';
-  const newestKey = asks.reduce<AdminServiceAsk | undefined>((best, a) => (!best || a.latest > best.latest ? a : best), undefined);
-  const rows =
-    sort === 'most'
-      ? [...asks].sort((x, y) => y.askCount - x.askCount || (y.latest > x.latest ? 1 : y.latest < x.latest ? -1 : 0))
-      : asks;
+  const keyOf = (a: AdminServiceAsk) => `${a.society.id}:${a.service.id}`;
+  // The newest across both lists (ties: the first seen, i.e. the server's newest-first order).
+  const newest = [...asks, ...mostAsked].reduce<AdminServiceAsk | undefined>((best, a) => (!best || a.latest > best.latest ? a : best), undefined);
+  const newestKey = newest ? keyOf(newest) : undefined;
+  // FEAT-037 V2 P2-1: the server ranks "Most asked" over every waiting request, not just these 20.
+  const rows = sort === 'most' ? mostAsked : asks;
   return (
     <Card data-testid="asks" id="asks">
       <CardHeader>
@@ -108,17 +109,17 @@ function AsksCard({ asks }: { asks: AdminServiceAsk[] }) {
           <DataRows>
             {rows.map((ask) => {
               const recent = isRecent(ask.latest);
-              const newest = ask === newestKey;
+              const isNewest = keyOf(ask) === newestKey;
               return (
                 <DataRow
-                  key={`${ask.society.id}:${ask.service.id}`}
+                  key={keyOf(ask)}
                   className={recent ? RECENT_ROW : undefined}
                   title={
                     <span className="flex flex-wrap items-center gap-2">
                       {ask.service.name}
                       {recent && (
                         <Badge tone="amber" data-testid="ask-new">
-                          {newest ? 'Newest' : 'New'}
+                          {isNewest ? 'Newest' : 'New'}
                         </Badge>
                       )}
                     </span>
@@ -145,6 +146,7 @@ function AsksCard({ asks }: { asks: AdminServiceAsk[] }) {
   );
 }
 
+/** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
 function DashboardSummary() {
   const dashboard = useAdminDashboard();
   const { data, isLoading, refetch } = dashboard;
@@ -207,7 +209,7 @@ function DashboardSummary() {
       </section>
 
       {/* FEAT-022 (ADR-0033): what residents are asking for, as a to-do list for rounds. */}
-      <AsksCard asks={data.asks} />
+      <AsksCard asks={data.asks} mostAsked={data.asksMostAsked} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">

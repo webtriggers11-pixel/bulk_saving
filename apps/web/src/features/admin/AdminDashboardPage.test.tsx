@@ -180,14 +180,14 @@ describe('AdminDashboardPage', () => {
     };
 
     it('counts "+N more" from the server total, not the 20 rows listed (V2 P2-1)', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 30 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 30 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       expect(await screen.findByTestId('asks-alert')).toHaveTextContent('+29 more waiting');
     });
 
     it('opens with an alert naming the newest request, one link from a prefilled round', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       const alert = await screen.findByTestId('asks-alert');
@@ -204,7 +204,7 @@ describe('AdminDashboardPage', () => {
     });
 
     it('marks a request from the last 24 hours as New in the list', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('New');
@@ -212,7 +212,7 @@ describe('AdminDashboardPage', () => {
     });
 
     it('sorts newest first by default, most asked on request, and keeps the choice in the URL (FEAT-037)', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       const list = await screen.findByTestId('asks');
@@ -222,8 +222,40 @@ describe('AdminDashboardPage', () => {
       expect(order()).toEqual(['ask-row-tank', 'ask-row-ro']);
     });
 
+    it('"Most asked" shows the server\'s ranking over every waiting request, beyond the 20 newest (FEAT-037 V2 P2-1)', async () => {
+      const oldButPopular = { ...old, society: { id: 'soc_x', name: 'Far Away' }, service: { id: 'svc_far', name: 'Sofa Cleaning', slug: 'sofa' }, askCount: 15 };
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh], asksMostAsked: [oldButPopular, fresh], asksWaiting: 25 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      const list = await screen.findByTestId('asks');
+      expect(within(list).queryByTestId('ask-row-sofa')).not.toBeInTheDocument();
+      fireEvent.click(within(list).getByRole('radio', { name: 'Most asked' }));
+      expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-sofa');
+    });
+
+    it('the sort and the rounds filters keep each other\'s URL params (FEAT-037 V2 P3-3)', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage('/admin?status=OPEN&asks=most');
+      const list = await screen.findByTestId('asks');
+      expect(within(list).getByRole('radio', { name: 'Most asked' })).toBeChecked();
+      await waitFor(() => expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'OPEN' })));
+      // Changing the sort leaves the rounds filter in place.
+      fireEvent.click(within(list).getByRole('radio', { name: 'Newest first' }));
+      fireEvent.click(within(list).getByRole('radio', { name: 'Most asked' }));
+      await waitFor(() => expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'OPEN' })));
+      expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-tank');
+    });
+
+    it('"Newest" goes to the latest request even when it is not listed first (FEAT-037 V2 P3-3)', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [old, fresh], asksMostAsked: [old, fresh], asksWaiting: 2 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('Newest');
+    });
+
     it('a shared ?asks=most link opens in most-asked order (FEAT-037)', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage('/admin?asks=most');
       const list = await screen.findByTestId('asks');
@@ -233,7 +265,7 @@ describe('AdminDashboardPage', () => {
 
     it('highlights recent requests and labels the single newest one (FEAT-037)', async () => {
       const second = { ...fresh, service: { id: 'svc_geyser', name: 'Geyser Service', slug: 'geyser' }, latest: '2026-11-22T10:00:00.000Z' };
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, second, old], asksWaiting: 3 });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, second, old], asksMostAsked: [old, fresh, second], asksWaiting: 3 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       const newest = await screen.findByTestId('ask-row-ro');

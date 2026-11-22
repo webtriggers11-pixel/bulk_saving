@@ -70,6 +70,13 @@ describe('Service asks reach the admin (BUG-029)', () => {
     expect(fresh).toBeLessThan(stale);
     expect(Date.now() - new Date(asks[fresh].latest).getTime()).toBeLessThan(60_000);
     expect(asks[stale].askCount).toBe(3);
+    // FEAT-037: "Most asked" puts the three-ask pair above the one-ask pair, whatever their age.
+    const most = res.body.data.asksMostAsked as AdminServiceAsk[];
+    const mStale = most.findIndex((a) => a.society.id === oldSociety.id && a.service.id === service.id);
+    const mFresh = most.findIndex((a) => a.society.id === newSociety.id && a.service.id === service.id);
+    expect(mStale).toBeGreaterThanOrEqual(0);
+    expect(mFresh === -1 || mStale < mFresh).toBe(true);
+    for (let i = 1; i < most.length; i += 1) expect(most[i - 1].askCount).toBeGreaterThanOrEqual(most[i].askCount);
     expect(new Date(asks[stale].latest).getTime()).toBeLessThan(Date.now() - 86_400_000);
   });
 

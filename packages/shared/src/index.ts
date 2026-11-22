@@ -705,6 +705,8 @@ export interface AdminDashboardDto {
   demandBySociety: AdminSocietyDemand[];
   /** FEAT-022: services residents are asking for, newest first (top 20; BUG-029). */
   asks: AdminServiceAsk[];
+  /** FEAT-037: the 20 most-asked waiting requests (count desc, then newest), ranked over every waiting request. */
+  asksMostAsked: AdminServiceAsk[];
   /** BUG-029 V2 P2-1: every waiting request (same source as the sidebar count); `asks` shows the first 20. */
   asksWaiting: number;
   /** Totals over ASSIGNED / DELIVERED / RATED rounds (integer ₹). */

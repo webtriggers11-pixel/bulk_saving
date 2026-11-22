@@ -1888,3 +1888,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Browser pass (headless, worktree servers, isolated DB): the first highlight (`bg-amber-ink/5 ring-1`, then `bg-none bg-amber-ink/10`) was INVISIBLE, because `html[data-look] .surface-solid` outranks utilities on the row. Now drawn with `::before` (4 px amber bar + 10 % amber wash), confirmed by screenshot. Servers stopped, including the watcher; QA asks deleted.
 - Web 771/771, typecheck, lint.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-037 — V2 PASS-conditional → taken; closing
+- V2 (code-reviewer subagent, its own gate at 0c91860): EXIT 0 (site 71, backend 632, web 771). URL params checked: the sort and the rounds filters never clobber each other.
+- Taken: P2-1 "Most asked" re-sorted only the 20 newest. The server now returns `asksMostAsked`, ranked over every waiting pair, and a backend test asserts the order. P2-2 the `::before` wash painted OVER the text; `isolate` + `before:-z-10` puts it behind the text, re-checked by screenshot. P3-1 JSDoc moved back. P3-2 spec reworded to the build (bar + wash; "waiting since" date), and AC4 left unticked until now. P3-3 tests: ranking beyond the 20 newest, params kept across both controls, "Newest" when it isn't listed first. "Newest" is now matched by society+service, not object identity, since the two lists hold different objects.
+- Not taken: P3-4 (duplicate `ask-row-<slug>` testid when two societies ask for the same service; pre-existing, test-only).
+- Site entry added and registry flipped before V3.
+- By: agent (autonomous) + code-reviewer subagent

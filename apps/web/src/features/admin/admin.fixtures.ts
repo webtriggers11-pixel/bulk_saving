@@ -125,6 +125,7 @@ export const dashboard: AdminDashboardDto = {
     CANCELLED: 1,
   },
   asks: [],
+  asksMostAsked: [],
   asksWaiting: 0,
   demandBySociety: [
     {

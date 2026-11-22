@@ -312,6 +312,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-037',
+    title: 'Requests you can\'t miss',
+    what: 'When residents ask for a service, the operator dashboard opens with it, highlights the newest requests, and sorts them newest first or most asked. One tap opens a group buy with the society and service already chosen.',
+    why: 'A request nobody sees is a group buy that never happens.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
     id: 'FEAT-036',
     title: 'Admins are just admins',
     what: 'An operator account belongs to no society. Operators add another admin with a phone number, and that person signs in at the admin page and runs every society from there.',

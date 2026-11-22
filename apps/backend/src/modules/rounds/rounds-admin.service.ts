@@ -272,11 +272,12 @@ export class RoundsAdminService {
 
     // FEAT-007: the BRIEF's success metric ("delivered jobs average >= 4.0 / 5").
     const ratings = await this.ratings.platformSummary();
-    const { asks, waiting } = await this.askedFor();
+    const { asks, mostAsked, waiting } = await this.askedFor();
     return {
       statusCounts,
       demandBySociety,
       asks,
+      asksMostAsked: mostAsked,
       asksWaiting: waiting,
       payments: { collectedAmount, outstandingAmount },
       ratings,
@@ -288,23 +289,28 @@ export class RoundsAdminService {
    * newest request first, with when it came in and how long the oldest ask has waited.
    * Top 20: this is a to-do list for opening rounds, not a report.
    */
-  private async askedFor(): Promise<{ asks: AdminServiceAsk[]; waiting: number }> {
+  private async askedFor(): Promise<{ asks: AdminServiceAsk[]; mostAsked: AdminServiceAsk[]; waiting: number }> {
     const all = await waitingAskGroups(this.prisma);
-    const groups = all.slice(0, 20);
-    if (groups.length === 0) return { asks: [], waiting: 0 };
+    const newest = all.slice(0, 20);
+    // FEAT-037 V2 P2-1: "Most asked" ranks EVERY waiting pair (stable sort keeps newest-first on ties),
+    // not just the 20 newest, so an old, much-asked request still tops it.
+    const mostAsked = [...all].sort((x, y) => y.askCount - x.askCount).slice(0, 20);
+    const groups = [...new Map([...newest, ...mostAsked].map((g) => [`${g.societyId}|${g.serviceId}`, g])).values()];
+    if (groups.length === 0) return { asks: [], mostAsked: [], waiting: 0 };
     const [societies, services] = await Promise.all([
       this.prisma.society.findMany({ where: { id: { in: groups.map((g) => g.societyId) } }, select: { id: true, name: true } }),
       this.prisma.service.findMany({ where: { id: { in: groups.map((g) => g.serviceId) } }, select: { id: true, name: true, slug: true } }),
     ]);
     const societyById = new Map(societies.map((s) => [s.id, s]));
     const serviceById = new Map(services.map((s) => [s.id, s]));
-    const asks = groups.flatMap((g) => {
-      const society = societyById.get(g.societyId);
-      const service = serviceById.get(g.serviceId);
-      if (!society || !service) return [];
-      return [{ society, service, askCount: g.askCount, since: g.since.toISOString(), latest: g.latest.toISOString() }];
-    });
-    return { asks, waiting: all.length };
+    const toDto = (list: typeof groups): AdminServiceAsk[] =>
+      list.flatMap((g) => {
+        const society = societyById.get(g.societyId);
+        const service = serviceById.get(g.serviceId);
+        if (!society || !service) return [];
+        return [{ society, service, askCount: g.askCount, since: g.since.toISOString(), latest: g.latest.toISOString() }];
+      });
+    return { asks: toDto(newest), mostAsked: toDto(mostAsked), waiting: all.length };
   }
 
   /**
