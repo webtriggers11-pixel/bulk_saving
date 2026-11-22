@@ -85,10 +85,10 @@ export function HomePage() {
             </span>
             <CardEyebrow className="mt-4">Your society</CardEyebrow>
             <CardTitle size="md" className="mt-2 leading-[1.12]" data-testid="society-name">
-              {data.society.name}
+              {data.society?.name ?? '—'}
             </CardTitle>
             <p className="mt-1 text-meta text-ink-muted" data-testid="society-city">
-              {data.society.city}
+              {data.society?.city}
             </p>
           </Card>
 

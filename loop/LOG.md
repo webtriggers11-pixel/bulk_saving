@@ -1838,3 +1838,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Decision ADR-0046 (High, judgment call): nullable `societyId` for SUPER_ADMIN only, guarded by a DB CHECK and a partial unique index; `@CurrentMember` → 403 NO_SOCIETY on society endpoints; `POST /admin/admins`. A separate Admin model was rejected (duplicates auth).
 - Work in worktree `feat/FEAT-036-standalone-admin` (another Claude session is active on this machine).
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-036 — T1–T3 done; V1 PASS
+- T1: migration `20261122150000_feat_036_standalone_admin` (DROP NOT NULL + CHECK `societyId IS NOT NULL OR role='SUPER_ADMIN'` + partial unique `phone WHERE societyId IS NULL`); `migrate diff` against the schema: no difference. Seeds use `prisma/platform-admin.ts` (adopts a pre-FEAT-036 admin row, no duplicate; checked by moving +919999900001 back into GREEN001 and re-seeding). Also fixed seed-demo's missing `SERVICE_ASK_OPENED` body, which had made `pnpm seed:demo` fail to compile at main.
+- T2: `AuthContext.societyId: string | null`; `@CurrentMember` (403 NO_SOCIETY) on rounds/ratings/catalog/asks/push-subscribe/residents; `/me` → `society: null`; admin door prefers the society-less row; `POST /admin/admins`; no demoting a platform admin. New `test/platform-admin.integration.spec.ts` (15 tests).
+- T3: web: "Platform admin" in Users list/detail/overview, "Add an admin" form, ProtectedRoute sends a platform admin to /admin, no "Back to app" for them; TEST_LOGINS.md. 8 new web tests.
+- The worktree gate uses its own database `bulk_saving_feat036` (worktree .env only), so this migration never touches the shared dev DB another session is using. Redis is still shared, so gates stay serialised.
+- First backend-only run had 2 failures in untouched suites (admin-auth "ignores a body…", pagination "defaults to 20…"); both pass alone and the next full run was 625/625. Watching for it in V3.
+- V1 `bash scripts/verify.sh` EXIT 0: site 71/71, backend 625/625, web 757/757.
+- By: agent (autonomous)

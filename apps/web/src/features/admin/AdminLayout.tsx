@@ -7,6 +7,7 @@ import { Icon, type IconName } from '../../components/ui/icon';
 import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { UpdatePrompt } from '../shell/UpdatePrompt';
+import { useAuthStore } from '../auth/auth.store';
 
 interface NavItem {
   to: string;
@@ -59,6 +60,8 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 /** The grouped section list, shared by the desktop sidebar and the phone drawer. */
 function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => void }) {
+  // FEAT-036 (ADR-0046): a platform admin has no resident app to go back to.
+  const platformAdmin = useAuthStore((state) => state.resident?.societyId === null);
   return (
     <nav aria-label={label} className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {NAV_GROUPS.map((group) => (
@@ -72,12 +75,14 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
           ))}
         </div>
       ))}
-      <div className="mt-auto flex flex-col gap-1 border-t border-line/10 pt-4">
-        <NavLink to="/" end className={() => linkClass({ isActive: false })} onClick={onNavigate}>
-          <Icon name="back" size={18} strokeWidth={1.9} />
-          Back to app
-        </NavLink>
-      </div>
+      {!platformAdmin && (
+        <div className="mt-auto flex flex-col gap-1 border-t border-line/10 pt-4">
+          <NavLink to="/" end className={() => linkClass({ isActive: false })} onClick={onNavigate}>
+            <Icon name="back" size={18} strokeWidth={1.9} />
+            Back to app
+          </NavLink>
+        </div>
+      )}
     </nav>
   );
 }

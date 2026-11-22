@@ -62,7 +62,7 @@ describe('apiRequest transparent refresh', () => {
     vi.stubGlobal('fetch', mock);
 
     const result = await apiRequest<MeResponse>('/me');
-    expect(result.society.name).toBe('Green Acres');
+    expect(result.society?.name).toBe('Green Acres');
     expect(useAuthStore.getState().accessToken).toBe('new');
     const refreshCalls = mock.mock.calls.filter(([u]) => String(u).endsWith('/auth/refresh'));
     expect(refreshCalls).toHaveLength(1);

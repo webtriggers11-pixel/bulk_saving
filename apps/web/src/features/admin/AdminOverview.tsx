@@ -6,7 +6,7 @@ import { Icon, type IconName } from '../../components/ui/icon';
 import { Notice } from '../../components/ui/notice';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { StatCard } from '../../components/ui/stat';
-import { errorMessage } from './adminFormat';
+import { errorMessage, societyLabel } from './adminFormat';
 import { spacedCode } from './invitation';
 import { useAdminOverview } from './useAdmin';
 
@@ -95,7 +95,7 @@ function Recent({ data }: { data: AdminOverviewDto }) {
                   <span className="flex flex-1 flex-col">
                     <span className="text-body font-extrabold text-ink">{u.name ?? 'No name yet'}</span>
                     <span className="num text-meta text-ink-muted">
-                      {u.phone} · {u.society.name}
+                      {u.phone} · {societyLabel(u.society)}
                     </span>
                   </span>
                   {u.role === 'SUPER_ADMIN' && <span className="text-meta font-bold text-brand-ink">Admin</span>}

@@ -34,6 +34,7 @@ import type {
   UpdateVendorBody,
   UpsertOfferingBody,
   VendorDto,
+  CreateAdminBody,
 } from '@bulk/shared';
 import {
   assignRound,
@@ -63,6 +64,7 @@ import {
   updateService,
   updateVendor,
   upsertOffering,
+  createAdmin,
 } from './admin.api';
 import { fetchAllPages, usePagedQuery, type Paged } from '../../lib/pages';
 import { catalogQueryKey } from '../catalog/useCatalog';
@@ -425,6 +427,12 @@ function settleUsers(queryClient: QueryClient): void {
 export function useUpdateUser(): UseMutationResult<AdminResidentDto, Error, { id: string; body: UpdateResidentBody }> {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: ({ id, body }) => updateUser(id, body), onSuccess: () => settleUsers(queryClient) });
+}
+
+/** FEAT-036: add a platform admin (no society). */
+export function useCreateAdmin(): UseMutationResult<AdminResidentDto, Error, CreateAdminBody> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: createAdmin, onSuccess: () => settleUsers(queryClient) });
 }
 
 export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, string> {

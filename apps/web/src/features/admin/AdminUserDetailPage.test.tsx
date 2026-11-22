@@ -121,4 +121,13 @@ describe('AdminUserDetailPage (FEAT-035)', () => {
     expect(screen.getByRole('switch', { name: 'Account active' })).toBeDisabled();
     expect(screen.getByTestId('remove-user')).toBeDisabled();
   });
+
+  it('a platform admin shows "Platform admin", no society link, and no way to make them a resident (FEAT-036)', async () => {
+    vi.mocked(fetchUser).mockResolvedValue({ ...fresh, role: 'SUPER_ADMIN', society: null });
+    renderPage('res_new');
+    expect(await screen.findByTestId('user-platform-admin')).toHaveTextContent('Platform admin');
+    expect(screen.queryByTestId('user-society-link')).not.toBeInTheDocument();
+    expect(screen.getByTestId('platform-access')).toHaveTextContent("can't become a resident");
+    expect(screen.queryByRole('radio', { name: 'Resident' })).not.toBeInTheDocument();
+  });
 });

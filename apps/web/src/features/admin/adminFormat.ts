@@ -52,3 +52,9 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong. P
   }
   return fallback;
 }
+
+/** FEAT-036 (ADR-0046): a platform admin belongs to no society; say so where a society name goes. */
+export const PLATFORM_ADMIN_LABEL = 'Platform admin';
+export function societyLabel(society: { name: string } | null): string {
+  return society ? society.name : PLATFORM_ADMIN_LABEL;
+}

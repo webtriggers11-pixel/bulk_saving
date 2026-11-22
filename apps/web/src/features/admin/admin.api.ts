@@ -27,6 +27,7 @@ import type {
   UpdateVendorBody,
   UpsertOfferingBody,
   VendorDto,
+  CreateAdminBody,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 import { toQueryString } from '../../lib/filters';
@@ -205,6 +206,11 @@ export function fetchUsers(query: AdminResidentsQuery = {}): Promise<Page<AdminR
 /** PATCH /admin/residents/:id — rename and/or grant or revoke admin access. */
 export function updateUser(id: string, body: UpdateResidentBody): Promise<AdminResidentDto> {
   return apiRequest<AdminResidentDto>(`/admin/residents/${encodeURIComponent(id)}`, { method: 'PATCH', body: body satisfies UpdateResidentBody });
+}
+
+/** POST /admin/admins (FEAT-036, ADR-0046): a platform admin, in no society. */
+export function createAdmin(body: CreateAdminBody): Promise<AdminResidentDto> {
+  return apiRequest<AdminResidentDto>('/admin/admins', { method: 'POST', body: body satisfies CreateAdminBody });
 }
 
 /** DELETE /admin/residents/:id — refused for yourself, the last admin, or live pledges. */

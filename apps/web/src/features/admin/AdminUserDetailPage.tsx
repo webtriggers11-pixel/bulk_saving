@@ -14,7 +14,7 @@ import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { useAuthStore } from '../auth/auth.store';
 import { AdminLayout } from './AdminLayout';
-import { errorMessage, formatDateTime } from './adminFormat';
+import { PLATFORM_ADMIN_LABEL, errorMessage, formatDateTime, societyLabel } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
 import { useAdminUser, useRemoveUser, useUpdateUser } from './useAdmin';
 
@@ -34,9 +34,15 @@ function ProfileCard({ user }: { user: AdminResidentDetailDto }) {
         <div>
           <dt className="text-eyebrow uppercase text-ink-muted">Society</dt>
           <dd className="text-body font-bold">
-            <Link to={`/admin/societies/${user.society.id}`} className="text-brand-ink underline" data-testid="user-society-link">
-              {user.society.name}
-            </Link>
+            {user.society ? (
+              <Link to={`/admin/societies/${user.society.id}`} className="text-brand-ink underline" data-testid="user-society-link">
+                {user.society.name}
+              </Link>
+            ) : (
+              <span className="text-ink" data-testid="user-platform-admin">
+                {PLATFORM_ADMIN_LABEL}. Not part of any society
+              </span>
+            )}
           </dd>
         </div>
         <div>
@@ -78,6 +84,11 @@ function AccessCard({ user, isSelf }: { user: AdminResidentDetailDto; isSelf: bo
         {isSelf ? (
           <p className="text-meta text-ink-muted" data-testid="self-access">
             Access: <span className="font-bold text-ink">{ROLE_LABEL[user.role]}</span>. You can&apos;t change your own access. Ask another admin.
+          </p>
+        ) : user.society === null ? (
+          // FEAT-036 (ADR-0046 §3): a resident needs a society, so a platform admin stays an admin.
+          <p className="text-meta text-ink-muted" data-testid="platform-access">
+            Access: <span className="font-bold text-ink">Admin</span>. A platform admin has no society, so they can&apos;t become a resident. Switch them off or remove them instead.
           </p>
         ) : (
           <FilterChips
@@ -255,7 +266,7 @@ export function AdminUserDetailPage() {
   return (
     <AdminLayout
       title={data.name ?? 'No name yet'}
-      subtitle={`${data.phone} · ${data.society.name}`}
+      subtitle={`${data.phone} · ${societyLabel(data.society)}`}
       action={
         <span className="flex gap-2">
           <Badge tone={data.role === Role.SUPER_ADMIN ? 'teal' : 'slate'} data-testid="user-role">

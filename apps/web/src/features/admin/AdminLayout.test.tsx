@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { AdminLayout } from './AdminLayout';
+import { useAuthStore } from '../auth/auth.store';
 
 function renderAt(path: string) {
   const client = new QueryClient();
@@ -91,5 +92,22 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     focusable[focusable.length - 1].focus();
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(document.activeElement).toBe(focusable[0]);
+  });
+
+  it('a platform admin (no society) gets no "Back to app" link (FEAT-036)', () => {
+    useAuthStore.setState({
+      status: 'authenticated',
+      accessToken: 'a',
+      refreshToken: 'r',
+      resident: { id: 'res_p', societyId: null, phone: '+919999900001', name: 'Platform', role: 'SUPER_ADMIN', verifiedAt: null, createdAt: '2026-11-01T00:00:00.000Z' },
+    });
+    try {
+      renderAt('/admin');
+      const nav = screen.getByRole('navigation', { name: 'Admin' });
+      expect(within(nav).queryByRole('link', { name: 'Back to app' })).not.toBeInTheDocument();
+      expect(within(nav).getByRole('link', { name: 'Users' })).toBeInTheDocument();
+    } finally {
+      useAuthStore.setState({ status: 'unauthenticated', accessToken: null, refreshToken: null, resident: null, society: null });
+    }
   });
 });

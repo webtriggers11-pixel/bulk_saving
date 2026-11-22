@@ -102,4 +102,22 @@ describe('AnonymousRoute / ProtectedRoute', () => {
     renderAt('/profile');
     expect(screen.queryByText('Profile')).not.toBeInTheDocument();
   });
+
+  it('sends a platform admin (no society) from a resident page to the dashboard (FEAT-036)', () => {
+    useAuthStore.setState({
+      status: 'authenticated',
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      resident: { ...person('SUPER_ADMIN'), societyId: null },
+    });
+    renderAt('/profile');
+    expect(screen.getByText('Admin dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
+  });
+
+  it('still lets a society admin open resident pages', () => {
+    signInAs('SUPER_ADMIN');
+    renderAt('/profile');
+    expect(screen.getByText('Profile')).toBeInTheDocument();
+  });
 });
