@@ -11,7 +11,7 @@ and has nothing to give residents except the bare code. BRIEF.md lists `Societie
   `GET /admin/societies` (unchanged shape plus `residentCount`, `roundCount`, `createdAt`);
   `GET /admin/societies/:id`; `POST /admin/societies {name, city}` → 201 with a server-generated invite code;
   `PATCH /admin/societies/:id {name?, city?}`; `POST /admin/societies/:id/invite-code` → a fresh code (the old one
-  stops working at once); `DELETE /admin/societies/:id` → 204 only when it has no residents and no rounds, else 409 CONFLICT.
+  stops working at once); `DELETE /admin/societies/:id` → 200 `{deleted:true}` only when it has no residents and no rounds, else 409 CONFLICT.
 - [ ] AC2 — Invite codes: 8 characters from an unambiguous alphabet (A–Z and 2–9, without O/I/L/0/1), from a CSPRNG,
   retried on the unique-constraint clash. They still match the existing `^[A-Z0-9]{8}$`.
 - [ ] AC3 — Web `/admin/societies`: a list (name, city, code, resident count) with "New society", and a sheet to create or edit.

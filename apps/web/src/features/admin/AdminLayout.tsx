@@ -14,6 +14,8 @@ const NAV_ITEMS: Array<{ to: string; label: string; end: boolean; icon: IconName
   { to: '/admin/rounds/new', label: 'New round', end: true, icon: 'plus' },
   { to: '/admin/services', label: 'Services', end: true, icon: 'service' },
   { to: '/admin/vendors', label: 'Vendors', end: true, icon: 'users' },
+  // FEAT-032: not `end`, so the tab stays lit on a society's own page.
+  { to: '/admin/societies', label: 'Societies', end: false, icon: 'building' },
   { to: '/', label: 'Back to app', end: true, icon: 'back' },
 ];
 

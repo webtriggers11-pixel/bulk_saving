@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
@@ -31,7 +31,13 @@ export function OnboardingPage() {
   const login = useAuthStore((state) => state.login);
 
   const [step, setStep] = useState<Step>('invite');
-  const [inviteCode, setInviteCode] = useState('');
+  // FEAT-032 (ADR-0043 §4): a society's QR code and join link open `/onboard?code=XXXX`; the
+  // code is filled in (only if it has the invite shape), and the resident still taps Continue.
+  const [searchParams] = useSearchParams();
+  const [inviteCode, setInviteCode] = useState(() => {
+    const fromLink = (searchParams.get('code') ?? '').trim().toUpperCase();
+    return INVITE_CODE_SHAPE.test(fromLink) ? fromLink : '';
+  });
   // BUG-021: a code that cannot be right never reaches the server. The hint appears only
   // when someone tries to continue with one (owner: "give error in invite code only if it's
   // wrong") — never while they are still typing.

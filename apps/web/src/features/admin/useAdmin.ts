@@ -15,7 +15,9 @@ import type {
   AdminRoundSummaryDto,
   AdminServiceDto,
   AdminServicesQuery,
-  AdminSocietyDto,
+  AdminSocietyDetailDto,
+  CreateSocietyBody,
+  UpdateSocietyBody,
   AdminVendorsQuery,
   AssignRoundBody,
   CreateRoundBody,
@@ -40,7 +42,12 @@ import {
   fetchAdminRounds,
   fetchDashboard,
   fetchServices,
+  createSociety,
+  deleteSociety,
   fetchSocieties,
+  fetchSociety,
+  rotateInviteCode,
+  updateSociety,
   fetchVendors,
   setPayment,
   updateService,
@@ -61,6 +68,7 @@ export const adminKeys = {
   vendors: ['admin', 'vendors'] as const,
   vendorsFiltered: (filters: AdminVendorsQuery) => ['admin', 'vendors', filters] as const,
   societies: ['admin', 'societies'] as const,
+  society: (id: string) => ['admin', 'society', id] as const,
   /** Prefix of every filtered service list. */
   services: ['admin', 'services'] as const,
   servicesFiltered: (filters: AdminServicesQuery) => ['admin', 'services', filters] as const,
@@ -109,7 +117,7 @@ export function useAdminRound(id: string): UseQueryResult<AdminRoundDetailDto> {
 }
 
 /** GET /admin/societies. */
-export function useAdminSocieties(): UseQueryResult<AdminSocietyDto[]> {
+export function useAdminSocieties(): UseQueryResult<AdminSocietyDetailDto[]> {
   return useQuery({ queryKey: adminKeys.societies, queryFn: fetchSocieties });
 }
 
@@ -337,4 +345,43 @@ export function useOfferingSavePaused(serviceId: string): boolean {
     filters: { mutationKey: adminKeys.offeringMutation(serviceId), status: 'pending' },
     select: (mutation) => mutation.state.isPaused,
   }).some(Boolean);
+}
+
+// ─── Societies (FEAT-032, ADR-0043) ─────────────────────────────────────────────────
+
+/** One society with its counts. */
+export function useAdminSociety(id: string): UseQueryResult<AdminSocietyDetailDto> {
+  return useQuery({ queryKey: adminKeys.society(id), queryFn: () => fetchSociety(id), enabled: id.length > 0 });
+}
+
+/** After any society write: the list (and every society picker) and this society's detail. */
+function settleSociety(queryClient: QueryClient, society: AdminSocietyDetailDto): void {
+  queryClient.setQueryData(adminKeys.society(society.id), society);
+  void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+}
+
+export function useCreateSociety(): UseMutationResult<AdminSocietyDetailDto, Error, CreateSocietyBody> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: createSociety, onSuccess: (society) => settleSociety(queryClient, society) });
+}
+
+export function useUpdateSociety(id: string): UseMutationResult<AdminSocietyDetailDto, Error, UpdateSocietyBody> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (body: UpdateSocietyBody) => updateSociety(id, body), onSuccess: (society) => settleSociety(queryClient, society) });
+}
+
+export function useRotateInviteCode(id: string): UseMutationResult<AdminSocietyDetailDto, Error, void> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: () => rotateInviteCode(id), onSuccess: (society) => settleSociety(queryClient, society) });
+}
+
+export function useDeleteSociety(id: string): UseMutationResult<{ deleted: true }, Error, void> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteSociety(id),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: adminKeys.society(id) });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+    },
+  });
 }

@@ -2,18 +2,21 @@ import type {
   AdminDashboardDto,
   AdminRoundDetailDto,
   AdminRoundSummaryDto,
-  AdminSocietyDto,
+  AdminSocietyDetailDto,
   ResidentDto,
   VendorDto,
 } from '@bulk/shared';
 
 /** Test fixtures for the admin feature tests (never imported by app code). */
 
-export const society: AdminSocietyDto = {
+export const society: AdminSocietyDetailDto = {
   id: 'soc_1',
   name: 'Green Park',
   city: 'Pune',
   inviteCode: 'GREEN1',
+  residentCount: 3,
+  roundCount: 1,
+  createdAt: '2026-11-01T10:00:00.000Z',
 };
 
 export const roundSummary: AdminRoundSummaryDto = {

@@ -56,11 +56,11 @@ function installFetch(verify: MockResponse, requestData: unknown = { requested: 
   return mock;
 }
 
-function renderOnboarding() {
+function renderOnboarding(path = '/onboard') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/onboard']}>
+      <MemoryRouter initialEntries={[path]}>
         <OnboardingPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -126,6 +126,15 @@ describe('OnboardingPage', () => {
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     const verify = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
     expect(JSON.parse(String(verify?.[1]?.body))).toMatchObject({ phone: '+919999900201' });
+  });
+
+  it('a join link (/onboard?code=) fills in the invite code; an implausible one is ignored (FEAT-032)', () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    const { unmount } = renderOnboarding('/onboard?code=ab23cd45');
+    expect(screen.getByLabelText('Invite code')).toHaveValue('AB23CD45');
+    unmount();
+    renderOnboarding('/onboard?code=<script>');
+    expect(screen.getByLabelText('Invite code')).toHaveValue('');
   });
 
   it('an implausible number keeps Send code off and says what a number must look like (BUG-019)', async () => {

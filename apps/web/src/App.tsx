@@ -6,6 +6,8 @@ import { AdminRoute } from './features/admin/AdminRoute';
 import { AdminLoginPage } from './features/auth/AdminLoginPage';
 import { AdminServicesPage } from './features/admin/AdminServicesPage';
 import { AdminVendorsPage } from './features/admin/AdminVendorsPage';
+import { AdminSocietiesPage } from './features/admin/AdminSocietiesPage';
+import { AdminSocietyDetailPage } from './features/admin/AdminSocietyDetailPage';
 import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
 import { ServicesPage } from './features/catalog/ServicesPage';
@@ -125,6 +127,22 @@ export default function App() {
         element={
           <AdminRoute>
             <AdminVendorsPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/societies"
+        element={
+          <AdminRoute>
+            <AdminSocietiesPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/societies/:id"
+        element={
+          <AdminRoute>
+            <AdminSocietyDetailPage />
           </AdminRoute>
         }
       />

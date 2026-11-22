@@ -6,7 +6,9 @@ import type {
   AdminRoundSummaryDto,
   AdminServiceDto,
   AdminServicesQuery,
-  AdminSocietyDto,
+  AdminSocietyDetailDto,
+  CreateSocietyBody,
+  UpdateSocietyBody,
   AdminVendorsQuery,
   AssignRoundBody,
   CreateRoundBody,
@@ -36,8 +38,8 @@ export function fetchDashboard(): Promise<AdminDashboardDto> {
 }
 
 /** GET /admin/societies — every society (for filters and the new-round form). */
-export function fetchSocieties(): Promise<AdminSocietyDto[]> {
-  return apiRequest<AdminSocietyDto[]>('/admin/societies');
+export function fetchSocieties(): Promise<AdminSocietyDetailDto[]> {
+  return apiRequest<AdminSocietyDetailDto[]>('/admin/societies');
 }
 
 /** GET /admin/services — master services, including inactive ones, filtered on the server (FEAT-015). */
@@ -156,4 +158,34 @@ export function updateVendor(id: string, body: UpdateVendorBody): Promise<Vendor
     method: 'PATCH',
     body: body satisfies UpdateVendorBody,
   });
+}
+
+// ─── Societies (FEAT-032, ADR-0043) ─────────────────────────────────────────────────
+
+/** GET /admin/societies/:id — one society with its resident and round counts. */
+export function fetchSociety(id: string): Promise<AdminSocietyDetailDto> {
+  return apiRequest<AdminSocietyDetailDto>(`/admin/societies/${encodeURIComponent(id)}`);
+}
+
+/** POST /admin/societies — the server generates the invite code. */
+export function createSociety(body: CreateSocietyBody): Promise<AdminSocietyDetailDto> {
+  return apiRequest<AdminSocietyDetailDto>('/admin/societies', { method: 'POST', body: body satisfies CreateSocietyBody });
+}
+
+/** PATCH /admin/societies/:id — rename or change the city. */
+export function updateSociety(id: string, body: UpdateSocietyBody): Promise<AdminSocietyDetailDto> {
+  return apiRequest<AdminSocietyDetailDto>(`/admin/societies/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: body satisfies UpdateSocietyBody,
+  });
+}
+
+/** POST /admin/societies/:id/invite-code — a fresh code; the old one stops working. */
+export function rotateInviteCode(id: string): Promise<AdminSocietyDetailDto> {
+  return apiRequest<AdminSocietyDetailDto>(`/admin/societies/${encodeURIComponent(id)}/invite-code`, { method: 'POST' });
+}
+
+/** DELETE /admin/societies/:id — only an empty society; otherwise 409. */
+export function deleteSociety(id: string): Promise<{ deleted: true }> {
+  return apiRequest<{ deleted: true }>(`/admin/societies/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
