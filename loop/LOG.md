@@ -1640,3 +1640,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 3c957d7 (detached worktree, .env without WHATSAPP_*, no other gate running): two back-to-back runs, 21:03:34–21:04:29 and 21:04:29–21:05:22, both exit 0 and identical: site 62/62, backend 566/566, web 689/689. No flakes. Logs: f29-v3-1.log and f29-v3-2.log in the session scratchpad.
 - FEAT-029 → done. BUG-025 → done.
 - By: agent (autonomous)
+
+## 2026-11-22 — CHORE-027 — opened and closed (docs only)
+- Owner asked for an md file listing all user logins and for the OTP to show as a toast at the top after sending the phone number.
+- The toast already exists (FEAT-026, ADR-0037), both doors. Checked against the running dev servers: `POST /auth/otp/request` for +919999900108/GREEN001 → requested; `GET /dev/otp` → `1111` (CHORE-026 fixed code). No code change needed.
+- Added `TEST_LOGINS.md` at the repo root: the societies, the 12 demo residents, the 2 SUPER_ADMINs, the vendors, the seed commands, and when the toast does and doesn't show (dev build only, OTP_DEV_LOG=true, same machine).
+- Docs only, no app code touched: verify.sh not re-run for this item.
+- By: agent (autonomous)
