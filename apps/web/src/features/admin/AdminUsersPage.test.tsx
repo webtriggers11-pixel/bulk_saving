@@ -95,7 +95,7 @@ describe('AdminUsersPage (FEAT-033)', () => {
     expect(await screen.findByTestId('access-note')).toHaveTextContent("You can't change your own access");
     // No radio group for yourself: plain text, nothing focusable pretending to be a control.
     expect(screen.getByTestId('self-access')).toHaveTextContent('Access: Admin');
-    expect(screen.queryByRole('radio', { name: 'Resident', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /^Resident$/ })).not.toBeInTheDocument();
     expect(screen.getByTestId('save-user')).toBeDisabled();
     expect(screen.getByTestId('remove-user')).toBeDisabled();
   });
