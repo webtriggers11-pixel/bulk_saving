@@ -1674,3 +1674,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Branch: feat/FEAT-031-fixed-plus91-phone (off main; carries CHORE-027 and a cherry-pick of BUG-026 so main's site test is green). The same commits also sit on feat/FEAT-030-interactive-hero, because another session switched the shared checkout's branch mid-session; that branch was left untouched.
 - FEAT-031 → done.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — post-close fix: on the site
+- Closing FEAT-031 (done in REGISTRY) tripped the site's content test ("every done FEAT appears on the site"), found by FEAT-032's V1. V3 ran before the registry flip, so it missed this. Added FEAT-031 to `apps/site/src/content/features.ts` (section `phone`). Site suite re-run: green. Lesson: flip the registry row to done BEFORE V3, so V3 checks the closing state.
+- By: agent (autonomous)

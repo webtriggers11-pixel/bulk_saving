@@ -228,6 +228,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-031',
+    title: 'Just your 10-digit number',
+    what: 'The +91 is already there and cannot be typed over. You enter only your mobile number, and a pasted number with +91 or a leading 0 lands correctly.',
+    why: 'Less to type and nothing to get wrong: the number you see is exactly the one we text.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-029',
     title: 'A real app icon on your home screen',
     what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests. Home shows a small card explaining how to install on your phone.',
