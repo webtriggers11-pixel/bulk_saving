@@ -1975,3 +1975,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Found by the dashboard screenshot: round-edit and round-cancel-reopen suites leaked one platform admin per run (a society delete does not cascade to a society-less row). Fixed (deleted in afterAll), and 20 leftovers removed from the worktree DB.
 - Closing: registry → done for FEAT-038, BUG-030, FEAT-039, FEAT-040, FEAT-041; site entries added for the four FEATs (before V3).
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-038, BUG-030, FEAT-039, FEAT-040, FEAT-041 — V3; CLOSED
+- V3 at 6daa4e9: runs 9 (01:33:07–01:35:57) and 10 (01:35:57–01:39:25), both EXIT 0 and identical: site 71/71, backend 654/654, web 801/801. Logs v3-9.log, v3-10.log in the session scratchpad.
+- All five → done. Branch `feat/FEAT-038-edit-round` is NOT merged: merging into `main` and applying the FEAT-039 migration to the shared dev DB wait for the owner's explicit approval.
+- By: agent (autonomous)

@@ -3,6 +3,13 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
+## Session C, part 2 (2026-11-23): FEAT-038 edit a round, BUG-030 prices must fall, FEAT-039 cancel reason + reopen, FEAT-040 closing date, FEAT-041 decluttered dashboard. Branch `feat/FEAT-038-edit-round` (off `main` df0486a), NOT merged
+
+- All five closed: V1, V2 (4 review rounds, findings taken, including a real P1 where a close job racing a deadline extension stranded the round), browser pass, V3 identical at 6daa4e9 (site 71, backend 654, web 801).
+- **To merge (owner approval needed):** fast-forward `main`, then in the main checkout: `corepack pnpm install --offline`, `corepack pnpm --filter @bulk/shared build`, `cd apps/backend && npx prisma migrate deploy` (applies `20261123090000_feat_039_cancel_reason_reopen`, additive) `&& npx prisma generate`, then restart the backend.
+- Also open from the owner: the duplicate empty "Blue Waters" (BLUE0002) and the seeded AC Servicing round created by the 2026-11-22 re-seed, waiting on a yes to delete. And the offer of a 30 s auto-refresh on admin screens (TanStack Query `refetchInterval`).
+- Watch: the worktree DB `bulk_saving_feat036` is used by this branch's gates; the BUG-027 flake (OnboardingPage offline, under load) and BUG-014 (envelope-less 404) each showed once this session, untouched suites.
+
 ## Session C (2026-11-22, evening): FEAT-036 "admin is admin" + BUG-029 "service requests reach the admin" + FEAT-037 (asks sort + highlight). Branch `feat/FEAT-036-standalone-admin` (off `main` 66fef6f), NOT merged
 
 - **FEAT-036** (ADR-0046): `Resident.societyId` is nullable for SUPER_ADMIN only (DB CHECK + partial unique on phone). Society endpoints use `@CurrentMember` → 403 NO_SOCIETY. `/me` returns `society: null`. `POST /admin/admins` + an "Add an admin" form. A platform admin can't be demoted. The admin door prefers an ACTIVE society-less row. Seeds: +919999900001 and +919999900209 are society-less; `prisma/platform-admin.ts` adopts old in-society admin rows.
