@@ -1663,4 +1663,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-032 + FEAT-033 — opened (triage → plan, autonomous)
 - Owner: society onboarding (create, invite code, QR print format, invitation message), "as admin i want all access also users access right", "show all users all society all cruds". Split into FEAT-032 (societies + invites, P1, ADR-0043) and FEAT-033 (users + roles, P1, ADR-0044). Vendors, services and rounds already have admin CRUD.
 - No new dependency: `qrcode` 1.5.4 is already in apps/web. Built on branch feat/FEAT-032-society-onboarding (worktree), stacked on FEAT-031.
+## 2026-11-22 — FEAT-031 — V2 (code-reviewer)
+- Gate (run by reviewer): `bash scripts/verify.sh` exit 0 — site 62/62 (9 files), backend 566/566 (49 suites), web 702/702 (81 files); lint, typecheck, build, css-class and dev-only bundle checks OK.
+- Verdict: PASS (no P0/P1). Findings: P2 `toLocalDigits` (phone-field.tsx:16-22) strips a leading `91`/`0` from ANY >10-digit value, so one extra keystroke on a full number that starts with 91 (e.g. 9123456789 + "0") silently turns it into 9 digits (234567890). Recommend: strip `91` only at 12 digits and `0` only at 11, otherwise keep the first 10 digits; add a test for it. P3: `+91 (0) …` / `0091 …` pastes get mangled (end up invalid, so nothing wrong is sent); spec AC1 still says maxLength=10 (update the text to say it is omitted on purpose); the `phone-country` fallback id collides when there is no `id`; the caret jumps to the end when a non-digit is typed mid-value. Checked OK: the +91 is outside the value and inert; both bodies are always canonical `+91XXXXXXXXXX` (submit and button guards); the dev toast gets the canonical number; aria-describedby merges the hint; BUG-007 coverage via the `inset="prefix"` prop; no `any`.
+- By: code-reviewer subagent
+
+## 2026-11-22 — FEAT-031 — V2 findings taken
+- P2-1 fixed: a prefix is stripped only at the exact paste lengths (12 `91…`, 11 `0…`, 13 `910…`, 14 `0091…`); a stray 11th key on a 91-series number is dropped (test added). P3-1 fixed by the same rule (`+91 (0) …`, `0091 …`). P3-3: spec AC1 now says no maxLength, and why. P3-4: `useId` fallback for the prefix description id. P3-2 and P3-5 accepted as-is (visible to the user, same as a native field).
+- By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — V3; CLOSED
+- V3 at 28d0b7b (worktree, .env without WHATSAPP_*, no other gate running): two back-to-back runs, 12:47:58–12:50:59 and 12:50:59–12:53:33, both exit 0 and identical: site 62/62, backend 566/566, web 707/707. No flakes. Logs: f31-v3-1.log and f31-v3-2.log in the session scratchpad.
+- Branch: feat/FEAT-031-fixed-plus91-phone (off main; carries CHORE-027 and a cherry-pick of BUG-026 so main's site test is green). The same commits also sit on feat/FEAT-030-interactive-hero, because another session switched the shared checkout's branch mid-session; that branch was left untouched.
+- FEAT-031 → done.
 - By: agent (autonomous)

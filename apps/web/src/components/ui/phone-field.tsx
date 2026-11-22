@@ -1,4 +1,4 @@
-import { forwardRef, type ComponentProps } from 'react';
+import { forwardRef, useId, type ComponentProps } from 'react';
 import { normalisePhone } from '@bulk/shared';
 import { cn } from '../../lib/utils';
 import { Input } from './input';
@@ -9,15 +9,19 @@ const LOCAL_DIGITS = 10;
 
 /**
  * What is left for the field after a keystroke or a paste (FEAT-031): digits only, at most 10.
- * A pasted `+91 98765 43210`, `91 9876543210` or `098765 43210` loses its prefix first, so a
- * number copied from a contact card lands whole instead of being cut to `9198765432`.
+ *
+ * A prefix is removed only when the digit count says the WHOLE international or trunk form
+ * arrived at once (a paste): `+91 98765 43210` (12), `098765 43210` (11), `+91 (0) 98765 43210`
+ * (13), `0091 98765 43210` (14). Anything else over 10 digits keeps its first 10. A stray 11th
+ * keystroke is dropped rather than read as a prefix, because a number can itself start with 91
+ * (V2 P2-1: `9123456789` + one more key used to become `234567890`).
  */
 export function toLocalDigits(raw: string): string {
   let digits = raw.replace(/\D/g, '');
-  if (digits.length > LOCAL_DIGITS) {
-    if (digits.startsWith('91')) digits = digits.slice(2);
-    else if (digits.startsWith('0')) digits = digits.slice(1);
-  }
+  if (digits.length === 14 && digits.startsWith('0091')) digits = digits.slice(4);
+  else if (digits.length === 13 && digits.startsWith('910')) digits = digits.slice(3);
+  else if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
   return digits.slice(0, LOCAL_DIGITS);
 }
 
@@ -43,7 +47,9 @@ export const PhoneField = forwardRef<HTMLInputElement, PhoneFieldProps>(function
   { value, onValueChange, id, className, 'aria-describedby': describedBy, ...props },
   ref,
 ) {
-  const prefixId = `${id ?? 'phone'}-country`;
+  // useId as the fallback (V2 P3-4): two id-less fields must not share one description.
+  const fallbackId = useId();
+  const prefixId = `${id ?? fallbackId}-country`;
   return (
     <div className="relative">
       <span
