@@ -1721,3 +1721,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Web: `/admin/users` (search, society select, access chips, ShowMore), an edit sheet (name, Resident/Admin, remove behind ConfirmSheet; you can't change or remove yourself), nav "Users", "See its N users" on the society page.
 - V1 at c52898d (worktree, no other gate): exit 0: site 62/62, backend 593/593, web 731/731.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-034 + FEAT-035 — opened (triage, autonomous)
+- Owner: "I want sidebar and the dashboard proper admin dashboard with all the operations … see the user details … delete edit active in active all type of things". Split: FEAT-034 (sidebar shell + dashboard + overview API, P1) and FEAT-035 (user detail page + active/inactive for users and societies, additive migration, ADR-0045, P1). The migration is additive (two `DEFAULT true` columns); proceeding under the owner's standing autonomy instruction and flagged in the session summary.
+- By: agent (autonomous)
