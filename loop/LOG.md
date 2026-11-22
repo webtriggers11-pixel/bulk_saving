@@ -1871,3 +1871,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Found two things unit tests can't see, both fixed: (1) the alert used the `accent` surface, which is black in the mono theme, so the dark headline and the black button were unreadable. Now `tint` with an amber bell, re-checked by screenshot. (2) The Remove-user note told a platform admin's operator "They can join again with the invite code"; it now says they can be added back from Users (with a test). Both came after the first V3, so V3 is re-run below.
 - QA data removed (QA admin row, test ask).
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-036 + BUG-029 — V3; CLOSED
+- V3 pair A at c1303a7: runs 1+2 (20:15:51–20:18:38), both EXIT 0, identical (site 71, backend 632, web 768). The browser pass then changed the web (b212419), so V3 was re-run.
+- V3 pair B at b212419: runs 3+4 both EXIT 1, the same single failure: `tenant-isolation` "DENIES reading a resident from another society" got a 404 with no error envelope (BUG-014's signature). A `nest start --watch` from this worktree's browser-pass backend was still running (only its child had been killed), recompiling and restarting during the gates. The test passed 3/3 alone. Watcher killed.
+- V3 pair C at b212419: runs 5 (20:24:41–20:25:49) and 6 (20:25:49–20:27:00), both EXIT 0, identical: site 71/71, backend 632/632, web 768/768. Logs: v3-1…v3-6.log in the session scratchpad.
+- FEAT-036 → done. BUG-029 → done. Branch `feat/FEAT-036-standalone-admin` is not merged into `main` (another session holds the main checkout); merge steps are in HANDOFF.md.
+- By: agent (autonomous)

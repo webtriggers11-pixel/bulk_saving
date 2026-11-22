@@ -3,6 +3,15 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
+## Session C (2026-11-22, evening): FEAT-036 "admin is admin" + BUG-029 "service requests reach the admin". Branch `feat/FEAT-036-standalone-admin` (off `main` 66fef6f), NOT merged
+
+- **FEAT-036** (ADR-0046): `Resident.societyId` is nullable for SUPER_ADMIN only (DB CHECK + partial unique on phone). Society endpoints use `@CurrentMember` → 403 NO_SOCIETY. `/me` returns `society: null`. `POST /admin/admins` + an "Add an admin" form. A platform admin can't be demoted. The admin door prefers an ACTIVE society-less row. Seeds: +919999900001 and +919999900209 are society-less; `prisma/platform-admin.ts` adopts old in-society admin rows.
+- **BUG-029:** the dashboard's asks list is newest-first with `latest`, a New badge, and a "Residents are asking" alert at the top of /admin linking to a prefilled New round. The sidebar counts waiting requests (`overview.waitingAsks` = `dashboard.asksWaiting`). New round says who asked.
+- Both closed: V1, V2 (subagent; findings taken), browser pass (it found and fixed an unreadable alert surface in the mono theme), V3 identical at b212419 (runs 5+6: site 71, backend 632, web 768).
+- **To merge (owner):** merge the branch into `main`, then in the main checkout: `corepack pnpm install`, `corepack pnpm --filter @bulk/shared build`, `cd apps/backend && npx prisma migrate deploy && npx prisma generate && corepack pnpm seed` (the seed moves the two admins out of their societies), then restart the backend.
+- **Worktree DB:** this branch was tested on its own database `bulk_saving_feat036` (and shadow `bulk_saving_shadow036`), named only in the scratchpad worktree's `.env`. The shared `bulk_saving` DB is untouched. These are safe to drop after merging.
+- Watch: a `nest start --watch` left running from a worktree restarts during gates. One V3 pair failed `tenant-isolation` with an envelope-less 404 (BUG-014 shape) while it ran; it passed 3/3 alone and the next pair was clean after the watcher was killed.
+
 ## State after merge (2026-11-22): everything is on `main`
 
 - Local `main` now carries both sessions' work: FEAT-031…035, CHORE-027, BUG-026, BUG-027/028 (triaged), and FEAT-030 (merged from `feat/FEAT-030-interactive-hero`). The merge conflicts were only in shared records and in early copies of FEAT-031 files that the FEAT-030 branch also carried; `main` kept the reviewed versions.
