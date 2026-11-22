@@ -90,11 +90,18 @@ export class RoundNotificationsService {
   async stageAskOpened(
     tx: Tx,
     round: { id: string; societyId: string; serviceId: string; deadline: Date; reopenCount?: number; service: { name: string; unitLabel: string; unitLabelPlural: string } },
+    /** FEAT-039 (V2 r3 P3-2): residents already told another way; their asks are cleared, not messaged. */
+    alreadyTold: string[] = [],
   ): Promise<string[]> {
-    const asks = await tx.serviceAsk.findMany({
+    const all = await tx.serviceAsk.findMany({
       where: { societyId: round.societyId, serviceId: round.serviceId },
       select: { id: true, residentId: true },
     });
+    if (all.length === 0) return [];
+    const skip = new Set(alreadyTold);
+    const silent = all.filter((a) => skip.has(a.residentId));
+    if (silent.length > 0) await tx.serviceAsk.deleteMany({ where: { id: { in: silent.map((a) => a.id) } } });
+    const asks = all.filter((a) => !skip.has(a.residentId));
     if (asks.length === 0) return [];
     const body = renderNotification({ type: NotificationType.SERVICE_ASK_OPENED, round: this.forMessage(round) });
     const ids = await this.notifications.stage(

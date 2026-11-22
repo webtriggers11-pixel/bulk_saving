@@ -1956,3 +1956,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The dashboard keeps the alert, quick actions, the platform numbers and the status tiles (now links to Rounds filtered). New pages: Requests (asks + sort; the sidebar badge moved here), Rounds (the filters list + New round), Reports (demand, collected, outstanding). Links re-pointed (+N more → Requests, Open rounds tile → Rounds?status=OPEN, round back link → Rounds). The page components stay in AdminDashboardPage.tsx and are exported; thin page files wrap them.
 - Tests moved to the page that now owns each section (a router harness mounts all four), plus new tests for the tile links, Reports, Rounds, and +N more → Requests; sidebar test updated. Web admin 159/159.
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-039 — V2 r3 PASS-conditional → taken
+- V2 r3 (same reviewer, its own gate at 559eaee: EXIT 0, site 71, backend 651, web 794). FEAT-038 still PASS; FEAT-040 still PASS-conditional (390 px browser check pending).
+- Taken: P2-1 reopen now requires what create requires (the service offered and active, the society active). P3-1 reopen MOVES surviving jobs (`reschedule`). P3-2 a pledger who also asked gets only "open again" (their ask is cleared silently). P3-4 the cancel reason shows in the Rounds list. P3-5 copy "cancelled. Reason: …. You were not charged." (trailing punctuation stripped). P3-6 the suite rewritten with per-test fixtures, plus new cases: resident cancel → 403, service off / society off → 400, CLOSED_MET → CANCELLED → OPEN → second close delivered with `:c1`, ask fan-out cycle key.
+- Accepted in ADR-0048 §6: a pledger switched off while the round was cancelled is messaged like the others (already the case for OPEN rounds).
+- Backend 34/34 (cancel-reopen, service-asks, rounds-admin); web admin + requests 176/176.
+- By: agent (autonomous) + code-reviewer subagent

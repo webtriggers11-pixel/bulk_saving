@@ -66,7 +66,7 @@ function statusDetail(round: MyRoundDto): string {
     case 'CANCELLED':
       // FEAT-039: why, in the admin's words.
       return round.cancelReason
-        ? `This round was cancelled: ${round.cancelReason}. You were not charged.`
+        ? `This round was cancelled. Reason: ${round.cancelReason.replace(/[.!\s]+$/, '')}. You were not charged.`
         : 'This round was cancelled. You were not charged.';
     default: {
       // A new RoundStatus must fail the build here rather than ship a resident a

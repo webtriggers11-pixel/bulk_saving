@@ -94,6 +94,13 @@ describe('AdminDashboardPage', () => {
     expect(within(row).getByText('6 AC units / 2')).toBeInTheDocument();
   });
 
+  it('a cancelled round shows its reason in the Rounds list (FEAT-039)', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue(page([{ ...roundSummary, status: 'CANCELLED', cancelReason: 'Vendor unavailable', cancelledAt: '2026-11-20T10:00:00.000Z' }]));
+    renderPage('/admin/rounds');
+    expect(await screen.findByTestId('round-cancel-reason')).toHaveTextContent('Cancelled: Vendor unavailable');
+  });
+
   it('refetches rounds with the chosen status and society filters', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     fetchAdminRoundsMock.mockResolvedValue(page([]));

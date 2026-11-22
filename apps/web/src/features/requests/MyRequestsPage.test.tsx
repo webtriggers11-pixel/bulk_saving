@@ -93,9 +93,9 @@ describe('MyRequestsPage', () => {
   });
 
   it('a cancelled round says why, in the admin\'s words (FEAT-039)', async () => {
-    fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'CANCELLED', cancelReason: 'Vendor unavailable that week' })]));
+    fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'CANCELLED', cancelReason: 'Vendor unavailable that week.' })]));
     renderPage();
-    expect(await screen.findByTestId('my-round-round_1')).toHaveTextContent('cancelled: Vendor unavailable that week');
+    expect(await screen.findByTestId('my-round-round_1')).toHaveTextContent('Reason: Vendor unavailable that week. You were not charged.');
   });
 
   it('an open round shows the closing date next to the countdown (FEAT-040)', async () => {

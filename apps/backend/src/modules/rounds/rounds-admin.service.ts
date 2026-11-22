@@ -355,10 +355,21 @@ export class RoundsAdminService {
    */
   async reopen(roundId: string, deadline: string, viewerResidentId: string): Promise<AdminRoundDetailDto> {
     this.assertDeadlineFuture(deadline);
+    // V2 r3 P2-1: the same "can this round exist?" checks as create — the service must still be
+    // offered (enabled + active) and the society active. A reopen must not resurrect a round for a
+    // service residents can no longer see.
+    const round = await this.prisma.round.findUnique({ where: { id: roundId }, include: { society: { select: { active: true } } } });
+    if (!round) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+    if (!round.society.active) {
+      throw new BadRequestException({ code: ErrorCode.BAD_REQUEST, message: 'This society is switched off. Switch it back on before reopening.' });
+    }
+    await this.assertServiceOffered(round.societyId, round.serviceId);
     try {
+      // V2 r3 P3-1: reschedule, not schedule — a close job or reminder that survived the cancel is
+      // MOVED to the new deadline (changeDelay) instead of kept at the old one.
       await this.rounds.reopen(roundId, new Date(deadline), viewerResidentId, async (at) => {
-        await this.scheduler.schedule(roundId, at);
-        await this.reminders.schedule(roundId, at);
+        await this.scheduler.reschedule(roundId, at);
+        await this.reminders.reschedule(roundId, at);
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {

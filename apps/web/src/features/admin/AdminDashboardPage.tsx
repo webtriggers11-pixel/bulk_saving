@@ -354,6 +354,11 @@ export function RoundsPanel() {
                     ·
                   </span>
                   <span className="num">{formatDateTime(round.deadline)}</span>
+                  {round.status === 'CANCELLED' && round.cancelReason && (
+                    <span className="basis-full text-ink-muted" data-testid="round-cancel-reason">
+                      Cancelled: {round.cancelReason}
+                    </span>
+                  )}
                 </span>
               }
               columns={

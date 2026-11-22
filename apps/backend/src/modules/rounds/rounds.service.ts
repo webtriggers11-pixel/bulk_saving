@@ -599,8 +599,9 @@ export class RoundsService {
       });
       await schedule(deadline);
       const reopened = await this.roundNotifications.stageForParticipants(tx, roundId, NotificationType.ROUND_REOPENED);
-      const round = await tx.round.findUniqueOrThrow({ where: { id: roundId }, include: { service: true } });
-      const asked = await this.roundNotifications.stageAskOpened(tx, round);
+      const round = await tx.round.findUniqueOrThrow({ where: { id: roundId }, include: { service: true, participants: { select: { residentId: true } } } });
+      // V2 r3 P3-2: a pledger who also asked already got "open again"; their ask is answered, not re-sent.
+      const asked = await this.roundNotifications.stageAskOpened(tx, round, round.participants.map((p) => p.residentId));
       return { result, staged: [...reopened, ...asked] };
     });
   }
