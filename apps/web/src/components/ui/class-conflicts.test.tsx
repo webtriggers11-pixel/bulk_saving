@@ -22,6 +22,7 @@ import { PageHeader } from './page-header';
 import { Select } from './select';
 import { FilterChips } from './filter-chips';
 import { SearchField } from './search-field';
+import { PhoneField } from './phone-field';
 import { Switch } from './switch';
 import { ResultSummary } from './result-summary';
 import { SchemeToggle } from './scheme-toggle';
@@ -169,6 +170,8 @@ const PRIMITIVES: Array<[string, ReactElement]> = [
   ['Switch', <Switch key="sw" checked={false} onChange={() => {}} label="Active" text="Inactive" />],
   ['ResultSummary', <ResultSummary key="rsum" count={2} noun={['row', 'rows']} activeCount={1} onClear={() => {}} />],
   ['SchemeToggle', <SchemeToggle key="st" />],
+  // FEAT-031: the fixed-+91 phone field; its className lands on the inner Input (FORWARDS_TO).
+  ['PhoneField', <PhoneField key="pf" value="" onValueChange={() => {}} />],
 ];
 
 /**
@@ -198,7 +201,7 @@ const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link', 'da
 const BUTTON_SIZES = ['md', 'sm', 'icon'] as const;
 const INPUT_SIZES = ['default', 'numeric', 'lg', 'xl', 'code'] as const;
 const INPUT_EMPHASES = ['normal', 'primary'] as const;
-const INPUT_INSETS = ['default', 'icons'] as const;
+const INPUT_INSETS = ['default', 'icons', 'prefix'] as const;
 const INPUT_TRACKINGS = ['default', 'invite', 'code'] as const;
 
 const CARD_SURFACES = ['glass', 'solid', 'tint', 'accent'] as const;
@@ -351,6 +354,7 @@ const NO_BASE_CLASSES: Array<[string, ReactElement]> = [
  */
 const FORWARDS_TO: Record<string, string> = {
   DataRow: 'RowSurface',
+  PhoneField: 'Input',
 };
 
 function appSources(dir = join(process.cwd(), 'src'), out: string[] = []): string[] {

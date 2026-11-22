@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils';
 import { Input } from './input';
 
 /** The only country the web signs people in from (ADR-0042; ADR-0036's India default). */
-export const PHONE_COUNTRY_CODE = '+91';
+const PHONE_COUNTRY_CODE = '+91';
 const LOCAL_DIGITS = 10;
 
 /**
