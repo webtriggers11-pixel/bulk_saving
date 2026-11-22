@@ -16,6 +16,7 @@ import type {
   CreateRoundBody,
   RoundDto,
   Page,
+  UpdateRoundBody,
 } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
@@ -340,6 +341,34 @@ export class RoundsAdminService {
     collected: boolean,
   ): Promise<AdminRoundParticipantDto> {
     return this.rounds.setPaymentCollected(roundId, participantId, collected);
+  }
+
+  /**
+   * Edit an OPEN round's deadline and/or tiers (FEAT-038, ADR-0047). Validated like create; the
+   * guarded write and the job moves happen in {@link RoundsService.updateOpenRound}. Returns the
+   * refreshed admin detail.
+   */
+  async updateRound(roundId: string, body: UpdateRoundBody): Promise<AdminRoundDetailDto> {
+    if (body.deadline === undefined && body.tiers === undefined) {
+      throw new BadRequestException({ code: ErrorCode.BAD_REQUEST, message: 'Change the deadline or the price tiers.' });
+    }
+    if (body.tiers !== undefined) this.assertTiersValid(body.tiers);
+    if (body.deadline !== undefined) this.assertDeadlineFuture(body.deadline);
+    await this.rounds.updateOpenRound(
+      roundId,
+      {
+        ...(body.deadline !== undefined ? { deadline: new Date(body.deadline) } : {}),
+        ...(body.tiers !== undefined ? { tiers: body.tiers } : {}),
+      },
+      async (deadline) => {
+        // A pending job keeps its old delay, so move both: cancel, then schedule at the new time.
+        await this.scheduler.cancel(roundId);
+        await this.scheduler.schedule(roundId, deadline);
+        await this.reminders.cancel(roundId);
+        await this.reminders.schedule(roundId, deadline);
+      },
+    );
+    return this.getRoundDetail(roundId);
   }
 
   /** Tiers must be non-empty with positive prices and STRICTLY ascending thresholds. */

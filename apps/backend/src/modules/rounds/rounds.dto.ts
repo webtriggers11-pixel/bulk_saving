@@ -24,6 +24,7 @@ import type {
   RateRoundBody,
   RoundTierDto,
   SetPaymentBody,
+  UpdateRoundBody,
 } from '@bulk/shared';
 import { MAX_RATING_COMMENT, MAX_SEARCH, RoundStatus } from '@bulk/shared';
 
@@ -58,6 +59,20 @@ export class CreateRoundDto implements CreateRoundBody {
   @ValidateNested({ each: true })
   @Type(() => RoundTierInputDto)
   tiers!: RoundTierInputDto[];
+}
+
+/** `PATCH /admin/rounds/:id` (FEAT-038): deadline and/or tiers; at least one (checked in the service). */
+export class UpdateRoundDto implements UpdateRoundBody {
+  @IsOptional()
+  @IsISO8601()
+  deadline?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => RoundTierInputDto)
+  tiers?: RoundTierInputDto[];
 }
 
 /** Max units one resident may pledge in a single round (v1 guard, FEAT-003). */

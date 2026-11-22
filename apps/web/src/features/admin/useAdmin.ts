@@ -35,6 +35,7 @@ import type {
   UpsertOfferingBody,
   VendorDto,
   CreateAdminBody,
+  UpdateRoundBody,
 } from '@bulk/shared';
 import {
   assignRound,
@@ -65,6 +66,7 @@ import {
   updateVendor,
   upsertOffering,
   createAdmin,
+  updateRound,
 } from './admin.api';
 import { fetchAllPages, usePagedQuery, type Paged } from '../../lib/pages';
 import { catalogQueryKey } from '../catalog/useCatalog';
@@ -177,6 +179,15 @@ export function useCreateRound(): UseMutationResult<RoundDto, Error, CreateRound
   return useMutation({
     mutationFn: (body: CreateRoundBody) => createRound(body),
     onSuccess: (round) => invalidateRound(queryClient, round.id),
+  });
+}
+
+/** PATCH /admin/rounds/:id (FEAT-038). */
+export function useUpdateRound(id: string): UseMutationResult<AdminRoundDetailDto, Error, UpdateRoundBody> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateRoundBody) => updateRound(id, body),
+    onSuccess: () => invalidateRound(queryClient, id),
   });
 }
 

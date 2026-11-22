@@ -325,6 +325,12 @@ export interface CreateRoundBody {
   tiers: RoundTierDto[];
 }
 
+/** `PATCH /admin/rounds/:id` (FEAT-038, ADR-0047): OPEN rounds only; society and service are fixed. */
+export interface UpdateRoundBody {
+  deadline?: string;
+  tiers?: RoundTierDto[];
+}
+
 /* ---------------------------------------------------------------------------
  * Post-service rating (FEAT-007, ADR-0017)
  * ------------------------------------------------------------------------- */

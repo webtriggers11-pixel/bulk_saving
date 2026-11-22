@@ -32,7 +32,8 @@ export class RoundCloserProcessor extends WorkerHost {
 
   async process(job: Job<RoundClosingJobData>): Promise<RoundCloserJobResult> {
     const { roundId } = job.data;
-    const result = await this.rounds.closeRound(roundId);
+    // FEAT-038 (ADR-0047 §5): only if due — the deadline may have been extended since this job was queued.
+    const result = await this.rounds.closeRound(roundId, '', { onlyIfDue: true });
     if (!result) {
       // Not found: either deleted, or created in a transaction that has not
       // committed yet (the job is enqueued before commit). Throw to use the

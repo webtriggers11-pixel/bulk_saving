@@ -34,6 +34,9 @@ type Tx = Prisma.TransactionClient;
  */
 export const ROUND_TX_OPTIONS = { maxWait: 5_000, timeout: 30_000 } as const;
 
+/** FEAT-038: a deadline job firing this early (clock skew, BullMQ jitter) still closes the round. */
+export const CLOSE_DUE_TOLERANCE_MS = 5_000;
+
 /**
  * Extra round columns a lifecycle transition may write together with the status
  * (FEAT-005, ADR-0012). Deliberately narrow: never `status` or `unitsCount`.
@@ -273,11 +276,19 @@ export class RoundsService {
    * `viewerResidentId` only shapes `myUnits` in the returned view (the processor
    * passes none and ignores it).
    */
-  async closeRound(roundId: string, viewerResidentId = ''): Promise<RoundDto | null> {
+  async closeRound(roundId: string, viewerResidentId = '', { onlyIfDue = false } = {}): Promise<RoundDto | null> {
     return this.inRoundTxNotifying(async (tx) => {
       const locked = await this.lockRoundForUpdate(tx, roundId);
       if (!locked) {
         return { result: null, staged: [] };
+      }
+      // FEAT-038 (ADR-0047 §5): the deadline job closes only a round that is due. A job that was
+      // already running when an admin extended the deadline finds it not due and does nothing.
+      if (onlyIfDue && locked.status === RoundStatus.OPEN) {
+        const { deadline } = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: { deadline: true } });
+        if (deadline.getTime() > Date.now() + CLOSE_DUE_TOLERANCE_MS) {
+          return { result: await this.buildRoundById(tx, roundId, viewerResidentId), staged: [] };
+        }
       }
       if (locked.status !== RoundStatus.OPEN) {
         // Idempotent no-op: already closed/cancelled — return the current view.
@@ -557,6 +568,46 @@ export class RoundsService {
       include: this.viewInclude(viewerResidentId),
     });
     return buildRoundDto(updated as RoundWithView);
+  }
+
+  /**
+   * Edit an OPEN round's deadline and/or tiers (FEAT-038, ADR-0047). Under the round row lock,
+   * so it serialises with joins, leaves, close and cancel. Tiers are replaced as a set; pledges
+   * and `unitsCount` are untouched (price is derived on read). `onDeadlineChanged` runs INSIDE the
+   * transaction (it moves the queued jobs), so a queue failure rolls the edit back. Unknown → 404;
+   * not OPEN → 409 ROUND_CLOSED.
+   */
+  async updateOpenRound(
+    roundId: string,
+    change: { deadline?: Date; tiers?: Array<{ threshold: number; price: number }> },
+    onDeadlineChanged: (deadline: Date) => Promise<void>,
+  ): Promise<void> {
+    await this.inRoundTx(async (tx) => {
+      const locked = await this.lockRoundForUpdate(tx, roundId);
+      if (!locked) {
+        throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+      }
+      if (locked.status !== RoundStatus.OPEN) {
+        throw new ConflictException({
+          code: ErrorCode.ROUND_CLOSED,
+          message: 'Only an open round can be edited. This one has already closed.',
+        });
+      }
+      if (change.tiers) {
+        await tx.roundTier.deleteMany({ where: { roundId } });
+        await tx.roundTier.createMany({
+          data: change.tiers.map((t) => ({ roundId, threshold: t.threshold, price: t.price })),
+        });
+      }
+      if (change.deadline) {
+        const before = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: { deadline: true } });
+        await tx.round.update({ where: { id: roundId }, data: { deadline: change.deadline } });
+        if (before.deadline.getTime() !== change.deadline.getTime()) await onDeadlineChanged(change.deadline);
+      } else {
+        // Touch updatedAt so the edit is visible on the row.
+        await tx.round.update({ where: { id: roundId }, data: { updatedAt: new Date() } });
+      }
+    });
   }
 
   /**

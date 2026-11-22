@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import type {
   AdminRoundDetailDto,
   AdminRoundParticipantDto,
@@ -11,7 +11,7 @@ import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { AdminRoundsQueryDto, AssignRoundDto, CreateRoundDto, SetPaymentDto } from './rounds.dto';
+import { AdminRoundsQueryDto, AssignRoundDto, CreateRoundDto, SetPaymentDto, UpdateRoundDto } from './rounds.dto';
 import { RoundsAdminService } from './rounds-admin.service';
 
 /**
@@ -44,6 +44,12 @@ export class RoundsAdminController {
   @Get(':id')
   detail(@Param('id') id: string): Promise<AdminRoundDetailDto> {
     return this.admin.getRoundDetail(id);
+  }
+
+  /** FEAT-038 (ADR-0047): edit an OPEN round's deadline and/or tiers. */
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateRoundDto): Promise<AdminRoundDetailDto> {
+    return this.admin.updateRound(id, dto);
   }
 
   @Post(':id/close')

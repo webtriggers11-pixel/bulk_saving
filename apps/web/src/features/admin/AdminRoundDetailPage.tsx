@@ -18,6 +18,7 @@ import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { formatRatingSummary } from '../rating/formatRating';
 import { StatusBadge } from './StatusBadge';
+import { parseTiers, TierFields, useTierRows } from './RoundTierFields';
 import {
   adminKeys,
   useAdminRound,
@@ -27,6 +28,7 @@ import {
   useDeliverRound,
   useSetPayment,
   useAllVendors,
+  useUpdateRound,
 } from './useAdmin';
 
 /** Final price bounds (integer ₹ per unit), mirroring the backend AssignRoundBody validation. */
@@ -408,6 +410,109 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
   );
 }
 
+/** `2026-11-25T18:30` for a datetime-local input, in the admin's own time zone. */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * FEAT-038 (ADR-0047): change an OPEN round's deadline and price tiers. Society and service stay;
+ * to change those, cancel and open a new round. Pledges are kept, and the price is re-derived.
+ */
+function EditRound({ round }: { round: AdminRoundDetailDto }) {
+  const update = useUpdateRound(round.id);
+  const [open, setOpen] = useState(false);
+  const [deadline, setDeadline] = useState(() => toLocalInput(round.deadline));
+  const tiers = useTierRows(round.tiers);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  function start() {
+    setDeadline(toLocalInput(round.deadline));
+    tiers.reset(round.tiers);
+    setFormError(null);
+    update.reset();
+    setOpen(true);
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const deadlineDate = new Date(deadline);
+    if (deadline === '' || Number.isNaN(deadlineDate.getTime())) {
+      setFormError('Choose a deadline.');
+      return;
+    }
+    const parsed = parseTiers(tiers.rows);
+    if ('error' in parsed) {
+      setFormError(parsed.error);
+      return;
+    }
+    setFormError(null);
+    const deadlineChanged = deadline !== toLocalInput(round.deadline);
+    const tiersChanged = JSON.stringify(parsed.tiers) !== JSON.stringify(round.tiers.map((t) => ({ threshold: t.threshold, price: t.price })));
+    if (!deadlineChanged && !tiersChanged) {
+      setOpen(false);
+      return;
+    }
+    update.mutate(
+      { ...(deadlineChanged ? { deadline: deadlineDate.toISOString() } : {}), ...(tiersChanged ? { tiers: parsed.tiers } : {}) },
+      { onSuccess: () => setOpen(false) },
+    );
+  }
+
+  if (round.status !== 'OPEN') return null;
+  return (
+    <Card data-testid="edit-round">
+      <CardHeader>
+        <CardTitle>Edit round</CardTitle>
+        <CardDescription>
+          Change the deadline or the price tiers while the round is open. Pledges are kept. To change the society or
+          service, cancel this round and open a new one.
+        </CardDescription>
+      </CardHeader>
+      {!open ? (
+        <Button variant="secondary" className="self-start" onClick={start} data-testid="edit-round-open">
+          Edit deadline and tiers
+        </Button>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="Edit round" noValidate>
+          <Field label="Deadline" id="edit-round-deadline">
+            {(props) => <Input {...props} type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />}
+          </Field>
+          <TierFields
+            idPrefix="edit-tier"
+            rows={tiers.rows}
+            unit={unitLabelFor(round.service)}
+            unitPlural={unitLabelPluralFor(round.service)}
+            onChange={tiers.update}
+            onAdd={tiers.add}
+            onRemove={tiers.remove}
+          />
+          {(formError || update.isError) && (
+            <p role="alert" className="rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+              {formError ?? errorMessage(update.error)}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={update.isPending} data-testid="edit-round-save">
+              {update.isPending ? 'Saving…' : 'Save changes'}
+            </Button>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={update.isPending}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
+      {!open && update.isSuccess && (
+        <p role="status" className="mt-3 text-meta font-bold text-brand-ink">
+          Saved
+        </p>
+      )}
+    </Card>
+  );
+}
+
 /**
  * Super-admin round detail (FEAT-005): the round's facts, the actions valid for its
  * current status only, and per-participant payment tracking (ADR-0012).
@@ -456,6 +561,7 @@ export function AdminRoundDetailPage() {
       {data && (
         <>
           <RoundSummary round={data} />
+          <EditRound round={data} />
           <RoundActions round={data} />
           <Participants round={data} />
         </>

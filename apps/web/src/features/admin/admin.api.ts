@@ -28,6 +28,7 @@ import type {
   UpsertOfferingBody,
   VendorDto,
   CreateAdminBody,
+  UpdateRoundBody,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 import { toQueryString } from '../../lib/filters';
@@ -102,6 +103,11 @@ export function createRound(body: CreateRoundBody): Promise<RoundDto> {
     method: 'POST',
     body: body satisfies CreateRoundBody,
   });
+}
+
+/** PATCH /admin/rounds/:id (FEAT-038): an OPEN round's deadline and/or tiers. */
+export function updateRound(id: string, body: UpdateRoundBody): Promise<AdminRoundDetailDto> {
+  return apiRequest<AdminRoundDetailDto>(`/admin/rounds/${encodeURIComponent(id)}`, { method: 'PATCH', body: body satisfies UpdateRoundBody });
 }
 
 /** POST /admin/rounds/:id/close — OPEN → CLOSED_MET | CLOSED_EXPIRED. */

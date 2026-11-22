@@ -17,6 +17,7 @@ import {
   fetchAdminRound,
   fetchVendors,
   setPayment,
+  updateRound,
 } from './admin.api';
 import { AdminRoundDetailPage } from './AdminRoundDetailPage';
 import { page } from '../../test/page';
@@ -40,6 +41,7 @@ vi.mock('./admin.api', () => ({
   createService: vi.fn(),
   updateService: vi.fn(),
   upsertOffering: vi.fn(),
+  updateRound: vi.fn(),
 }));
 
 const fetchAdminRoundMock = vi.mocked(fetchAdminRound);
@@ -265,5 +267,54 @@ describe('AdminRoundDetailPage', () => {
     expect(await screen.findByLabelText('Final price per room (₹)')).toBeInTheDocument();
     // And nothing on the page still says the generic word.
     expect(screen.queryByText(/per unit/i)).not.toBeInTheDocument();
+  });
+
+  describe('Edit round (FEAT-038)', () => {
+    it('an OPEN round opens the editor prefilled; saving sends only what changed', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail());
+      vi.mocked(updateRound).mockResolvedValue(roundDetail({ tiers: [{ threshold: 5, price: 850 }, { threshold: 10, price: 700 }] }));
+      renderPage();
+      fireEvent.click(await screen.findByTestId('edit-round-open'));
+      const price1 = screen.getByLabelText('Tier 1 price (₹)');
+      expect(price1).toHaveValue(900);
+      expect(screen.getByLabelText('Tier 2 threshold (AC units)')).toHaveValue(10);
+      fireEvent.change(price1, { target: { value: '850' } });
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      await waitFor(() => expect(updateRound).toHaveBeenCalled());
+      expect(vi.mocked(updateRound).mock.calls[0]).toEqual(['round_1', { tiers: [{ threshold: 5, price: 850 }, { threshold: 10, price: 700 }] }]);
+      expect(await screen.findByText('Saved')).toBeInTheDocument();
+    });
+
+    it('a new deadline is sent as an ISO instant', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail());
+      vi.mocked(updateRound).mockResolvedValue(roundDetail());
+      renderPage();
+      fireEvent.click(await screen.findByTestId('edit-round-open'));
+      fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '2030-01-15T18:30' } });
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      await waitFor(() => expect(updateRound).toHaveBeenCalled());
+      expect(vi.mocked(updateRound).mock.calls[0][1]).toEqual({ deadline: new Date('2030-01-15T18:30').toISOString() });
+    });
+
+    it('bad tiers are refused before calling the API; a server refusal is shown', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail());
+      vi.mocked(updateRound).mockRejectedValue(new ApiError('ROUND_CLOSED', 'Only an open round can be edited. This one has already closed.', 409));
+      renderPage();
+      fireEvent.click(await screen.findByTestId('edit-round-open'));
+      fireEvent.change(screen.getByLabelText('Tier 2 threshold (AC units)'), { target: { value: '5' } });
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      expect(await screen.findByText('Tier thresholds must be strictly ascending.')).toBeInTheDocument();
+      expect(updateRound).not.toHaveBeenCalled();
+      fireEvent.change(screen.getByLabelText('Tier 2 threshold (AC units)'), { target: { value: '12' } });
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      expect(await screen.findByText(/already closed/)).toBeInTheDocument();
+    });
+
+    it('is not offered once the round has closed', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail({ status: 'CLOSED_MET' }));
+      renderPage();
+      await screen.findByText('AC Servicing');
+      expect(screen.queryByTestId('edit-round')).not.toBeInTheDocument();
+    });
   });
 });

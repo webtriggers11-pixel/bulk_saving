@@ -1,6 +1,5 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { RoundTierDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Field } from '../../components/ui/field';
@@ -14,48 +13,9 @@ import {
 } from '../../lib/offline';
 import { unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { AdminLayout } from './AdminLayout';
+import { parseTiers, TierFields, useTierRows } from './RoundTierFields';
 import { errorMessage, timeAgo } from './adminFormat';
 import { useAdminDashboard, useAllServices, useAdminSocieties, useCreateRound } from './useAdmin';
-
-/** One editable tier row; `key` is a stable React key, values are raw input strings. */
-interface TierRow {
-  key: number;
-  threshold: string;
-  price: string;
-}
-
-/** Parse a raw input as a positive integer, or null. */
-function positiveInt(raw: string): number | null {
-  if (raw.trim() === '') {
-    return null;
-  }
-  const value = Number(raw);
-  return Number.isInteger(value) && value > 0 ? value : null;
-}
-
-/**
- * Validate the tier rows: at least one, every threshold and price a positive
- * integer, thresholds strictly ascending. Returns the parsed tiers or an error.
- */
-function parseTiers(rows: TierRow[]): { tiers: RoundTierDto[] } | { error: string } {
-  if (rows.length === 0) {
-    return { error: 'Add at least one tier.' };
-  }
-  const tiers: RoundTierDto[] = [];
-  for (const [index, row] of rows.entries()) {
-    const threshold = positiveInt(row.threshold);
-    const price = positiveInt(row.price);
-    if (threshold === null || price === null) {
-      return { error: `Tier ${index + 1}: threshold and price must be whole numbers above 0.` };
-    }
-    const previous = tiers[tiers.length - 1];
-    if (previous && threshold <= previous.threshold) {
-      return { error: 'Tier thresholds must be strictly ascending.' };
-    }
-    tiers.push({ threshold, price });
-  }
-  return { tiers };
-}
 
 /**
  * Super-admin "open a round" form (FEAT-005): society, active service, deadline and
@@ -68,13 +28,12 @@ export function AdminNewRoundPage() {
   const services = useAllServices();
   const create = useCreateRound();
 
-  const nextKey = useRef(1);
   // FEAT-022: "Open a round" from the dashboard demand list arrives with both chosen.
   const [searchParams] = useSearchParams();
   const [societyId, setSocietyId] = useState(() => searchParams.get('society') ?? '');
   const [serviceId, setServiceId] = useState(() => searchParams.get('service') ?? '');
   const [deadline, setDeadline] = useState('');
-  const [tiers, setTiers] = useState<TierRow[]>([{ key: 0, threshold: '', price: '' }]);
+  const { rows: tiers, update: updateTier, add: addTier, remove: removeTier } = useTierRows();
   const [formError, setFormError] = useState<string | null>(null);
 
   const activeServices = (services.data ?? []).filter((service) => service.active);
@@ -88,20 +47,6 @@ export function AdminNewRoundPage() {
   const ask = dashboard.data?.asks.find((a) => a.society.id === societyId && a.service.id === serviceId);
   const selectedUnit = selectedService ? unitLabelFor(selectedService) : 'unit';
   const selectedUnitPlural = selectedService ? unitLabelPluralFor(selectedService) : 'units';
-
-  function updateTier(key: number, patch: Partial<Omit<TierRow, 'key'>>) {
-    setTiers((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-  }
-
-  function addTier() {
-    const key = nextKey.current;
-    nextKey.current += 1;
-    setTiers((rows) => [...rows, { key, threshold: '', price: '' }]);
-  }
-
-  function removeTier(key: number) {
-    setTiers((rows) => (rows.length > 1 ? rows.filter((row) => row.key !== key) : rows));
-  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -197,62 +142,14 @@ export function AdminNewRoundPage() {
               )}
             </Field>
 
-            <fieldset className="flex flex-col gap-3">
-              <legend className="mb-2 text-label uppercase text-ink-muted">
-                Price tiers (price per {selectedUnit} once the {selectedUnit} threshold is
-                reached)
-              </legend>
-              {tiers.map((row, index) => (
-                <div key={row.key} className="flex items-end gap-2" data-testid="tier-row">
-                  <Field
-                    className="flex-1"
-                    id={`tier-threshold-${row.key}`}
-                    label={`Tier ${index + 1} threshold (${selectedUnitPlural})`}
-                  >
-                    {(props) => (
-                      <Input
-                        {...props}
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
-                        value={row.threshold}
-                        onChange={(e) => updateTier(row.key, { threshold: e.target.value })}
-                      />
-                    )}
-                  </Field>
-                  <Field
-                    className="flex-1"
-                    id={`tier-price-${row.key}`}
-                    label={`Tier ${index + 1} price (₹)`}
-                  >
-                    {(props) => (
-                      <Input
-                        {...props}
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
-                        value={row.price}
-                        onChange={(e) => updateTier(row.key, { price: e.target.value })}
-                      />
-                    )}
-                  </Field>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    aria-label={`Remove tier ${index + 1}`}
-                    disabled={tiers.length <= 1}
-                    onClick={() => removeTier(row.key)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Button variant="secondary" size="sm" className="self-start" onClick={addTier}>
-                Add tier
-              </Button>
-            </fieldset>
+            <TierFields
+              rows={tiers}
+              unit={selectedUnit}
+              unitPlural={selectedUnitPlural}
+              onChange={updateTier}
+              onAdd={addTier}
+              onRemove={removeTier}
+            />
 
             {formError && (
               <p
