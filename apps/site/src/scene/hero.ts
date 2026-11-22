@@ -411,7 +411,7 @@ export function mountHero(root: HTMLElement) {
           building = mountBuilding(sceneEl, units(), {
             flat: true,
             drift: true,
-            interactive: { onPick, onHover: showTip },
+            interactive: { onPick, onHover: showTip, onDragStart: stopAuto },
           });
           building.setOrder(order);
           building.setUnits(units());

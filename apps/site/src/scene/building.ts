@@ -67,6 +67,8 @@ export interface BuildingOptions {
   interactive?: {
     onPick(index: number, at: { x: number; y: number }): void;
     onHover(index: number | null, at: { x: number; y: number }): void;
+    /** A drag began (the visitor is turning the society). */
+    onDragStart?(): void;
   };
 }
 
@@ -88,7 +90,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   const target: View = { ...restView, rise: options.flat && !reduced ? 0 : 1 };
   const current: View = { ...target };
   const CAMERA = { x: 7.6, y: 6.4, z: 9.4 };
-  const renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+  const renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
   // Crisp edges on retina: render at the device's full ratio (capped at 2.5 for 4K laptops).
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
   renderer.setClearColor(0x000000, 0);
@@ -117,7 +119,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   sun.position.set(-5, 10, 7.5);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left = -6;
   sun.shadow.camera.right = 6;
   sun.shadow.camera.top = 6;
@@ -487,6 +489,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
         drag.moved = true;
         setHover(null);
         ia.onHover(null, p);
+        ia.onDragStart?.();
       }
       if (drag.moved) {
         const now = performance.now();
@@ -686,6 +689,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
         if (Array.isArray(mat)) mat.forEach((x) => x.dispose?.());
         else mat?.dispose?.();
       });
+      sun.shadow.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },
