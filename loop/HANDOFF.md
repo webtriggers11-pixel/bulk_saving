@@ -3,7 +3,17 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
+## Latest session (2026-11-22: the website hero you play with — FEAT-030 + BUG-026, branch `feat/FEAT-030-interactive-hero`)
+
+- **FEAT-030 closed** (owner: "make more creative hero … check using the 3d model … interactive, micro animation"; then "this building looks very blurry … make it realistic"). It rides ADR-0039 and adds no dependency.
+  - **Hero (apps/site):** tap a window to invite that flat (`flatOf` + `promote` in model.ts, so the tapped flat lights next). Drag turns the towers (clamped, inertia, spring-back, `pan-y`). A live feed shows who joined (3 cards, 1 on phones). A "+N" chip arcs to the price, which counts down when it lands. Each unlock gets a banner, a ground ring and sparks. Idle autoplay runs 3→6 units, then "Your turn: tap a window". The scene glow grows with progress, and a "Live demo" kicker sits above the h1. `mountHero` is idempotent.
+  - **Lit model (AC8):** Lambert walls under ambient + a shadow-casting sun (intensities ×π; three's Lambert divides by π), a ShadowMaterial ground, instanced frames/sills/glass at separated depths (the old halo z-fought the glass = the "blur"), slab bands, entrances, white trees. Night: dark walls, glowing accent windows. The #how story scene inherits it. Low-power GPU, 1024 shadow map.
+  - V3 at 37ec3fd (fc87a60 reverted in the worktree): attempt 1 not identical because of a **BUG-014** hit (WA status 404, probe silent; evidence in LOG). Attempt 2 was two identical runs, 12:57:37–12:58:52 and 12:58:52–13:00:04 (site 71, backend 566, web 689).
+- **BUG-026 closed:** the site's content test was red at main because FEAT-029 was never added to `features.ts`. Added. `siteFeatures` = {FEAT-028, FEAT-030} replaces the hardcoded FEAT-028 exclusion.
+- **Shared branch warning:** another session committed **CHORE-027** (76c2f3a, TEST_LOGINS.md) and **FEAT-031** (a41e4bb + fc87a60, fixed +91 phone field, "in pr") onto this branch. **fc87a60 breaks the web gate**: `class-conflicts.test.tsx` "covers every component in components/ui" flags `PhoneField` / `PHONE_COUNTRY_CODE`. That is FEAT-031's owner's to fix. Until then the branch gate is red in apps/web only.
+- **Not done (noted):** jsdom tests for the hero controller (count cap, drag ≠ tap, autoplay stop). BUG-014 is still open, with a new route family in its evidence.
+
+## Earlier session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
 
 - **FEAT-029 closed** (owner: "make this as prper pwa app", "web app"). ADR-0041.
   - **Icons:** `apps/web/pwa-assets/mark.svg` (the app's bolt) feeds `scripts/gen-pwa-assets.mjs`, which uses sharp through Astro, so no new dependency. It renders any/maskable 192/512, apple-touch 180, favicons, shortcut icons and 10 iOS launch images. Re-run it if the mark changes.

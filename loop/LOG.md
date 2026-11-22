@@ -1686,3 +1686,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — BUG-014 — new occurrence (evidence)
 - Seen in FEAT-030 V3 run 2: `GET /auth/wa/status/<id>` → 404 mid-flow in `wa-login.integration.spec.ts:194`, probe silent (no `[BUG-014 probe]` line for that path while it logged every expected 404 of other suites). New route family (WhatsApp status), same shape. Another session's gate started at 12:56:22, four seconds after the failing run ended; overlap during the run not proven.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — V3; CLOSED
+- V3 attempt 2 at 37ec3fd (detached worktree, fc87a60 reverted, .env without WHATSAPP_*, each run started only with no other gate running): run 3 12:57:37–12:58:52 and run 4 12:58:52–13:00:04, both exit 0 and identical: site 71/71, backend 566/566, web 689/689. Logs: f30-v3-3.log, f30-v3-4.log in the session scratchpad. Attempt 1's run-2 failure is BUG-014 (logged above), not this item.
+- FEAT-030 → done. Branch gate stays red in apps/web until FEAT-031's owner registers PhoneField in class-conflicts.test.tsx.
+- By: agent (autonomous)
