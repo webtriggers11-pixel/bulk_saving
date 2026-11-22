@@ -77,6 +77,17 @@ describe('index.astro', () => {
     expect((html.match(/data-w="\d+"/g) ?? []).length).toBeGreaterThan(30);
   });
 
+  it('the hero is something you play with: kicker, feed, tip, hint, unlock banner (FEAT-030)', () => {
+    expect(html).toContain('class="hero__kicker"');
+    expect(html).toContain('Tap a window. Watch the price fall.');
+    expect(html).toMatch(/<ol class="feed" data-feed aria-live="polite"/);
+    expect(html).toMatch(/class="scene__tip" data-tip hidden/);
+    expect(html).toContain('data-scene-hint');
+    expect(html).toContain('Drag to turn · tap a window');
+    expect(html).toMatch(/class="scene__unlock" data-unlock aria-live="polite"/);
+    expect(html).toContain('class="scene__glow"');
+  });
+
   it('has the services ticker, section reveals, and count-up tiles', () => {
     expect((html.match(/class="ticker__item"/g) ?? []).length).toBeGreaterThanOrEqual(2 * 20);
     expect((html.match(/<section class="section reveal"/g) ?? []).length).toBe(SECTION_IDS.length);

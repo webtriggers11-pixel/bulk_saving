@@ -397,3 +397,298 @@ html.gsap .story__step.is-current::before {
 html.gsap .hero__copy > * {
   animation: none;
 }
+
+/* ---- FEAT-030: the hero you play with ----------------------------------------------------- */
+
+/* the kicker: a live dot that pings, an invitation to touch */
+.hero__kicker {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background-color: rgb(var(--paper));
+  box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / 0.04);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.hero__kicker-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+.hero__kicker-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(var(--brand-2));
+  animation: ping 1.8s var(--ease-out-soft) infinite;
+}
+@keyframes ping {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+.hero__kicker-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--hairline-strong);
+}
+
+/* the scene: an accent glow that grows with the count */
+.scene__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 40% 100%, rgb(var(--brand) / calc(0.03 + var(--progress, 0) * 0.14)), transparent 70%),
+    radial-gradient(40% 40% at 80% 10%, rgb(var(--brand-2) / calc(var(--progress, 0) * 0.07)), transparent 70%);
+  transition: opacity 600ms var(--ease-out-soft);
+}
+.scene canvas {
+  touch-action: pan-y;
+}
+
+/* the feed: who just joined, newest on top, older ones quieter */
+.feed {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  max-width: 62%;
+  pointer-events: none;
+}
+.feed__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background-color: rgb(var(--paper) / 0.86);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 16px -10px rgb(var(--shadow-rgb) / 0.3);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  animation: feed-in 520ms var(--ease-entrance) both;
+  transition: opacity 400ms var(--ease-out-soft);
+}
+.feed__item i {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+.feed__item strong {
+  font-family: var(--font-label);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.feed__item span {
+  color: rgb(var(--ink-muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feed__item.is-mine {
+  border-color: rgb(var(--brand) / 0.5);
+}
+.feed__item.is-mine i {
+  background: rgb(var(--brand-2));
+  box-shadow: 0 0 0 3px rgb(var(--brand-2) / 0.2);
+}
+.feed__item:nth-child(2) {
+  opacity: 0.75;
+}
+.feed__item:nth-child(3) {
+  opacity: 0.45;
+}
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    filter: blur(4px);
+  }
+}
+
+/* the hint, bottom right; nudges when autoplay hands over */
+.scene__hint {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  font-size: 0.75rem;
+  color: rgb(var(--ink-soft));
+  pointer-events: none;
+  transition: color var(--dur-hover) var(--ease-out-soft);
+}
+.scene__hint.is-nudge {
+  color: rgb(var(--brand-ink));
+  font-weight: 500;
+  animation: nudge 900ms var(--ease-press) 2;
+}
+@keyframes nudge {
+  30% {
+    transform: translateY(-4px) scale(1.06);
+  }
+  60% {
+    transform: translateY(0) scale(1);
+  }
+}
+@media (max-width: 560px) {
+  .scene__hint {
+    display: none;
+  }
+}
+
+/* the tip that follows the pointer onto a window */
+.scene__tip {
+  position: absolute;
+  z-index: 3;
+  transform: translate(14px, -130%);
+  padding: 4px 9px;
+  border-radius: var(--radius-chip);
+  background: rgb(var(--ink));
+  color: rgb(var(--paper));
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 18px -10px rgb(var(--shadow-rgb) / 0.5);
+}
+.scene__tip[hidden] {
+  display: none;
+}
+.scene__tip.is-shake {
+  animation: shake 360ms var(--ease-press);
+}
+@keyframes shake {
+  25% {
+    transform: translate(10px, -130%);
+  }
+  50% {
+    transform: translate(18px, -130%);
+  }
+  75% {
+    transform: translate(12px, -130%);
+  }
+}
+
+/* the banner when a tier unlocks: pops in the middle of the scene, then lifts away */
+.scene__unlock {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  z-index: 3;
+  padding: 8px 16px;
+  border: 1px solid rgb(var(--brand) / 0.4);
+  border-radius: 999px;
+  background-color: rgb(var(--paper) / 0.9);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 16px 40px -18px rgb(var(--shadow-rgb) / 0.45);
+  font-size: clamp(0.9375rem, 0.8rem + 0.6vw, 1.125rem);
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgb(var(--brand-ink));
+  opacity: 0;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+.scene__unlock.is-on {
+  animation: unlock-pop 2200ms var(--ease-entrance) both;
+}
+@keyframes unlock-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.7);
+    filter: blur(6px);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.06);
+    filter: blur(0);
+  }
+  22% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.98);
+  }
+}
+
+/* "+N": flies from the window to the price (x on the outer, y on the chip = an arc) */
+.fly {
+  position: absolute;
+  z-index: 30;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.fly__chip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+  color: rgb(var(--on-fill));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 3px rgb(var(--brand-2) / 0.25),
+    0 10px 22px -10px rgb(var(--shadow-rgb) / 0.5);
+}
+
+/* the price, as a chip lands on it */
+.round__price [data-price] {
+  display: inline-block;
+}
+.round__price .tick {
+  animation: tick 460ms var(--ease-press);
+}
+@keyframes tick {
+  35% {
+    transform: scale(1.14) translateY(-2px);
+  }
+}
+@media (max-width: 560px) {
+  .feed {
+    left: 10px;
+    bottom: 10px;
+  }
+  .feed__item {
+    padding: 5px 9px;
+    font-size: 0.75rem;
+  }
+  .feed__item:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+/* V2 P3-1: with reduced motion the banner has no keyframes; the class shows it, a timer hides it */
+@media (prefers-reduced-motion: reduce) {
+  .scene__unlock.is-on {
+    opacity: 1;
+  }
+}

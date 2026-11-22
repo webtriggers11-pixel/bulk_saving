@@ -3,7 +3,13 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-11-22: admin console, society onboarding, users and access, fixed +91, on branch `feat/FEAT-032-society-onboarding`)
+## State after merge (2026-11-22): everything is on `main`
+
+- Local `main` now carries both sessions' work: FEAT-031…035, CHORE-027, BUG-026, BUG-027/028 (triaged), and FEAT-030 (merged from `feat/FEAT-030-interactive-hero`). The merge conflicts were only in shared records and in early copies of FEAT-031 files that the FEAT-030 branch also carried; `main` kept the reviewed versions.
+- **`git push origin main` is refused (403):** the git credential `nishant-7156` has no write access to webtriggers11-pixel/bulk_saving. The owner needs to sign in with a writer account (`gh auth login`) or grant access, then push.
+- The FEAT-035 migration is applied to the local dev DB; with `main` now carrying its folder, the drift caveat is gone for anyone on `main`.
+
+## Session A (2026-11-22: admin console, society onboarding, users and access, fixed +91, on branch `feat/FEAT-032-society-onboarding`)
 
 **Where the work is:** branch `feat/FEAT-032-society-onboarding`, stacked on `feat/FEAT-031-fixed-plus91-phone`, which is off `main`. Nothing is merged or pushed. The work was built in scratchpad worktrees because another session holds the main checkout on `feat/FEAT-030-interactive-hero`. That session switched branches mid-session, and this session's first three commits (CHORE-027, FEAT-031 triage and build) also landed on its branch; they were cherry-picked here, and that branch was left untouched. BUG-026 (another session's site fix) was cherry-picked onto FEAT-031 so the site test is green off `main`.
 
@@ -34,6 +40,15 @@
   - A signed-in person opening a join link is sent to `/` and the code is dropped.
 
 **Next:** merge `feat/FEAT-031-fixed-plus91-phone` and then `feat/FEAT-032-society-onboarding` into `main` (owner's call), then BUG-028/BUG-027.
+## Session B (2026-11-22: the website hero you play with — FEAT-030 + BUG-026, branch `feat/FEAT-030-interactive-hero`)
+
+- **FEAT-030 closed** (owner: "make more creative hero … check using the 3d model … interactive, micro animation"; then "this building looks very blurry … make it realistic"). It rides ADR-0039 and adds no dependency.
+  - **Hero (apps/site):** tap a window to invite that flat (`flatOf` + `promote` in model.ts, so the tapped flat lights next). Drag turns the towers (clamped, inertia, spring-back, `pan-y`). A live feed shows who joined (3 cards, 1 on phones). A "+N" chip arcs to the price, which counts down when it lands. Each unlock gets a banner, a ground ring and sparks. Idle autoplay runs 3→6 units, then "Your turn: tap a window". The scene glow grows with progress, and a "Live demo" kicker sits above the h1. `mountHero` is idempotent.
+  - **Lit model (AC8):** Lambert walls under ambient + a shadow-casting sun (intensities ×π; three's Lambert divides by π), a ShadowMaterial ground, instanced frames/sills/glass at separated depths (the old halo z-fought the glass = the "blur"), slab bands, entrances, white trees. Night: dark walls, glowing accent windows. The #how story scene inherits it. Low-power GPU, 1024 shadow map.
+  - V3 at 37ec3fd (fc87a60 reverted in the worktree): attempt 1 not identical because of a **BUG-014** hit (WA status 404, probe silent; evidence in LOG). Attempt 2 was two identical runs, 12:57:37–12:58:52 and 12:58:52–13:00:04 (site 71, backend 566, web 689).
+- **BUG-026 closed:** the site's content test was red at main because FEAT-029 was never added to `features.ts`. Added. `siteFeatures` = {FEAT-028, FEAT-030} replaces the hardcoded FEAT-028 exclusion.
+- **Shared branch warning:** another session committed **CHORE-027** (76c2f3a, TEST_LOGINS.md) and **FEAT-031** (a41e4bb + fc87a60, fixed +91 phone field, "in pr") onto this branch. **fc87a60 breaks the web gate**: `class-conflicts.test.tsx` "covers every component in components/ui" flags `PhoneField` / `PHONE_COUNTRY_CODE`. That is FEAT-031's owner's to fix. Until then the branch gate is red in apps/web only.
+- **Not done (noted):** jsdom tests for the hero controller (count cap, drag ≠ tap, autoplay stop). BUG-014 is still open, with a new route family in its evidence.
 
 ## Earlier session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
 

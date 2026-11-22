@@ -1641,6 +1641,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-029 → done. BUG-025 → done.
 - By: agent (autonomous)
 
+## 2026-11-22 — FEAT-030 — OPENED (triage: FEAT, P2, parent FEAT-028)
+- Owner asked for a more creative, interactive hero on the Astro site using the 3D model, same UI system. Classified FEAT (new interaction). Branch `feat/FEAT-030-interactive-hero`. Spec/plan/tasks in loop/work/FEAT-030-interactive-hero/. No new dependency, no new ADR (rides ADR-0039 §4).
+- By: agent (autonomous)
+
 ## 2026-11-22 — CHORE-027 — opened and closed (docs only)
 - Owner asked for an md file listing all user logins and for the OTP to show as a toast at the top after sending the phone number.
 - The toast already exists (FEAT-026, ADR-0037), both doors. Checked against the running dev servers: `POST /auth/otp/request` for +919999900108/GREEN001 → requested; `GET /dev/otp` → `1111` (CHORE-026 fixed code). No code change needed.
@@ -1648,18 +1652,25 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Docs only, no app code touched: verify.sh not re-run for this item.
 - By: agent (autonomous)
 
+## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
+- `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
+- By: agent (autonomous)
+
 ## 2026-11-22 — FEAT-031 — opened (triage → plan, autonomous)
 - Owner: "make +91 non editable only phone number will add by user". Classified FEAT (P2). Spec, plan and tasks in loop/work/FEAT-031-fixed-plus91-phone/. ADR-0042 (amends ADR-0036 §2, web side only; Confidence High, judgment call).
+- By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — T1–T3 done; V1 PASS
+- T1 (095ff2a) pure `flatLabel` / `flatOf` / `promote` + 8 tests. T2 (7fdd09c) `building.ts` `interactive` option: raycast pick + hover tint, drag-to-turn (clamped ±0.75 rad, inertia, spring-back, 6 px tap slop, `touch-action: pan-y`), `project()`, `setOrder()`, ground shockwave ring on tier bursts. T3 (08b487d) hero: tap-to-invite, feed (3, 1 on phones), arcing "+N" chip (x linear on the outer, y curve on the chip), price counts after the chip lands, unlock banner, idle autoplay to 6 units that stops on first pointerdown/keydown, scene glow by progress, kicker; `mountHero` idempotent (dev HMR had double-mounted it once in the browser pass).
+- Browser pass (Playwright, dev :4321): 1440×900 mono + ocean, 390×844 dark. Autoplay 3→6 then "Your turn: tap a window"; a tap on hovered A-801 lit that flat, count +1, autoplay stayed off; a drag did not count; unlock showed ring + banner + chips; no horizontal scroll at 390; console clean.
+- V1 at 08b487d (detached worktree, .env without WHATSAPP_*): exit 0 — site 71, backend 566, web 689. Log: f30-v1.log in the session scratchpad.
+- Note: a concurrent session committed CHORE-027 (76c2f3a, TEST_LOGINS.md) onto this branch mid-build; docs only, no conflict.
 - By: agent (autonomous)
 
 ## 2026-11-22 — FEAT-031 — T1+T2 done (V1)
 - `PhoneField` primitive (`components/ui/phone-field.tsx`: fixed `+91` label, digits only, max 10, paste-friendly, no maxLength because browsers cut a paste to it before onChange) + `phone-field.test.tsx`. Both doors use it; PHONE_HINT → "Enter your 10-digit mobile number."; page tests updated (the foreign-number test now types a valid Indian number).
 - V1 on the main tree: web all green; backend 565/566. The 1 failure is BUG-024 (wa-login "switched off", the owner's .env WhatsApp creds), not mine. Re-gating in a detached worktree with `.env` minus WHATSAPP_*.
 - Browser pass (headless Chromium, 390×844, :5173 dev): admin door, typed `+91 99999abc00209xyz55` → field `9999900209`, Send code → "Sent by SMS to +919999900209", top toast "Your code is 1111".
-## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
-- `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
-- By: agent (autonomous)
-
 ## 2026-11-22 — FEAT-032 + FEAT-033 — opened (triage → plan, autonomous)
 - Owner: society onboarding (create, invite code, QR print format, invitation message), "as admin i want all access also users access right", "show all users all society all cruds". Split into FEAT-032 (societies + invites, P1, ADR-0043) and FEAT-033 (users + roles, P1, ADR-0044). Vendors, services and rounds already have admin CRUD.
 - No new dependency: `qrcode` 1.5.4 is already in apps/web. Built on branch feat/FEAT-032-society-onboarding (worktree), stacked on FEAT-031.
@@ -1801,4 +1812,23 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — Post-merge browser check on `main` (b9e9d45)
 - `main` fast-forwarded locally to b9e9d45 (FEAT-031…035, CHORE-027, BUG-026 cherry-pick). `git push origin main` was REFUSED (403: the git credential is `nishant-7156`, which has no write access to webtriggers11-pixel/bulk_saving). Waiting on the owner.
 - Merged main run from a worktree on :3100/:5180 (headless Chromium). Full scripted pass, 25 steps, all green after two script fixes (my script expected the invite error at Continue, but the server checks the code at Send code, and that's existing behaviour; and it asked for a second SMS inside the resend interval): admin login (+91 field, toast, Use it) → dashboard → every sidebar section with `aria-current` → society create/edit/rotate/inactive (code refused at Send code)/active/delete → resident onboarding through the join link (code prefilled, +91, toast, verify, Home) → resident pages (/, /services, /rounds, /my-requests, /profile: no crash, no horizontal overflow at 390px) → new resident in Users → detail → admin/resident toggle → switch off → next sign-in shows "This account has been switched off…" and the old session's refresh is 401 → switch on → remove → filters → phone drawer and no overflow on every admin page. Console errors seen were only the expected 404 (dev-OTP lookup before the code is stashed) and 400/429 (refused code, resend interval). No app bugs found. QA data was cleaned up.
+- By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — owner: "building looks very blurry … make it realistic"; V2 r1 PASS-conditional → taken
+- Cause of the blur: the additive halo plane sat at the glass's exact depth (z-fight → hatched stripes on lit windows) and every face was unlit flat paper, so form read soft. Fix (AC8 added to spec): Lambert walls under ambient + a shadow-casting sun (intensities ×π for three's Lambert), ShadowMaterial ground, instanced frames + sills + glass at separated depths (halo 0.004 with polygonOffset, frame 0.015, glass 0.034), slab bands per floor, entrances with canopies, five white model trees, pixel ratio ≤2.5, camera near 0.5. Night: walls dark, accent windows glow with a wall halo. Browser-checked light/mono and dark/ocean.
+- V2 r1 (code-reviewer subagent, its own gate at 7e76338 exit 0: site 71, backend 566, web 689). P2-1 touch tip hidden by the post-tap `pointerleave`: `onLeave` ignores touch, a tap's tip auto-hides after 1.6 s (browser-checked: tip stays, second tap shakes "A-808 is in", count unchanged). P3-1 reduced-motion banner: `.is-on` shows it under the media query, a timer removes it. P3-2 autoplay no longer polls off-screen: it parks and resumes from the IntersectionObserver / visibilitychange. P3-3 a finger landing to scroll no longer kills autoplay (touch stops on the tap/click). P3-4 burst/flash/banner land with the chip, on the new price. Not taken: P3-5 a jsdom test of the controller (rules browser-checked; noted).
+- By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-22 — FEAT-030 — V2 r2 PASS-conditional; V3 attempt 1 not identical (BUG-014 hit)
+- V2 r2 (code-reviewer subagent, its gate at 2a148f1 EXIT 1): site 71, backend 566, web 1 failed / 701. The web failure is `class-conflicts.test.tsx` "covers every component in components/ui" for `phone-field.tsx`, introduced by **FEAT-031 (fc87a60, another session's in-PR work committed onto this branch)** — not mine, left to its owner. FEAT-030 code: PASS; AC8 lit model browser-checked in hero and the #how story, light and dark. P3s taken in 37ec3fd: back to `powerPreference: 'low-power'` + 1024 shadow map, a touch drag stops autoplay (`onDragStart`), `sun.shadow.dispose()`. Not taken: P3-5 (controller jsdom tests).
+- V3 attempt 1 at 37ec3fd with fc87a60 reverted in a detached worktree (so the gate measures main + FEAT-030 + BUG-026 only): run 1 12:53:36–12:55:26 exit 0 (site 71, backend 566, web 689); run 2 12:55:26–12:56:18 exit 1 — backend 1 failed: `wa-login.integration.spec.ts` "the wrong button denies for good…" got a 404 from `GET /auth/wa/status/:id`, a route that exists and whose handler never answers 404, and the BUG-014 probe did NOT log it. That is BUG-014's signature (route-level 404 that never reaches the handler chain), already triaged; FEAT-030 touches no backend code. Evidence appended to BUG-014 below. Not identical → cannot close on this attempt; re-running the double, each run started only when no other gate is running. Logs: f30-v3-1.log, f30-v3-2.log in the session scratchpad.
+- By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-22 — BUG-014 — new occurrence (evidence)
+- Seen in FEAT-030 V3 run 2: `GET /auth/wa/status/<id>` → 404 mid-flow in `wa-login.integration.spec.ts:194`, probe silent (no `[BUG-014 probe]` line for that path while it logged every expected 404 of other suites). New route family (WhatsApp status), same shape. Another session's gate started at 12:56:22, four seconds after the failing run ended; overlap during the run not proven.
+- By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — V3; CLOSED
+- V3 attempt 2 at 37ec3fd (detached worktree, fc87a60 reverted, .env without WHATSAPP_*, each run started only with no other gate running): run 3 12:57:37–12:58:52 and run 4 12:58:52–13:00:04, both exit 0 and identical: site 71/71, backend 566/566, web 689/689. Logs: f30-v3-3.log, f30-v3-4.log in the session scratchpad. Attempt 1's run-2 failure is BUG-014 (logged above), not this item.
+- FEAT-030 → done. Branch gate stays red in apps/web until FEAT-031's owner registers PhoneField in class-conflicts.test.tsx.
 - By: agent (autonomous)
