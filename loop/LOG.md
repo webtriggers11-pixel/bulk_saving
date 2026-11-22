@@ -1895,3 +1895,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Not taken: P3-4 (duplicate `ask-row-<slug>` testid when two societies ask for the same service; pre-existing, test-only).
 - Site entry added and registry flipped before V3.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-22 — FEAT-037 — V3; CLOSED
+- V3 at c66f17e: runs 7 (21:22:25–21:23:32) and 8 (21:23:32–21:24:38), both EXIT 0 and identical: site 71/71, backend 632/632, web 774/774. Logs v3-7.log, v3-8.log in the session scratchpad.
+- FEAT-037 → done. The branch now carries FEAT-036, BUG-029 and FEAT-037; merging into `main` is waiting on the owner's explicit approval (an earlier merge attempt was blocked by the permission check).
+- By: agent (autonomous)
