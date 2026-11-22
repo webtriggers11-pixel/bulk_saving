@@ -1787,3 +1787,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-034: PASS. FEAT-035: PASS. The P1 is closed: all six `/admin` controllers carry class-level `@UseGuards(AccessTokenGuard, RolesGuard)` + `@Roles(SUPER_ADMIN)`, with no method overrides and no admin route on AccessTokenGuard alone. The re-read applies to every `@Roles` route (none mixes roles). The P2 fixes were verified (message, WhatsApp stop, admin-door test, revoke test, verify-after-switch-off, no write before refusal, stable drawer callbacks + scroll lock + Tab wrap).
 - New P3s, both taken: the WhatsApp screen hides the match number, QR, steps and status under a refusal ("Use an SMS code instead" stays); the re-render test now asserts focus stayed on Vendors. P3 accepted: one PK read per admin request.
 - By: code-reviewer subagent (recorded by agent: the review worktree was busy with V3)
+
+## 2026-11-22 — BUG-028 — triaged (found by FEAT-034/035 V3)
+- V3 at 08b2625: run 1 (13:57:55–13:58:43) exit 1, `round-lifecycle.integration.spec.ts` "join / update / leave on a CLOSED_MET round": the PATCH got 404 where 409 was expected; run 2 (13:58:43–13:59:51) exit 0 (62 / 610 / 750). The runs differ, so it's flaky. The PATCH locks the round first (`lockOpenRoundForWrite`), so the 404 means the round row was missing right after the POST saw it (409): something deleted it mid-test, a shared-DB race. 08b2625 touched only web files; the suite passed in the 4 earlier V3 runs today and 6/6 alone. Not caused by FEAT-034/035. The other session shares this DB, which fits.
+- Logs: f3435-v3b-1.log and f3435-v3b-2.log in the session scratchpad.
+- By: agent (autonomous)
