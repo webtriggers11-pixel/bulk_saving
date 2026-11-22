@@ -1659,3 +1659,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-031 — opened (triage → plan, autonomous)
 - Owner: "make +91 non editable only phone number will add by user". Classified FEAT (P2). Spec, plan and tasks in loop/work/FEAT-031-fixed-plus91-phone/. ADR-0042 (amends ADR-0036 §2, web side only; Confidence High, judgment call).
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — T1–T3 done; V1 PASS
+- T1 (095ff2a) pure `flatLabel` / `flatOf` / `promote` + 8 tests. T2 (7fdd09c) `building.ts` `interactive` option: raycast pick + hover tint, drag-to-turn (clamped ±0.75 rad, inertia, spring-back, 6 px tap slop, `touch-action: pan-y`), `project()`, `setOrder()`, ground shockwave ring on tier bursts. T3 (08b487d) hero: tap-to-invite, feed (3, 1 on phones), arcing "+N" chip (x linear on the outer, y curve on the chip), price counts after the chip lands, unlock banner, idle autoplay to 6 units that stops on first pointerdown/keydown, scene glow by progress, kicker; `mountHero` idempotent (dev HMR had double-mounted it once in the browser pass).
+- Browser pass (Playwright, dev :4321): 1440×900 mono + ocean, 390×844 dark. Autoplay 3→6 then "Your turn: tap a window"; a tap on hovered A-801 lit that flat, count +1, autoplay stayed off; a drag did not count; unlock showed ring + banner + chips; no horizontal scroll at 390; console clean.
+- V1 at 08b487d (detached worktree, .env without WHATSAPP_*): exit 0 — site 71, backend 566, web 689. Log: f30-v1.log in the session scratchpad.
+- Note: a concurrent session committed CHORE-027 (76c2f3a, TEST_LOGINS.md) onto this branch mid-build; docs only, no conflict.
+- By: agent (autonomous)
