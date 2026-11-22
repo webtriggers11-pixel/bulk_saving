@@ -1858,3 +1858,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Not taken: P3-7 (web reacting to NO_SOCIETY for a session from before adoption). Dev-only, needs a live session from before the re-seed; signing out fixes it.
 - BUG-014 evidence: one run of `wa-login` "a phone may attach to a limited number…" got a 404 from `POST /webhooks/whatsapp` mid-test (route exists); the next two runs passed. Same signature as BUG-014.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-22 — BUG-029 — regression tests first; fix; V2 PASS-conditional → taken; closing
+- Failing first: backend `test/service-asks-visibility` failed 2/2 with the fix reverted (new ask sorted after the old one; `waitingAsks` undefined), passed with it. Web: alert, New badge, sidebar badge, New round context and `timeAgo` failed at HEAD. The reviewer independently re-confirmed both.
+- Fix (45e82f7): `waitingAskGroups()` newest-first by the latest ask, `latest` on each ask, `overview.waitingAsks`; /admin opens with a "Residents are asking" alert linking to a prefilled New round; New badge (24 h); sidebar count on New round; New round says who asked.
+- V2 (code-reviewer subagent, its own gate at 919f1a8): EXIT 0 (site 71, backend 632, web 767). Taken: P2-1 (dashboard `asksWaiting` from the same source as the sidebar, so "+N more" and the badge agree, with a test); P3-1 (round and catalog writes invalidate the overview); P3-2 (overview staleTime 30 s); P3-4 (the alert is a labelled section, not a live region; long names wrap); P3-6 (dashboard tests pin the clock). Accepted and recorded in the spec: P3-3 (100-pair window), P3-5 (context only for the 20 listed).
+- BUG-029 → done; V3 runs with FEAT-036's on the same commit.
+- By: agent (autonomous) + code-reviewer subagent

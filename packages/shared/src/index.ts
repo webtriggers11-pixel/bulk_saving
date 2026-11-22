@@ -703,8 +703,10 @@ export interface AdminDashboardDto {
   statusCounts: Record<RoundStatus, number>;
   /** One entry per society (including societies with no open rounds), ordered by name. */
   demandBySociety: AdminSocietyDemand[];
-  /** FEAT-022: services residents are asking for, most-asked first (top 20). */
+  /** FEAT-022: services residents are asking for, newest first (top 20; BUG-029). */
   asks: AdminServiceAsk[];
+  /** BUG-029 V2 P2-1: every waiting request (same source as the sidebar count); `asks` shows the first 20. */
+  asksWaiting: number;
   /** Totals over ASSIGNED / DELIVERED / RATED rounds (integer ₹). */
   payments: { collectedAmount: number; outstandingAmount: number };
   /**

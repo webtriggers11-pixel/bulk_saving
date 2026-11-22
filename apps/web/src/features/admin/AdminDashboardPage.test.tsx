@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboard, roundSummary, society } from './admin.fixtures';
 import { fetchAdminRounds, fetchDashboard, fetchSocieties } from './admin.api';
 import { AdminDashboardPage } from './AdminDashboardPage';
@@ -127,6 +127,7 @@ describe('AdminDashboardPage', () => {
   it('lists what residents are asking for, each one link away from opening a round (FEAT-022)', async () => {
     fetchDashboardMock.mockResolvedValue({
       ...dashboard,
+      asksWaiting: 1,
       asks: [
         {
           society: { id: 'soc_1', name: 'Green Park' },
@@ -157,12 +158,18 @@ describe('AdminDashboardPage', () => {
   });
 
   describe('a new request reaches the admin (BUG-029)', () => {
+    // V2 P3-6: pin the clock so "3 min ago" can't drift with a slow run.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-22T12:00:00.000Z'));
+    });
+    afterEach(() => vi.useRealTimers());
     const fresh = {
       society: { id: 'soc_av', name: 'avighna heights' },
       service: { id: 'svc_ro', name: 'RO Water Purifier Service', slug: 'ro' },
       askCount: 1,
-      since: new Date(Date.now() - 3 * 60_000).toISOString(),
-      latest: new Date(Date.now() - 3 * 60_000).toISOString(),
+      since: '2026-11-22T11:57:00.000Z',
+      latest: '2026-11-22T11:57:00.000Z',
     };
     const old = {
       society: { id: 'soc_1', name: 'Green Park' },
@@ -172,8 +179,15 @@ describe('AdminDashboardPage', () => {
       latest: '2026-10-11T09:00:00.000Z',
     };
 
+    it('counts "+N more" from the server total, not the 20 rows listed (V2 P2-1)', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 30 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      expect(await screen.findByTestId('asks-alert')).toHaveTextContent('+29 more waiting');
+    });
+
     it('opens with an alert naming the newest request, one link from a prefilled round', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old] });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       const alert = await screen.findByTestId('asks-alert');
@@ -190,7 +204,7 @@ describe('AdminDashboardPage', () => {
     });
 
     it('marks a request from the last 24 hours as New in the list', async () => {
-      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old] });
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
       expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('New');

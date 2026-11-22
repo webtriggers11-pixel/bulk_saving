@@ -73,8 +73,11 @@ describe('Service asks reach the admin (BUG-029)', () => {
     expect(new Date(asks[stale].latest).getTime()).toBeLessThan(Date.now() - 86_400_000);
   });
 
-  it('the overview counts waiting requests for the sidebar badge', async () => {
+  it('the overview counts waiting requests for the sidebar badge, the same number the dashboard reports', async () => {
     const res = await http().get('/admin/overview').set('Authorization', `Bearer ${adminToken}`).expect(200);
     expect(res.body.data.waitingAsks).toBeGreaterThanOrEqual(2);
+    const dash = await http().get('/admin/dashboard').set('Authorization', `Bearer ${adminToken}`).expect(200);
+    expect(dash.body.data.asksWaiting).toBe(res.body.data.waitingAsks);
+    expect(dash.body.data.asks.length).toBe(Math.min(20, dash.body.data.asksWaiting));
   });
 });

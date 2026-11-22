@@ -125,6 +125,7 @@ export const dashboard: AdminDashboardDto = {
     CANCELLED: 1,
   },
   asks: [],
+  asksWaiting: 0,
   demandBySociety: [
     {
       society: { id: 'soc_1', name: 'Green Park', city: 'Pune' },

@@ -389,39 +389,43 @@ function AsksAlert() {
   const newest = data?.asks[0];
   if (!newest) return null;
   const residents = newest.askCount === 1 ? '1 resident is' : `${newest.askCount} residents are`;
-  const more = data.asks.length - 1;
+  // V2 P2-1: count from the server's total, not the 20 rows listed, so it matches the sidebar.
+  const more = data.asksWaiting - 1;
   return (
-    <Card surface="accent" role="status" aria-live="polite" data-testid="asks-alert" className="mb-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
-          <Icon name="bell" size={20} strokeWidth={2} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-eyebrow uppercase text-ink-muted">Residents are asking</span>
-          <span className="text-lead font-extrabold text-ink">
-            {newest.society.name} asked for {newest.service.name}
+    // V2 P3-4: a labelled region with an action, not a live region (it is there at mount).
+    <section aria-labelledby="asks-alert-title" data-testid="asks-alert" className="mb-6">
+      <Card surface="accent">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
+            <Icon name="bell" size={20} strokeWidth={2} />
           </span>
-          <span className="text-meta text-ink-muted">
-            {timeAgo(newest.latest)} · {residents} waiting. Set the price tiers and a deadline to open a group buy.
-            {more > 0 && (
-              <>
-                {' '}
-                <a href="#asks" className="font-bold text-brand-ink underline">
-                  +{more} more waiting
-                </a>
-              </>
-            )}
-          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-eyebrow uppercase text-ink-muted">Residents are asking</span>
+            <span id="asks-alert-title" className="break-words text-lead font-extrabold text-ink">
+              {newest.society.name} asked for {newest.service.name}
+            </span>
+            <span className="text-meta text-ink-muted">
+              {timeAgo(newest.latest)} · {residents} waiting. Set the price tiers and a deadline to open a group buy.
+              {more > 0 && (
+                <>
+                  {' '}
+                  <a href="#asks" className="font-bold text-brand-ink underline">
+                    +{more} more waiting
+                  </a>
+                </>
+              )}
+            </span>
+          </div>
+          <Link
+            to={openRoundHref(newest.society.id, newest.service.id)}
+            className="inline-flex min-h-touch shrink-0 items-center gap-2 self-start rounded-control paint-mono px-4 text-meta font-bold text-on-fill no-underline t press focus-visible:shadow-focus focus-visible:outline-none sm:self-center"
+          >
+            Open a round
+            <Icon name="forward" size={15} strokeWidth={2.2} />
+          </Link>
         </div>
-        <Link
-          to={openRoundHref(newest.society.id, newest.service.id)}
-          className="inline-flex min-h-touch shrink-0 items-center gap-2 self-start rounded-control paint-mono px-4 text-meta font-bold text-on-fill no-underline t press focus-visible:shadow-focus focus-visible:outline-none sm:self-center"
-        >
-          Open a round
-          <Icon name="forward" size={15} strokeWidth={2.2} />
-        </Link>
-      </div>
-    </Card>
+      </Card>
+    </section>
   );
 }
 

@@ -106,6 +106,8 @@ function invalidateRound(queryClient: QueryClient, id: string): void {
   void queryClient.invalidateQueries({ queryKey: adminKeys.round(id) });
   void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
   void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
+  // BUG-029 V2 P3-1: opening a round answers requests (the sidebar count) and changes open rounds.
+  void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
 }
 
 /** GET /admin/dashboard. */
@@ -303,6 +305,7 @@ function invalidateCatalog(queryClient: QueryClient): Promise<void> {
   // the background.
   void queryClient.invalidateQueries({ queryKey: catalogQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
   // Prefix match: covers the resident feed and "My Requests" (['rounds', 'mine']).
   void queryClient.invalidateQueries({ queryKey: roundsQueryKey });
   void queryClient.invalidateQueries({ queryKey: adminKeys.roundsAll });
@@ -444,7 +447,8 @@ export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, str
 export function useAdminOverview(): UseQueryResult<AdminOverviewDto> {
   // BUG-029: every admin page reads this now (the sidebar's waiting-requests badge). A lambda,
   // so the call resolves when the query runs, not when a page renders.
-  return useQuery({ queryKey: adminKeys.overview, queryFn: () => fetchOverview() });
+  // V2 P3-2: 30 s fresh, so moving between admin pages doesn't re-run it every time; writes invalidate it.
+  return useQuery({ queryKey: adminKeys.overview, queryFn: () => fetchOverview(), staleTime: 30_000 });
 }
 
 /** FEAT-035: one user with every pledge, for the user detail page. */
