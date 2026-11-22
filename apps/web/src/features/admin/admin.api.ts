@@ -9,6 +9,7 @@ import type {
   AdminSocietyDetailDto,
   AdminOverviewDto,
   AdminResidentDto,
+  AdminResidentDetailDto,
   AdminResidentsQuery,
   UpdateResidentBody,
   CreateSocietyBody,
@@ -214,4 +215,9 @@ export function removeUser(id: string): Promise<{ deleted: true }> {
 /** GET /admin/overview (FEAT-034) — the dashboard's opening numbers and newest rows. */
 export function fetchOverview(): Promise<AdminOverviewDto> {
   return apiRequest<AdminOverviewDto>('/admin/overview');
+}
+
+/** GET /admin/residents/:id (FEAT-035) — one user and every pledge they made. */
+export function fetchUser(id: string): Promise<AdminResidentDetailDto> {
+  return apiRequest<AdminResidentDetailDto>(`/admin/residents/${encodeURIComponent(id)}`);
 }

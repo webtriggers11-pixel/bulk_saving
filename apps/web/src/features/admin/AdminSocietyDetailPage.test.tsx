@@ -20,6 +20,7 @@ const empty: AdminSocietyDetailDto = {
   name: 'Lakeview',
   city: 'Pune',
   inviteCode: 'AB23CD45',
+  active: true,
   residentCount: 0,
   roundCount: 0,
   createdAt: '2026-11-22T08:00:00.000Z',
@@ -146,5 +147,13 @@ describe('AdminSocietyDetailPage (FEAT-032)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
     });
     expect(updateSociety).toHaveBeenCalledWith('soc_lake', { name: 'Lakeview Towers', city: 'Pune' });
+  });
+
+  it('the Active switch turns the society off and back on (FEAT-035)', async () => {
+    vi.mocked(fetchSociety).mockResolvedValue(occupied);
+    vi.mocked(updateSociety).mockResolvedValue({ ...occupied, active: false });
+    renderPage();
+    fireEvent.click(await screen.findByRole('switch', { name: 'Society active' }));
+    await waitFor(() => expect(updateSociety).toHaveBeenCalledWith('soc_lake', { active: false }));
   });
 });

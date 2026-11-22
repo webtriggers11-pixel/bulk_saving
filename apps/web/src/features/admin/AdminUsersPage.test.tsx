@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminResidentDto } from '@bulk/shared';
-import { fetchSocieties, fetchUsers, removeUser, updateUser } from './admin.api';
+import { fetchSocieties, fetchUsers } from './admin.api';
 import { society } from './admin.fixtures';
 import { AdminUsersPage } from './AdminUsersPage';
 import { useAuthStore } from '../auth/auth.store';
@@ -21,6 +21,7 @@ const me: AdminResidentDto = {
   name: 'Platform Admin',
   phone: '+919999900001',
   role: 'SUPER_ADMIN',
+  active: true,
   verifiedAt: '2026-11-01T00:00:00.000Z',
   createdAt: '2026-11-01T00:00:00.000Z',
   society: { id: 'soc_1', name: 'Green Park' },
@@ -71,43 +72,18 @@ describe('AdminUsersPage (FEAT-033)', () => {
     expect(fetchUsers).toHaveBeenCalledWith(expect.objectContaining({ societyId: 'soc_1', role: 'SUPER_ADMIN' }));
   });
 
-  it('makes a resident an admin', async () => {
-    vi.mocked(updateUser).mockResolvedValue({ ...asha, role: 'SUPER_ADMIN' });
+  it('each row opens that user\'s page; a switched-off user is marked', async () => {
+    vi.mocked(fetchUsers).mockResolvedValue(page([me, { ...asha, active: false }]));
     renderPage();
-    fireEvent.click(within((await screen.findAllByTestId('user-row'))[1]).getByRole('button'));
-    fireEvent.click(await screen.findByRole('radio', { name: 'Admin (full access)' }));
-    fireEvent.click(screen.getByTestId('save-user'));
-    await waitFor(() => expect(updateUser).toHaveBeenCalledWith('res_asha', { role: 'SUPER_ADMIN' }));
+    const rows = await screen.findAllByTestId('user-row');
+    expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', '/admin/users/res_asha');
+    expect(within(rows[1]).getByTestId('user-inactive')).toHaveTextContent('Switched off');
+    expect(within(rows[0]).queryByTestId('user-inactive')).not.toBeInTheDocument();
   });
 
-  it('renames a user; clearing the name sends null', async () => {
-    vi.mocked(updateUser).mockResolvedValue({ ...asha, name: null });
-    renderPage();
-    fireEvent.click(within((await screen.findAllByTestId('user-row'))[1]).getByRole('button'));
-    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: '   ' } });
-    fireEvent.click(screen.getByTestId('save-user'));
-    await waitFor(() => expect(updateUser).toHaveBeenCalledWith('res_asha', { name: null }));
-  });
-
-  it('you cannot change your own access or remove yourself', async () => {
-    renderPage();
-    fireEvent.click(within((await screen.findAllByTestId('user-row'))[0]).getByRole('button'));
-    expect(await screen.findByTestId('access-note')).toHaveTextContent("You can't change your own access");
-    // No radio group for yourself: plain text, nothing focusable pretending to be a control.
-    expect(screen.getByTestId('self-access')).toHaveTextContent('Access: Admin');
-    expect(screen.queryByRole('radio', { name: /^Resident$/ })).not.toBeInTheDocument();
-    expect(screen.getByTestId('save-user')).toBeDisabled();
-    expect(screen.getByTestId('remove-user')).toBeDisabled();
-  });
-
-  it('removing asks first, then removes; a server refusal is shown in the sheet', async () => {
-    vi.mocked(removeUser).mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ApiError' }));
-    renderPage();
-    fireEvent.click(within((await screen.findAllByTestId('user-row'))[1]).getByRole('button'));
-    fireEvent.click(await screen.findByTestId('remove-user'));
-    expect(removeUser).not.toHaveBeenCalled();
-    fireEvent.click(await screen.findByRole('button', { name: 'Yes, remove' }));
-    await waitFor(() => expect(removeUser).toHaveBeenCalledWith('res_asha', expect.anything()));
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+  it('the status filter reaches the server (FEAT-035)', async () => {
+    renderPage('/admin/users?status=inactive');
+    await screen.findAllByTestId('user-row');
+    expect(fetchUsers).toHaveBeenCalledWith(expect.objectContaining({ status: 'inactive' }));
   });
 });

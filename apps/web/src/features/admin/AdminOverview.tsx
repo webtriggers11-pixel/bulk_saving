@@ -86,7 +86,7 @@ function Recent({ data }: { data: AdminOverviewDto }) {
           <DataRows>
             {data.recentUsers.map((u) => (
               <RowSurface key={u.id}>
-                <Link to={`/admin/users?q=${encodeURIComponent(u.phone)}`} className="flex w-full items-center gap-3 no-underline">
+                <Link to={`/admin/users/${u.id}`} className="flex w-full items-center gap-3 no-underline">
                   <span className="flex flex-1 flex-col">
                     <span className="text-body font-extrabold text-ink">{u.name ?? 'No name yet'}</span>
                     <span className="num text-meta text-ink-muted">

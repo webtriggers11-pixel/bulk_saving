@@ -20,6 +20,7 @@ const lakeview: AdminSocietyDetailDto = {
   name: 'Lakeview',
   city: 'Pune',
   inviteCode: 'AB23CD45',
+  active: true,
   residentCount: 12,
   roundCount: 2,
   createdAt: '2026-11-22T08:00:00.000Z',

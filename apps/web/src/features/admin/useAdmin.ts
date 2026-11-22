@@ -18,6 +18,7 @@ import type {
   AdminSocietyDetailDto,
   AdminOverviewDto,
   AdminResidentDto,
+  AdminResidentDetailDto,
   AdminResidentsQuery,
   UpdateResidentBody,
   CreateSocietyBody,
@@ -52,6 +53,7 @@ import {
   fetchSociety,
   fetchOverview,
   fetchUsers,
+  fetchUser,
   removeUser,
   updateUser,
   rotateInviteCode,
@@ -80,6 +82,7 @@ export const adminKeys = {
   society: (id: string) => ['admin', 'society', id] as const,
   /** Prefix of every filtered user list (FEAT-033). */
   users: ['admin', 'users'] as const,
+  user: (id: string) => ['admin', 'user', id] as const,
   usersFiltered: (filters: AdminResidentsQuery) => ['admin', 'users', filters] as const,
   /** Prefix of every filtered service list. */
   services: ['admin', 'services'] as const,
@@ -413,6 +416,7 @@ export function useAdminUsers(filters: AdminResidentsQuery = {}): Paged<AdminRes
 /** A user write changes the user lists and every society's resident count. */
 function settleUsers(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: adminKeys.users });
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] });
   void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
   void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
   void queryClient.invalidateQueries({ queryKey: ['admin', 'society'] });
@@ -431,4 +435,9 @@ export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, str
 /** FEAT-034: the dashboard's platform numbers. Any society or user write makes it stale. */
 export function useAdminOverview(): UseQueryResult<AdminOverviewDto> {
   return useQuery({ queryKey: adminKeys.overview, queryFn: fetchOverview });
+}
+
+/** FEAT-035: one user with every pledge, for the user detail page. */
+export function useAdminUser(id: string): UseQueryResult<AdminResidentDetailDto> {
+  return useQuery({ queryKey: adminKeys.user(id), queryFn: () => fetchUser(id), enabled: id.length > 0 });
 }

@@ -108,6 +108,11 @@ function SocietyRow({ society }: { society: AdminSocietyDetailDto }) {
             {society.city} · {society.residentCount} {society.residentCount === 1 ? 'resident' : 'residents'}
           </span>
         </span>
+        {!society.active && (
+          <span className="shrink-0 text-meta font-bold text-danger-ink" data-testid="society-inactive">
+            Inactive
+          </span>
+        )}
         <span className="num shrink-0 text-meta font-bold tracking-[0.12em] text-ink" data-testid="society-code">
           {spacedCode(society.inviteCode)}
         </span>

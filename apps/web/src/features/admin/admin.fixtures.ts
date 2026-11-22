@@ -14,6 +14,7 @@ export const society: AdminSocietyDetailDto = {
   name: 'Green Park',
   city: 'Pune',
   inviteCode: 'GREEN1',
+  active: true,
   residentCount: 3,
   roundCount: 1,
   createdAt: '2026-11-01T10:00:00.000Z',

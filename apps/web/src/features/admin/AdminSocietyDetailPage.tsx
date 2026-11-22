@@ -7,6 +7,7 @@ import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import { Icon } from '../../components/ui/icon';
 import { Notice } from '../../components/ui/notice';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
+import { Switch } from '../../components/ui/switch';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
 import { invitationMessage, joinLink, spacedCode, whatsappShareHref } from './invitation';
@@ -178,6 +179,7 @@ function ManageCard({ society }: { society: AdminSocietyDetailDto }) {
   const navigate = useNavigate();
   const rotate = useRotateInviteCode(society.id);
   const remove = useDeleteSociety(society.id);
+  const update = useUpdateSociety(society.id);
   const [asking, setAsking] = useState<'rotate' | 'delete' | null>(null);
   const occupied = society.residentCount > 0 || society.roundCount > 0;
 
@@ -187,6 +189,18 @@ function ManageCard({ society }: { society: AdminSocietyDetailDto }) {
         <CardTitle>Manage</CardTitle>
       </CardHeader>
       <div className="flex flex-col gap-4">
+        {/* FEAT-035 (ADR-0045 §4): an inactive society's code admits nobody. */}
+        <div className="flex flex-col gap-1.5">
+          <Switch
+            checked={society.active}
+            onChange={(next) => update.mutate({ active: next })}
+            label="Society active"
+            text={society.active ? 'Active: the invite code works' : 'Inactive: the invite code admits nobody'}
+            busy={update.isPending}
+          />
+          <p className="text-meta text-ink-muted">Residents already signed in stay signed in. Switch individual users off from Users.</p>
+          {update.isError && <Notice tone="error">{errorMessage(update.error)}</Notice>}
+        </div>
         <div className="flex flex-col gap-1.5">
           <Button variant="secondary" className="self-start" onClick={() => setAsking('rotate')} data-testid="rotate-code">
             <Icon name="refresh" size={15} strokeWidth={2} /> New invite code

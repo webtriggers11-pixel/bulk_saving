@@ -9,6 +9,7 @@ import { AdminVendorsPage } from './features/admin/AdminVendorsPage';
 import { AdminSocietiesPage } from './features/admin/AdminSocietiesPage';
 import { AdminSocietyDetailPage } from './features/admin/AdminSocietyDetailPage';
 import { AdminUsersPage } from './features/admin/AdminUsersPage';
+import { AdminUserDetailPage } from './features/admin/AdminUserDetailPage';
 import { OnboardingPage } from './features/auth/OnboardingPage';
 import { AnonymousRoute, ProtectedRoute } from './features/auth/ProtectedRoute';
 import { ServicesPage } from './features/catalog/ServicesPage';
@@ -152,6 +153,14 @@ export default function App() {
         element={
           <AdminRoute>
             <AdminUsersPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/users/:id"
+        element={
+          <AdminRoute>
+            <AdminUserDetailPage />
           </AdminRoute>
         }
       />

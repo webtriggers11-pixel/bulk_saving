@@ -21,6 +21,7 @@ const overview: AdminOverviewDto = {
       name: 'Asha Rao',
       phone: '+919999900101',
       role: 'RESIDENT',
+      active: true,
       verifiedAt: null,
       createdAt: '2026-11-22T08:00:00.000Z',
       society: { id: society.id, name: society.name },
@@ -71,7 +72,7 @@ describe('AdminOverview (FEAT-034)', () => {
     expect(societies).toHaveTextContent('AB23 CD45');
     const users = screen.getByTestId('recent-users');
     expect(users).toHaveTextContent('Asha Rao');
-    expect(within(users).getByRole('link')).toHaveAttribute('href', '/admin/users?q=%2B919999900101');
+    expect(within(users).getByRole('link')).toHaveAttribute('href', '/admin/users/res_1');
   });
 
   it('says so when the overview cannot load', async () => {
