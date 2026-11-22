@@ -198,6 +198,7 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
         name: societyA.name,
         city: 'Pune',
         inviteCode: societyA.inviteCode,
+        active: true, // FEAT-035
         // FEAT-032 (ADR-0043): the Societies screens show these and gate delete on them.
         residentCount: expect.any(Number),
         roundCount: expect.any(Number),
