@@ -1878,3 +1878,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 pair C at b212419: runs 5 (20:24:41–20:25:49) and 6 (20:25:49–20:27:00), both EXIT 0, identical: site 71/71, backend 632/632, web 768/768. Logs: v3-1…v3-6.log in the session scratchpad.
 - FEAT-036 → done. BUG-029 → done. Branch `feat/FEAT-036-standalone-admin` is not merged into `main` (another session holds the main checkout); merge steps are in HANDOFF.md.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-037 — OPENED (triage)
+- Owner: "Residents are asking for sort proper sort this proper also recent one hilight". They're looking at `main`, which doesn't have BUG-029's newest-first order or New badge yet (branch not merged; the merge is waiting on the owner's approval). Classified FEAT P2: a sort toggle plus a stronger highlight on top of BUG-029. Web only, on the same branch.
+- By: agent (autonomous)
