@@ -111,10 +111,11 @@ describe('BUG-016 V2 — the pieces a phone layout depends on', () => {
     expect(src('catalog/ServicesPage.tsx')).toMatch(/<span className="inline-flex items-center gap-1 whitespace-nowrap">\s*\{formatCountdown/);
   });
 
-  it('the admin nav is a scrolling rail on a phone that keeps the current page in view and its focus ring uncut', () => {
+  it('the admin nav is a drawer on a phone and a sidebar from lg up — no scrolling rail (FEAT-034)', () => {
     const layout = src('admin/AdminLayout.tsx');
-    expect(layout).toMatch(/chip-rail snap-none[^"]*overflow-x-auto[^"]*py-1\.5/);
-    expect(layout).toContain('scrollIntoRail(rail.current, active)');
+    expect(layout).toMatch(/<aside className="[^"]*hidden[^"]*lg:flex/);
+    expect(layout).toMatch(/<header className="[^"]*lg:hidden/);
+    expect(layout).not.toContain('chip-rail');
     expect(layout).toContain('focus-visible:shadow-focus');
   });
 });
