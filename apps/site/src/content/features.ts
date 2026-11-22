@@ -304,6 +304,22 @@ export const features: Feature[] = [
 
   // ---- for operators ----------------------------------------------------------------------
   {
+    id: 'FEAT-034',
+    title: 'An operator console, not a list of pages',
+    what: 'A sidebar groups everything an operator does (onboarding, group buys, catalog), and the dashboard opens with the numbers that matter and one-tap actions. On a phone the same menu slides in from the side.',
+    why: 'Running dozens of societies should feel like one place, not a stack of screens.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
+    id: 'FEAT-035',
+    title: 'Switch off, don\'t delete',
+    what: 'Each member has a page with their details and every group buy they joined. An operator can switch an account off, which signs it out everywhere and stops sign-in, or pause a whole society\'s invite code, and switch either back on later.',
+    why: 'Problems get handled without erasing anyone\'s history.',
+    section: 'operators',
+    status: 'done',
+  },
+  {
     id: 'FEAT-032',
     title: 'A new society in two minutes',
     what: 'The operator creates a society and gets its invite code, a QR poster ready to print, and an invitation message to paste into the society WhatsApp group. Scanning the QR opens the app with the code already filled in.',
