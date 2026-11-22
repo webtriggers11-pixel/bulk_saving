@@ -91,13 +91,14 @@ export function WhatsAppSignIn({ login, onUseSms, phoneLike = isPhoneLike() }: W
           {messageFromError(refused)}
         </Notice>
       )}
+      {/* V2 round 2 P3: a refusal is final, so the match number, QR and steps go away with it. */}
       {queuedOffline && (
         <Notice tone="warn" data-testid="whatsapp-offline">
           {OFFLINE_QUEUED_TEXT}
         </Notice>
       )}
 
-      {session && (
+      {session && !refused && (
         <>
           <div className="surface-tint flex items-center gap-4 rounded-tile border border-paper/70 px-5 py-4" data-testid="whatsapp-match">
             <span className="text-eyebrow uppercase text-ink-muted">Your number</span>

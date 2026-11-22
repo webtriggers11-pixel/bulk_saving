@@ -77,6 +77,8 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
+    // The fix itself: focus stayed on Vendors through the re-render.
+    expect(document.activeElement).toHaveTextContent('Vendors');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(document.body.style.overflow).toBe('');
   });

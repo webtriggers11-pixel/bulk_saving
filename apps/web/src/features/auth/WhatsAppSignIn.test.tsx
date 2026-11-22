@@ -34,6 +34,9 @@ describe('WhatsAppSignIn', () => {
       />,
     );
     expect(screen.getByTestId('whatsapp-refused')).toHaveTextContent('This account has been switched off');
+    // No "tap the number" instructions under a final refusal.
+    expect(screen.queryByTestId('whatsapp-match')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('whatsapp-status')).not.toBeInTheDocument();
   });
 
   it('starts on mount when idle', () => {
