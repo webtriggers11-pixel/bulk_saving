@@ -74,6 +74,23 @@ describe('AdminDashboardPage', () => {
     expect(screen.queryByTestId('payments-collected')).not.toBeInTheDocument();
   });
 
+  it('an old /admin?status=… link opens Rounds with the same filter; ?asks= opens Requests (FEAT-041 V2 P3-1)', async () => {
+    fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [], asksMostAsked: [], asksWaiting: 0 });
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
+    renderPage('/admin?status=CLOSED_MET');
+    await screen.findByTestId('admin-rounds-empty');
+    expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'CLOSED_MET' }));
+  });
+
+  it('Rounds has a New round action (FEAT-041)', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue(page([]));
+    renderPage('/admin/rounds');
+    await screen.findByTestId('admin-rounds-empty');
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('link', { name: 'New round' })).toHaveAttribute('href', '/admin/rounds/new');
+  });
+
   it('Reports shows demand by society and the payment totals (FEAT-041)', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     renderPage('/admin/reports');

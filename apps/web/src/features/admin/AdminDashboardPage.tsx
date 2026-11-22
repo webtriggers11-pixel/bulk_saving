@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, Navigate, useLocation } from 'react-router-dom';
 import type { AdminRoundsQuery, AdminServiceAsk, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -164,18 +164,6 @@ export function DashboardSummary() {
               <Skeleton className="mt-3 h-6 w-1/3" delay={2} />
             </div>
           ))}
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="surface-glass rounded-card p-6 md:col-span-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="mt-3 h-3 w-2/3" delay={1} />
-            <Skeleton radius="inset" className="mt-5 h-24 w-full" delay={2} />
-          </div>
-          <div className="surface-glass rounded-card p-6">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="mt-5 h-8 w-32" delay={1} />
-            <Skeleton className="mt-4 h-8 w-32" delay={2} />
-          </div>
         </div>
       </SkeletonScreen>
     );
@@ -448,6 +436,12 @@ function AsksAlert() {
  * society, payment totals, and the filterable rounds list.
  */
 export function AdminDashboardPage() {
+  // V2 r4 P3-1: links shared before FEAT-041 (`/admin?status=…`, `/admin?asks=most`) open the page
+  // that now owns that list, with the same query, instead of silently dropping it.
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (ROUND_FILTER_KEYS.some((key) => params.has(key))) return <Navigate to={`/admin/rounds${location.search}`} replace />;
+  if (params.has('asks')) return <Navigate to={`/admin/requests${location.search}`} replace />;
   return (
     <AdminLayout title="Dashboard" subtitle="Your societies, members and group buys at a glance">
       <AsksAlert />

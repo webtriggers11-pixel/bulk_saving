@@ -124,4 +124,17 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     expect(badge).toHaveTextContent('2');
     expect(within(nav).getByRole('link', { name: /Requests.*2 waiting/ })).toBeInTheDocument();
   });
+
+  it('Rounds stays lit on a round page but not on New round (FEAT-041 V2 P3-2)', () => {
+    renderAt('/admin/rounds/round_1');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    expect(within(nav).getByRole('link', { name: 'Rounds' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('on New round only New round is lit (FEAT-041)', () => {
+    renderAt('/admin/rounds/new');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    expect(within(nav).getByRole('link', { name: 'New round' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: 'Rounds' })).not.toHaveAttribute('aria-current', 'page');
+  });
 });

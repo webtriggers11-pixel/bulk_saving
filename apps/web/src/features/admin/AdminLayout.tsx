@@ -16,6 +16,8 @@ interface NavItem {
   /** Exact match only. Off for a section whose child pages should keep it lit. */
   end: boolean;
   icon: IconName;
+  /** FEAT-041: child paths that belong to ANOTHER item (Rounds must not light on /admin/rounds/new). */
+  except?: string[];
 }
 
 /** The console's sections (FEAT-034): what an operator does, in the order they do it. */
@@ -32,7 +34,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Group buys',
     items: [
       { to: '/admin/requests', label: 'Requests', end: true, icon: 'bell' },
-      { to: '/admin/rounds', label: 'Rounds', end: true, icon: 'clock' },
+      { to: '/admin/rounds', label: 'Rounds', end: false, icon: 'clock', except: ['/admin/rounds/new'] },
       { to: '/admin/rounds/new', label: 'New round', end: true, icon: 'plus' },
       { to: '/admin/reports', label: 'Reports', end: true, icon: 'trend' },
     ],
@@ -73,13 +75,21 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
   const platformAdmin = useAuthStore((state) => state.resident?.societyId === null);
   // BUG-029 / FEAT-041: waiting requests are counted on Requests, on every admin page.
   const waiting = useAdminOverview().data?.waitingAsks ?? 0;
+  const { pathname } = useLocation();
   return (
     <nav aria-label={label} className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           <span className="px-3.5 pb-1 text-eyebrow uppercase text-ink-soft">{group.label}</span>
           {group.items.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={linkClass} onClick={onNavigate}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => linkClass({ isActive: isActive && !(item.except ?? []).includes(pathname) })}
+              aria-current={(item.except ?? []).includes(pathname) ? false : undefined}
+              onClick={onNavigate}
+            >
               <Icon name={item.icon} size={18} strokeWidth={1.9} />
               {item.label}
               {item.to === '/admin/requests' && waiting > 0 && (

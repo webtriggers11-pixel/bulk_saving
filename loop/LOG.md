@@ -1963,3 +1963,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Accepted in ADR-0048 §6: a pledger switched off while the round was cancelled is messaged like the others (already the case for OPEN rounds).
 - Backend 34/34 (cancel-reopen, service-asks, rounds-admin); web admin + requests 176/176.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-23 — FEAT-041 + FEAT-039 — V2 r4: FEAT-039 PASS, FEAT-041 PASS-conditional → taken
+- V2 r4 (same reviewer, its own gate at 52e92ae: EXIT 0, site 71, backend 654, web 797).
+- FEAT-041 taken: P3-1 old `/admin?status=…` / `?asks=` links redirect to Rounds / Requests with the same query; P3-2 Rounds stays lit on a round's own page (not on New round, via `except`); P3-3 the dashboard skeleton drops the moved cards; P3-5 tests for the redirect, the Rounds page's New round action, and the nav active states. Not taken: P3-4 (the tile link's aria-label wording; correct as is).
+- Web admin 164/164.
+- By: agent (autonomous) + code-reviewer subagent
