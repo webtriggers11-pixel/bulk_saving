@@ -23,7 +23,11 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
+  Raycaster,
+  RingGeometry,
   Scene,
+  Vector2,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { FLOOR_HEIGHT, SOCIETY, allWindows, lightingOrder, litSet } from './model';
@@ -37,6 +41,10 @@ export interface Building {
   /** Where the camera rests when nothing drives it. */
   readonly restView: View;
   burst(): void;
+  /** FEAT-030: replace the lighting order (the hero promotes a tapped flat). */
+  setOrder(order: readonly number[]): void;
+  /** FEAT-030: a window's centre in container pixels, or null when it is off-screen. */
+  project(index: number): { x: number; y: number } | null;
   dispose(): void;
 }
 
@@ -45,12 +53,25 @@ export interface BuildingOptions {
   flat?: boolean;
   /** A slow, continuous zoom drift on the resting view (the Ken Burns idea). */
   drift?: boolean;
+  /**
+   * FEAT-030 (hero only): windows answer the pointer — hover tints one and reports it, a tap
+   * picks it, a drag turns the society (clamped, inertia, springs back).
+   */
+  interactive?: {
+    onPick(index: number, at: { x: number; y: number }): void;
+    onHover(index: number | null, at: { x: number; y: number }): void;
+  };
 }
 
 const GROUND_FLOOR = 0.3;
 const SPARKS = 56;
 const SPARK_LIFE = 950;
 const LIGHT_FADE = 520;
+const RING_LIFE = 1300;
+/** How far a drag may turn the society: past this the unlit back faces would show. */
+const DRAG_MAX = 0.75;
+/** Pixels a pointer may travel and still count as a tap. */
+const TAP_SLOP = 6;
 
 const rgb = (token: string) => new Color(...readRgb(token));
 
@@ -87,6 +108,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   // A soft halo behind each lit window: additive, so an unlit (black) halo adds nothing.
   const glow = new MeshBasicMaterial({ toneMapped: false, transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false });
   const sparkMat = new PointsMaterial({ size: 0.075, transparent: true, opacity: 0, depthWrite: false });
+  const ringMat = new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
 
   const colours = { brand: new Color(), brand2: new Color(), unlit: new Color() };
   const paint = () => {
@@ -103,6 +125,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
     plot.color.copy(ink);
     gridMat.color.copy(ink);
     sparkMat.color.copy(colours.brand2);
+    ringMat.color.copy(colours.brand);
     repaintWindows(true);
   };
 
@@ -149,7 +172,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
 
   // ---- windows: one instanced plane each; lit = accent, unlit = faint ---------------------
   const windows = allWindows();
-  const order = lightingOrder(windows.length);
+  let order = lightingOrder(windows.length);
   const winMesh = new InstancedMesh(new PlaneGeometry(0.3, 0.23), win, windows.length);
   const glowMesh = new InstancedMesh(new PlaneGeometry(0.62, 0.5), glow, windows.length);
   const proxy = new Object3D();
@@ -171,6 +194,7 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   towers.add(winMesh);
   towers.scale.y = Math.max(0.001, current.rise);
   const black = new Color(0, 0, 0);
+  let hovered: number | null = null;
 
   let units = initialUnits;
   let lit = litSet(order, units);
@@ -179,13 +203,15 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   const tmp = new Color();
   const tmp2 = new Color();
 
+  /** A window whose hover state just changed and needs one repaint. */
+  let hoverDirty = -1;
   function repaintWindows(all: boolean) {
     const now = performance.now();
     let dirty = all;
     for (let i = 0; i < windows.length; i++) {
       const at = changedAt.get(i);
       const fading = at !== undefined && now - at < LIGHT_FADE;
-      if (!all && !fading) continue;
+      if (!all && !fading && i !== hoverDirty) continue;
       const isLit = lit.has(i);
       if (fading && !reduced) {
         const k = (now - (at as number)) / LIGHT_FADE;
@@ -196,11 +222,14 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
         tmp.copy(isLit ? colours.brand : colours.unlit);
         changedAt.delete(i);
       }
+      // FEAT-030: the window under the pointer leans toward the partner hue.
+      if (i === hovered && !isLit) tmp.lerp(colours.brand2, 0.55);
       winMesh.setColorAt(i, tmp);
       // The halo is the window's colour at a fraction, black when unlit (additive = nothing).
       glowMesh.setColorAt(i, isLit ? tmp2.copy(tmp).multiplyScalar(0.35) : black);
       dirty = true;
     }
+    hoverDirty = -1;
     if (dirty && winMesh.instanceColor) winMesh.instanceColor.needsUpdate = true;
     if (dirty && glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
   }
@@ -214,6 +243,26 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
   sparks.visible = false;
   world.add(sparks);
   let sparkStart = -1;
+
+  // ---- FEAT-030: a shockwave ring on the plot when a tier unlocks --------------------------
+  const ring = new Mesh(new RingGeometry(0.92, 1, 64), ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, 0.004, 0);
+  ring.visible = false;
+  world.add(ring);
+  let ringStart = -1;
+  function stepRing(now: number) {
+    if (ringStart < 0) return;
+    const k = (now - ringStart) / RING_LIFE;
+    if (k >= 1) {
+      ring.visible = false;
+      ringStart = -1;
+      return;
+    }
+    const e = 1 - Math.pow(1 - k, 3);
+    ring.scale.setScalar(0.4 + e * 3.4);
+    ringMat.opacity = 0.7 * (1 - k);
+  }
 
   const tall = SOCIETY[0]!;
   const top = GROUND_FLOOR + tall.floors * FLOOR_HEIGHT + 0.2;
@@ -236,6 +285,10 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
     sparkGeo.attributes.position!.needsUpdate = true;
     sparks.visible = true;
     sparkStart = performance.now();
+    if (!at) {
+      ring.visible = true;
+      ringStart = sparkStart;
+    }
     wake();
   }
 
@@ -284,19 +337,108 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
 
   let pointerX = 0;
   let pointerY = 0;
-  const onPointer = (e: PointerEvent) => {
+  // FEAT-030: drag-to-turn state. dragYaw is added to the view's yaw; it springs to 0.
+  let dragYaw = 0;
+  let dragVel = 0;
+  let drag: { id: number; x0: number; y0: number; lastX: number; lastT: number; moved: boolean } | null = null;
+  const raycaster = new Raycaster();
+  const ndc = new Vector2();
+  const local = (e: PointerEvent) => {
     const r = container.getBoundingClientRect();
-    pointerX = ((e.clientX - r.left) / r.width - 0.5) * 2;
-    pointerY = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
+  };
+  /** The window under a container point, or null. */
+  const pickAt = (x: number, y: number, w: number, h: number): number | null => {
+    ndc.set((x / w) * 2 - 1, -(y / h) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.intersectObject(winMesh, false)[0];
+    return hit?.instanceId ?? null;
+  };
+  const setHover = (next: number | null) => {
+    if (next === hovered) return;
+    const prev = hovered;
+    hovered = next;
+    if (prev !== null) {
+      hoverDirty = prev;
+      repaintWindows(false);
+    }
+    if (next !== null) hoverDirty = next;
+    container.style.cursor = drag?.moved ? 'grabbing' : next !== null ? 'pointer' : options.interactive ? 'grab' : '';
+  };
+  const onPointer = (e: PointerEvent) => {
+    const p = local(e);
+    pointerX = (p.x / p.w - 0.5) * 2;
+    pointerY = (p.y / p.h - 0.5) * 2;
+    const ia = options.interactive;
+    if (ia && drag && drag.id === e.pointerId) {
+      if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > TAP_SLOP) {
+        drag.moved = true;
+        setHover(null);
+        ia.onHover(null, p);
+      }
+      if (drag.moved) {
+        const now = performance.now();
+        const dx = e.clientX - drag.lastX;
+        const d = (dx / p.w) * 2.4;
+        dragYaw = Math.max(-DRAG_MAX, Math.min(DRAG_MAX, dragYaw + d));
+        dragVel = d / Math.max(0.008, (now - drag.lastT) / 1000);
+        drag.lastX = e.clientX;
+        drag.lastT = now;
+      }
+    } else if (ia && e.pointerType !== 'touch') {
+      const idx = pickAt(p.x, p.y, p.w, p.h);
+      setHover(idx);
+      ia.onHover(idx, p);
+    }
     wake();
   };
   const onLeave = () => {
     pointerX = 0;
     pointerY = 0;
+    if (options.interactive) {
+      setHover(null);
+      options.interactive.onHover(null, { x: 0, y: 0 });
+    }
+    wake();
+  };
+  const onDown = (e: PointerEvent) => {
+    if (!options.interactive || e.button !== 0) return;
+    drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastT: performance.now(), moved: false };
+    dragVel = 0;
+    try {
+      container.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture is a nicety */
+    }
+  };
+  const onUp = (e: PointerEvent) => {
+    const ia = options.interactive;
+    if (!ia || !drag || drag.id !== e.pointerId) return;
+    const wasDrag = drag.moved;
+    drag = null;
+    container.style.cursor = hovered !== null ? 'pointer' : 'grab';
+    if (wasDrag) {
+      wake();
+      return;
+    }
+    dragVel = 0;
+    const p = local(e);
+    const idx = pickAt(p.x, p.y, p.w, p.h);
+    if (idx !== null) ia.onPick(idx, p);
+  };
+  const onCancel = () => {
+    drag = null;
     wake();
   };
   container.addEventListener('pointermove', onPointer);
   container.addEventListener('pointerleave', onLeave);
+  if (options.interactive) {
+    container.style.cursor = 'grab';
+    container.style.touchAction = 'pan-y';
+    container.addEventListener('pointerdown', onDown);
+    container.addEventListener('pointerup', onUp);
+    container.addEventListener('pointercancel', onCancel);
+  }
 
   // ---- the loop: runs while something moves; sleeps otherwise ---------------------------------
   let raf = 0;
@@ -325,7 +467,18 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
     // The Ken Burns drift: a slow push-in and back on the resting view.
     const drift = options.drift && !reduced ? 1 + 0.045 * (0.5 + 0.5 * Math.sin(now * 0.00012)) : 1;
     const idle = reduced ? 0 : Math.sin(now * 0.00035) * 0.11;
-    const targetYaw = current.yaw + idle + (reduced ? 0 : pointerX * 0.14);
+    // FEAT-030: after a drag the society coasts, then springs back to its resting angle.
+    let dragMoving = false;
+    if (!drag && (Math.abs(dragYaw) > 0.0005 || Math.abs(dragVel) > 0.001)) {
+      dragYaw = Math.max(-DRAG_MAX, Math.min(DRAG_MAX, dragYaw + dragVel * dt));
+      dragVel *= Math.pow(0.04, dt);
+      dragYaw += (0 - dragYaw) * Math.min(1, dt * 1.6);
+      dragMoving = true;
+    } else if (!drag) {
+      dragYaw = 0;
+      dragVel = 0;
+    }
+    const targetYaw = current.yaw + idle + dragYaw + (reduced || drag?.moved ? 0 : pointerX * 0.14);
     const targetPitch = current.pitch + (reduced ? 0 : -pointerY * 0.05);
     yaw += (targetYaw - yaw) * Math.min(1, dt * 4);
     pitch += (targetPitch - pitch) * Math.min(1, dt * 4);
@@ -338,9 +491,11 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
 
     repaintWindows(false);
     stepSparks(now, dt);
+    stepRing(now);
     renderer.render(scene, camera);
 
-    const moving = !reduced || viewMoving || sparkStart >= 0 || changedAt.size > 0 || Math.abs(targetYaw - yaw) > 0.0005;
+    const moving =
+      !reduced || viewMoving || dragMoving || drag !== null || sparkStart >= 0 || ringStart >= 0 || changedAt.size > 0 || Math.abs(targetYaw - yaw) > 0.0005;
     if (visible && (moving || settleFrames-- > 0)) raf = requestAnimationFrame(frame);
   }
   function wake() {
@@ -387,6 +542,19 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
     },
     restView,
     burst: () => burst(),
+    setOrder(next) {
+      order = [...next];
+    },
+    project(index) {
+      if (index < 0 || index >= windows.length) return null;
+      const m = new Object3D();
+      winMesh.getMatrixAt(index, m.matrix);
+      const v = new Vector3().setFromMatrixPosition(m.matrix);
+      winMesh.updateWorldMatrix(true, false);
+      v.applyMatrix4(winMesh.matrixWorld).project(camera);
+      if (v.z > 1) return null;
+      return { x: ((v.x + 1) / 2) * container.clientWidth, y: ((1 - v.y) / 2) * container.clientHeight };
+    },
     dispose() {
       disposed = true;
       if (raf) cancelAnimationFrame(raf);
@@ -394,6 +562,9 @@ export function mountBuilding(container: HTMLElement, initialUnits: number, opti
       io.disconnect();
       container.removeEventListener('pointermove', onPointer);
       container.removeEventListener('pointerleave', onLeave);
+      container.removeEventListener('pointerdown', onDown);
+      container.removeEventListener('pointerup', onUp);
+      container.removeEventListener('pointercancel', onCancel);
       document.removeEventListener('bulk:theme', onTheme);
       scene.traverse((o) => {
         const m = o as Mesh;
