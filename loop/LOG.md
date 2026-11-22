@@ -1647,3 +1647,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Added `TEST_LOGINS.md` at the repo root: the societies, the 12 demo residents, the 2 SUPER_ADMINs, the vendors, the seed commands, and when the toast does and doesn't show (dev build only, OTP_DEV_LOG=true, same machine).
 - Docs only, no app code touched: verify.sh not re-run for this item.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — opened (triage → plan, autonomous)
+- Owner: "make +91 non editable only phone number will add by user". Classified FEAT (P2). Spec, plan and tasks in loop/work/FEAT-031-fixed-plus91-phone/. ADR-0042 (amends ADR-0036 §2, web side only; Confidence High, judgment call).
+- By: agent (autonomous)
