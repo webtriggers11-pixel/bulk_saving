@@ -13,6 +13,7 @@ import { Select } from '../../components/ui/select';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { StatCard } from '../../components/ui/stat';
 import { AdminLayout } from './AdminLayout';
+import { AdminOverview } from './AdminOverview';
 import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
@@ -375,7 +376,8 @@ function RoundsPanel() {
  */
 export function AdminDashboardPage() {
   return (
-    <AdminLayout title="Dashboard" subtitle="Demand, money and what needs a vendor">
+    <AdminLayout title="Dashboard" subtitle="Your societies, members and group buys at a glance">
+      <AdminOverview />
       <DashboardSummary />
       <RoundsPanel />
     </AdminLayout>

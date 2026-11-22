@@ -7,6 +7,7 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminOverviewDto,
   AdminResidentDto,
   AdminResidentsQuery,
   UpdateResidentBody,
@@ -208,4 +209,9 @@ export function updateUser(id: string, body: UpdateResidentBody): Promise<AdminR
 /** DELETE /admin/residents/:id — refused for yourself, the last admin, or live pledges. */
 export function removeUser(id: string): Promise<{ deleted: true }> {
   return apiRequest<{ deleted: true }>(`/admin/residents/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** GET /admin/overview (FEAT-034) — the dashboard's opening numbers and newest rows. */
+export function fetchOverview(): Promise<AdminOverviewDto> {
+  return apiRequest<AdminOverviewDto>('/admin/overview');
 }

@@ -16,6 +16,7 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminOverviewDto,
   AdminResidentDto,
   AdminResidentsQuery,
   UpdateResidentBody,
@@ -49,6 +50,7 @@ import {
   deleteSociety,
   fetchSocieties,
   fetchSociety,
+  fetchOverview,
   fetchUsers,
   removeUser,
   updateUser,
@@ -67,6 +69,7 @@ import { roundsQueryKey } from '../rounds/useRounds';
 /** Query keys for the super-admin screens. All live under ['admin', ...]. */
 export const adminKeys = {
   dashboard: ['admin', 'dashboard'] as const,
+  overview: ['admin', 'overview'] as const,
   roundsAll: ['admin', 'rounds'] as const,
   rounds: (filters: AdminRoundsQuery) => ['admin', 'rounds', filters] as const,
   round: (id: string) => ['admin', 'round', id] as const,
@@ -367,6 +370,7 @@ export function useAdminSociety(id: string): UseQueryResult<AdminSocietyDetailDt
 function settleSociety(queryClient: QueryClient, society: AdminSocietyDetailDto): void {
   queryClient.setQueryData(adminKeys.society(society.id), society);
   void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
 }
 
 export function useCreateSociety(): UseMutationResult<AdminSocietyDetailDto, Error, CreateSocietyBody> {
@@ -391,6 +395,7 @@ export function useDeleteSociety(id: string): UseMutationResult<{ deleted: true 
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: adminKeys.society(id) });
       void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
     },
   });
 }
@@ -408,6 +413,7 @@ export function useAdminUsers(filters: AdminResidentsQuery = {}): Paged<AdminRes
 /** A user write changes the user lists and every society's resident count. */
 function settleUsers(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: adminKeys.users });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
   void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
   void queryClient.invalidateQueries({ queryKey: ['admin', 'society'] });
 }
@@ -420,4 +426,9 @@ export function useUpdateUser(): UseMutationResult<AdminResidentDto, Error, { id
 export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: removeUser, onSuccess: () => settleUsers(queryClient) });
+}
+
+/** FEAT-034: the dashboard's platform numbers. Any society or user write makes it stale. */
+export function useAdminOverview(): UseQueryResult<AdminOverviewDto> {
+  return useQuery({ queryKey: adminKeys.overview, queryFn: fetchOverview });
 }

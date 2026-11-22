@@ -9,6 +9,8 @@ import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
 vi.mock('./admin.api', () => ({
+  // FEAT-034: the overview section above the demand summary.
+  fetchOverview: vi.fn().mockResolvedValue({ societies: 2, users: 9, admins: 1, openRounds: 3, recentSocieties: [], recentUsers: [] }),
   fetchDashboard: vi.fn(),
   fetchSocieties: vi.fn(),
   fetchServices: vi.fn(),
