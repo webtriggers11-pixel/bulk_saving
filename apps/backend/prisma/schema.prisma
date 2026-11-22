@@ -67,8 +67,10 @@ model Society {
 
 model Resident {
   id         String    @id @default(cuid())
-  societyId  String
-  society    Society   @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  // FEAT-036 (ADR-0046): NULL only for a platform admin (SUPER_ADMIN), enforced by a DB CHECK.
+  // A society-less phone is unique by a partial index the migration creates (Prisma can't model it).
+  societyId  String?
+  society    Society?  @relation(fields: [societyId], references: [id], onDelete: Cascade)
   phone      String
   name       String?
   role       Role      @default(RESIDENT)

@@ -9,6 +9,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import type { ServiceCategory } from '@bulk/shared';
+import { upsertPlatformAdmin } from './platform-admin';
 
 const prisma = new PrismaClient();
 
@@ -121,17 +122,8 @@ async function main(): Promise<void> {
   }
 
   const green = await prisma.society.findUniqueOrThrow({ where: { inviteCode: 'GREEN001' } });
-  await prisma.resident.upsert({
-    where: { societyId_phone: { societyId: green.id, phone: SUPER_ADMIN_PHONE } },
-    create: {
-      societyId: green.id,
-      phone: SUPER_ADMIN_PHONE,
-      name: 'Platform Admin',
-      role: 'SUPER_ADMIN',
-      verifiedAt: new Date(),
-    },
-    update: { role: 'SUPER_ADMIN', verifiedAt: new Date() },
-  });
+  // FEAT-036 (ADR-0046): the platform admin belongs to no society.
+  await upsertPlatformAdmin(prisma, SUPER_ADMIN_PHONE, 'Platform Admin');
 
   // Master services (idempotent upsert by unique slug).
   for (const svc of SERVICES) {
@@ -211,7 +203,7 @@ async function main(): Promise<void> {
   for (const s of SOCIETIES) {
     console.log(`  Society: ${s.inviteCode} — ${s.name} (${s.city})`);
   }
-  console.log(`  Super-admin resident: ${SUPER_ADMIN_PHONE} in Green Meadows (GREEN001)`);
+  console.log(`  Platform admin: ${SUPER_ADMIN_PHONE} (no society; sign in at /admin/login)`);
   console.log(`  Master services: ${SERVICES.length} (${SERVICES.map((s) => s.slug).join(', ')})`);
   for (const svc of SERVICES) {
     console.log(`    ${svc.name}: 1 ${svc.unitLabel} / 2 ${svc.unitLabelPlural}`);

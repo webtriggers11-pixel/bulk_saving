@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
-import { ACTIVE_FILTERS, MAX_SEARCH, Role, type ActiveFilter, type AdminResidentsQuery, type UpdateResidentBody } from '@bulk/shared';
+import { IsBoolean, IsIn, IsOptional, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { ACTIVE_FILTERS, MAX_SEARCH, Role, type ActiveFilter, type AdminResidentsQuery, type CreateAdminBody, type UpdateResidentBody } from '@bulk/shared';
 import { PageQueryDto } from '../../common/pagination';
 
 const ROLES = [Role.RESIDENT, Role.SUPER_ADMIN] as const;
@@ -45,4 +45,18 @@ export class UpdateResidentDto implements UpdateResidentBody {
   @ValidateIf((_o, value) => value !== undefined)
   @IsBoolean()
   active?: boolean;
+}
+
+/** `POST /admin/admins` (FEAT-036, ADR-0046): a platform admin, in no society. */
+export class CreateAdminDto implements CreateAdminBody {
+  // Formatting is allowed in; `normalisePhone` in the service decides what is stored (BUG-019).
+  @Matches(/^\+?[0-9][0-9\s().-]{5,24}$/, { message: 'phone must be a valid phone number.' })
+  phone!: string;
+
+  @IsOptional()
+  @ValidateIf((_o, value) => value !== null)
+  @Transform(trim)
+  @IsString()
+  @Length(1, 80)
+  name?: string | null;
 }

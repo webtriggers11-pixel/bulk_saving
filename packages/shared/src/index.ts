@@ -41,7 +41,8 @@ export type Role = (typeof Role)[keyof typeof Role];
  */
 export interface ResidentDto {
   id: string;
-  societyId: string;
+  /** FEAT-036 (ADR-0046): null for a platform admin, who belongs to no society. */
+  societyId: string | null;
   phone: string;
   name: string | null;
   role: Role;
@@ -126,7 +127,8 @@ export interface SignOutResponse {
 /** `GET /me` success payload. */
 export interface MeResponse {
   resident: ResidentDto;
-  society: SocietyDto;
+  /** FEAT-036 (ADR-0046): null for a platform admin. */
+  society: SocietyDto | null;
 }
 
 /**
@@ -473,7 +475,8 @@ export interface AdminResidentDto {
   active: boolean;
   verifiedAt: string | null;
   createdAt: string;
-  society: { id: string; name: string };
+  /** FEAT-036 (ADR-0046): null for a platform admin, who belongs to no society. */
+  society: { id: string; name: string } | null;
   /** Pledges in rounds that are not cancelled — what makes a removal refuse (ADR-0044 §5). */
   pledgeCount: number;
 }
@@ -504,6 +507,13 @@ export interface AdminResidentDetailDto extends AdminResidentDto {
 }
 
 /** `PATCH /admin/residents/:id`. `name: null` clears the name. */
+/** `POST /admin/admins` (FEAT-036, ADR-0046): a platform admin, in no society. */
+export interface CreateAdminBody {
+  /** Canonical `+91XXXXXXXXXX` (ADR-0036); the server normalises. */
+  phone: string;
+  name?: string | null;
+}
+
 export interface UpdateResidentBody {
   name?: string | null;
   role?: Role;

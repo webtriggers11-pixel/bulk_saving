@@ -39,6 +39,8 @@ export const ErrorCode = {
   WHATSAPP_WEBHOOK_SIGNATURE: 'WHATSAPP_WEBHOOK_SIGNATURE',
   /** FEAT-035 (ADR-0045): an admin switched this account off. */
   ACCOUNT_DISABLED: 'ACCOUNT_DISABLED',
+  /** FEAT-036 (ADR-0046): a platform admin (no society) called a society-only endpoint. */
+  NO_SOCIETY: 'NO_SOCIETY',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

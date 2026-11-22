@@ -76,6 +76,12 @@ export class ResidentsService {
    * the caller is told about an unverified number.
    */
   async findAdminByPhone(phone: string): Promise<Resident | null> {
+    // FEAT-036 (ADR-0046 §4): a society-less (platform) admin row wins. It is unique per phone
+    // (partial index), so there is no ambiguity to resolve.
+    const standalone = await this.prisma.resident.findFirst({
+      where: { phone, role: 'SUPER_ADMIN', societyId: null },
+    });
+    if (standalone) return standalone;
     const admins = await this.prisma.resident.findMany({
       where: { phone, role: 'SUPER_ADMIN' },
       take: 2,
@@ -91,6 +97,11 @@ export class ResidentsService {
   /** Fetch a resident by id — for the trusted authenticated-context path only. */
   findById(id: string): Promise<Resident | null> {
     return this.prisma.resident.findUnique({ where: { id } });
+  }
+
+  /** A platform admin's own row by id: SUPER_ADMIN with no society (FEAT-036, ADR-0046). */
+  findStandaloneAdmin(id: string): Promise<Resident | null> {
+    return this.prisma.resident.findFirst({ where: { id, societyId: null, role: 'SUPER_ADMIN' } });
   }
 
   /** Tenant-scoped fetch: returns the resident only if it belongs to `societyId`. */

@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import type { AdminResidentDetailDto, AdminResidentDto, Page } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { AdminResidentsQueryDto, UpdateResidentDto } from './residents-admin.dto';
+import { AdminResidentsQueryDto, CreateAdminDto, UpdateResidentDto } from './residents-admin.dto';
 import { ResidentsAdminService } from './residents-admin.service';
 
 /** Users and access rights (FEAT-033, ADR-0044). SUPER_ADMIN only; a resident token gets 403. */
@@ -34,5 +34,18 @@ export class ResidentsAdminController {
   @Delete(':id')
   remove(@CurrentAuth() ctx: AuthContext, @Param('id') id: string): Promise<{ deleted: true }> {
     return this.residents.remove(ctx.residentId, id);
+  }
+}
+
+/** FEAT-036 (ADR-0046): platform admins, who belong to no society. SUPER_ADMIN only. */
+@Controller('admin/admins')
+@UseGuards(AccessTokenGuard, RolesGuard)
+@Roles(Role.SUPER_ADMIN)
+export class PlatformAdminsController {
+  constructor(private readonly residents: ResidentsAdminService) {}
+
+  @Post()
+  create(@Body() dto: CreateAdminDto): Promise<AdminResidentDto> {
+    return this.residents.createAdmin(dto);
   }
 }

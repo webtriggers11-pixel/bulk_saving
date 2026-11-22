@@ -15,7 +15,7 @@ import {
 import type { Page, MyRoundDto, RatingDto, RoundDto } from '@bulk/shared';
 import { PageQueryDto } from '../../common/pagination';
 import { AccessTokenGuard } from '../auth/access-token.guard';
-import { CurrentAuth, type AuthContext } from '../auth/auth-context';
+import { CurrentMember, type MemberContext } from '../auth/auth-context';
 import { RatingsService } from './ratings.service';
 import { JoinRoundDto, RateRoundDto } from './rounds.dto';
 import { RoundsService } from './rounds.service';
@@ -35,7 +35,7 @@ export class RoundsController {
   ) {}
 
   @Get()
-  list(@CurrentAuth() ctx: AuthContext, @Query() page: PageQueryDto): Promise<Page<RoundDto>> {
+  list(@CurrentMember() ctx: MemberContext, @Query() page: PageQueryDto): Promise<Page<RoundDto>> {
     return this.rounds.listForSociety(ctx.societyId, ctx.residentId, page);
   }
 
@@ -46,7 +46,7 @@ export class RoundsController {
    * to `list` documents that this is the second resident feed.
    */
   @Get('mine')
-  listMine(@CurrentAuth() ctx: AuthContext, @Query() page: PageQueryDto): Promise<Page<MyRoundDto>> {
+  listMine(@CurrentMember() ctx: MemberContext, @Query() page: PageQueryDto): Promise<Page<MyRoundDto>> {
     return this.rounds.listMine(ctx.societyId, ctx.residentId, page);
   }
 
@@ -54,7 +54,7 @@ export class RoundsController {
   join(
     @Param('id') id: string,
     @Body() dto: JoinRoundDto,
-    @CurrentAuth() ctx: AuthContext,
+    @CurrentMember() ctx: MemberContext,
   ): Promise<RoundDto> {
     return this.rounds.join(id, ctx.societyId, ctx.residentId, dto.units);
   }
@@ -63,13 +63,13 @@ export class RoundsController {
   update(
     @Param('id') id: string,
     @Body() dto: JoinRoundDto,
-    @CurrentAuth() ctx: AuthContext,
+    @CurrentMember() ctx: MemberContext,
   ): Promise<RoundDto> {
     return this.rounds.updatePledge(id, ctx.societyId, ctx.residentId, dto.units);
   }
 
   @Delete(':id/join')
-  leave(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
+  leave(@Param('id') id: string, @CurrentMember() ctx: MemberContext): Promise<RoundDto> {
     return this.rounds.leave(id, ctx.societyId, ctx.residentId);
   }
 
@@ -81,7 +81,7 @@ export class RoundsController {
   rate(
     @Param('id') id: string,
     @Body() dto: RateRoundDto,
-    @CurrentAuth() ctx: AuthContext,
+    @CurrentMember() ctx: MemberContext,
   ): Promise<RatingDto> {
     return this.ratings.rate(id, ctx.societyId, ctx.residentId, dto);
   }
@@ -89,7 +89,7 @@ export class RoundsController {
   /** Withdraw the caller's own rating. The round stays RATED (status never rolls back). */
   @Delete(':id/rating')
   @HttpCode(HttpStatus.NO_CONTENT)
-  unrate(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<void> {
+  unrate(@Param('id') id: string, @CurrentMember() ctx: MemberContext): Promise<void> {
     return this.ratings.remove(id, ctx.societyId, ctx.residentId);
   }
 }

@@ -227,10 +227,14 @@ export class AuthController {
   @Get('me')
   @UseGuards(AccessTokenGuard)
   async me(@CurrentAuth() ctx: AuthContext): Promise<MeResponse> {
-    // Scoped strictly to the caller's own society (from the token).
-    const resident = await this.residents.findInSociety(ctx.residentId, ctx.societyId);
-    const society = await this.societies.findById(ctx.societyId);
-    if (!resident || !society) {
+    // Scoped strictly to the caller's own society (from the token). FEAT-036 (ADR-0046): a
+    // platform admin has none; their row must still be society-less, or the token is stale.
+    const resident =
+      ctx.societyId === null
+        ? await this.residents.findStandaloneAdmin(ctx.residentId)
+        : await this.residents.findInSociety(ctx.residentId, ctx.societyId);
+    const society = ctx.societyId === null ? null : await this.societies.findById(ctx.societyId);
+    if (!resident || (ctx.societyId !== null && !society)) {
       throw new UnauthorizedException({
         code: ErrorCode.UNAUTHORIZED,
         message: 'Resident no longer exists.',
@@ -238,7 +242,7 @@ export class AuthController {
     }
     return {
       resident: toResidentDto(resident),
-      society: { id: society.id, name: society.name, city: society.city },
+      society: society ? { id: society.id, name: society.name, city: society.city } : null,
     };
   }
 }

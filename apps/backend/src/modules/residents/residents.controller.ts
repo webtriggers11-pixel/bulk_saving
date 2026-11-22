@@ -8,7 +8,7 @@ import {
 import type { ResidentDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { AccessTokenGuard } from '../auth/access-token.guard';
-import { CurrentAuth, type AuthContext } from '../auth/auth-context';
+import { CurrentMember, type MemberContext } from '../auth/auth-context';
 import { toResidentDto } from './residents.mapper';
 import { ResidentsService } from './residents.service';
 
@@ -23,7 +23,7 @@ export class ResidentsController {
   constructor(private readonly residents: ResidentsService) {}
 
   @Get(':id')
-  async getOne(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<ResidentDto> {
+  async getOne(@Param('id') id: string, @CurrentMember() ctx: MemberContext): Promise<ResidentDto> {
     const resident = await this.residents.findInSociety(id, ctx.societyId);
     if (!resident) {
       throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Resident not found.' });

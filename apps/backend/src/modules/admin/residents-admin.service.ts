@@ -1,8 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoundStatus } from '@prisma/client';
 import {
+  normalisePhone,
   Role,
   type AdminResidentDetailDto,
+  type CreateAdminBody,
   type AdminResidentDto,
   type AdminResidentsQuery,
   type Page,
@@ -86,6 +88,9 @@ export class ResidentsAdminService {
             current.active &&
             (await tx.resident.count({ where: { role: Role.SUPER_ADMIN, active: true } })) <= 1;
           if (body.role !== undefined && body.role !== current.role) {
+            // FEAT-036 (ADR-0046 §3): a RESIDENT must belong to a society; a platform admin has none.
+            if (current.societyId === null)
+              throw conflict('A platform admin has no society, so they cannot become a resident. Remove or switch them off instead.');
             if (id === actorId)
               throw conflict('You cannot change your own role. Ask another admin.');
             if (await lastActiveAdmin())
@@ -117,6 +122,41 @@ export class ResidentsAdminService {
       .catch(raceOutcome);
     if (switchedOff) await this.auth.revokeAllSessions(id);
     return dto;
+  }
+
+  /**
+   * Create a platform admin: SUPER_ADMIN with no society (FEAT-036, ADR-0046 §3). Refused when
+   * the phone already has a society-less account, and when it belongs to a resident: making a
+   * resident an admin is a role change on their row (ADR-0044), not a second account.
+   */
+  async createAdmin(body: CreateAdminBody): Promise<AdminResidentDto> {
+    const phone = normalisePhone(body.phone);
+    if (!phone) {
+      throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'phone must be a valid phone number.' });
+    }
+    const existing = await this.prisma.resident.findFirst({
+      where: { phone },
+      orderBy: [{ societyId: { sort: 'asc', nulls: 'first' } }],
+      include: { society: { select: { name: true } } },
+    });
+    if (existing?.societyId === null) throw conflict('This number is already a platform admin.');
+    if (existing) {
+      throw conflict(
+        `This number belongs to a resident of ${existing.society?.name ?? 'a society'}. Open them in Users and make them an admin instead.`,
+      );
+    }
+    try {
+      const row = await this.prisma.resident.create({
+        data: { phone, name: body.name ?? null, role: Role.SUPER_ADMIN, societyId: null },
+        include: RESIDENT_ROW,
+      });
+      return toResidentDto(row);
+    } catch (err) {
+      // The partial unique index (ADR-0046 §1): a concurrent create with the same phone.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+        throw conflict('This number is already a platform admin.');
+      throw err;
+    }
   }
 
   /** One user with every pledge they made, newest first (FEAT-035). */
@@ -218,7 +258,7 @@ export function toResidentDto(row: Row): AdminResidentDto {
     active: row.active,
     verifiedAt: row.verifiedAt ? row.verifiedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
-    society: { id: row.society.id, name: row.society.name },
+    society: row.society ? { id: row.society.id, name: row.society.name } : null,
     pledgeCount: row._count.roundParticipations,
   };
 }

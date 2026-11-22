@@ -11,7 +11,8 @@ import type { AuthContext } from './auth-context';
 /** Claims carried by an access token. */
 export interface AccessTokenPayload {
   sub: string;
-  societyId: string;
+  /** FEAT-036 (ADR-0046): null for a platform admin, who belongs to no society. */
+  societyId: string | null;
   role: Role;
 }
 
@@ -206,7 +207,7 @@ export class AuthService {
 
   private async signPair(
     residentId: string,
-    societyId: string,
+    societyId: string | null,
     role: Role,
     jti: string,
     sid: string,
@@ -243,7 +244,7 @@ export class AuthService {
         message: 'Invalid or expired access token.',
       });
     }
-    return { residentId: payload.sub, societyId: payload.societyId, role: payload.role };
+    return { residentId: payload.sub, societyId: payload.societyId ?? null, role: payload.role };
   }
 
   /**

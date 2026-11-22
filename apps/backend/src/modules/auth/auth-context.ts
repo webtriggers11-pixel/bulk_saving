@@ -1,6 +1,7 @@
 import {
   createParamDecorator,
   ExecutionContext,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Role } from '@bulk/shared';
@@ -13,8 +14,14 @@ import { ErrorCode } from '../../common/error-codes';
  */
 export interface AuthContext {
   residentId: string;
-  societyId: string;
+  /** FEAT-036 (ADR-0046): null for a platform admin, who belongs to no society. */
+  societyId: string | null;
   role: Role;
+}
+
+/** An {@link AuthContext} that belongs to a society — what every society-scoped handler needs. */
+export interface MemberContext extends AuthContext {
+  societyId: string;
 }
 
 /** Request shape once the access-token guard has run. */
@@ -36,3 +43,32 @@ export const CurrentAuth = createParamDecorator(
     return req.auth;
   },
 );
+
+/**
+ * Param decorator for society-scoped handlers (FEAT-036, ADR-0046). Same as
+ * {@link CurrentAuth}, but a caller with no society (a platform admin) is refused with
+ * 403 `NO_SOCIETY` before the handler runs, so no service ever sees a null tenant.
+ */
+export const CurrentMember = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): MemberContext => {
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+    if (!req.auth) {
+      throw new UnauthorizedException({
+        code: ErrorCode.UNAUTHORIZED,
+        message: 'Not authenticated.',
+      });
+    }
+    return requireMember(req.auth);
+  },
+);
+
+/** Narrow an {@link AuthContext} to a society member, or answer 403 `NO_SOCIETY`. */
+export function requireMember(auth: AuthContext): MemberContext {
+  if (auth.societyId === null) {
+    throw new ForbiddenException({
+      code: ErrorCode.NO_SOCIETY,
+      message: 'This is a platform admin account. It does not belong to a society.',
+    });
+  }
+  return { ...auth, societyId: auth.societyId };
+}

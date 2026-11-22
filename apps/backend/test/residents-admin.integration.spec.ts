@@ -59,7 +59,7 @@ describe('Residents admin API (integration, needs DB)', () => {
     serviceIds.push(service.id);
     await prisma.round.create({
       data: {
-        societyId: resident.societyId,
+        societyId: resident.societyId!,
         serviceId: service.id,
         status,
         unitsCount: 1,

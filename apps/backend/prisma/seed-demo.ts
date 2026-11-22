@@ -21,6 +21,9 @@ import { NotificationType, PrismaClient, Role, RoundStatus } from '@prisma/clien
 import { Queue } from 'bullmq';
 import { SEED_JOBS } from './seed-demo.constants';
 import { assertLocalDatabase } from './seed-guard';
+import { upsertPlatformAdmin } from './platform-admin';
+
+const OPS_ADMIN_PHONE = '+919999900209';
 
 const prisma = new PrismaClient();
 
@@ -64,7 +67,6 @@ const RESIDENTS: ResidentSeed[] = [
   { key: 'ananya', society: 'BLUE0002', phone: '+919999900203', name: 'Ananya Sen' },
   { key: 'dev', society: 'BLUE0002', phone: '+919999900204', name: 'Dev Malhotra' },
   // A second admin, so a browser pass need not burn the main admin's OTP quota (5/hour).
-  { key: 'ops', society: 'BLUE0002', phone: '+919999900209', name: 'Ops Admin', role: 'SUPER_ADMIN' },
 ];
 
 const VENDORS = [
@@ -481,6 +483,7 @@ const NOTIFICATION_BODY: Record<NotificationType, (service: string) => string> =
   ROUND_ASSIGNED: (s) => `A vendor has been assigned for your ${s} booking.`,
   ROUND_DELIVERED: (s) => `Your ${s} service is marked delivered. Tell us how it went.`,
   ROUND_CANCELLED: (s) => `The ${s} group-buy was cancelled. You will not be charged.`,
+  SERVICE_ASK_OPENED: (s) => `You asked for ${s}. A group-buy is now open.`,
 };
 
 function checkRound(r: RoundSeed, unitsCount: number): void {
@@ -535,6 +538,9 @@ async function seed(queues: { closing: Queue; reminder: Queue }): Promise<void> 
     });
     residentId.set(r.key, row.id);
   }
+
+  // FEAT-036 (ADR-0046): the demo's second admin belongs to no society.
+  await upsertPlatformAdmin(prisma, OPS_ADMIN_PHONE, 'Ops Admin');
 
   for (const v of VENDORS) {
     const data = { name: v.name, phone: v.phone, category: v.category, notes: v.notes, active: v.active ?? true };
@@ -686,7 +692,7 @@ async function seed(queues: { closing: Queue; reminder: Queue }): Promise<void> 
 
   console.log('Demo seed complete:');
   console.log(`  Residents: ${RESIDENTS.length} (demo resident: Asha Rao +919999900101 in GREEN001; empty-state: Kabir Shah +919999900108)`);
-  console.log('  Admins: +919999900001 (GREEN001), +919999900209 (BLUE0002)');
+  console.log('  Platform admins (no society; /admin/login): +919999900001, +919999900209');
   console.log(`  Vendors: ${VENDORS.length} (1 deactivated)`);
   console.log(`  Demo rounds removed and recreated: ${removed} -> ${created.length}`);
   for (const line of created) console.log(`    ${line}`);

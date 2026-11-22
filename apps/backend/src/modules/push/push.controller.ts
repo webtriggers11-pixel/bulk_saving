@@ -13,7 +13,7 @@ import {
 import type { PushConfigDto } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
 import { AccessTokenGuard } from '../auth/access-token.guard';
-import { type AuthContext, CurrentAuth } from '../auth/auth-context';
+import { type AuthContext, CurrentAuth, CurrentMember, type MemberContext } from '../auth/auth-context';
 import { PushSubscribeDto, PushUnsubscribeDto } from './push.dto';
 import { PushService } from './push.service';
 
@@ -36,7 +36,7 @@ export class PushController {
   @Post('subscriptions')
   @HttpCode(HttpStatus.OK)
   async subscribe(
-    @CurrentAuth() ctx: AuthContext,
+    @CurrentMember() ctx: MemberContext,
     @Body() dto: PushSubscribeDto,
     @Headers('user-agent') userAgent: string | undefined,
   ): Promise<{ subscribed: true }> {
