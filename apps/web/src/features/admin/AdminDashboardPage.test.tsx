@@ -211,6 +211,39 @@ describe('AdminDashboardPage', () => {
       expect(within(screen.getByTestId('ask-row-tank')).queryByTestId('ask-new')).not.toBeInTheDocument();
     });
 
+    it('sorts newest first by default, most asked on request, and keeps the choice in the URL (FEAT-037)', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      const list = await screen.findByTestId('asks');
+      const order = () => within(list).getAllByTestId(/^ask-row-/).map((row) => row.getAttribute('data-testid'));
+      expect(order()).toEqual(['ask-row-ro', 'ask-row-tank']);
+      fireEvent.click(within(list).getByRole('radio', { name: 'Most asked' }));
+      expect(order()).toEqual(['ask-row-tank', 'ask-row-ro']);
+    });
+
+    it('a shared ?asks=most link opens in most-asked order (FEAT-037)', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksWaiting: 2 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage('/admin?asks=most');
+      const list = await screen.findByTestId('asks');
+      expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-tank');
+      expect(within(list).getByRole('radio', { name: 'Most asked' })).toBeChecked();
+    });
+
+    it('highlights recent requests and labels the single newest one (FEAT-037)', async () => {
+      const second = { ...fresh, service: { id: 'svc_geyser', name: 'Geyser Service', slug: 'geyser' }, latest: '2026-11-22T10:00:00.000Z' };
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, second, old], asksWaiting: 3 });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      const newest = await screen.findByTestId('ask-row-ro');
+      expect(within(newest).getByTestId('ask-new')).toHaveTextContent('Newest');
+      expect(newest.className).toContain('before:border-amber-ink');
+      expect(within(screen.getByTestId('ask-row-geyser')).getByTestId('ask-new')).toHaveTextContent('New');
+      expect(screen.getByTestId('ask-row-geyser')).toHaveTextContent('latest 2 h ago');
+      expect(screen.getByTestId('ask-row-tank').className).not.toContain('before:border-amber-ink');
+    });
+
     it('shows no alert when nobody is waiting', async () => {
       fetchDashboardMock.mockResolvedValue(dashboard);
       fetchAdminRoundsMock.mockResolvedValue(page([]));

@@ -1882,3 +1882,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-037 — OPENED (triage)
 - Owner: "Residents are asking for sort proper sort this proper also recent one hilight". They're looking at `main`, which doesn't have BUG-029's newest-first order or New badge yet (branch not merged; the merge is waiting on the owner's approval). Classified FEAT P2: a sort toggle plus a stronger highlight on top of BUG-029. Web only, on the same branch.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-037 — built; browser-checked
+- `AsksCard`: sort chips **Newest first** (default, the server's order) / **Most asked** (count desc, then newest), kept in the URL as `?asks=most`. Recent rows (24 h) are highlighted and the single newest says **Newest**. Each row shows "latest N ago · waiting since …". 3 new tests.
+- Browser pass (headless, worktree servers, isolated DB): the first highlight (`bg-amber-ink/5 ring-1`, then `bg-none bg-amber-ink/10`) was INVISIBLE, because `html[data-look] .surface-solid` outranks utilities on the row. Now drawn with `::before` (4 px amber bar + 10 % amber wash), confirmed by screenshot. Servers stopped, including the watcher; QA asks deleted.
+- Web 771/771, typecheck, lint.
+- By: agent (autonomous)

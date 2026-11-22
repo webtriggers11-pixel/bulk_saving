@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import type { AdminRoundsQuery, RoundStatus } from '@bulk/shared';
+import { Link, useSearchParams } from 'react-router-dom';
+import type { AdminRoundsQuery, AdminServiceAsk, RoundStatus } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { DataCell, DataRow, DataRows } from '../../components/ui/data-rows';
@@ -52,6 +52,99 @@ function PanelError({ subject, onRetry }: { subject: string; onRetry: () => void
 }
 
 /** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
+/** FEAT-037: a recent request's row. Drawn with ::before (an amber bar and wash), because the
+ * active look's `.surface-solid` background rules outrank utility classes on the row itself. */
+const RECENT_ROW =
+  'relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:border-l-4 before:border-amber-ink before:bg-amber-ink/10 before:content-[""]';
+
+const ASK_SORTS = [
+  { value: '', label: 'Newest first' },
+  { value: 'most', label: 'Most asked' },
+];
+
+/**
+ * "Residents are asking for" (FEAT-022; BUG-029; FEAT-037). Newest first by default (the
+ * server's order) or most asked, kept in the URL. Requests from the last 24 h are tinted
+ * and marked New; the single newest one says Newest.
+ */
+function AsksCard({ asks }: { asks: AdminServiceAsk[] }) {
+  const [params, setParams] = useSearchParams();
+  const sort = params.get('asks') === 'most' ? 'most' : '';
+  const newestKey = asks.reduce<AdminServiceAsk | undefined>((best, a) => (!best || a.latest > best.latest ? a : best), undefined);
+  const rows =
+    sort === 'most'
+      ? [...asks].sort((x, y) => y.askCount - x.askCount || (y.latest > x.latest ? 1 : y.latest < x.latest ? -1 : 0))
+      : asks;
+  return (
+    <Card data-testid="asks" id="asks">
+      <CardHeader>
+        <CardTitle>Residents are asking for</CardTitle>
+        <CardDescription>
+          Services with no open round that residents want. Open one and everyone who asked is told
+        </CardDescription>
+      </CardHeader>
+      {asks.length === 0 ? (
+        <p className="text-caption text-ink-muted">Nobody is waiting on a service right now.</p>
+      ) : (
+        <>
+          <div className="mb-3">
+            <FilterChips
+              label="Sort requests"
+              options={ASK_SORTS}
+              value={sort}
+              onChange={(next) =>
+                setParams(
+                  (current) => {
+                    const updated = new URLSearchParams(current);
+                    if (next) updated.set('asks', next);
+                    else updated.delete('asks');
+                    return updated;
+                  },
+                  { replace: true },
+                )
+              }
+            />
+          </div>
+          <DataRows>
+            {rows.map((ask) => {
+              const recent = isRecent(ask.latest);
+              const newest = ask === newestKey;
+              return (
+                <DataRow
+                  key={`${ask.society.id}:${ask.service.id}`}
+                  className={recent ? RECENT_ROW : undefined}
+                  title={
+                    <span className="flex flex-wrap items-center gap-2">
+                      {ask.service.name}
+                      {recent && (
+                        <Badge tone="amber" data-testid="ask-new">
+                          {newest ? 'Newest' : 'New'}
+                        </Badge>
+                      )}
+                    </span>
+                  }
+                  meta={`${ask.society.name} · latest ${timeAgo(ask.latest)} · waiting since ${formatDateTime(ask.since)}`}
+                  data-testid={`ask-row-${ask.service.slug}`}
+                  columns={<DataCell label="Residents asking" value={ask.askCount} />}
+                  trailing={
+                    <Link
+                      to={openRoundHref(ask.society.id, ask.service.id)}
+                      className="inline-flex min-h-touch items-center gap-2 rounded-control px-3 text-meta font-bold text-brand-ink t hover:bg-paper/60 focus-visible:shadow-focus focus-visible:outline-none"
+                    >
+                      Open a round
+                      <Icon name="forward" size={15} strokeWidth={2.2} className="nudge" />
+                    </Link>
+                  }
+                />
+              );
+            })}
+          </DataRows>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function DashboardSummary() {
   const dashboard = useAdminDashboard();
   const { data, isLoading, refetch } = dashboard;
@@ -114,47 +207,7 @@ function DashboardSummary() {
       </section>
 
       {/* FEAT-022 (ADR-0033): what residents are asking for, as a to-do list for rounds. */}
-      <Card data-testid="asks" id="asks">
-        <CardHeader>
-          <CardTitle>Residents are asking for</CardTitle>
-          <CardDescription>
-            Services with no open round that residents want, newest first. Open one and everyone who asked is told
-          </CardDescription>
-        </CardHeader>
-        {data.asks.length === 0 ? (
-          <p className="text-caption text-ink-muted">Nobody is waiting on a service right now.</p>
-        ) : (
-          <DataRows>
-            {data.asks.map((ask) => (
-              <DataRow
-                key={`${ask.society.id}:${ask.service.id}`}
-                title={
-                  <span className="flex flex-wrap items-center gap-2">
-                    {ask.service.name}
-                    {isRecent(ask.latest) && (
-                      <Badge tone="amber" data-testid="ask-new">
-                        New
-                      </Badge>
-                    )}
-                  </span>
-                }
-                meta={`${ask.society.name} · latest ${timeAgo(ask.latest)} · asking since ${formatDateTime(ask.since)}`}
-                data-testid={`ask-row-${ask.service.slug}`}
-                columns={<DataCell label="Residents asking" value={ask.askCount} />}
-                trailing={
-                  <Link
-                    to={openRoundHref(ask.society.id, ask.service.id)}
-                    className="inline-flex min-h-touch items-center gap-2 rounded-control px-3 text-meta font-bold text-brand-ink t hover:bg-paper/60 focus-visible:shadow-focus focus-visible:outline-none"
-                  >
-                    Open a round
-                    <Icon name="forward" size={15} strokeWidth={2.2} className="nudge" />
-                  </Link>
-                }
-              />
-            ))}
-          </DataRows>
-        )}
-      </Card>
+      <AsksCard asks={data.asks} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">
