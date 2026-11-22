@@ -1,7 +1,7 @@
 import { ApiError } from '../../lib/api';
 
 /** What a number must look like (BUG-019) — shown under the field and for the server's refusal. */
-export const PHONE_HINT = "Use your 10-digit mobile number, or +country code and number.";
+export const PHONE_HINT = "Enter your 10-digit mobile number.";
 /** What an invite code must look like (BUG-021) — the same pattern, for the other validated field. */
 export const INVITE_HINT = 'An invite code is 8 letters and numbers, like AB12CD34.';
 export const INVITE_CODE_SHAPE = /^[A-Z0-9]{8}$/;

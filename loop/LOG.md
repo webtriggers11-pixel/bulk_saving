@@ -1651,3 +1651,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-031 — opened (triage → plan, autonomous)
 - Owner: "make +91 non editable only phone number will add by user". Classified FEAT (P2). Spec, plan and tasks in loop/work/FEAT-031-fixed-plus91-phone/. ADR-0042 (amends ADR-0036 §2, web side only; Confidence High, judgment call).
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — T1+T2 done (V1)
+- `PhoneField` primitive (`components/ui/phone-field.tsx`: fixed `+91` label, digits only, max 10, paste-friendly, no maxLength because browsers cut a paste to it before onChange) + `phone-field.test.tsx`. Both doors use it; PHONE_HINT → "Enter your 10-digit mobile number."; page tests updated (the foreign-number test now types a valid Indian number).
+- V1 on the main tree: web all green; backend 565/566. The 1 failure is BUG-024 (wa-login "switched off", the owner's .env WhatsApp creds), not mine. Re-gating in a detached worktree with `.env` minus WHATSAPP_*.
+- Browser pass (headless Chromium, 390×844, :5173 dev): admin door, typed `+91 99999abc00209xyz55` → field `9999900209`, Send code → "Sent by SMS to +919999900209", top toast "Your code is 1111".
+- By: agent (autonomous)
