@@ -1,11 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import type { AdminSocietyDetailDto } from '@bulk/shared';
+import type { AdminOverviewDto, AdminSocietyDetailDto } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateSocietyDto, UpdateSocietyDto } from '../societies/societies.dto';
 import { SocietiesService } from '../societies/societies.service';
+import { OverviewService } from './overview.service';
 
 /**
  * Super-admin-only surface. `GET /admin/ping` demonstrates the role guard;
@@ -15,7 +16,16 @@ import { SocietiesService } from '../societies/societies.service';
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN)
 export class AdminController {
-  constructor(private readonly societies: SocietiesService) {}
+  constructor(
+    private readonly societies: SocietiesService,
+    private readonly overview: OverviewService,
+  ) {}
+
+  /** FEAT-034: platform counts and the newest societies and users, for the dashboard. */
+  @Get('overview')
+  getOverview(): Promise<AdminOverviewDto> {
+    return this.overview.get();
+  }
 
   @Get('ping')
   ping(): { pong: true } {

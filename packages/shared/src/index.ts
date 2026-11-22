@@ -485,6 +485,16 @@ export interface UpdateResidentBody {
   role?: Role;
 }
 
+/** `GET /admin/overview` (FEAT-034): the console's opening numbers and what is newest. */
+export interface AdminOverviewDto {
+  societies: number;
+  users: number;
+  admins: number;
+  openRounds: number;
+  recentSocieties: AdminSocietyDetailDto[];
+  recentUsers: AdminResidentDto[];
+}
+
 /** Compact society reference embedded in admin round views. */
 export interface AdminSocietySummary {
   id: string;

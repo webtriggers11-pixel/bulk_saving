@@ -10,11 +10,11 @@ import { AuthService } from '../auth/auth.service';
 /** A pledge counts while its round is not cancelled: those are the rows a removal would orphan. */
 const LIVE_PLEDGE = { round: { status: { not: RoundStatus.CANCELLED } } } satisfies Prisma.RoundParticipantWhereInput;
 
-const ROW = {
+export const RESIDENT_ROW = {
   society: { select: { id: true, name: true } },
   _count: { select: { roundParticipations: { where: LIVE_PLEDGE } } },
 } satisfies Prisma.ResidentInclude;
-type Row = Prisma.ResidentGetPayload<{ include: typeof ROW }>;
+type Row = Prisma.ResidentGetPayload<{ include: typeof RESIDENT_ROW }>;
 
 /**
  * Every resident, across every society, for the super-admin (FEAT-033, ADR-0044) — the
@@ -36,10 +36,10 @@ export class ResidentsAdminService {
       ...(query.role ? { role: query.role } : {}),
     };
     const [rows, total] = await Promise.all([
-      this.prisma.resident.findMany({ where, include: ROW, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], ...pageArgs(query) }),
+      this.prisma.resident.findMany({ where, include: RESIDENT_ROW, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], ...pageArgs(query) }),
       this.prisma.resident.count({ where }),
     ]);
-    return pageOf(rows, query, total, toDto);
+    return pageOf(rows, query, total, toResidentDto);
   }
 
   /**
@@ -64,9 +64,9 @@ export class ResidentsAdminService {
           ...(body.name !== undefined ? { name: body.name } : {}),
           ...(body.role !== undefined ? { role: body.role } : {}),
         },
-        include: ROW,
+        include: RESIDENT_ROW,
       });
-      return toDto(row);
+      return toResidentDto(row);
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
@@ -78,7 +78,7 @@ export class ResidentsAdminService {
   async remove(actorId: string, id: string): Promise<{ deleted: true }> {
     if (id === actorId) throw conflict('You cannot remove yourself.');
     await this.prisma.$transaction(async (tx) => {
-      const current = await tx.resident.findUnique({ where: { id }, include: ROW });
+      const current = await tx.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
       if (!current) throw notFound();
       if (current.role === Role.SUPER_ADMIN && (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1) {
         throw conflict('This is the last admin and cannot be removed.');
@@ -102,7 +102,7 @@ function conflict(message: string): ConflictException {
   return new ConflictException({ code: ErrorCode.CONFLICT, message });
 }
 
-function toDto(row: Row): AdminResidentDto {
+export function toResidentDto(row: Row): AdminResidentDto {
   return {
     id: row.id,
     name: row.name,

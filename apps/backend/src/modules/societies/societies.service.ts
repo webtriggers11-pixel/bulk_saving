@@ -8,8 +8,8 @@ import { generateInviteCode } from './invite-code';
 /** How many times a generated invite code may clash before we give up (31^8 codes: never, in practice). */
 const CODE_ATTEMPTS = 5;
 
-const WITH_COUNTS = { _count: { select: { residents: true, rounds: true } } } as const;
-type SocietyWithCounts = Society & { _count: { residents: number; rounds: number } };
+export const WITH_COUNTS = { _count: { select: { residents: true, rounds: true } } } as const;
+export type SocietyWithCounts = Society & { _count: { residents: number; rounds: number } };
 
 /**
  * Societies: tenant binding from invite codes, and the super-admin's Societies screens
@@ -148,7 +148,7 @@ function notFound(): NotFoundException {
   return new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Society not found.' });
 }
 
-function toDetail(row: SocietyWithCounts): AdminSocietyDetailDto {
+export function toDetail(row: SocietyWithCounts): AdminSocietyDetailDto {
   return {
     id: row.id,
     name: row.name,
