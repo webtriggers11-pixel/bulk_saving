@@ -98,7 +98,7 @@ function AddSocietyForm() {
 function SocietyRow({ society }: { society: AdminSocietyDetailDto }) {
   return (
     <RowSurface data-testid="society-row">
-      <Link to={`/admin/societies/${society.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+      <Link to={`/admin/societies/${society.id}`} className="flex w-full items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-chip bg-brand/10 text-brand-ink">
           <Icon name="building" size={18} strokeWidth={2} />
         </span>

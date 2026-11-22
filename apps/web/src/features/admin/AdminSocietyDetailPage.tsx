@@ -124,7 +124,7 @@ function InvitationCard({ society, message }: { society: AdminSocietyDetailDto; 
           target="_blank"
           rel="noopener noreferrer"
           data-testid="whatsapp-message"
-          className="inline-flex h-9 items-center gap-1.5 rounded-control border border-line/15 px-3.5 text-meta font-bold text-ink"
+          className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line/15 px-3.5 text-meta font-bold text-ink"
         >
           <Icon name="chat" size={14} strokeWidth={2} /> Send on WhatsApp
         </a>

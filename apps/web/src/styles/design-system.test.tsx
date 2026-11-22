@@ -368,6 +368,9 @@ describe('FEAT-016 AC3 — no light-only colour outside the accent fills', () =>
   const ACCENT_FILL_USES: Record<string, number> = {
     'components/ui/switch.tsx': 1, // the knob is white in both schemes, like iOS
     'features/appearance/AppearanceSheet.tsx': 1, // the tick on a swatch: always a day fill
+    // FEAT-032: the QR code's quiet zone. A camera reads dark-on-light; a QR on the night
+    // ground scans badly or not at all, so its tile stays white in both schemes.
+    'features/admin/AdminSocietyDetailPage.tsx': 1,
   };
   // Every utility that can paint a colour, plus arbitrary white literals.
   const WHITE = /\b(?:bg|border|from|to|via|ring|divide|text|stroke|fill|shadow|outline|decoration|caret|accent|placeholder)-white\b|-\[(?:#fff(?:fff)?|white|rgb\(255[ ,_]+255[ ,_]+255)/gi;
