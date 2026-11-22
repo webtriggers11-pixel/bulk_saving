@@ -1668,3 +1668,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-031 — V2 findings taken
 - P2-1 fixed: a prefix is stripped only at the exact paste lengths (12 `91…`, 11 `0…`, 13 `910…`, 14 `0091…`); a stray 11th key on a 91-series number is dropped (test added). P3-1 fixed by the same rule (`+91 (0) …`, `0091 …`). P3-3: spec AC1 now says no maxLength, and why. P3-4: `useId` fallback for the prefix description id. P3-2 and P3-5 accepted as-is (visible to the user, same as a native field).
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — V3; CLOSED
+- V3 at 28d0b7b (worktree, .env without WHATSAPP_*, no other gate running): two back-to-back runs, 12:47:58–12:50:59 and 12:50:59–12:53:33, both exit 0 and identical: site 62/62, backend 566/566, web 707/707. No flakes. Logs: f31-v3-1.log and f31-v3-2.log in the session scratchpad.
+- Branch: feat/FEAT-031-fixed-plus91-phone (off main; carries CHORE-027 and a cherry-pick of BUG-026 so main's site test is green). The same commits also sit on feat/FEAT-030-interactive-hero, because another session switched the shared checkout's branch mid-session; that branch was left untouched.
+- FEAT-031 → done.
+- By: agent (autonomous)
