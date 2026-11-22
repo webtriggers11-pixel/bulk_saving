@@ -103,6 +103,7 @@ describe('Ask for this service (FEAT-022)', () => {
           tiers: [{ threshold: 5, price: 700 }],
           myUnits: 0,
           finalPrice: null,
+          cancelReason: null,
         },
       ]));
     renderPage();
@@ -124,6 +125,7 @@ describe('Ask for this service (FEAT-022)', () => {
         tiers: [{ threshold: 5, price: 700 }],
         myUnits: 0,
         finalPrice: null,
+        cancelReason: null,
       },
     ]));
     renderPage();

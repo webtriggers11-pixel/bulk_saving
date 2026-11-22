@@ -46,6 +46,7 @@ const base: RoundDto = {
   ],
   myUnits: 0,
   finalPrice: null,
+  cancelReason: null,
 };
 
 function renderWith(ui: React.ReactNode) {

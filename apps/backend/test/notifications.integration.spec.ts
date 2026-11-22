@@ -623,7 +623,7 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
       );
       expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeDefined();
 
-      await adminRounds.cancel(dto.id, alice.id);
+      await adminRounds.cancel(dto.id, alice.id, 'Vendor unavailable');
 
       expect(await reminderQueue.getJob(reminderJobId(dto.id))).toBeUndefined();
     });

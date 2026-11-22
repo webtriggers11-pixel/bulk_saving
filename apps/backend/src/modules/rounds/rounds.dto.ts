@@ -26,6 +26,8 @@ import type {
   RoundTierDto,
   SetPaymentBody,
   UpdateRoundBody,
+  CancelRoundBody,
+  ReopenRoundBody,
 } from '@bulk/shared';
 import { MAX_RATING_COMMENT, MAX_SEARCH, RoundStatus } from '@bulk/shared';
 
@@ -60,6 +62,20 @@ export class CreateRoundDto implements CreateRoundBody {
   @ValidateNested({ each: true })
   @Type(() => RoundTierInputDto)
   tiers!: RoundTierInputDto[];
+}
+
+/** `POST /admin/rounds/:id/cancel` (FEAT-039, ADR-0048): a reason is required. */
+export class CancelRoundDto implements CancelRoundBody {
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @Length(3, 300, { message: 'Give a reason for cancelling (3 to 300 characters).' })
+  reason!: string;
+}
+
+/** `POST /admin/rounds/:id/reopen` (FEAT-039): a new, future deadline. */
+export class ReopenRoundDto implements ReopenRoundBody {
+  @IsISO8601()
+  deadline!: string;
 }
 
 /** `PATCH /admin/rounds/:id` (FEAT-038): deadline and/or tiers; at least one (checked in the service). */

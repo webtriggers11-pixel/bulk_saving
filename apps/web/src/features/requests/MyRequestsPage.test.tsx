@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MyRoundDto } from '@bulk/shared';
+import { formatClosingDate } from '../rounds/formatCountdown';
 import { MyRequestsPage } from './MyRequestsPage';
 import { fetchMyRounds } from '../rounds/rounds.api';
 import { page } from '../../test/page';
@@ -28,6 +29,7 @@ function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
     tiers: [{ threshold: 5, price: 900 }],
     myUnits: 2,
     finalPrice: null,
+    cancelReason: null,
     myRating: null,
     ...overrides,
   };
@@ -88,6 +90,19 @@ describe('MyRequestsPage', () => {
     expect(screen.getByTestId('my-round-round_1')).toHaveTextContent(detail);
     // The raw enum must never reach the resident.
     expect(screen.getByTestId('my-round-round_1')).not.toHaveTextContent(status);
+  });
+
+  it('a cancelled round says why, in the admin\'s words (FEAT-039)', async () => {
+    fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'CANCELLED', cancelReason: 'Vendor unavailable that week' })]));
+    renderPage();
+    expect(await screen.findByTestId('my-round-round_1')).toHaveTextContent('cancelled: Vendor unavailable that week');
+  });
+
+  it('an open round shows the closing date next to the countdown (FEAT-040)', async () => {
+    const deadline = new Date(Date.now() + 3 * 86_400_000).toISOString();
+    fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'OPEN', deadline })]));
+    renderPage();
+    expect(await screen.findByTestId('my-round-round_1')).toHaveTextContent(formatClosingDate(deadline));
   });
 
   it('shows an existing rating when the round carries one', async () => {
@@ -176,7 +191,7 @@ describe('MyRequestsPage', () => {
     });
 
     it('shows the tier price, and no total, while nothing has been negotiated', async () => {
-      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'OPEN', currentPrice: 900, finalPrice: null })]));
+      fetchMyRoundsMock.mockResolvedValue(page([round({ status: 'OPEN', currentPrice: 900, finalPrice: null, cancelReason: null })]));
       renderPage();
 
       expect(await screen.findByTestId('my-price')).toHaveTextContent('₹900');

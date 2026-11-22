@@ -1940,3 +1940,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Not taken: concurrency test of edit vs join (both take the same row lock, already covered by design and the existing lock tests).
 - FEAT-039 WIP (schema + migration) parked in the scratchpad while these fixes go through the gate.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-23 — FEAT-038/BUG-030/FEAT-040 V2 r2; FEAT-039 built
+- V2 r2 (same reviewer, its own gate at 2a9e225: EXIT 0, site 71, backend 643, web 787): **FEAT-038 PASS, BUG-030 PASS, FEAT-040 PASS-conditional**. The reviewer verified the re-arm (`moveToDelayed` keeps attempts, no failure, no tight loop) and `changeDelay` atomicity against real BullMQ 5.81.5 with a throwaway-prefix probe, and found no remaining window where an OPEN round has no close job. Remaining P3s are taken in the next commit.
+- FEAT-039 built: migration `20261123090000_feat_039_cancel_reason_reopen` (additive: cancelReason, cancelledAt, reopenCount, enum ROUND_REOPENED), applied to the worktree DB only. Cancel requires a reason (3–300, trimmed). `RoundsService.reopen` (CANCELLED → OPEN; never-assigned + nothing collected; jobs scheduled in the tx; ROUND_REOPENED to pledgers; askers told too). `cycleKey` adds `:c<n>` to lifecycle and ask dedupe keys after a reopen. Web: required reason in the Cancel sheet (ConfirmSheet gained `children` + `confirmDisabled`), a Cancelled card with the reason and Reopen (or why not), and the reason on My Requests. Tests: `round-cancel-reopen.integration.spec.ts` (6), the template, the transition matrix, and web (cancel reason, reopen ×3, My Requests reason + FEAT-040 date).
+- Web full run: 1 failure, the BUG-027 flake (OnboardingPage QUEUED offline under load), 3/3 alone. Backend round, notification and push suites: 228/228.
+- By: agent (autonomous) + code-reviewer subagent

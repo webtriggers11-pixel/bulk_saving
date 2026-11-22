@@ -11,7 +11,7 @@ import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { AdminRoundsQueryDto, AssignRoundDto, CreateRoundDto, SetPaymentDto, UpdateRoundDto } from './rounds.dto';
+import { AdminRoundsQueryDto, AssignRoundDto, CancelRoundDto, CreateRoundDto, ReopenRoundDto, SetPaymentDto, UpdateRoundDto } from './rounds.dto';
 import { RoundsAdminService } from './rounds-admin.service';
 
 /**
@@ -58,8 +58,14 @@ export class RoundsAdminController {
   }
 
   @Post(':id/cancel')
-  cancel(@Param('id') id: string, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
-    return this.admin.cancel(id, ctx.residentId);
+  cancel(@Param('id') id: string, @Body() dto: CancelRoundDto, @CurrentAuth() ctx: AuthContext): Promise<RoundDto> {
+    return this.admin.cancel(id, ctx.residentId, dto.reason);
+  }
+
+  /** FEAT-039 (ADR-0048): a CANCELLED round, open again until a new deadline. */
+  @Post(':id/reopen')
+  reopen(@Param('id') id: string, @Body() dto: ReopenRoundDto, @CurrentAuth() ctx: AuthContext): Promise<AdminRoundDetailDto> {
+    return this.admin.reopen(id, dto.deadline, ctx.residentId);
   }
 
   @Post(':id/assign')

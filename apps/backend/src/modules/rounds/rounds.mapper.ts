@@ -51,5 +51,6 @@ export function buildRoundDto(round: RoundWithView): RoundDto {
     myUnits,
     // BUG-010: the negotiated price, so the resident sees what they actually owe.
     finalPrice: round.finalPrice,
+    cancelReason: round.status === 'CANCELLED' ? round.cancelReason : null,
   };
 }

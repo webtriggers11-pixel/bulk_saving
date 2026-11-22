@@ -39,6 +39,7 @@ function round(id: string, name: string, daysLeft: number, myUnits = 0, unitLabe
     ],
     myUnits,
     finalPrice: null,
+    cancelReason: null,
   };
 }
 

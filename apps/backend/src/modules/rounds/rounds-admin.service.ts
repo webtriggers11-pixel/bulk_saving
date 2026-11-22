@@ -154,8 +154,9 @@ export class RoundsAdminService {
    * Cancel a round (SUPER_ADMIN): guarded transition to CANCELLED, then remove its
    * scheduled close job. Unknown id → 404; illegal from a terminal state → 409.
    */
-  async cancel(roundId: string, viewerResidentId: string): Promise<RoundDto> {
-    const dto = await this.rounds.cancel(roundId, viewerResidentId);
+  async cancel(roundId: string, viewerResidentId: string, reason: string): Promise<RoundDto> {
+    // FEAT-039 (ADR-0048 §1): a reason is required (the DTO trims and bounds it).
+    const dto = await this.rounds.cancel(roundId, viewerResidentId, reason);
     await this.scheduler.cancel(roundId);
     await this.reminders.cancel(roundId);
     return dto;
@@ -345,6 +346,27 @@ export class RoundsAdminService {
     collected: boolean,
   ): Promise<AdminRoundParticipantDto> {
     return this.rounds.setPaymentCollected(roundId, participantId, collected);
+  }
+
+  /**
+   * Reopen a CANCELLED round until `deadline` (FEAT-039, ADR-0048). The guarded transition, the
+   * job scheduling and the messages live in {@link RoundsService.reopen}. Another OPEN round for
+   * the same society and service → 409 ROUND_ALREADY_OPEN.
+   */
+  async reopen(roundId: string, deadline: string, viewerResidentId: string): Promise<AdminRoundDetailDto> {
+    this.assertDeadlineFuture(deadline);
+    try {
+      await this.rounds.reopen(roundId, new Date(deadline), viewerResidentId, async (at) => {
+        await this.scheduler.schedule(roundId, at);
+        await this.reminders.schedule(roundId, at);
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw this.roundAlreadyOpen();
+      }
+      throw err;
+    }
+    return this.getRoundDetail(roundId);
   }
 
   /**

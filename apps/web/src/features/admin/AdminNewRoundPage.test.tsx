@@ -65,6 +65,7 @@ const createdRound: RoundDto = {
   ],
   myUnits: 0,
   finalPrice: null,
+  cancelReason: null,
 };
 
 function renderPage(url = '/admin/rounds/new') {

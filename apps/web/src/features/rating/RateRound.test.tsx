@@ -32,6 +32,7 @@ function round(overrides: Partial<MyRoundDto> = {}): MyRoundDto {
     tiers: [{ threshold: 5, price: 700 }],
     myUnits: 2,
     finalPrice: null,
+    cancelReason: null,
     myRating: null,
     ...overrides,
   };

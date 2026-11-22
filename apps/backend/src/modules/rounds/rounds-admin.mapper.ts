@@ -101,6 +101,11 @@ export function buildAdminRoundSummary(
     assignedAt: round.assignedAt?.toISOString() ?? null,
     deliveredAt: round.deliveredAt?.toISOString() ?? null,
     payments: computePaymentSummary(round.finalPrice, round.participants),
+    cancelReason: round.status === 'CANCELLED' ? round.cancelReason : null,
+    cancelledAt: round.status === 'CANCELLED' ? (round.cancelledAt?.toISOString() ?? null) : null,
+    // FEAT-039 (ADR-0048 §2): never assigned and nothing collected.
+    canReopen:
+      round.status === 'CANCELLED' && round.vendorId === null && round.participants.every((p) => p.paymentCollectedAt === null),
   };
 }
 

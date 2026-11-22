@@ -12,7 +12,7 @@ import { RoundStatus } from '@bulk/shared';
  * ASSIGNED        -> DELIVERED | CANCELLED
  * DELIVERED       -> RATED
  * RATED           -> (terminal)
- * CANCELLED       -> (terminal)
+ * CANCELLED       -> OPEN (FEAT-039: reopen; guarded in RoundsService.reopen)
  *
  * Pure data + a pure validator so the full legal/illegal matrix is unit-testable
  * without a database.
@@ -24,7 +24,7 @@ export const LEGAL_TRANSITIONS: Readonly<Record<RoundStatus, readonly RoundStatu
   [RoundStatus.ASSIGNED]: [RoundStatus.DELIVERED, RoundStatus.CANCELLED],
   [RoundStatus.DELIVERED]: [RoundStatus.RATED],
   [RoundStatus.RATED]: [],
-  [RoundStatus.CANCELLED]: [],
+  [RoundStatus.CANCELLED]: [RoundStatus.OPEN],
 };
 
 /** True iff a round may move directly from `from` to `to`. Self-transitions are illegal. */

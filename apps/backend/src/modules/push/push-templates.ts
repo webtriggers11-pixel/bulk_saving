@@ -18,6 +18,7 @@ const EVENT: Record<NotificationType, { title: string; url: string; urgency: 'no
   [NotificationType.ROUND_ASSIGNED]: { title: 'Vendor confirmed 🛠️', url: '/my-requests', urgency: 'normal' },
   [NotificationType.ROUND_DELIVERED]: { title: 'Job done — how was it? ⭐', url: '/my-requests', urgency: 'normal' },
   [NotificationType.ROUND_CANCELLED]: { title: 'Round cancelled', url: '/my-requests', urgency: 'high' },
+  [NotificationType.ROUND_REOPENED]: { title: 'Open again ✨', url: '/rounds', urgency: 'high' },
   [NotificationType.SERVICE_ASK_OPENED]: { title: 'You asked — it’s open ✨', url: '/rounds', urgency: 'high' },
 };
 

@@ -315,6 +315,18 @@ export interface RoundDto {
    * a resident ₹900 for a job negotiated at ₹680.
    */
   finalPrice: number | null;
+  /** FEAT-039 (ADR-0048): why the admin cancelled it; null unless CANCELLED. */
+  cancelReason: string | null;
+}
+
+/** `POST /admin/rounds/:id/cancel` (FEAT-039): the reason is required. */
+export interface CancelRoundBody {
+  reason: string;
+}
+
+/** `POST /admin/rounds/:id/reopen` (FEAT-039): a CANCELLED round, open again until `deadline`. */
+export interface ReopenRoundBody {
+  deadline: string;
 }
 
 /** `POST /admin/rounds` body — open a round for a (society, service) with tiers. */
@@ -586,6 +598,11 @@ export interface AdminRoundSummaryDto {
   assignedAt: string | null;
   deliveredAt: string | null;
   payments: AdminRoundPaymentSummary;
+  /** FEAT-039 (ADR-0048): the cancel reason and when, while CANCELLED. */
+  cancelReason: string | null;
+  cancelledAt: string | null;
+  /** FEAT-039: a CANCELLED round that never had a vendor or a collected payment can reopen. */
+  canReopen: boolean;
 }
 
 /** One resident's participation as seen by the super-admin (includes PII: admin-only). */

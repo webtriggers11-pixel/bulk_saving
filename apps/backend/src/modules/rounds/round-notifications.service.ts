@@ -20,7 +20,17 @@ export type RoundFanoutType =
   | typeof NotificationType.ROUND_CLOSED_EXPIRED
   | typeof NotificationType.ROUND_ASSIGNED
   | typeof NotificationType.ROUND_DELIVERED
-  | typeof NotificationType.ROUND_CANCELLED;
+  | typeof NotificationType.ROUND_CANCELLED
+  | typeof NotificationType.ROUND_REOPENED;
+
+/**
+ * FEAT-039 (ADR-0048 §4): lifecycle dedupe keys carry the reopen cycle once a round has been
+ * reopened, so a re-cancel or a second "closing soon" in a later cycle is delivered, not
+ * swallowed. Cycle 0 keeps the original key shape, so existing rows stay valid.
+ */
+export function cycleKey(base: string, reopenCount: number): string {
+  return reopenCount > 0 ? `${base}:c${reopenCount}` : base;
+}
 
 /**
  * Turns a round change into outbox rows (FEAT-006, ADR-0013).
@@ -79,7 +89,7 @@ export class RoundNotificationsService {
    */
   async stageAskOpened(
     tx: Tx,
-    round: { id: string; societyId: string; serviceId: string; deadline: Date; service: { name: string; unitLabel: string; unitLabelPlural: string } },
+    round: { id: string; societyId: string; serviceId: string; deadline: Date; reopenCount?: number; service: { name: string; unitLabel: string; unitLabelPlural: string } },
   ): Promise<string[]> {
     const asks = await tx.serviceAsk.findMany({
       where: { societyId: round.societyId, serviceId: round.serviceId },
@@ -93,7 +103,7 @@ export class RoundNotificationsService {
         residentId,
         roundId: round.id,
         type: NotificationType.SERVICE_ASK_OPENED,
-        dedupeKey: `${NotificationType.SERVICE_ASK_OPENED}:${round.id}:${residentId}`,
+        dedupeKey: cycleKey(`${NotificationType.SERVICE_ASK_OPENED}:${round.id}:${residentId}`, round.reopenCount ?? 0),
         body,
       })),
     );
@@ -140,7 +150,7 @@ export class RoundNotificationsService {
         residentId: participant.residentId,
         roundId,
         type,
-        dedupeKey: `${type}:${roundId}:${participant.residentId}`,
+        dedupeKey: cycleKey(`${type}:${roundId}:${participant.residentId}`, round.reopenCount),
         body: renderNotification(input),
       };
     });
@@ -193,6 +203,8 @@ export class RoundNotificationsService {
         return { type, round: ctx.round };
       case NotificationType.ROUND_CANCELLED:
         return { type, round: ctx.round };
+      case NotificationType.ROUND_REOPENED:
+        return { type, round: ctx.round, units: ctx.units };
     }
   }
 

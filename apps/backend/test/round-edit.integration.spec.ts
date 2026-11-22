@@ -63,7 +63,7 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
   async function openRound(days = 5): Promise<string> {
     // Only one OPEN round per pair: cancel whatever the previous test left open.
     const open = await prisma.round.findMany({ where: { societyId: society.id, status: 'OPEN' } });
-    for (const r of open) await asAdmin(http().post(`/admin/rounds/${r.id}/cancel`)).expect(201);
+    for (const r of open) await asAdmin(http().post(`/admin/rounds/${r.id}/cancel`).send({ reason: 'Vendor unavailable' })).expect(201);
     const res = await asAdmin(http().post('/admin/rounds')).send({
       societyId: society.id,
       serviceId: service.id,
@@ -127,7 +127,7 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
 
   it('only an OPEN round can be edited; unknown id → 404; residents → 403 (AC1)', async () => {
     const id = await openRound();
-    await asAdmin(http().post(`/admin/rounds/${id}/cancel`)).expect(201);
+    await asAdmin(http().post(`/admin/rounds/${id}/cancel`).send({ reason: 'Vendor unavailable' })).expect(201);
     const res = await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ deadline: futureIso(3) }).expect(409);
     expect(res.body.error.code).toBe(ErrorCode.ROUND_CLOSED);
     await asAdmin(http().patch('/admin/rounds/does-not-exist')).send({ deadline: futureIso(3) }).expect(404);
@@ -148,7 +148,7 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
 
   it('BUG-030: a price that rises with more units is refused, at create and at edit', async () => {
     const open = await prisma.round.findMany({ where: { societyId: society.id, status: 'OPEN' } });
-    for (const r of open) await asAdmin(http().post(`/admin/rounds/${r.id}/cancel`)).expect(201);
+    for (const r of open) await asAdmin(http().post(`/admin/rounds/${r.id}/cancel`).send({ reason: 'Vendor unavailable' })).expect(201);
     const rising = [{ threshold: 5, price: 700 }, { threshold: 6, price: 800 }];
     const created = await asAdmin(http().post('/admin/rounds')).send({ societyId: society.id, serviceId: service.id, deadline: futureIso(3), tiers: rising }).expect(400);
     expect(created.body.error.message).toMatch(/lower than the one before/);

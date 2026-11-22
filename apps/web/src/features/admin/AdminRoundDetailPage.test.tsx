@@ -16,6 +16,7 @@ import {
   deliverRound,
   fetchAdminRound,
   fetchVendors,
+  reopenRound,
   setPayment,
   updateRound,
 } from './admin.api';
@@ -42,6 +43,7 @@ vi.mock('./admin.api', () => ({
   updateService: vi.fn(),
   upsertOffering: vi.fn(),
   updateRound: vi.fn(),
+  reopenRound: vi.fn(),
 }));
 
 const fetchAdminRoundMock = vi.mocked(fetchAdminRound);
@@ -167,8 +169,13 @@ describe('AdminRoundDetailPage', () => {
     expect(cancelRoundMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel round' }));
+    // FEAT-039: a reason is required before the danger button works.
+    expect(screen.getByRole('button', { name: 'Yes, cancel round' })).toBeDisabled();
+    fireEvent.change(screen.getByTestId('cancel-reason'), { target: { value: 'ab' } });
+    expect(screen.getByRole('button', { name: 'Yes, cancel round' })).toBeDisabled();
+    fireEvent.change(screen.getByTestId('cancel-reason'), { target: { value: '  Vendor unavailable  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel round' }));
-    await waitFor(() => expect(cancelRoundMock).toHaveBeenCalledWith('round_1'));
+    await waitFor(() => expect(cancelRoundMock).toHaveBeenCalledWith('round_1', 'Vendor unavailable'));
   });
 
   it('a refused cancel stays in the sheet with its reason (FEAT-024 AC1)', async () => {
@@ -176,6 +183,7 @@ describe('AdminRoundDetailPage', () => {
     cancelRoundMock.mockRejectedValue(new ApiError('ROUND_CLOSED', 'Already closed.', 409));
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel round' }));
+    fireEvent.change(screen.getByTestId('cancel-reason'), { target: { value: 'Vendor unavailable' } });
     fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel round' }));
     await waitFor(() => expect(cancelRoundMock).toHaveBeenCalled());
     expect(screen.getByRole('dialog', { name: 'Cancel this round?' })).toBeInTheDocument();
@@ -338,6 +346,38 @@ describe('AdminRoundDetailPage', () => {
       renderPage();
       await screen.findByText('AC Servicing');
       expect(screen.queryByTestId('edit-round')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Cancelled round: reason and reopen (FEAT-039)', () => {
+    const cancelled = () => roundDetail({ status: 'CANCELLED', cancelReason: 'Vendor unavailable', cancelledAt: '2026-11-20T10:00:00.000Z', canReopen: true });
+
+    it('shows the reason and reopens with a new deadline', async () => {
+      fetchAdminRoundMock.mockResolvedValue(cancelled());
+      vi.mocked(reopenRound).mockResolvedValue(roundDetail());
+      renderPage();
+      expect(await screen.findByTestId('cancel-reason-shown')).toHaveTextContent('Reason: Vendor unavailable');
+      fireEvent.click(screen.getByTestId('reopen-round'));
+      expect(await screen.findByText('Choose a new deadline.')).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('New deadline'), { target: { value: '2030-01-15T18:30' } });
+      fireEvent.click(screen.getByTestId('reopen-round'));
+      await waitFor(() => expect(reopenRound).toHaveBeenCalledWith('round_1', new Date('2030-01-15T18:30').toISOString()));
+    });
+
+    it('says why a round that had a vendor cannot be reopened', async () => {
+      fetchAdminRoundMock.mockResolvedValue({ ...cancelled(), canReopen: false });
+      renderPage();
+      expect(await screen.findByTestId('reopen-blocked')).toHaveTextContent("can't be reopened");
+      expect(screen.queryByTestId('reopen-round')).not.toBeInTheDocument();
+    });
+
+    it('shows the server\'s refusal (another round open for the pair)', async () => {
+      fetchAdminRoundMock.mockResolvedValue(cancelled());
+      vi.mocked(reopenRound).mockRejectedValue(new ApiError('ROUND_ALREADY_OPEN', 'An open round already exists for this service in this society.', 409));
+      renderPage();
+      fireEvent.change(await screen.findByLabelText('New deadline'), { target: { value: '2030-01-15T18:30' } });
+      fireEvent.click(screen.getByTestId('reopen-round'));
+      expect(await screen.findByText(/already exists/)).toBeInTheDocument();
     });
   });
 });

@@ -43,6 +43,8 @@ enum NotificationType {
   ROUND_CANCELLED
   // FEAT-022: a round opened for a service the resident had asked for.
   SERVICE_ASK_OPENED
+  // FEAT-039 (ADR-0048): a cancelled round the resident had pledged to is open again.
+  ROUND_REOPENED
 }
 
 enum NotificationStatus {
@@ -166,6 +168,12 @@ model Round {
   finalPrice  Int?
   assignedAt  DateTime?
   deliveredAt DateTime?
+
+  // FEAT-039 (ADR-0048): why an admin cancelled it (cleared on reopen), and how many times it was
+  // reopened. `reopenCount` makes lifecycle message dedupe keys unique per cycle.
+  cancelReason String?
+  cancelledAt  DateTime?
+  reopenCount  Int       @default(0)
 
   @@index([societyId, status])
   @@index([status])

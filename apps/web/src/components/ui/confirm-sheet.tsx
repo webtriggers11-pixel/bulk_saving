@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button } from './button';
 import { Sheet } from './sheet';
 
@@ -19,6 +20,10 @@ interface ConfirmSheetProps {
   /** An action that failed: shown inside the sheet, which stays open. */
   error?: string | null;
   onConfirm: () => void;
+  /** FEAT-039: extra content under the consequence, e.g. a required reason field. */
+  children?: ReactNode;
+  /** FEAT-039: hold the danger button until the extra content is complete. */
+  confirmDisabled?: boolean;
   'data-testid'?: string;
 }
 
@@ -44,6 +49,8 @@ export function ConfirmSheet({
   busy = false,
   error,
   onConfirm,
+  children,
+  confirmDisabled = false,
   'data-testid': testId,
 }: ConfirmSheetProps) {
   return (
@@ -58,7 +65,7 @@ export function ConfirmSheet({
               {error}
             </p>
           )}
-          <Button variant="danger" className="w-full" disabled={busy} onClick={onConfirm} data-testid="confirm-yes">
+          <Button variant="danger" className="w-full" disabled={busy || confirmDisabled} onClick={onConfirm} data-testid="confirm-yes">
             {busy ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </Button>
           {/* Never disabled: the Sheet contract is "always closable" — the action, if running,
@@ -72,6 +79,7 @@ export function ConfirmSheet({
       <p className="text-caption text-ink-muted" data-testid="confirm-consequence">
         {consequence}
       </p>
+      {children}
     </Sheet>
   );
 }

@@ -29,6 +29,8 @@ import type {
   VendorDto,
   CreateAdminBody,
   UpdateRoundBody,
+  CancelRoundBody,
+  ReopenRoundBody,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
 import { toQueryString } from '../../lib/filters';
@@ -118,9 +120,18 @@ export function closeRound(id: string): Promise<RoundDto> {
 }
 
 /** POST /admin/rounds/:id/cancel — any pre-DELIVERED status → CANCELLED. */
-export function cancelRound(id: string): Promise<RoundDto> {
+export function cancelRound(id: string, reason: string): Promise<RoundDto> {
   return apiRequest<RoundDto>(`/admin/rounds/${encodeURIComponent(id)}/cancel`, {
     method: 'POST',
+    body: { reason } satisfies CancelRoundBody,
+  });
+}
+
+/** POST /admin/rounds/:id/reopen (FEAT-039): a cancelled round, open again until `deadline`. */
+export function reopenRound(id: string, deadline: string): Promise<AdminRoundDetailDto> {
+  return apiRequest<AdminRoundDetailDto>(`/admin/rounds/${encodeURIComponent(id)}/reopen`, {
+    method: 'POST',
+    body: { deadline } satisfies ReopenRoundBody,
   });
 }
 

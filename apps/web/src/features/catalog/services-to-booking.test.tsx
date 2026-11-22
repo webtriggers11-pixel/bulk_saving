@@ -49,6 +49,7 @@ const acRound: RoundDto = {
   ],
   myUnits: 0,
   finalPrice: null,
+  cancelReason: null,
 };
 
 function Where() {

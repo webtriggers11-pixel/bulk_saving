@@ -48,6 +48,7 @@ const ALL_INPUTS: TemplateInput[] = [
   { type: NotificationType.ROUND_DELIVERED, round },
   { type: NotificationType.ROUND_CANCELLED, round },
   { type: NotificationType.SERVICE_ASK_OPENED, round },
+  { type: NotificationType.ROUND_REOPENED, round, units: 2 },
 ];
 
 describe('formatDeadline', () => {
@@ -321,5 +322,12 @@ describe('renderNotification — rules that hold for every type', () => {
       expect(body.toLowerCase()).not.toContain('otp');
       expect(body).not.toContain('eyJ'); // a JWT prefix
     }
+  });
+
+  it('ROUND_REOPENED says it is open again until when, and that the pledge stands (FEAT-039)', () => {
+    const body = renderNotification({ type: NotificationType.ROUND_REOPENED, round, units: 2 });
+    expect(body).toContain('open again');
+    expect(body).toContain('still stands');
+    expect(body).toMatch(/2 /);
   });
 });

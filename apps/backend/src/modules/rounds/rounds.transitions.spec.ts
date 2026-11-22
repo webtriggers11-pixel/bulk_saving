@@ -19,6 +19,8 @@ describe('round lifecycle transitions (full legal/illegal matrix)', () => {
     `${S.ASSIGNED}->${S.DELIVERED}`,
     `${S.ASSIGNED}->${S.CANCELLED}`,
     `${S.DELIVERED}->${S.RATED}`,
+    // FEAT-039 (ADR-0048): reopen.
+    `${S.CANCELLED}->${S.OPEN}`,
   ]);
 
   const pairs = ALL.flatMap((from) => ALL.map((to) => [from, to] as const));
@@ -31,9 +33,9 @@ describe('round lifecycle transitions (full legal/illegal matrix)', () => {
     expect(isLegalTransition(from, to)).toBe(LEGAL.has(`${from}->${to}`));
   });
 
-  it('RATED and CANCELLED are terminal', () => {
+  it('RATED is terminal; CANCELLED only reopens (FEAT-039)', () => {
     expect(LEGAL_TRANSITIONS[S.RATED]).toEqual([]);
-    expect(LEGAL_TRANSITIONS[S.CANCELLED]).toEqual([]);
+    expect(LEGAL_TRANSITIONS[S.CANCELLED]).toEqual([S.OPEN]);
   });
 
   it('CANCELLED is reachable from every pre-DELIVERED state and nowhere else', () => {

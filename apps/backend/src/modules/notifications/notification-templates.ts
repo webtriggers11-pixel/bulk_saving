@@ -73,6 +73,8 @@ export type TemplateInput =
     }
   | { type: typeof NotificationType.ROUND_DELIVERED; round: RoundForMessage }
   | { type: typeof NotificationType.ROUND_CANCELLED; round: RoundForMessage }
+  /** FEAT-039: a cancelled round the resident had pledged to is open again; the pledge stands. */
+  | { type: typeof NotificationType.ROUND_REOPENED; round: RoundForMessage; units: number }
   /** FEAT-022: the round a resident asked for has opened. */
   | { type: typeof NotificationType.SERVICE_ASK_OPENED; round: RoundForMessage };
 
@@ -217,6 +219,13 @@ function cancelled(input: Extract<TemplateInput, { type: 'ROUND_CANCELLED' }>): 
   );
 }
 
+function reopened(input: Extract<TemplateInput, { type: 'ROUND_REOPENED' }>): string {
+  return (
+    `${SENDER}: Good news — the ${input.round.serviceName} round is open again until ${formatDeadline(input.round.deadline)}. ` +
+    `Your pledge of ${units(input.units, input.round)} still stands; open BulkSaving to change or leave it before then.`
+  );
+}
+
 function askOpened(input: Extract<TemplateInput, { type: 'SERVICE_ASK_OPENED' }>): string {
   return (
     `${SENDER}: You asked, and it is open — a ${input.round.serviceName} group buy has started in your society. ` +
@@ -247,5 +256,7 @@ export function renderNotification(input: TemplateInput): string {
       return clamp(cancelled(input));
     case NotificationType.SERVICE_ASK_OPENED:
       return clamp(askOpened(input));
+    case NotificationType.ROUND_REOPENED:
+      return clamp(reopened(input));
   }
 }

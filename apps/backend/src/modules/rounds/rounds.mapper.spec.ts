@@ -17,6 +17,7 @@ function round(overrides: Partial<Round>): RoundWithView {
     id: 'r1', societyId: 's', serviceId: 'svc', status: 'OPEN', unitsCount: 11,
     deadline: new Date('2026-10-01T00:00:00Z'), createdAt: new Date(), updatedAt: new Date(),
     vendorId: null, finalPrice: null, assignedAt: null, deliveredAt: null,
+    cancelReason: null, cancelledAt: null, reopenCount: 0,
     ...overrides,
     service,
     tiers: [

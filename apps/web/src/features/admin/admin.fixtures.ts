@@ -37,9 +37,12 @@ export const roundSummary: AdminRoundSummaryDto = {
   createdAt: '2026-09-17T10:00:00.000Z',
   vendor: null,
   finalPrice: null,
+  cancelReason: null,
   assignedAt: null,
   deliveredAt: null,
   payments: { participantsCount: 2, collectedCount: 0, collectedAmount: 0, outstandingAmount: 0 },
+  cancelledAt: null,
+  canReopen: false,
 };
 
 export function roundDetail(overrides: Partial<AdminRoundDetailDto> = {}): AdminRoundDetailDto {

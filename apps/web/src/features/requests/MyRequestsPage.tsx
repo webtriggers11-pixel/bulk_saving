@@ -64,7 +64,10 @@ function statusDetail(round: MyRoundDto): string {
     case 'RATED':
       return 'This job is done.';
     case 'CANCELLED':
-      return 'This round was cancelled. You were not charged.';
+      // FEAT-039: why, in the admin's words.
+      return round.cancelReason
+        ? `This round was cancelled: ${round.cancelReason}. You were not charged.`
+        : 'This round was cancelled. You were not charged.';
     default: {
       // A new RoundStatus must fail the build here rather than ship a resident a
       // blank explanation line (FEAT-008 V2).

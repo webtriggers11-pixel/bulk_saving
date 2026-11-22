@@ -118,6 +118,7 @@ describe('a pledge submitted while offline', () => {
         tiers: [{ threshold: 5, price: 900 }],
         myUnits: 0,
         finalPrice: null,
+        cancelReason: null,
       },
     ]));
     joinRoundMock.mockResolvedValue({} as never);

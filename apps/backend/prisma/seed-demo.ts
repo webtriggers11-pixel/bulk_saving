@@ -484,6 +484,7 @@ const NOTIFICATION_BODY: Record<NotificationType, (service: string) => string> =
   ROUND_DELIVERED: (s) => `Your ${s} service is marked delivered. Tell us how it went.`,
   ROUND_CANCELLED: (s) => `The ${s} group-buy was cancelled. You will not be charged.`,
   SERVICE_ASK_OPENED: (s) => `You asked for ${s}. A group-buy is now open.`,
+  ROUND_REOPENED: (s) => `The ${s} group-buy is open again. Your pledge still stands.`,
 };
 
 function checkRound(r: RoundSeed, unitsCount: number): void {

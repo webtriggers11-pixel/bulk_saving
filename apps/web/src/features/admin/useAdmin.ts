@@ -67,6 +67,7 @@ import {
   upsertOffering,
   createAdmin,
   updateRound,
+  reopenRound,
 } from './admin.api';
 import { fetchAllPages, usePagedQuery, type Paged } from '../../lib/pages';
 import { catalogQueryKey } from '../catalog/useCatalog';
@@ -201,11 +202,20 @@ export function useCloseRound(id: string): UseMutationResult<RoundDto, Error, vo
 }
 
 /** POST /admin/rounds/:id/cancel. */
-export function useCancelRound(id: string): UseMutationResult<RoundDto, Error, void> {
+export function useCancelRound(id: string): UseMutationResult<RoundDto, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => cancelRound(id),
+    mutationFn: (reason: string) => cancelRound(id, reason),
     onSettled: () => invalidateRound(queryClient, id),
+  });
+}
+
+/** POST /admin/rounds/:id/reopen (FEAT-039). */
+export function useReopenRound(id: string): UseMutationResult<AdminRoundDetailDto, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (deadline: string) => reopenRound(id, deadline),
+    onSuccess: () => invalidateRound(queryClient, id),
   });
 }
 

@@ -31,6 +31,7 @@ import {
   useSetPayment,
   useAllVendors,
   useUpdateRound,
+  useReopenRound,
 } from './useAdmin';
 
 /** Final price bounds (integer ₹ per unit), mirroring the backend AssignRoundBody validation. */
@@ -225,6 +226,9 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
   const deliver = useDeliverRound(round.id);
   const cancel = useCancelRound(round.id);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // FEAT-039 (ADR-0048): a reason is required to cancel.
+  const [cancelReason, setCancelReason] = useState('');
+  const reasonOk = cancelReason.trim().length >= 3;
 
   // The assign mutation lives in AssignForm; watch it by key so Cancel can't race it.
   const assigning = useIsMutating({ mutationKey: adminKeys.assignMutation(round.id) }) > 0;
@@ -268,16 +272,30 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
           open={confirmingCancel}
           onClose={() => setConfirmingCancel(false)}
           title="Cancel this round?"
-          consequence="Residents' pledges will no longer be fulfilled. This cannot be undone."
+          consequence="Everyone who pledged is told it was cancelled and that there's nothing to pay. If no vendor was assigned, you can reopen it later."
           confirmLabel="Yes, cancel round"
           pendingLabel={cancel.isPaused ? OFFLINE_WAITING_LABEL : 'Cancelling…'}
           keepLabel="Keep round"
           busy={cancel.isPending}
           error={cancel.isError ? errorMessage(cancel.error) : null}
           // onSuccess, not onSettled (V2 r2): a refused cancel keeps the sheet open with its error.
-          onConfirm={() => cancel.mutate(undefined, { onSuccess: () => setConfirmingCancel(false) })}
+          onConfirm={() => cancel.mutate(cancelReason.trim(), { onSuccess: () => { setConfirmingCancel(false); setCancelReason(''); } })}
+          confirmDisabled={!reasonOk}
           data-testid="cancel-confirm"
-        />
+        >
+          <Field label="Reason (required)" id="cancel-reason" hint="Admins see this, and residents see it in the app.">
+            {(props) => (
+              <Input
+                {...props}
+                value={cancelReason}
+                maxLength={300}
+                placeholder="e.g. The vendor isn't available that week"
+                onChange={(e) => setCancelReason(e.target.value)}
+                data-testid="cancel-reason"
+              />
+            )}
+          </Field>
+        </ConfirmSheet>
 
         {[close, deliver, cancel].map((mutation, index) =>
           mutation.isError ? (
@@ -524,6 +542,66 @@ function EditRound({ round }: { round: AdminRoundDetailDto }) {
 }
 
 /**
+ * FEAT-039 (ADR-0048): a CANCELLED round shows why, and can be reopened with a new deadline when
+ * it never had a vendor or a collected payment. Pledges are kept; their owners are told.
+ */
+function CancelledRound({ round }: { round: AdminRoundDetailDto }) {
+  const reopen = useReopenRound(round.id);
+  const [deadline, setDeadline] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  if (round.status !== 'CANCELLED') return null;
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const at = new Date(deadline);
+    if (deadline === '' || Number.isNaN(at.getTime())) {
+      setFormError('Choose a new deadline.');
+      return;
+    }
+    if (at.getTime() <= Date.now()) {
+      setFormError('The new deadline must be in the future.');
+      return;
+    }
+    setFormError(null);
+    reopen.mutate(at.toISOString());
+  }
+
+  return (
+    <Card data-testid="cancelled-round">
+      <CardHeader>
+        <CardTitle>Cancelled</CardTitle>
+        <CardDescription data-testid="cancel-reason-shown">
+          {round.cancelReason ? `Reason: ${round.cancelReason}` : 'No reason was recorded.'}
+          {round.cancelledAt ? ` · ${formatDateTime(round.cancelledAt)}` : ''}
+        </CardDescription>
+      </CardHeader>
+      {round.canReopen ? (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="Reopen round" noValidate>
+          <p className="text-meta text-ink-muted">
+            Reopen it with a new deadline. {round.unitsCount > 0 ? `The ${round.participantsCount} resident(s) who pledged keep their pledge and are told it is open again.` : ''}
+          </p>
+          <Field label="New deadline" id="reopen-deadline">
+            {(props) => <Input {...props} type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />}
+          </Field>
+          {(formError || reopen.isError) && (
+            <p role="alert" className="rounded-chip border border-paper/55 bg-danger-ink/10 px-3 py-2 text-meta font-bold text-danger-ink">
+              {formError ?? errorMessage(reopen.error)}
+            </p>
+          )}
+          <Button type="submit" className="self-start" disabled={reopen.isPending} data-testid="reopen-round">
+            {reopen.isPending ? 'Reopening…' : 'Reopen round'}
+          </Button>
+        </form>
+      ) : (
+        <p className="text-meta text-ink-muted" data-testid="reopen-blocked">
+          This round had a vendor or collected payments, so it can&apos;t be reopened. Open a new round instead.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/**
  * Super-admin round detail (FEAT-005): the round's facts, the actions valid for its
  * current status only, and per-participant payment tracking (ADR-0012).
  */
@@ -572,6 +650,7 @@ export function AdminRoundDetailPage() {
         <>
           <RoundSummary round={data} />
           <EditRound round={data} />
+          <CancelledRound round={data} />
           <RoundActions round={data} />
           <Participants round={data} />
         </>

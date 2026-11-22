@@ -36,6 +36,7 @@ const openRound: RoundDto = {
   ],
   myUnits: 0,
   finalPrice: null,
+  cancelReason: null,
 };
 
 function renderPage() {

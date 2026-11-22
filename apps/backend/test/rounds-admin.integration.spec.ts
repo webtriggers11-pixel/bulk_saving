@@ -270,7 +270,7 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
     expect(await queue.getJob(id)).toBeDefined();
 
     const res = await request(app.getHttpServer())
-      .post(`/admin/rounds/${id}/cancel`)
+      .post(`/admin/rounds/${id}/cancel`).send({ reason: 'Vendor unavailable' })
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(201);
     expect((res.body.data as RoundDto).status).toBe('CANCELLED');
@@ -282,13 +282,13 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
       where: { societyId: society.id, serviceId: acService.id, status: 'CLOSED_MET' },
     });
     const ok = await request(app.getHttpServer())
-      .post(`/admin/rounds/${met.id}/cancel`)
+      .post(`/admin/rounds/${met.id}/cancel`).send({ reason: 'Vendor unavailable' })
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(201);
     expect((ok.body.data as RoundDto).status).toBe('CANCELLED');
 
     const again = await request(app.getHttpServer())
-      .post(`/admin/rounds/${met.id}/cancel`)
+      .post(`/admin/rounds/${met.id}/cancel`).send({ reason: 'Vendor unavailable' })
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(409);
     expect(again.body.error.code).toBe(ErrorCode.INVALID_ROUND_TRANSITION);
@@ -301,11 +301,11 @@ describe('Admin rounds API (integration, needs DB + Redis)', () => {
       .send(openBody())
       .expect(201);
     await request(app.getHttpServer())
-      .post(`/admin/rounds/${(opened.body.data as RoundDto).id}/cancel`)
+      .post(`/admin/rounds/${(opened.body.data as RoundDto).id}/cancel`).send({ reason: 'Vendor unavailable' })
       .set('Authorization', `Bearer ${residentToken}`)
       .expect(403);
     const missing = await request(app.getHttpServer())
-      .post('/admin/rounds/does-not-exist/cancel')
+      .post('/admin/rounds/does-not-exist/cancel').send({ reason: 'Vendor unavailable' })
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(404);
     expect(missing.body.error.code).toBe(ErrorCode.NOT_FOUND);

@@ -43,7 +43,7 @@ export const CLOSE_DUE_TOLERANCE_MS = 5_000;
  */
 type TransitionData = Pick<
   Prisma.RoundUncheckedUpdateInput,
-  'vendorId' | 'finalPrice' | 'assignedAt' | 'deliveredAt'
+  'vendorId' | 'finalPrice' | 'assignedAt' | 'deliveredAt' | 'cancelReason' | 'cancelledAt' | 'deadline' | 'reopenCount'
 >;
 
 /** Statuses in which a participant's payment may be recorded (a vendor has been assigned). */
@@ -321,7 +321,7 @@ export class RoundsService {
    * longer be changed and drop out of the dashboard totals, so the admin must undo
    * (refund) them first rather than let collected money become invisible.
    */
-  async cancel(roundId: string, viewerResidentId = ''): Promise<RoundDto> {
+  async cancel(roundId: string, viewerResidentId = '', reason: string | null = null): Promise<RoundDto> {
     return this.inRoundTxNotifying(async (tx) => {
       const result = await this.transition(
         tx,
@@ -338,7 +338,8 @@ export class RoundsService {
               message: `Undo the ${collected} collected payment(s) before cancelling this round.`,
             });
           }
-          return {};
+          // FEAT-039 (ADR-0048 §1): why, and when.
+          return { cancelReason: reason, cancelledAt: new Date() };
         },
       );
       const staged = await this.roundNotifications.stageForParticipants(
@@ -568,6 +569,40 @@ export class RoundsService {
       include: this.viewInclude(viewerResidentId),
     });
     return buildRoundDto(updated as RoundWithView);
+  }
+
+  /**
+   * Reopen a CANCELLED round until `deadline` (FEAT-039, ADR-0048). Guarded: only a round that
+   * never had a vendor and has no collected payment. Clears the cancel reason and bumps
+   * `reopenCount` (the dedupe cycle). Pledges are kept and their owners are told it is open again;
+   * anyone who asked for the service meanwhile hears too. `schedule` runs INSIDE the transaction
+   * (as create does), so a queue failure rolls the reopen back. Another OPEN round for the pair →
+   * the partial unique index throws P2002 (the caller maps it to 409).
+   */
+  async reopen(
+    roundId: string,
+    deadline: Date,
+    viewerResidentId: string,
+    schedule: (deadline: Date) => Promise<void>,
+  ): Promise<RoundDto> {
+    return this.inRoundTxNotifying(async (tx) => {
+      const result = await this.transition(tx, roundId, RoundStatus.OPEN, viewerResidentId, async () => {
+        const row = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: { vendorId: true } });
+        const collected = await tx.roundParticipant.count({ where: { roundId, paymentCollectedAt: { not: null } } });
+        if (row.vendorId !== null || collected > 0) {
+          throw new ConflictException({
+            code: ErrorCode.INVALID_ROUND_TRANSITION,
+            message: 'This round had a vendor or collected payments, so it cannot be reopened. Open a new round instead.',
+          });
+        }
+        return { deadline, cancelReason: null, cancelledAt: null, reopenCount: { increment: 1 } };
+      });
+      await schedule(deadline);
+      const reopened = await this.roundNotifications.stageForParticipants(tx, roundId, NotificationType.ROUND_REOPENED);
+      const round = await tx.round.findUniqueOrThrow({ where: { id: roundId }, include: { service: true } });
+      const asked = await this.roundNotifications.stageAskOpened(tx, round);
+      return { result, staged: [...reopened, ...asked] };
+    });
   }
 
   /**
