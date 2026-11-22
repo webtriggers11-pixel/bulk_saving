@@ -1659,3 +1659,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
 - `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — V2 (code-reviewer)
+- Gate (run by reviewer): `bash scripts/verify.sh` exit 0 — site 62/62 (9 files), backend 566/566 (49 suites), web 702/702 (81 files); lint, typecheck, build, css-class and dev-only bundle checks OK.
+- Verdict: PASS (no P0/P1). Findings: P2 `toLocalDigits` (phone-field.tsx:16-22) strips a leading `91`/`0` from ANY >10-digit value, so one extra keystroke on a full number that starts with 91 (e.g. 9123456789 + "0") silently turns it into 9 digits (234567890). Recommend: strip `91` only at 12 digits and `0` only at 11, otherwise keep the first 10 digits; add a test for it. P3: `+91 (0) …` / `0091 …` pastes get mangled (end up invalid, so nothing wrong is sent); spec AC1 still says maxLength=10 (update the text to say it is omitted on purpose); the `phone-country` fallback id collides when there is no `id`; the caret jumps to the end when a non-digit is typed mid-value. Checked OK: the +91 is outside the value and inert; both bodies are always canonical `+91XXXXXXXXXX` (submit and button guards); the dev toast gets the canonical number; aria-describedby merges the hint; BUG-007 coverage via the `inset="prefix"` prop; no `any`.
+- By: code-reviewer subagent
+
+## 2026-11-22 — FEAT-031 — V2 findings taken
+- P2-1 fixed: a prefix is stripped only at the exact paste lengths (12 `91…`, 11 `0…`, 13 `910…`, 14 `0091…`); a stray 11th key on a 91-series number is dropped (test added). P3-1 fixed by the same rule (`+91 (0) …`, `0091 …`). P3-3: spec AC1 now says no maxLength, and why. P3-4: `useId` fallback for the prefix description id. P3-2 and P3-5 accepted as-is (visible to the user, same as a native field).
+- By: agent (autonomous)

@@ -10,7 +10,7 @@ fixed on screen and only the mobile number typed.
 ## Acceptance criteria
 - [ ] AC1 — A shared `PhoneField` primitive: a visible, non-interactive `+91` prefix (not part of the input's
       value, cannot be selected, deleted or focused) and an input that holds at most 10 digits
-      (`inputMode="numeric"`, `autoComplete="tel-national"`, `maxLength=10`). Non-digits are dropped.
+      (`inputMode="numeric"`, `autoComplete="tel-national"`; deliberately NO `maxLength`: a browser truncates a paste to it before onChange, so the 10-digit cap lives in the sanitiser). Non-digits are dropped.
 - [ ] AC2 — Paste-friendly: pasting `+91 98765 43210`, `91 9876543210` or `098765 43210` leaves `9876543210`.
 - [ ] AC3 — Both doors use it. What's sent is always `+91` + the 10 digits, put into canonical form by
       `normalisePhone` (ADR-0036). "Send code" stays disabled until it's a valid Indian mobile number (starts 6–9), with the hint

@@ -23,6 +23,11 @@ describe('toLocalDigits (FEAT-031)', () => {
     ['098765-43210', '9876543210'],
     ['98a7b6', '9876'],
     ['98765432101234', '9876543210'],
+    ['+91 (0) 98765 43210', '9876543210'],
+    ['0091 98765 43210', '9876543210'],
+    // V2 P2-1: a number that itself starts with 91, plus one stray key, keeps its first 10.
+    ['91234567890', '9123456789'],
+    ['9123456789', '9123456789'],
     ['', ''],
   ])('%j → %j', (raw, expected) => {
     expect(toLocalDigits(raw)).toBe(expected);
@@ -64,6 +69,12 @@ describe('PhoneField', () => {
     fireEvent.change(input, { target: { value: '987654321099' } });
     expect(input).toHaveValue('9876543210');
     expect(screen.getByTestId('canonical')).toHaveTextContent('+919876543210');
+  });
+
+  it('an extra keystroke on a full 91-series number is dropped, not read as a prefix (V2 P2-1)', () => {
+    render(<Harness initial="9123456789" />);
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '91234567895' } });
+    expect(screen.getByLabelText('Phone number')).toHaveValue('9123456789');
   });
 
   it('a pasted +91 number lands whole', () => {
