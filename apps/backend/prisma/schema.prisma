@@ -56,6 +56,8 @@ model Society {
   name       String
   city       String
   inviteCode String            @unique
+  // FEAT-035 (ADR-0045): an inactive society's code refuses new joins; members are untouched.
+  active     Boolean           @default(true)
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
   residents  Resident[]
@@ -70,6 +72,8 @@ model Resident {
   phone      String
   name       String?
   role       Role      @default(RESIDENT)
+  // FEAT-035 (ADR-0045): an inactive resident cannot sign in or refresh.
+  active     Boolean   @default(true)
   verifiedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

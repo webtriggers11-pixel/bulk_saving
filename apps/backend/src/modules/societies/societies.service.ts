@@ -20,8 +20,14 @@ export type SocietyWithCounts = Society & { _count: { residents: number; rounds:
 export class SocietiesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByInviteCode(inviteCode: string): Promise<Society | null> {
-    return this.prisma.society.findUnique({ where: { inviteCode } });
+  /**
+   * The society a code admits to. An inactive society's code admits nobody (FEAT-035,
+   * ADR-0045 §4): every door answers "unknown code", exactly as for a code that never
+   * existed, and residents already signed in keep their sessions.
+   */
+  async findByInviteCode(inviteCode: string): Promise<Society | null> {
+    const society = await this.prisma.society.findUnique({ where: { inviteCode } });
+    return society?.active ? society : null;
   }
 
   findById(id: string): Promise<Society | null> {
@@ -68,6 +74,7 @@ export class SocietiesService {
         data: {
           ...(body.name !== undefined ? { name: body.name } : {}),
           ...(body.city !== undefined ? { city: body.city } : {}),
+          ...(body.active !== undefined ? { active: body.active } : {}),
         },
         include: WITH_COUNTS,
       })
@@ -154,6 +161,7 @@ export function toDetail(row: SocietyWithCounts): AdminSocietyDetailDto {
     name: row.name,
     city: row.city,
     inviteCode: row.inviteCode,
+    active: row.active,
     residentCount: row._count.residents,
     roundCount: row._count.rounds,
     createdAt: row.createdAt.toISOString(),

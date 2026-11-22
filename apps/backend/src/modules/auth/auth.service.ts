@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Resident } from '@prisma/client';
 import type { AuthTokens, Role } from '@bulk/shared';
@@ -145,6 +145,11 @@ export class AuthService {
    * (BUG-017).
    */
   async issueTokens(resident: Resident): Promise<AuthTokens> {
+    // FEAT-035 (ADR-0045 §2): the one place tokens are minted, so every door (OTP, admin OTP,
+    // WhatsApp) refuses a switched-off account here, after the code proved who is asking.
+    if (resident.active === false) {
+      throw new ForbiddenException({ code: ErrorCode.ACCOUNT_DISABLED, message: 'This account has been switched off. Ask your society admin.' });
+    }
     const sid = randomUUID();
     const jti = randomUUID();
     const tokens = await this.signPair(resident.id, resident.societyId, resident.role as Role, jti, sid);
@@ -261,7 +266,8 @@ export class AuthService {
     }
 
     const resident = await this.residents.findById(payload.sub);
-    if (!resident) {
+    // FEAT-035: a switched-off account cannot refresh (its sessions were also revoked).
+    if (!resident || resident.active === false) {
       throw new UnauthorizedException({
         code: ErrorCode.TOKEN_REVOKED,
         message: 'Refresh token is no longer valid.',

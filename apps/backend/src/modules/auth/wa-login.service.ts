@@ -1,5 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ErrorCode } from '../../common/error-codes';
 import type { Resident } from '@prisma/client';
 import { normalisePhone, whatsAppLoginMessage, WA_LOGIN_TTL_SECONDS, type WaStartResponse, type WaStatusResponse } from '@bulk/shared';
 import { RedisService } from '../../redis/redis.service';
@@ -248,6 +249,11 @@ export class WaLoginService {
       // societyId was bound from the invite code at START (ADR-0003) — never from anything the
       // WhatsApp side said. The profile name is a default for a NEW resident only.
       resident = await this.residents.upsertVerifiedDefaultName(record.societyId, phone, record.profileName || null);
+    }
+    // FEAT-035 (ADR-0045 §2): refuse a switched-off account BEFORE the consume, the OTP
+    // door's 403 one step later; issueTokens would refuse too, but after burning the request.
+    if (resident.active === false) {
+      throw new ForbiddenException({ code: ErrorCode.ACCOUNT_DISABLED, message: 'This account has been switched off. Ask your society admin.' });
     }
     const consumed = (await this.redis.eval(CONSUME_LUA, 1, key)) as number;
     if (consumed !== 1) return { status: 'expired' };

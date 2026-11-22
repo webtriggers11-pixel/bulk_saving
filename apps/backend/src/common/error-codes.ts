@@ -37,6 +37,8 @@ export const ErrorCode = {
   // Sign in with WhatsApp (FEAT-027, ADR-0038)
   WHATSAPP_LOGIN_DISABLED: 'WHATSAPP_LOGIN_DISABLED',
   WHATSAPP_WEBHOOK_SIGNATURE: 'WHATSAPP_WEBHOOK_SIGNATURE',
+  /** FEAT-035 (ADR-0045): an admin switched this account off. */
+  ACCOUNT_DISABLED: 'ACCOUNT_DISABLED',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

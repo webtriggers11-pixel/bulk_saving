@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
-import { MAX_SEARCH, Role, type AdminResidentsQuery, type UpdateResidentBody } from '@bulk/shared';
+import { IsBoolean, IsIn, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
+import { ACTIVE_FILTERS, MAX_SEARCH, Role, type ActiveFilter, type AdminResidentsQuery, type UpdateResidentBody } from '@bulk/shared';
 import { PageQueryDto } from '../../common/pagination';
 
 const ROLES = [Role.RESIDENT, Role.SUPER_ADMIN] as const;
@@ -21,6 +21,11 @@ export class AdminResidentsQueryDto extends PageQueryDto implements AdminResiden
   @IsOptional()
   @IsIn(ROLES, { message: `role must be one of: ${ROLES.join(', ')}.` })
   role?: Role;
+
+  /** FEAT-035. */
+  @IsOptional()
+  @IsIn(ACTIVE_FILTERS, { message: `status must be one of: ${ACTIVE_FILTERS.join(', ')}.` })
+  status?: ActiveFilter;
 }
 
 /** `PATCH /admin/residents/:id`: a name (null clears it) and/or a role. */
@@ -35,4 +40,9 @@ export class UpdateResidentDto implements UpdateResidentBody {
   @ValidateIf((_o, value) => value !== undefined)
   @IsIn(ROLES, { message: `role must be one of: ${ROLES.join(', ')}.` })
   role?: Role;
+
+  /** FEAT-035 (ADR-0045 §2): false switches the account off and ends its sessions. */
+  @ValidateIf((_o, value) => value !== undefined)
+  @IsBoolean()
+  active?: boolean;
 }

@@ -436,6 +436,8 @@ export interface AdminSocietyDto {
  * residents and rounds hang off it, which is also what decides whether it may be deleted.
  */
 export interface AdminSocietyDetailDto extends AdminSocietyDto {
+  /** FEAT-035: an inactive society's code admits nobody. */
+  active: boolean;
   residentCount: number;
   roundCount: number;
   createdAt: string;
@@ -451,6 +453,8 @@ export interface CreateSocietyBody {
 export interface UpdateSocietyBody {
   name?: string;
   city?: string;
+  /** FEAT-035 (ADR-0045 §4). */
+  active?: boolean;
 }
 
 /** Invite codes: 8 characters from an alphabet without look-alikes (no O/0, I/1/L) — ADR-0043. */
@@ -465,6 +469,8 @@ export interface AdminResidentDto {
   name: string | null;
   phone: string;
   role: Role;
+  /** FEAT-035: a switched-off account cannot sign in or refresh. */
+  active: boolean;
   verifiedAt: string | null;
   createdAt: string;
   society: { id: string; name: string };
@@ -477,12 +483,32 @@ export interface AdminResidentsQuery extends PageQuery {
   q?: string;
   societyId?: string;
   role?: Role;
+  /** FEAT-035: active or inactive accounts only. */
+  status?: ActiveFilter;
+}
+
+/** One pledge on the user detail page (FEAT-035). */
+export interface AdminResidentPledgeDto {
+  roundId: string;
+  serviceName: string;
+  status: RoundStatus;
+  units: number;
+  paid: boolean;
+  deadline: string;
+  joinedAt: string;
+}
+
+/** `GET /admin/residents/:id` (FEAT-035): the user and every pledge they made, newest first. */
+export interface AdminResidentDetailDto extends AdminResidentDto {
+  pledges: AdminResidentPledgeDto[];
 }
 
 /** `PATCH /admin/residents/:id`. `name: null` clears the name. */
 export interface UpdateResidentBody {
   name?: string | null;
   role?: Role;
+  /** FEAT-035 (ADR-0045 §2): false switches the account off and ends its sessions. */
+  active?: boolean;
 }
 
 /** `GET /admin/overview` (FEAT-034): the console's opening numbers and what is newest. */

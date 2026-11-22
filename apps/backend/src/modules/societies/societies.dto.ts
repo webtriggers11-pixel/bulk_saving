@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsString, Length, ValidateIf } from 'class-validator';
+import { IsBoolean, IsString, Length, ValidateIf } from 'class-validator';
 import type { CreateSocietyBody, UpdateSocietyBody } from '@bulk/shared';
 
 /** Trim string inputs before validation so whitespace-only names fail the length check. */
@@ -31,4 +31,9 @@ export class UpdateSocietyDto implements UpdateSocietyBody {
   @IsString()
   @Length(2, 60)
   city?: string;
+
+  /** FEAT-035 (ADR-0045 §4): false stops the invite code admitting anyone. */
+  @ValidateIf((_o, value) => value !== undefined)
+  @IsBoolean()
+  active?: boolean;
 }

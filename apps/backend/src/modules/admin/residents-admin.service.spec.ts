@@ -7,7 +7,7 @@ import { ResidentsAdminService } from './residents-admin.service';
 /** The last-admin guard (ADR-0044 §3): untestable against the shared DB, which always holds seeded admins. */
 describe('ResidentsAdminService — last admin (FEAT-033)', () => {
   function serviceWith(admins: number) {
-    const lone = { id: 'r_admin', role: 'SUPER_ADMIN', societyId: 's', _count: { roundParticipations: 0 } };
+    const lone = { id: 'r_admin', role: 'SUPER_ADMIN', active: true, societyId: 's', _count: { roundParticipations: 0 } };
     const tx = {
       resident: {
         findUnique: jest.fn().mockResolvedValue(lone),
@@ -37,7 +37,7 @@ describe('ResidentsAdminService — last admin (FEAT-033)', () => {
   it('with a second admin, the demotion goes through', async () => {
     const { service, tx } = serviceWith(2);
     tx.resident.update.mockResolvedValue({
-      id: 'r_admin', name: null, phone: '+919999900001', role: 'RESIDENT', verifiedAt: null, createdAt: new Date(0),
+      id: 'r_admin', name: null, phone: '+919999900001', role: 'RESIDENT', active: true, verifiedAt: null, createdAt: new Date(0),
       society: { id: 's', name: 'S' }, _count: { roundParticipations: 0 },
     });
     await expect(service.update('someone_else', 'r_admin', { role: 'RESIDENT' })).resolves.toMatchObject({ role: 'RESIDENT' });
@@ -45,7 +45,7 @@ describe('ResidentsAdminService — last admin (FEAT-033)', () => {
 
   it('a successful removal revokes every session of that resident (V2 P3)', async () => {
     const { service, tx, auth } = serviceWith(2);
-    tx.resident.findUnique.mockResolvedValue({ id: 'r_x', role: 'RESIDENT', societyId: 's', _count: { roundParticipations: 0 } });
+    tx.resident.findUnique.mockResolvedValue({ id: 'r_x', role: 'RESIDENT', active: true, societyId: 's', _count: { roundParticipations: 0 } });
     await service.remove('someone_else', 'r_x');
     expect(tx.resident.delete).toHaveBeenCalledWith({ where: { id: 'r_x' } });
     expect(auth.revokeAllSessions).toHaveBeenCalledWith('r_x');
@@ -61,5 +61,12 @@ describe('ResidentsAdminService — last admin (FEAT-033)', () => {
     await expect(make('P2034').update('a', 'b', { name: 'x' })).rejects.toBeInstanceOf(ConflictException);
     await expect(make('P2025').update('a', 'b', { name: 'x' })).rejects.toBeInstanceOf(NotFoundException);
     await expect(make('P2034').remove('a', 'b')).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('refuses to switch off the last active admin, and does not revoke anything (FEAT-035)', async () => {
+    const { service, tx, auth } = serviceWith(1);
+    await expect(service.update('someone_else', 'r_admin', { active: false })).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.resident.update).not.toHaveBeenCalled();
+    expect(auth.revokeAllSessions).not.toHaveBeenCalled();
   });
 });

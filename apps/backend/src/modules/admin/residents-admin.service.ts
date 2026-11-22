@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { Prisma, RoundStatus } from '@prisma/client';
 import {
   Role,
+  type AdminResidentDetailDto,
   type AdminResidentDto,
   type AdminResidentsQuery,
   type Page,
@@ -51,6 +52,8 @@ export class ResidentsAdminService {
         : {}),
       ...(query.societyId ? { societyId: query.societyId } : {}),
       ...(query.role ? { role: query.role } : {}),
+      // FEAT-035: active or inactive accounts only.
+      ...(query.status ? { active: query.status === 'active' } : {}),
     };
     const [rows, total] = await Promise.all([
       this.prisma.resident.findMany({
@@ -65,32 +68,41 @@ export class ResidentsAdminService {
   }
 
   /**
-   * Rename and/or change a role (ADR-0044 §3). An admin cannot change their own role, and
-   * the last SUPER_ADMIN cannot be demoted — both would lock the admin door (ADR-0023).
-   * The check and the write share a serializable transaction, so two admins demoting each
-   * other at once cannot both succeed.
+   * Rename, change a role, or switch an account on/off (ADR-0044 §3, ADR-0045 §2–3). An admin
+   * cannot change their own role or switch themselves off, and the last ACTIVE admin can be
+   * neither demoted nor switched off: either would lock the admin door (ADR-0023). The checks
+   * and the write share a serializable transaction, so two admins acting on each other at once
+   * cannot both succeed. Switching an account off ends every one of its sessions.
    */
   async update(actorId: string, id: string, body: UpdateResidentBody): Promise<AdminResidentDto> {
-    return this.prisma
+    let switchedOff = false;
+    const dto = await this.prisma
       .$transaction(
         async (tx) => {
           const current = await tx.resident.findUnique({ where: { id } });
           if (!current) throw notFound();
+          const lastActiveAdmin = async () =>
+            current.role === Role.SUPER_ADMIN &&
+            current.active &&
+            (await tx.resident.count({ where: { role: Role.SUPER_ADMIN, active: true } })) <= 1;
           if (body.role !== undefined && body.role !== current.role) {
             if (id === actorId)
               throw conflict('You cannot change your own role. Ask another admin.');
-            if (
-              current.role === Role.SUPER_ADMIN &&
-              (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1
-            ) {
+            if (await lastActiveAdmin())
               throw conflict('This is the last admin. Make someone else an admin first.');
-            }
+          }
+          if (body.active === false && current.active) {
+            if (id === actorId) throw conflict('You cannot switch yourself off.');
+            if (await lastActiveAdmin())
+              throw conflict('This is the last active admin and cannot be switched off.');
+            switchedOff = true;
           }
           const row = await tx.resident.update({
             where: { id },
             data: {
               ...(body.name !== undefined ? { name: body.name } : {}),
               ...(body.role !== undefined ? { role: body.role } : {}),
+              ...(body.active !== undefined ? { active: body.active } : {}),
             },
             include: RESIDENT_ROW,
           });
@@ -99,6 +111,38 @@ export class ResidentsAdminService {
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       )
       .catch(raceOutcome);
+    if (switchedOff) await this.auth.revokeAllSessions(id);
+    return dto;
+  }
+
+  /** One user with every pledge they made, newest first (FEAT-035). */
+  async detail(id: string): Promise<AdminResidentDetailDto> {
+    const row = await this.prisma.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
+    if (!row) throw notFound();
+    const pledges = await this.prisma.roundParticipant.findMany({
+      where: { residentId: id },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      select: {
+        units: true,
+        paymentCollectedAt: true,
+        createdAt: true,
+        round: {
+          select: { id: true, status: true, deadline: true, service: { select: { name: true } } },
+        },
+      },
+    });
+    return {
+      ...toResidentDto(row),
+      pledges: pledges.map((p) => ({
+        roundId: p.round.id,
+        serviceName: p.round.service.name,
+        status: p.round.status as RoundStatus,
+        units: p.units,
+        paid: p.paymentCollectedAt !== null,
+        deadline: p.round.deadline.toISOString(),
+        joinedAt: p.createdAt.toISOString(),
+      })),
+    };
   }
 
   /**
@@ -115,7 +159,8 @@ export class ResidentsAdminService {
           if (!current) throw notFound();
           if (
             current.role === Role.SUPER_ADMIN &&
-            (await tx.resident.count({ where: { role: Role.SUPER_ADMIN } })) <= 1
+            current.active &&
+            (await tx.resident.count({ where: { role: Role.SUPER_ADMIN, active: true } })) <= 1
           ) {
             throw conflict('This is the last admin and cannot be removed.');
           }
@@ -166,6 +211,7 @@ export function toResidentDto(row: Row): AdminResidentDto {
     name: row.name,
     phone: row.phone,
     role: row.role as Role,
+    active: row.active,
     verifiedAt: row.verifiedAt ? row.verifiedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     society: { id: row.society.id, name: row.society.name },

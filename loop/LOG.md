@@ -1755,3 +1755,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 3e11afa (review worktree, .env without WHATSAPP_*, no other gate): two back-to-back runs 13:26:19–13:27:34 and 13:27:34–13:28:52, both exit 0 and identical: site 62/62, backend 598/598, web 736/736. No flakes (BUG-027 did not recur). Logs: f3233-v3-1.log and f3233-v3-2.log in the session scratchpad.
 - FEAT-032 → done. FEAT-033 → done.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-035 — T1+T2 (backend)
+- Migration `20261122080000_feat_035_active_flags` (additive: `Resident.active`, `Society.active`, NOT NULL DEFAULT true) applied to the LOCAL dev DB (localhost:5442) with `prisma migrate deploy`. The owner's running :3000 backend stayed healthy. Caveat: the main checkout (other session's branch) doesn't have this migration folder, so a `prisma migrate dev` run THERE before merging would see drift.
+- Gates: `AuthService.issueTokens` refuses `active === false` with 403 ACCOUNT_DISABLED (every door goes through it); refresh refuses it with 401; WhatsApp confirm refuses before consuming. `SocietiesService.findByInviteCode` returns null for an inactive society (ADR-0045 §4 revised: the code admits nobody; signed-in members stay).
+- Admin API: `GET /admin/residents/:id` (profile + every pledge), `active` on PATCH residents (self + last ACTIVE admin guarded; switching off revokes sessions) and PATCH societies, `status` filter on the users list. Last-admin guards now count ACTIVE admins.
+- Tests: `active-flags.integration.spec.ts` (5) + a unit test for switching off the last active admin. Admin integration suites 26/26, backend unit 249.
+- By: agent (autonomous)

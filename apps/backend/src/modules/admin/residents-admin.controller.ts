@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
-import type { AdminResidentDto, Page } from '@bulk/shared';
+import type { AdminResidentDetailDto, AdminResidentDto, Page } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
@@ -18,6 +18,12 @@ export class ResidentsAdminController {
   @Get()
   list(@Query() query: AdminResidentsQueryDto): Promise<Page<AdminResidentDto>> {
     return this.residents.list(query);
+  }
+
+  /** FEAT-035: the user detail page — profile plus every pledge. */
+  @Get(':id')
+  detail(@Param('id') id: string): Promise<AdminResidentDetailDto> {
+    return this.residents.detail(id);
   }
 
   @Patch(':id')
