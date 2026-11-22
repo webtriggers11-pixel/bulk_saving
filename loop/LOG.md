@@ -1655,3 +1655,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
 - `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — opened (triage → plan, autonomous)
+- Owner: "make +91 non editable only phone number will add by user". Classified FEAT (P2). Spec, plan and tasks in loop/work/FEAT-031-fixed-plus91-phone/. ADR-0042 (amends ADR-0036 §2, web side only; Confidence High, judgment call).
+- By: agent (autonomous)
