@@ -1659,3 +1659,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
 - `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-032 + FEAT-033 — opened (triage → plan, autonomous)
+- Owner: society onboarding (create, invite code, QR print format, invitation message), "as admin i want all access also users access right", "show all users all society all cruds". Split into FEAT-032 (societies + invites, P1, ADR-0043) and FEAT-033 (users + roles, P1, ADR-0044). Vendors, services and rounds already have admin CRUD.
+- No new dependency: `qrcode` 1.5.4 is already in apps/web. Built on branch feat/FEAT-032-society-onboarding (worktree), stacked on FEAT-031.
+- By: agent (autonomous)
