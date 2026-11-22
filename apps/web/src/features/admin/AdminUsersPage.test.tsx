@@ -52,7 +52,7 @@ describe('AdminUsersPage (FEAT-033)', () => {
       society: { id: 'soc_1', name: 'Green Park', city: 'Pune' },
     });
   });
-  afterEach(() => useAuthStore.setState({ status: 'anonymous', accessToken: null, refreshToken: null, resident: null, society: null }));
+  afterEach(() => useAuthStore.setState({ status: 'unauthenticated', accessToken: null, refreshToken: null, resident: null, society: null }));
 
   it('lists users from every society with their phone, society and access', async () => {
     renderPage();
