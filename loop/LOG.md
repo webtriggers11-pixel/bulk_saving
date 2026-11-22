@@ -1832,3 +1832,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 attempt 2 at 37ec3fd (detached worktree, fc87a60 reverted, .env without WHATSAPP_*, each run started only with no other gate running): run 3 12:57:37–12:58:52 and run 4 12:58:52–13:00:04, both exit 0 and identical: site 71/71, backend 566/566, web 689/689. Logs: f30-v3-3.log, f30-v3-4.log in the session scratchpad. Attempt 1's run-2 failure is BUG-014 (logged above), not this item.
 - FEAT-030 → done. Branch gate stays red in apps/web until FEAT-031's owner registers PhoneField in class-conflicts.test.tsx.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-036 — OPENED (triage)
+- Owner: "Admin no need to create society and everything. Admin is admin." → "yes fix this". Classified FEAT (P1), not BUG: admins-in-a-society was a deliberate ADR-0023 shape. Approval for the storage-format change (nullable `Resident.societyId`) is the owner's "yes fix this".
+- Decision ADR-0046 (High, judgment call): nullable `societyId` for SUPER_ADMIN only, guarded by a DB CHECK and a partial unique index; `@CurrentMember` → 403 NO_SOCIETY on society endpoints; `POST /admin/admins`. A separate Admin model was rejected (duplicates auth).
+- Work in worktree `feat/FEAT-036-standalone-admin` (another Claude session is active on this machine).
+- By: agent (autonomous)
