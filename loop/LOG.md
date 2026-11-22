@@ -1725,3 +1725,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-034 + FEAT-035 — opened (triage, autonomous)
 - Owner: "I want sidebar and the dashboard proper admin dashboard with all the operations … see the user details … delete edit active in active all type of things". Split: FEAT-034 (sidebar shell + dashboard + overview API, P1) and FEAT-035 (user detail page + active/inactive for users and societies, additive migration, ADR-0045, P1). The migration is additive (two `DEFAULT true` columns); proceeding under the owner's standing autonomy instruction and flagged in the session summary.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-033 — browser pass
+- Branch build on :3100/:5180, headless 390×844, signed in as +919999900001 (the two seeded admins' local OTP send counters, which my own test runs had exhausted, were cleared in local Redis: `otp:resend:{hourly,ceiling}:admin-door:<phone>`). `/admin/users` lists 20 on page one; `?q=9999900202` finds Rohan; promote → Admin → demote → Resident (restored); removing Asha is refused in the sheet ("has 8 pledge(s)…"); own row: "You can't change your own access", remove disabled.
+- Note: `+919999900108` (seeded "Kabir Shah") now belongs to a real sign-in renamed "Web Triggers"; TEST_LOGINS.md's "Kabir" row is stale on this DB.
+- By: agent (autonomous)
