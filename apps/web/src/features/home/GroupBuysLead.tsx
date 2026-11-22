@@ -5,7 +5,7 @@ import { Card } from '../../components/ui/card';
 import { Icon } from '../../components/ui/icon';
 import { queryStalled } from '../../lib/offline';
 import { unitLabelFor } from '../../lib/units';
-import { formatCountdown } from '../rounds/formatCountdown';
+import { formatClosingDate, formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
 import { useRounds } from '../rounds/useRounds';
 
@@ -91,7 +91,7 @@ export function GroupBuysLead() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-body font-extrabold">{round.service.name}</span>
                     <span className="mt-0.5 block text-micro font-semibold text-on-fill">
-                      {formatCountdown(round.deadline)}
+                      {formatCountdown(round.deadline)} · {formatClosingDate(round.deadline, undefined, { time: false })}
                       {round.myUnits > 0 && (
                         <>
                           {' · '}

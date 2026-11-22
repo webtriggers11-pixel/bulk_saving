@@ -16,7 +16,7 @@ import { Sheet } from '../../components/ui/sheet';
 import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import { Sparkles } from '../../components/ui/sparkles';
 import { Notice } from '../../components/ui/notice';
-import { formatClock, formatCountdown } from './formatCountdown';
+import { formatClock, formatClosingDate, formatCountdown } from './formatCountdown';
 import { formatRupees } from './formatPrice';
 import { capitalise, formatUnits, unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { useJoinRound, useLeaveRound, useRounds, useUpdatePledge } from './useRounds';
@@ -475,14 +475,21 @@ function RoundCard({
             </Badge>
           )}
         </div>
-        <Badge
-          tone={urgent ? 'amber' : 'slate'}
-          icon={<Icon name="clock" size={13} strokeWidth={2.2} />}
-          className={urgent ? 'num' : undefined}
-          data-testid={`closing-${round.id}`}
-        >
-          {closing}
-        </Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <Badge
+            tone={urgent ? 'amber' : 'slate'}
+            icon={<Icon name="clock" size={13} strokeWidth={2.2} />}
+            className={urgent ? 'num' : undefined}
+            data-testid={`closing-${round.id}`}
+          >
+            {closing}
+          </Badge>
+          {/* FEAT-040: the date itself, highlighted, next to the countdown. */}
+          <Badge tone="teal" data-testid={`closing-date-${round.id}`}>
+            <span className="sr-only">Closes </span>
+            {formatClosingDate(round.deadline)}
+          </Badge>
+        </div>
       </div>
 
       <div className="mt-[18px] flex items-center gap-4">

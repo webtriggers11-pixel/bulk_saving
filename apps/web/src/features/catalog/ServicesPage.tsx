@@ -21,7 +21,7 @@ import { CatalogSkeleton } from './CatalogSkeleton';
 import { useRounds } from '../rounds/useRounds';
 import { ShowMore } from '../../components/ui/show-more';
 import { formatRupees } from '../rounds/formatPrice';
-import { formatCountdown } from '../rounds/formatCountdown';
+import { formatClosingDate, formatCountdown } from '../rounds/formatCountdown';
 import { formatUnits } from '../../lib/units';
 
 /**
@@ -95,7 +95,7 @@ function RoundStatus({
       {lead} · {formatRupees(round.currentPrice)} now ·{' '}
       {/* The countdown and the arrow break as one piece — never an arrow alone on a line. */}
       <span className="inline-flex items-center gap-1 whitespace-nowrap">
-        {formatCountdown(round.deadline)}
+        {formatCountdown(round.deadline)} · {formatClosingDate(round.deadline, undefined, { time: false })}
         <Icon name="forward" size={15} strokeWidth={2.2} className="nudge" />
       </span>
     </p>

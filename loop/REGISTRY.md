@@ -116,4 +116,5 @@
 | FEAT-038 | Edit an open round: deadline and price tiers (PATCH /admin/rounds/:id under the round lock; jobs moved; deadline-aware close job) + Edit round on the admin round page | in-progress | P1 | 2026-11-23 | — | loop/work/FEAT-038-edit-round/ | ADR-0047, ADR-0004, ADR-0011 |
 | BUG-030 | Tier prices may RISE with more units (5 → ₹700, 6 → ₹800 accepted): create/edit only check thresholds ascend, never that prices fall (owner screenshot) | in-progress | P1 | 2026-11-23 | — | — | ADR-0010 |
 | FEAT-039 | Cancel a round with a required reason (shown to admins and in residents' cancellation message); reopen a cancelled round with a new deadline (refused if the pair already has an open round) | triaged | P1 | 2026-11-23 | — | — | ADR-0011 |
-| FEAT-040 | Resident round card: show the closing date next to "Closes in N days / today", highlighted | triaged | P2 | 2026-11-23 | — | — | — |
+| FEAT-040 | Resident round card: show the closing date next to "Closes in N days / today", highlighted | in-progress | P2 | 2026-11-23 | — | — | loop/work/FEAT-040-closing-date/ |
+| FEAT-041 | Declutter the admin dashboard: keep alert, quick actions and headline numbers; move requests, the rounds list and reports (demand, payments, ratings) to their own sidebar pages | triaged | P2 | 2026-11-23 | — | — | ADR-0022 |

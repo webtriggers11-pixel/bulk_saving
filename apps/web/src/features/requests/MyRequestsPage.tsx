@@ -7,7 +7,7 @@ import { Fact } from '../../components/ui/fact';
 import { PageHeader } from '../../components/ui/page-header';
 import { Badge, type BadgeTone } from '../../components/ui/badge';
 import { Icon, type IconName } from '../../components/ui/icon';
-import { formatCountdown } from '../rounds/formatCountdown';
+import { formatClosingDate, formatCountdown } from '../rounds/formatCountdown';
 import { formatRupees } from '../rounds/formatPrice';
 import { formatUnits, unitLabelFor } from '../../lib/units';
 import { useMyRounds } from '../rounds/useRounds';
@@ -51,7 +51,8 @@ const STATUS_STYLE: Record<RoundStatus, { tone: BadgeTone; icon: IconName; step:
 function statusDetail(round: MyRoundDto): string {
   switch (round.status) {
     case 'OPEN':
-      return formatCountdown(round.deadline);
+      // FEAT-040: the date too.
+      return `${formatCountdown(round.deadline)} · ${formatClosingDate(round.deadline)}`;
     case 'CLOSED_MET':
       return 'Enough neighbours joined — we are booking a vendor.';
     case 'CLOSED_EXPIRED':

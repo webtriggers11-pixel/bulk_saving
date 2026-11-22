@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoundDto } from '@bulk/shared';
 import { RoundsPage } from './RoundsPage';
+import { formatClosingDate } from './formatCountdown';
 import { fetchRounds, joinRound, leaveRound, updatePledge } from './rounds.api';
 import { page } from '../../test/page';
 
@@ -81,6 +82,16 @@ describe('RoundsPage', () => {
     // "unlocks ₹X at N <units>" hint from nextTier.
     expect(screen.getByTestId('next-tier-round_1')).toHaveTextContent('Unlocks ₹700 at 10 AC units');
     expect(screen.getByTestId('round-card')).toBeInTheDocument();
+  });
+
+  it('shows the closing date, highlighted, next to the countdown (FEAT-040)', async () => {
+    const deadline = new Date(Date.now() + 3 * 86_400_000 + 3_600_000).toISOString();
+    fetchRoundsMock.mockResolvedValue(page([{ ...openRound, deadline }]));
+    renderPage();
+    const chip = await screen.findByTestId('closing-date-round_1');
+    expect(chip).toHaveTextContent(formatClosingDate(deadline));
+    expect(chip).toHaveTextContent(/^Closes /);
+    expect(screen.getByTestId('closing-round_1')).toHaveTextContent('Closes in 3 days');
   });
 
   it('joins with the chosen units and refetches the list', async () => {

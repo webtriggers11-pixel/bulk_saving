@@ -42,3 +42,26 @@ export function formatClock(deadlineIso: string, now: number = Date.now()): stri
   const pad = (n: number) => String(n).padStart(2, '0');
   return `Closes in ${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
 }
+
+/**
+ * FEAT-040: the closing date itself, next to the countdown: "Today, 6:30 pm",
+ * "Tomorrow, 6:30 pm", "Wed 26 Nov, 6:30 pm" (the year only when it isn't this year).
+ * Viewer's time zone; `now` is injectable for tests.
+ */
+export function formatClosingDate(deadlineIso: string, now: Date = new Date(), { time: withTime = true } = {}): string {
+  const d = new Date(deadlineIso);
+  if (Number.isNaN(d.getTime())) return '';
+  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dayDiff = Math.round((startOf(d) - startOf(now)) / 86_400_000);
+  const at = (day: string) => (withTime ? `${day}, ${time}` : day);
+  if (dayDiff === 0) return at('Today');
+  if (dayDiff === 1) return at('Tomorrow');
+  const date = d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  }).replace(',', '');
+  return at(date);
+}

@@ -1926,3 +1926,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1 run 1 EXIT 1: `auth.integration` "normalises the phone…" got a 404 from `/auth/otp/verify` (route exists): BUG-014's signature, untouched code, 3/3 alone. V1 run 2 EXIT 0: site 71, backend 639, web 779.
 - Earlier in T1, a run of four suites together failed 6 tests that passed alone and together on a re-run: probably another process's Jest on the shared Redis at the same moment (my wait checks only `verify.sh`).
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-040 — built
+- `formatClosingDate` ("Today, 6:30 pm" / "Tomorrow, …" / "Thu 26 Nov, 6:30 pm", the year only when it isn't this year; viewer's time zone). The round card shows a brand-tone date chip under the countdown (screen readers hear "Closes …"). Home lead, Services and My Requests append the date after the countdown. Tests: 5 formatter cases (local-time dates, TZ-proof) + the card chip. Web 785.
+- FEAT-041 triaged (declutter the dashboard into sidebar pages), queued after FEAT-039.
+- By: agent (autonomous)
