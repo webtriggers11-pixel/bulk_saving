@@ -371,7 +371,7 @@ export class RoundsAdminService {
     return this.getRoundDetail(roundId);
   }
 
-  /** Tiers must be non-empty with positive prices and STRICTLY ascending thresholds. */
+  /** Tiers: non-empty, positive prices, STRICTLY ascending thresholds and STRICTLY falling prices (BUG-030). */
   private assertTiersValid(tiers: CreateRoundBody['tiers']): void {
     if (tiers.length === 0) {
       throw new BadRequestException({
@@ -390,6 +390,14 @@ export class RoundsAdminService {
         throw new BadRequestException({
           code: ErrorCode.BAD_REQUEST,
           message: 'Tier thresholds must be strictly ascending.',
+        });
+      }
+      // BUG-030: a group buy gets CHEAPER as more units join. A tier that costs the same or more
+      // than the one before it would charge everyone more for reaching it.
+      if (i > 0 && tiers[i].price >= tiers[i - 1].price) {
+        throw new BadRequestException({
+          code: ErrorCode.BAD_REQUEST,
+          message: 'Each tier\'s price must be lower than the one before it: more people, lower price.',
         });
       }
     }

@@ -163,6 +163,20 @@ describe('AdminNewRoundPage', () => {
     expect(await screen.findByText('Round detail page')).toBeInTheDocument();
   });
 
+  it('BUG-030: refuses a price that rises with more units, without calling the API', async () => {
+    renderPage('/admin/rounds/new?society=soc_1&service=svc_1');
+    await screen.findByRole('option', { name: /Green Park/ });
+    fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '2030-01-15T18:30' } });
+    fireEvent.change(screen.getByLabelText('Tier 1 threshold (AC units)'), { target: { value: '5' } });
+    fireEvent.change(screen.getByLabelText('Tier 1 price (₹)'), { target: { value: '700' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add tier' }));
+    fireEvent.change(screen.getByLabelText('Tier 2 threshold (AC units)'), { target: { value: '6' } });
+    fireEvent.change(screen.getByLabelText('Tier 2 price (₹)'), { target: { value: '800' } });
+    fireEvent.click(screen.getByRole('button', { name: /Open round|Create round/ }));
+    expect(await screen.findByText(/lower than the one before/)).toBeInTheDocument();
+    expect(createRoundMock).not.toHaveBeenCalled();
+  });
+
   it('rejects non-ascending thresholds without calling the API', async () => {
     renderPage();
     await fillForm([

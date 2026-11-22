@@ -1919,3 +1919,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-040 (P2): the closing date next to "Closes in N days" on the resident card, highlighted.
 - Order: BUG-030 → FEAT-038 close → FEAT-039 → FEAT-040.
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-038 T1–T2 + BUG-030 fix; V1 PASS
+- FEAT-038: `PATCH /admin/rounds/:id` → `RoundsService.updateOpenRound` (lock, OPEN-only, tiers replaced, jobs moved inside the tx); `closeRound(…, { onlyIfDue })` used by the deadline processor; `test/round-edit.integration.spec.ts` (6). Web: shared `RoundTierFields` (New round + Edit round), Edit round card on the round page (4 tests).
+- BUG-030: failing first (backend create/edit and the web form accepted 5 → ₹700, 6 → ₹800); now prices must strictly fall as thresholds rise, on the server and in the form. Both tests pass.
+- V1 run 1 EXIT 1: `auth.integration` "normalises the phone…" got a 404 from `/auth/otp/verify` (route exists): BUG-014's signature, untouched code, 3/3 alone. V1 run 2 EXIT 0: site 71, backend 639, web 779.
+- Earlier in T1, a run of four suites together failed 6 tests that passed alone and together on a re-run: probably another process's Jest on the shared Redis at the same moment (my wait checks only `verify.sh`).
+- By: agent (autonomous)

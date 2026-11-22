@@ -39,6 +39,10 @@ export function parseTiers(rows: TierRow[]): { tiers: RoundTierDto[] } | { error
     if (previous && threshold <= previous.threshold) {
       return { error: 'Tier thresholds must be strictly ascending.' };
     }
+    // BUG-030: more people, lower price. Mirrors the server's check.
+    if (previous && price >= previous.price) {
+      return { error: `Tier ${index + 1}'s price must be lower than the one before it: more people, lower price.` };
+    }
     tiers.push({ threshold, price });
   }
   return { tiers };

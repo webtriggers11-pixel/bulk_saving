@@ -141,4 +141,17 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
       await prisma.society.delete({ where: { id: other.id } });
     }
   });
+
+  it('BUG-030: a price that rises with more units is refused, at create and at edit', async () => {
+    const open = await prisma.round.findMany({ where: { societyId: society.id, status: 'OPEN' } });
+    for (const r of open) await asAdmin(http().post(`/admin/rounds/${r.id}/cancel`)).expect(201);
+    const rising = [{ threshold: 5, price: 700 }, { threshold: 6, price: 800 }];
+    const created = await asAdmin(http().post('/admin/rounds')).send({ societyId: society.id, serviceId: service.id, deadline: futureIso(3), tiers: rising }).expect(400);
+    expect(created.body.error.message).toMatch(/lower than the one before/);
+    const id = await openRound();
+    const edited = await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: rising }).expect(400);
+    expect(edited.body.error.message).toMatch(/lower than the one before/);
+    // Equal prices are refused too: a tier that saves nothing is a mistake.
+    await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: [{ threshold: 5, price: 700 }, { threshold: 8, price: 700 }] }).expect(400);
+  });
 });
