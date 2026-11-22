@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { resetMockRegisterSW, setMockRegisterSW, updateServiceWorkerCalls } from 'virtual:pwa-register/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ServiceWorkerProvider } from '../shell/ServiceWorkerProvider';
@@ -12,14 +13,18 @@ describe('AdminLayout update switch (BUG-025)', () => {
   });
 
   function renderAdmin() {
+    // BUG-029: the sidebar reads the overview query, as it does under the app's provider.
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } });
     render(
-      <ServiceWorkerProvider>
-        <MemoryRouter initialEntries={['/admin']}>
-          <AdminLayout title="Dashboard">
-            <p>content</p>
-          </AdminLayout>
-        </MemoryRouter>
-      </ServiceWorkerProvider>,
+      <QueryClientProvider client={client}>
+        <ServiceWorkerProvider>
+          <MemoryRouter initialEntries={['/admin']}>
+            <AdminLayout title="Dashboard">
+              <p>content</p>
+            </AdminLayout>
+          </MemoryRouter>
+        </ServiceWorkerProvider>
+      </QueryClientProvider>,
     );
   }
 

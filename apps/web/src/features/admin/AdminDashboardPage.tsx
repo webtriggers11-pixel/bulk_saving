@@ -14,7 +14,8 @@ import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { StatCard } from '../../components/ui/stat';
 import { AdminLayout } from './AdminLayout';
 import { AdminOverview } from './AdminOverview';
-import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees } from './adminFormat';
+import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees, isRecent, openRoundHref, timeAgo } from './adminFormat';
+import { Badge } from '../../components/ui/badge';
 import { StatusBadge } from './StatusBadge';
 import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
@@ -113,11 +114,11 @@ function DashboardSummary() {
       </section>
 
       {/* FEAT-022 (ADR-0033): what residents are asking for, as a to-do list for rounds. */}
-      <Card data-testid="asks">
+      <Card data-testid="asks" id="asks">
         <CardHeader>
           <CardTitle>Residents are asking for</CardTitle>
           <CardDescription>
-            Services with no open round that residents want — open one and everyone who asked is told
+            Services with no open round that residents want, newest first. Open one and everyone who asked is told
           </CardDescription>
         </CardHeader>
         {data.asks.length === 0 ? (
@@ -127,13 +128,22 @@ function DashboardSummary() {
             {data.asks.map((ask) => (
               <DataRow
                 key={`${ask.society.id}:${ask.service.id}`}
-                title={ask.service.name}
-                meta={`${ask.society.name} · asking since ${formatDateTime(ask.since)}`}
+                title={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {ask.service.name}
+                    {isRecent(ask.latest) && (
+                      <Badge tone="amber" data-testid="ask-new">
+                        New
+                      </Badge>
+                    )}
+                  </span>
+                }
+                meta={`${ask.society.name} · latest ${timeAgo(ask.latest)} · asking since ${formatDateTime(ask.since)}`}
                 data-testid={`ask-row-${ask.service.slug}`}
                 columns={<DataCell label="Residents asking" value={ask.askCount} />}
                 trailing={
                   <Link
-                    to={`/admin/rounds/new?society=${encodeURIComponent(ask.society.id)}&service=${encodeURIComponent(ask.service.id)}`}
+                    to={openRoundHref(ask.society.id, ask.service.id)}
                     className="inline-flex min-h-touch items-center gap-2 rounded-control px-3 text-meta font-bold text-brand-ink t hover:bg-paper/60 focus-visible:shadow-focus focus-visible:outline-none"
                   >
                     Open a round
@@ -370,6 +380,52 @@ function RoundsPanel() {
 }
 
 /**
+ * BUG-029: the first thing an admin sees when residents are waiting. It names the newest
+ * request and is one link from a New round form with society and service already chosen.
+ * Reads the same dashboard query as the list below, so it costs no extra request.
+ */
+function AsksAlert() {
+  const { data } = useAdminDashboard();
+  const newest = data?.asks[0];
+  if (!newest) return null;
+  const residents = newest.askCount === 1 ? '1 resident is' : `${newest.askCount} residents are`;
+  const more = data.asks.length - 1;
+  return (
+    <Card surface="accent" role="status" aria-live="polite" data-testid="asks-alert" className="mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-paper/70 text-brand-ink">
+          <Icon name="bell" size={20} strokeWidth={2} />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-eyebrow uppercase text-ink-muted">Residents are asking</span>
+          <span className="text-lead font-extrabold text-ink">
+            {newest.society.name} asked for {newest.service.name}
+          </span>
+          <span className="text-meta text-ink-muted">
+            {timeAgo(newest.latest)} · {residents} waiting. Set the price tiers and a deadline to open a group buy.
+            {more > 0 && (
+              <>
+                {' '}
+                <a href="#asks" className="font-bold text-brand-ink underline">
+                  +{more} more waiting
+                </a>
+              </>
+            )}
+          </span>
+        </div>
+        <Link
+          to={openRoundHref(newest.society.id, newest.service.id)}
+          className="inline-flex min-h-touch shrink-0 items-center gap-2 self-start rounded-control paint-mono px-4 text-meta font-bold text-on-fill no-underline t press focus-visible:shadow-focus focus-visible:outline-none sm:self-center"
+        >
+          Open a round
+          <Icon name="forward" size={15} strokeWidth={2.2} />
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
+/**
  * Super-admin dashboard (FEAT-005): where to act at a glance. Status tiles (the
  * "Needs vendor" and "Awaiting delivery" tiles are highlighted), demand pledged per
  * society, payment totals, and the filterable rounds list.
@@ -377,6 +433,7 @@ function RoundsPanel() {
 export function AdminDashboardPage() {
   return (
     <AdminLayout title="Dashboard" subtitle="Your societies, members and group buys at a glance">
+      <AsksAlert />
       <AdminOverview />
       <DashboardSummary />
       <RoundsPanel />

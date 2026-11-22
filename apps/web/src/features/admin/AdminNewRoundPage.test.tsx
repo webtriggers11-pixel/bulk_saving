@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminServiceDto, RoundDto } from '@bulk/shared';
 import { ApiError } from '../../lib/api';
 import { society } from './admin.fixtures';
-import { createRound, fetchServices, fetchSocieties } from './admin.api';
+import { createRound, fetchDashboard, fetchServices, fetchSocieties } from './admin.api';
+import { dashboard } from './admin.fixtures';
 import { AdminNewRoundPage } from './AdminNewRoundPage';
 import { page } from '../../test/page';
 
@@ -114,6 +115,23 @@ describe('AdminNewRoundPage', () => {
     await screen.findByRole('option', { name: /Green Park/ });
     expect(screen.getByLabelText('Society')).toHaveValue('soc_1');
     expect(screen.getByLabelText('Service')).toHaveValue('svc_1');
+  });
+
+  it('opened from a request, says who is asking (BUG-029)', async () => {
+    vi.mocked(fetchDashboard).mockResolvedValue({
+      ...dashboard,
+      asks: [
+        {
+          society: { id: 'soc_1', name: 'Green Park' },
+          service: { id: 'svc_1', name: 'AC Servicing', slug: 'ac-servicing' },
+          askCount: 3,
+          since: '2026-11-20T09:00:00.000Z',
+          latest: '2026-11-21T09:00:00.000Z',
+        },
+      ],
+    });
+    renderPage('/admin/rounds/new?society=soc_1&service=svc_1');
+    expect(await screen.findByTestId('ask-context')).toHaveTextContent('3 residents of Green Park asked for AC Servicing');
   });
 
   it('offers only active services', async () => {

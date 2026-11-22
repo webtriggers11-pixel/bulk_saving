@@ -14,6 +14,7 @@ const overview: AdminOverviewDto = {
   users: 27,
   admins: 2,
   openRounds: 5,
+  waitingAsks: 0,
   recentSocieties: [{ ...society, inviteCode: 'AB23CD45' }],
   recentUsers: [
     {

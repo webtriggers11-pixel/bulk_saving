@@ -14,8 +14,8 @@ import {
 } from '../../lib/offline';
 import { unitLabelFor, unitLabelPluralFor } from '../../lib/units';
 import { AdminLayout } from './AdminLayout';
-import { errorMessage } from './adminFormat';
-import { useAllServices, useAdminSocieties, useCreateRound } from './useAdmin';
+import { errorMessage, timeAgo } from './adminFormat';
+import { useAdminDashboard, useAllServices, useAdminSocieties, useCreateRound } from './useAdmin';
 
 /** One editable tier row; `key` is a stable React key, values are raw input strings. */
 interface TierRow {
@@ -82,6 +82,10 @@ export function AdminNewRoundPage() {
   // says "threshold (rooms)" rather than "threshold (units)". Falls back to unit/units
   // before a service is chosen.
   const selectedService = activeServices.find((service) => service.id === serviceId);
+  // BUG-029: opened from a request, say who is asking — the dashboard query is usually cached.
+  const fromAsk = searchParams.has('society') && searchParams.has('service');
+  const dashboard = useAdminDashboard({ enabled: fromAsk });
+  const ask = dashboard.data?.asks.find((a) => a.society.id === societyId && a.service.id === serviceId);
   const selectedUnit = selectedService ? unitLabelFor(selectedService) : 'unit';
   const selectedUnitPlural = selectedService ? unitLabelPluralFor(selectedService) : 'units';
 
@@ -150,6 +154,12 @@ export function AdminNewRoundPage() {
         )}
         {!loading && !loadFailed && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-label="New round" noValidate>
+            {ask && (
+              <p className="rounded-chip border border-paper/55 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-ink" data-testid="ask-context">
+                {ask.askCount === 1 ? '1 resident' : `${ask.askCount} residents`} of {ask.society.name} asked for {ask.service.name} (latest {timeAgo(ask.latest)}).
+                Everyone who asked is told when you open it.
+              </p>
+            )}
             <Field label="Society" id="round-society">
               {(props) => (
                 <Select {...props} value={societyId} onChange={(e) => setSocietyId(e.target.value)}>

@@ -35,6 +35,7 @@ import {
 } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { ROUND_TX_OPTIONS, RoundsService } from './rounds.service';
+import { waitingAskGroups } from './service-asks.query';
 
 /**
  * Super-admin round management (FEAT-003 + FEAT-004, ADR-0010/0011): open a round
@@ -282,37 +283,12 @@ export class RoundsAdminService {
   }
 
   /**
-   * FEAT-022 (ADR-0033): what residents are asking for — per society and service, most
-   * asked first, with how long the oldest ask has waited. Top 20: this is a to-do list
-   * for opening rounds, not a report.
+   * FEAT-022 (ADR-0033): what residents are asking for, per society and service. BUG-029:
+   * newest request first, with when it came in and how long the oldest ask has waited.
+   * Top 20: this is a to-do list for opening rounds, not a report.
    */
   private async askedFor(): Promise<AdminServiceAsk[]> {
-    const ranked = await this.prisma.serviceAsk.groupBy({
-      by: ['societyId', 'serviceId'],
-      _count: { _all: true },
-      _min: { createdAt: true },
-      orderBy: [{ _count: { residentId: 'desc' } }, { _min: { createdAt: 'asc' } }],
-      take: 100,
-    });
-    if (ranked.length === 0) return [];
-    // Only actionable rows (V2 P2-2, P3-2): a pair with a round already open needs no new
-    // one, and a service no longer offered there cannot have one ("Open a round" → 400).
-    const [openRounds, offered] = await Promise.all([
-      this.prisma.round.findMany({
-        where: { status: RoundStatus.OPEN, OR: ranked.map((g) => ({ societyId: g.societyId, serviceId: g.serviceId })) },
-        select: { societyId: true, serviceId: true },
-      }),
-      this.prisma.serviceOffering.findMany({
-        where: { enabled: true, service: { active: true }, OR: ranked.map((g) => ({ societyId: g.societyId, serviceId: g.serviceId })) },
-        select: { societyId: true, serviceId: true },
-      }),
-    ]);
-    const key = (p: { societyId: string; serviceId: string }) => `${p.societyId}|${p.serviceId}`;
-    const open = new Set(openRounds.map(key));
-    const ok = new Set(offered.map(key));
-    // Filtered from the top 100: if more than 80 of those are not actionable, lower-ranked
-    // actionable pairs wait for the next look — acceptable for a to-do list (V2 r2 P3).
-    const groups = ranked.filter((g) => ok.has(key(g)) && !open.has(key(g))).slice(0, 20);
+    const groups = (await waitingAskGroups(this.prisma)).slice(0, 20);
     if (groups.length === 0) return [];
     const [societies, services] = await Promise.all([
       this.prisma.society.findMany({ where: { id: { in: groups.map((g) => g.societyId) } }, select: { id: true, name: true } }),
@@ -324,7 +300,7 @@ export class RoundsAdminService {
       const society = societyById.get(g.societyId);
       const service = serviceById.get(g.serviceId);
       if (!society || !service) return [];
-      return [{ society, service, askCount: g._count._all, since: (g._min.createdAt ?? new Date()).toISOString() }];
+      return [{ society, service, askCount: g.askCount, since: g.since.toISOString(), latest: g.latest.toISOString() }];
     });
   }
 

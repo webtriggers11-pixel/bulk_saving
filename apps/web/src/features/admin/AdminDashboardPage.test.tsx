@@ -133,6 +133,7 @@ describe('AdminDashboardPage', () => {
           service: { id: 'svc_tank', name: 'Water Tank Cleaning', slug: 'tank' },
           askCount: 12,
           since: '2026-10-10T09:00:00.000Z',
+          latest: '2026-10-10T09:00:00.000Z',
         },
       ],
     });
@@ -153,5 +154,55 @@ describe('AdminDashboardPage', () => {
     fetchAdminRoundsMock.mockResolvedValue(page([]));
     renderPage();
     expect(await screen.findByTestId('asks')).toHaveTextContent('Nobody is waiting');
+  });
+
+  describe('a new request reaches the admin (BUG-029)', () => {
+    const fresh = {
+      society: { id: 'soc_av', name: 'avighna heights' },
+      service: { id: 'svc_ro', name: 'RO Water Purifier Service', slug: 'ro' },
+      askCount: 1,
+      since: new Date(Date.now() - 3 * 60_000).toISOString(),
+      latest: new Date(Date.now() - 3 * 60_000).toISOString(),
+    };
+    const old = {
+      society: { id: 'soc_1', name: 'Green Park' },
+      service: { id: 'svc_tank', name: 'Water Tank Cleaning', slug: 'tank' },
+      askCount: 4,
+      since: '2026-10-10T09:00:00.000Z',
+      latest: '2026-10-11T09:00:00.000Z',
+    };
+
+    it('opens with an alert naming the newest request, one link from a prefilled round', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old] });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      const alert = await screen.findByTestId('asks-alert');
+      expect(alert).toHaveTextContent('avighna heights asked for RO Water Purifier Service');
+      expect(alert).toHaveTextContent('3 min ago');
+      expect(alert).toHaveTextContent('+1 more waiting');
+      expect(within(alert).getByRole('link', { name: /Open a round/ })).toHaveAttribute(
+        'href',
+        '/admin/rounds/new?society=soc_av&service=svc_ro',
+      );
+      // It sits ABOVE the overview: the first thing on the page.
+      const overviewHeading = await screen.findByText('Newest societies');
+      expect(alert.compareDocumentPosition(overviewHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('marks a request from the last 24 hours as New in the list', async () => {
+      fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old] });
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('New');
+      expect(within(screen.getByTestId('ask-row-tank')).queryByTestId('ask-new')).not.toBeInTheDocument();
+    });
+
+    it('shows no alert when nobody is waiting', async () => {
+      fetchDashboardMock.mockResolvedValue(dashboard);
+      fetchAdminRoundsMock.mockResolvedValue(page([]));
+      renderPage();
+      await screen.findByTestId('asks');
+      expect(screen.queryByTestId('asks-alert')).not.toBeInTheDocument();
+    });
   });
 });

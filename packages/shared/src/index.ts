@@ -527,6 +527,8 @@ export interface AdminOverviewDto {
   users: number;
   admins: number;
   openRounds: number;
+  /** BUG-029: society+service requests waiting for a round (the sidebar badge). */
+  waitingAsks: number;
   recentSocieties: AdminSocietyDetailDto[];
   recentUsers: AdminResidentDto[];
 }
@@ -691,6 +693,8 @@ export interface AdminServiceAsk {
   askCount: number;
   /** When the earliest still-waiting ask was made (ISO) — how long they have waited. */
   since: string;
+  /** BUG-029: when the newest ask came in (ISO). The list is sorted on it, newest first. */
+  latest: string;
 }
 
 /** `GET /admin/dashboard`. */

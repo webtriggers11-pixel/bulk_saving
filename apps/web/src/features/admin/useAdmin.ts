@@ -109,8 +109,8 @@ function invalidateRound(queryClient: QueryClient, id: string): void {
 }
 
 /** GET /admin/dashboard. */
-export function useAdminDashboard(): UseQueryResult<AdminDashboardDto> {
-  return useQuery({ queryKey: adminKeys.dashboard, queryFn: fetchDashboard });
+export function useAdminDashboard({ enabled = true }: { enabled?: boolean } = {}): UseQueryResult<AdminDashboardDto> {
+  return useQuery({ queryKey: adminKeys.dashboard, queryFn: fetchDashboard, enabled });
 }
 
 /** GET /admin/rounds with optional status / society filters (part of the key). */
@@ -442,7 +442,9 @@ export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, str
 
 /** FEAT-034: the dashboard's platform numbers. Any society or user write makes it stale. */
 export function useAdminOverview(): UseQueryResult<AdminOverviewDto> {
-  return useQuery({ queryKey: adminKeys.overview, queryFn: fetchOverview });
+  // BUG-029: every admin page reads this now (the sidebar's waiting-requests badge). A lambda,
+  // so the call resolves when the query runs, not when a page renders.
+  return useQuery({ queryKey: adminKeys.overview, queryFn: () => fetchOverview() });
 }
 
 /** FEAT-035: one user with every pledge, for the user detail page. */

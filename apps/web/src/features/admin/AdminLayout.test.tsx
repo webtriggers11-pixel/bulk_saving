@@ -1,8 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AdminLayout } from './AdminLayout';
+import { fetchOverview } from './admin.api';
+
+vi.mock('./admin.api', () => ({
+  fetchOverview: vi.fn().mockResolvedValue({ societies: 1, users: 1, admins: 1, openRounds: 0, waitingAsks: 0, recentSocieties: [], recentUsers: [] }),
+}));
 import { useAuthStore } from '../auth/auth.store';
 
 function renderAt(path: string) {
@@ -109,5 +114,14 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     } finally {
       useAuthStore.setState({ status: 'unauthenticated', accessToken: null, refreshToken: null, resident: null, society: null });
     }
+  });
+
+  it('the sidebar counts waiting requests on New round (BUG-029)', async () => {
+    vi.mocked(fetchOverview).mockResolvedValueOnce({ societies: 1, users: 1, admins: 1, openRounds: 0, waitingAsks: 2, recentSocieties: [], recentUsers: [] });
+    renderAt('/admin/users');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    const badge = await within(nav).findByTestId('nav-asks-badge');
+    expect(badge).toHaveTextContent('2');
+    expect(within(nav).getByRole('link', { name: /New round.*2 waiting/ })).toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { UpdatePrompt } from '../shell/UpdatePrompt';
 import { useAuthStore } from '../auth/auth.store';
+import { useAdminOverview } from './useAdmin';
 
 interface NavItem {
   to: string;
@@ -62,6 +63,8 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => void }) {
   // FEAT-036 (ADR-0046): a platform admin has no resident app to go back to.
   const platformAdmin = useAuthStore((state) => state.resident?.societyId === null);
+  // BUG-029: waiting requests are counted on New round, on every admin page.
+  const waiting = useAdminOverview().data?.waitingAsks ?? 0;
   return (
     <nav aria-label={label} className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {NAV_GROUPS.map((group) => (
@@ -71,6 +74,15 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClass} onClick={onNavigate}>
               <Icon name={item.icon} size={18} strokeWidth={1.9} />
               {item.label}
+              {item.to === '/admin/rounds/new' && waiting > 0 && (
+                <span
+                  data-testid="nav-asks-badge"
+                  className="num ml-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-amber-ink/15 px-1.5 text-caption font-extrabold text-amber-ink"
+                >
+                  {waiting}
+                  <span className="sr-only"> waiting</span>
+                </span>
+              )}
             </NavLink>
           ))}
         </div>
