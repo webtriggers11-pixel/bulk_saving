@@ -293,6 +293,13 @@ export function AdminSocietyDetailPage() {
           subtitle={`${data.city} · ${data.residentCount} ${data.residentCount === 1 ? 'resident' : 'residents'} · ${data.roundCount} ${data.roundCount === 1 ? 'round' : 'rounds'}`}
         >
           <div className="flex flex-col gap-6">
+            <Link
+              to={`/admin/users?society=${encodeURIComponent(data.id)}`}
+              className="self-start text-meta font-bold text-brand-ink underline"
+              data-testid="society-users-link"
+            >
+              See its {data.residentCount} {data.residentCount === 1 ? 'user' : 'users'}
+            </Link>
             <InviteCard society={data} link={link} qr={qr} />
             <InvitationCard society={data} message={message} />
             <EditDetailsCard key={`${data.name}|${data.city}`} society={data} />

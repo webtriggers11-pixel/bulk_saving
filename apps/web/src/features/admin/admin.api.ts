@@ -7,6 +7,9 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminResidentDto,
+  AdminResidentsQuery,
+  UpdateResidentBody,
   CreateSocietyBody,
   UpdateSocietyBody,
   AdminVendorsQuery,
@@ -188,4 +191,21 @@ export function rotateInviteCode(id: string): Promise<AdminSocietyDetailDto> {
 /** DELETE /admin/societies/:id — only an empty society; otherwise 409. */
 export function deleteSociety(id: string): Promise<{ deleted: true }> {
   return apiRequest<{ deleted: true }>(`/admin/societies/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// ─── Users and access rights (FEAT-033, ADR-0044) ───────────────────────────────────
+
+/** GET /admin/residents — every user, across societies, filtered on the server. */
+export function fetchUsers(query: AdminResidentsQuery = {}): Promise<Page<AdminResidentDto>> {
+  return apiRequest<Page<AdminResidentDto>>(`/admin/residents${toQueryString(query)}`);
+}
+
+/** PATCH /admin/residents/:id — rename and/or grant or revoke admin access. */
+export function updateUser(id: string, body: UpdateResidentBody): Promise<AdminResidentDto> {
+  return apiRequest<AdminResidentDto>(`/admin/residents/${encodeURIComponent(id)}`, { method: 'PATCH', body: body satisfies UpdateResidentBody });
+}
+
+/** DELETE /admin/residents/:id — refused for yourself, the last admin, or live pledges. */
+export function removeUser(id: string): Promise<{ deleted: true }> {
+  return apiRequest<{ deleted: true }>(`/admin/residents/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

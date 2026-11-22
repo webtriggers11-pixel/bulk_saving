@@ -16,6 +16,9 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminResidentDto,
+  AdminResidentsQuery,
+  UpdateResidentBody,
   CreateSocietyBody,
   UpdateSocietyBody,
   AdminVendorsQuery,
@@ -46,6 +49,9 @@ import {
   deleteSociety,
   fetchSocieties,
   fetchSociety,
+  fetchUsers,
+  removeUser,
+  updateUser,
   rotateInviteCode,
   updateSociety,
   fetchVendors,
@@ -69,6 +75,9 @@ export const adminKeys = {
   vendorsFiltered: (filters: AdminVendorsQuery) => ['admin', 'vendors', filters] as const,
   societies: ['admin', 'societies'] as const,
   society: (id: string) => ['admin', 'society', id] as const,
+  /** Prefix of every filtered user list (FEAT-033). */
+  users: ['admin', 'users'] as const,
+  usersFiltered: (filters: AdminResidentsQuery) => ['admin', 'users', filters] as const,
   /** Prefix of every filtered service list. */
   services: ['admin', 'services'] as const,
   servicesFiltered: (filters: AdminServicesQuery) => ['admin', 'services', filters] as const,
@@ -384,4 +393,31 @@ export function useDeleteSociety(id: string): UseMutationResult<{ deleted: true 
       void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
     },
   });
+}
+
+// ─── Users and access rights (FEAT-033, ADR-0044) ───────────────────────────────────
+
+export function useAdminUsers(filters: AdminResidentsQuery = {}): Paged<AdminResidentDto> {
+  return usePagedQuery({
+    queryKey: adminKeys.usersFiltered(filters),
+    fetchPage: (page) => fetchUsers({ ...filters, ...page }),
+    placeholderData: 'keepPrevious',
+  });
+}
+
+/** A user write changes the user lists and every society's resident count. */
+function settleUsers(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: adminKeys.users });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'society'] });
+}
+
+export function useUpdateUser(): UseMutationResult<AdminResidentDto, Error, { id: string; body: UpdateResidentBody }> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: ({ id, body }) => updateUser(id, body), onSuccess: () => settleUsers(queryClient) });
+}
+
+export function useRemoveUser(): UseMutationResult<{ deleted: true }, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: removeUser, onSuccess: () => settleUsers(queryClient) });
 }

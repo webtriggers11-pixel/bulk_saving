@@ -457,6 +457,34 @@ export interface UpdateSocietyBody {
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const INVITE_CODE_LENGTH = 8;
 
+// ─── Admin: users and access rights (FEAT-033, ADR-0044) ─────────────────────────────
+
+/** A resident as the admin Users screen shows it — across every society. */
+export interface AdminResidentDto {
+  id: string;
+  name: string | null;
+  phone: string;
+  role: Role;
+  verifiedAt: string | null;
+  createdAt: string;
+  society: { id: string; name: string };
+  /** Pledges in rounds that are not cancelled — what makes a removal refuse (ADR-0044 §5). */
+  pledgeCount: number;
+}
+
+/** `GET /admin/residents` query. `q` matches name or phone. */
+export interface AdminResidentsQuery extends PageQuery {
+  q?: string;
+  societyId?: string;
+  role?: Role;
+}
+
+/** `PATCH /admin/residents/:id`. `name: null` clears the name. */
+export interface UpdateResidentBody {
+  name?: string | null;
+  role?: Role;
+}
+
 /** Compact society reference embedded in admin round views. */
 export interface AdminSocietySummary {
   id: string;

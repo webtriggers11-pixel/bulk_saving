@@ -1,6 +1,6 @@
 # FEAT-033: Admin sees and manages every user: all societies, roles (access rights), edit, remove
 
-**Status:** triaged · **Priority:** P1 · **Owner:** owner (requested: "as admin i want all access also users access right"; "show all users all society all cruds") / agent · **Opened:** 2026-11-22
+**Status:** in progress · **Priority:** P1 · **Owner:** owner (requested: "as admin i want all access also users access right"; "show all users all society all cruds") / agent · **Opened:** 2026-11-22
 
 ## Acceptance criteria
 - [ ] AC1 — `GET /admin/residents?q&societyId&role&cursor&limit` → `Page<AdminResidentDto>` across every society
