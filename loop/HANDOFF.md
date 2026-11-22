@@ -3,7 +3,39 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
-## Latest session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
+## Latest session (2026-11-22: admin console, society onboarding, users and access, fixed +91, on branch `feat/FEAT-032-society-onboarding`)
+
+**Where the work is:** branch `feat/FEAT-032-society-onboarding`, stacked on `feat/FEAT-031-fixed-plus91-phone`, which is off `main`. Nothing is merged or pushed. The work was built in scratchpad worktrees because another session holds the main checkout on `feat/FEAT-030-interactive-hero`. That session switched branches mid-session, and this session's first three commits (CHORE-027, FEAT-031 triage and build) also landed on its branch; they were cherry-picked here, and that branch was left untouched. BUG-026 (another session's site fix) was cherry-picked onto FEAT-031 so the site test is green off `main`.
+
+- **CHORE-027:** `TEST_LOGINS.md` at the root lists every seeded login, the dev OTP `1111`, how the top toast works, and the admin console map.
+- **FEAT-031** (ADR-0042): both sign-in doors use `PhoneField`. `+91` is fixed and outside the input's value, and the user types only 10 digits. Prefixes are stripped only at exact paste lengths. There's deliberately no `maxLength`, because browsers truncate a paste to it before onChange.
+- **FEAT-032** (ADR-0043): Societies list, create, edit, rotate and delete (delete only while empty). The detail page has the code, the join link `/onboard?code=`, a QR (SVG through the existing `qrcode` dep), an invitation with Copy/Share/WhatsApp, and a print-only A4 poster (`print:text-black`). `/onboard?code=` pre-fills the code.
+- **FEAT-033** (ADR-0044, §5 amended): `/admin/users` across societies (search, society, access, status). Rename and grant/revoke admin. Remove is refused for yourself, the last active admin, and anyone with group-buy history ("deactivate instead").
+- **FEAT-034:** the admin shell is a grouped left sidebar from `lg` and a menu drawer on phones. The dashboard opens with `GET /admin/overview` (counts, quick actions, newest societies and users).
+- **FEAT-035** (ADR-0045, §4 revised):
+  - **Migration** `20261122080000_feat_035_active_flags` adds `Resident.active` and `Society.active` (additive). It is **applied to the local dev DB only** (localhost:5442, `prisma migrate deploy`).
+  - **Switched-off accounts:** a switched-off account gets 403 ACCOUNT_DISABLED at every door and 401 at refresh, and its sessions are revoked.
+  - **Inactive societies:** an inactive society's code admits nobody, while signed-in members stay in.
+  - **`RolesGuard` re-reads the caller's row** on every admin route, so a switched-off or demoted admin loses access on the next request. This was the V2 P1.
+  - **User detail page:** `/admin/users/:id`.
+
+**Watch out:**
+- **Migration drift:** the main checkout doesn't have the FEAT-035 migration folder until this branch is merged. Don't run `prisma migrate dev` from there before merging, or Prisma will see drift on the shared dev DB.
+- **Bugs triaged, not fixed:**
+  - **BUG-027:** the OnboardingPage offline test flakes under CPU load.
+  - **BUG-028:** `round-lifecycle` CLOSED_MET PATCH 404, a shared-DB race, 1 in 10 full runs.
+  - **BUG-024:** still open.
+- **Test data:** `+919999900108` ("Kabir" in the seed) is now a real sign-in named "Web Triggers" on this DB.
+- **OTP limits:** the two seeded admins' local OTP send counters were cleared once in local Redis (`otp:resend:{hourly,ceiling}:admin-door:<phone>`) after test runs exhausted them.
+- **Accepted P3s** (in LOG.md):
+  - The rounds detail page lights no nav item.
+  - Overview counts include switched-off accounts.
+  - A WhatsApp request started before a society was switched off can confirm within its TTL.
+  - A signed-in person opening a join link is sent to `/` and the code is dropped.
+
+**Next:** merge `feat/FEAT-031-fixed-plus91-phone` and then `feat/FEAT-032-society-onboarding` into `main` (owner's call), then BUG-028/BUG-027.
+
+## Earlier session (2026-10-21, continued: a proper PWA — FEAT-029 + BUG-025, same branch)
 
 - **FEAT-029 closed** (owner: "make this as prper pwa app", "web app"). ADR-0041.
   - **Icons:** `apps/web/pwa-assets/mark.svg` (the app's bolt) feeds `scripts/gen-pwa-assets.mjs`, which uses sharp through Astro, so no new dependency. It renders any/maskable 192/512, apple-touch 180, favicons, shortcut icons and 10 iOS launch images. Re-run it if the mark changes.

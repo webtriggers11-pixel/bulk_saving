@@ -4,4 +4,4 @@
 - [x] T2 Admin API: resident detail, `active` on residents and societies + tests
 - [x] T3 Web: user detail page, status switches and filters, society Active switch; tests
 - [x] T4 Browser pass; V2 (FAIL P1 → fixed; round 2 PASS)
-- [ ] T5 V3; close
+- [x] T5 V3 (identical: 62 / 610 / 750); closed

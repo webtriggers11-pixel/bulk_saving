@@ -1792,3 +1792,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 08b2625: run 1 (13:57:55–13:58:43) exit 1, `round-lifecycle.integration.spec.ts` "join / update / leave on a CLOSED_MET round": the PATCH got 404 where 409 was expected; run 2 (13:58:43–13:59:51) exit 0 (62 / 610 / 750). The runs differ, so it's flaky. The PATCH locks the round first (`lockOpenRoundForWrite`), so the 404 means the round row was missing right after the POST saw it (409): something deleted it mid-test, a shared-DB race. 08b2625 touched only web files; the suite passed in the 4 earlier V3 runs today and 6/6 alone. Not caused by FEAT-034/035. The other session shares this DB, which fits.
 - Logs: f3435-v3b-1.log and f3435-v3b-2.log in the session scratchpad.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-034 + FEAT-035 — V3; CLOSED
+- Registry flipped and both added to the product site before V3. V3 at 4e1ef03 (pre round-2 P3s) was clean and identical. V3 at 08b2625 run 1 hit BUG-028 (triaged, not caused by these items). Re-run at 08b2625: two back-to-back runs 14:01:14–14:02:22 and 14:02:22–14:03:35, both exit 0 and identical: site 62/62, backend 610/610, web 750/750. Logs: f3435-v3c-1.log and f3435-v3c-2.log in the session scratchpad.
+- FEAT-034 → done. FEAT-035 → done. Closed with BUG-028 triaged, as FEAT-028 closed with BUG-020.
+- By: agent (autonomous)
