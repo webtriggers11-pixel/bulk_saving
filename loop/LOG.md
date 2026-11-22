@@ -1847,3 +1847,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - First backend-only run had 2 failures in untouched suites (admin-auth "ignores a body…", pagination "defaults to 20…"); both pass alone and the next full run was 625/625. Watching for it in V3.
 - V1 `bash scripts/verify.sh` EXIT 0: site 71/71, backend 625/625, web 757/757.
 - By: agent (autonomous)
+
+## 2026-11-22 — BUG-029 — OPENED (triage)
+- Owner (mid-FEAT-036): avighna heights asked for RO Water Purifier Service, and the admin dashboard showed no way to act on it; wants a highlight/notification and a proper path to set the price. Classified BUG P1 (regression of FEAT-022's ask → round loop, introduced by FEAT-034's layout). Read-only check of the owner's dev DB: the ask exists, the offering is enabled, there's no open round, so `askedFor()` DOES return it. The card is below the fold and orders it last among single asks. Queued behind FEAT-036 per the owner ("after above issue is fixed start working on this bug"). Interim workaround told to the owner: New round → avighna heights + RO Water Purifier.
+- By: agent (autonomous)
