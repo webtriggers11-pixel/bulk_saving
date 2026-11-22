@@ -1640,3 +1640,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 3c957d7 (detached worktree, .env without WHATSAPP_*, no other gate running): two back-to-back runs, 21:03:34–21:04:29 and 21:04:29–21:05:22, both exit 0 and identical: site 62/62, backend 566/566, web 689/689. No flakes. Logs: f29-v3-1.log and f29-v3-2.log in the session scratchpad.
 - FEAT-029 → done. BUG-025 → done.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-030 — OPENED (triage: FEAT, P2, parent FEAT-028)
+- Owner asked for a more creative, interactive hero on the Astro site using the 3D model, same UI system. Classified FEAT (new interaction). Branch `feat/FEAT-030-interactive-hero`. Spec/plan/tasks in loop/work/FEAT-030-interactive-hero/. No new dependency, no new ADR (rides ADR-0039 §4).
+- By: agent (autonomous)
