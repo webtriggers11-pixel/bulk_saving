@@ -1681,3 +1681,11 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-031 — post-close fix: on the site
 - Closing FEAT-031 (done in REGISTRY) tripped the site's content test ("every done FEAT appears on the site"), found by FEAT-032's V1. V3 ran before the registry flip, so it missed this. Added FEAT-031 to `apps/site/src/content/features.ts` (section `phone`). Site suite re-run: green. Lesson: flip the registry row to done BEFORE V3, so V3 checks the closing state.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-032 — T1–T3 done (V1) + browser pass
+- Backend: `SocietiesService` create (CSPRNG code over a look-alike-free alphabet, P2002 retry), update, rotate, delete-only-when-empty (serializable tx), list/detail with counts; admin routes; `invite-code.spec.ts` + `societies-admin.integration.spec.ts`. The `admin-dashboard` spec pinned the old list shape; updated to the counts.
+- Web: Societies list + create, society detail (code, join link, QR as SVG data URL through the existing `qrcode` dep, invitation copy/share/WhatsApp, print-only A4 poster, edit, rotate/delete behind ConfirmSheet), nav "Societies", `/onboard?code=` pre-fill. Design-system gate: WhatsApp link raised to 44px, row link `w-full` not `min-w-0`, QR tile's `bg-white` allowlisted (a QR must scan in dark mode).
+- Also found by V1: closing FEAT-031 tripped the site's done-FEAT test → fixed on the FEAT-031 branch and merged.
+- V1 (worktree, .env without WHATSAPP_*): verify.sh exit 0: backend 578/578, web 725/725, site green.
+- Browser pass (branch build on :3100/:5180, headless 390×844): admin sign-in → create "Sunrise Heights" → code 2DYMFB2B, QR, link, message, WhatsApp href → print media shows only the A4 poster → rotate → CAN637W2 → `/onboard?code=CAN637W2` pre-fills → delete (empty) → back on the list.
+- By: agent (autonomous)
