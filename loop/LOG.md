@@ -1651,3 +1651,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Added `TEST_LOGINS.md` at the repo root: the societies, the 12 demo residents, the 2 SUPER_ADMINs, the vendors, the seed commands, and when the toast does and doesn't show (dev build only, OTP_DEV_LOG=true, same machine).
 - Docs only, no app code touched: verify.sh not re-run for this item.
 - By: agent (autonomous)
+
+## 2026-11-22 — BUG-026 — OPENED and fixed (found by FEAT-030 V1)
+- `content.test.ts` "every done FEAT in the registry appears on the site" fails at main (b95fe4b): FEAT-029 was closed as done without a `features.ts` entry. The existing test is the failing test. Fix: a visitor-worded FEAT-029 entry in the Phone section ("A real app icon on your home screen"). The test's hardcoded `id !== 'FEAT-028'` became a `siteFeatures` set (FEAT-028, FEAT-030), since the website's own items are not product features. Site suite green.
+- By: agent (autonomous)

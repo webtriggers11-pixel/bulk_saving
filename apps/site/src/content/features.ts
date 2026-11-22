@@ -228,6 +228,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-029',
+    title: 'A real app icon on your home screen',
+    what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests. Home shows a small card explaining how to install on your phone.',
+    why: 'Something you open once a quarter has to be easy to find, and look like it belongs next to your other apps.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-023',
     title: 'Home opens on what you can save today',
     what: 'The first screen shows how many rounds are open and the three closing soonest, each one tap from its pledge sheet.',
@@ -302,6 +310,8 @@ export const features: Feature[] = [
  * from (FEATURES.md: "do not mention"). The content test exempts exactly these.
  */
 export const internalFeatures: ReadonlySet<string> = new Set(['FEAT-026']);
+/** The website's own work items: the site is not a product feature to list on itself. */
+export const siteFeatures: ReadonlySet<string> = new Set(['FEAT-028', 'FEAT-030']);
 
 export const featuresIn = (section: SectionId): Feature[] =>
   features.filter((f) => f.section === section);
