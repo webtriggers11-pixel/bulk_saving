@@ -1666,3 +1666,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1 at 08b487d (detached worktree, .env without WHATSAPP_*): exit 0 — site 71, backend 566, web 689. Log: f30-v1.log in the session scratchpad.
 - Note: a concurrent session committed CHORE-027 (76c2f3a, TEST_LOGINS.md) onto this branch mid-build; docs only, no conflict.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-031 — T1+T2 done (V1)
+- `PhoneField` primitive (`components/ui/phone-field.tsx`: fixed `+91` label, digits only, max 10, paste-friendly, no maxLength because browsers cut a paste to it before onChange) + `phone-field.test.tsx`. Both doors use it; PHONE_HINT → "Enter your 10-digit mobile number."; page tests updated (the foreign-number test now types a valid Indian number).
+- V1 on the main tree: web all green; backend 565/566. The 1 failure is BUG-024 (wa-login "switched off", the owner's .env WhatsApp creds), not mine. Re-gating in a detached worktree with `.env` minus WHATSAPP_*.
+- Browser pass (headless Chromium, 390×844, :5173 dev): admin door, typed `+91 99999abc00209xyz55` → field `9999900209`, Send code → "Sent by SMS to +919999900209", top toast "Your code is 1111".
+- By: agent (autonomous)

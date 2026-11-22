@@ -55,6 +55,8 @@ const INPUT_EMPHASIS = {
 const INPUT_INSET = {
   default: 'px-[15px]',
   icons: 'pl-11 pr-11',
+  // PhoneField's fixed `+91` (FEAT-031): room for the prefix and its divider.
+  prefix: 'pl-[68px] pr-[15px]',
 } as const;
 
 /**

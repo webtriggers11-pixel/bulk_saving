@@ -136,9 +136,12 @@ describe('OnboardingPage', () => {
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '022 2345 6789' } });
     expect(screen.getByRole('button', { name: 'Send code' })).toBeDisabled();
     expect(screen.getByTestId('phone-hint')).toHaveTextContent(/10-digit mobile/);
-    expect(screen.getByLabelText('Phone number')).toHaveAttribute('aria-describedby', 'phone-hint');
+    expect(screen.getByLabelText('Phone number').getAttribute('aria-describedby')).toContain('phone-hint');
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '98765 43210' } });
     expect(screen.queryByTestId('phone-hint')).not.toBeInTheDocument();
+    // FEAT-031: the field holds the local digits; `+91` is a fixed label beside it.
+    expect(screen.getByLabelText('Phone number')).toHaveValue('9876543210');
+    expect(screen.getByTestId('phone-prefix')).toHaveTextContent('+91');
     expect(screen.getByRole('button', { name: 'Send code' })).toBeEnabled();
   });
 
@@ -152,7 +155,7 @@ describe('OnboardingPage', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+1 415 555 2671' } });
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '98765 43210' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
     expect(await screen.findByText(/doesn't look like a phone number/)).toBeInTheDocument();
   });

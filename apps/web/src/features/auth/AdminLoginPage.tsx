@@ -1,4 +1,3 @@
-import { normalisePhone } from '@bulk/shared';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -16,6 +15,7 @@ import { AmbientGround } from '../../components/ui/ambient-ground';
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { Input } from '../../components/ui/input';
+import { indianPhone, PhoneField } from '../../components/ui/phone-field';
 import { Label } from '../../components/ui/label';
 import { Notice } from '../../components/ui/notice';
 
@@ -35,7 +35,9 @@ export function AdminLoginPage() {
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   // Typed something, but not yet a number the server will accept.
-  const implausible = phone.trim().length > 0 && normalisePhone(phone) === null;
+  // FEAT-031 (ADR-0042): `phone` holds the 10 local digits; `+91` is fixed on screen.
+  const canonicalPhone = indianPhone(phone);
+  const implausible = phone.length > 0 && canonicalPhone === null;
   const [code, setCode] = useState('');
 
   const devOtp = useDevOtp();
@@ -47,17 +49,17 @@ export function AdminLoginPage() {
     navigate('/admin', { replace: true });
   });
   const requestMutation = useMutation({
-    mutationFn: () => requestAdminOtp({ phone: normalisePhone(phone) ?? phone.trim() }),
+    mutationFn: () => requestAdminOtp({ phone: canonicalPhone ?? phone }),
     // A resend must not keep showing the previous code while the new one is fetched.
     onMutate: () => devOtp.clear(),
     onSuccess: () => {
       setStep('code');
-      devOtp.fetchFor(phone);
+      devOtp.fetchFor(canonicalPhone ?? phone);
     },
   });
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyAdminOtp({ phone: normalisePhone(phone) ?? phone.trim(), code }),
+    mutationFn: () => verifyAdminOtp({ phone: canonicalPhone ?? phone, code }),
     onSuccess: (result) => {
       login({
         accessToken: result.accessToken,
@@ -70,7 +72,7 @@ export function AdminLoginPage() {
 
   function submitPhone(event: FormEvent) {
     event.preventDefault();
-    if (normalisePhone(phone) === null) return;
+    if (canonicalPhone === null) return;
     requestMutation.mutate();
   }
 
@@ -134,18 +136,14 @@ export function AdminLoginPage() {
               This page is for society administrators. Residents sign in from the main app.
             </p>
             <Label htmlFor="admin-phone">Phone number</Label>
-            <Input
+            <PhoneField
               emphasis="primary"
               textSize="lg"
               id="admin-phone"
               name="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+91 98765 43210"
+              placeholder="98765 43210"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="num"
+              onValueChange={setPhone}
               aria-describedby={implausible ? 'admin-phone-hint' : undefined}
             />
             {/* BUG-019: a disabled button with no words is a dead end — say what a number must look like. */}
@@ -163,7 +161,7 @@ export function AdminLoginPage() {
             <Button
               className="mt-[22px] w-full"
               type="submit"
-              disabled={requestMutation.isPending || normalisePhone(phone) === null}
+              disabled={requestMutation.isPending || canonicalPhone === null}
             >
               {queuedOffline
                 ? OFFLINE_WAITING_LABEL
@@ -192,7 +190,7 @@ export function AdminLoginPage() {
           <form onSubmit={submitCode} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">Enter the code</h2>
             <p className="mb-6 mt-2 text-caption text-ink-muted">
-              Sent by SMS to <span className="num font-bold text-ink">{normalisePhone(phone) ?? phone}</span>.
+              Sent by SMS to <span className="num font-bold text-ink">{canonicalPhone ?? phone}</span>.
             </p>
             <Label htmlFor="admin-code">8-digit code</Label>
             <Input
