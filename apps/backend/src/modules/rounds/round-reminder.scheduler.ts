@@ -110,8 +110,13 @@ export class RoundReminderScheduler {
     if (job) {
       const state = await job.getState();
       if (state === 'delayed') {
-        await job.changeDelay(delay);
-        return;
+        try {
+          await job.changeDelay(delay);
+          return;
+        } catch {
+          // V2 r2 P3-2: promoted between getState() and changeDelay (BullMQ answers -3). It is now
+          // waiting or running; the close job re-arms itself if not due. Fall through.
+        }
       }
       if (state === 'waiting' || state === 'active' || state === 'prioritized') return;
       await job.remove();

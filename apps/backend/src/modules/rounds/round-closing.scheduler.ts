@@ -79,8 +79,13 @@ export class RoundClosingScheduler {
     if (job) {
       const state = await job.getState();
       if (state === 'delayed') {
-        await job.changeDelay(Math.max(0, deadline.getTime() - Date.now()));
-        return;
+        try {
+          await job.changeDelay(Math.max(0, deadline.getTime() - Date.now()));
+          return;
+        } catch {
+          // V2 r2 P3-2: promoted between getState() and changeDelay (BullMQ answers -3). It is now
+          // waiting or running; the close job re-arms itself if not due. Fall through.
+        }
       }
       if (state === 'waiting' || state === 'active' || state === 'prioritized') return;
     }

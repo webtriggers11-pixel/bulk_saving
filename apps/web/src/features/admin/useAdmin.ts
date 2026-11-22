@@ -188,7 +188,8 @@ export function useUpdateRound(id: string): UseMutationResult<AdminRoundDetailDt
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: UpdateRoundBody) => updateRound(id, body),
-    onSuccess: () => invalidateRound(queryClient, id),
+    // V2 r2 P3-1: also on error — a 503 means the edit WAS saved; the page must show it.
+    onSettled: () => invalidateRound(queryClient, id),
   });
 }
 

@@ -48,6 +48,9 @@ describe('formatClosingDate (FEAT-040)', () => {
     [new Date(2026, 10, 24, 9, 5), 'Tomorrow, 9:05 am'],
     [new Date(2026, 10, 26, 18, 30), 'Thu 26 Nov, 6:30 pm'],
     [new Date(2027, 0, 4, 12, 0), 'Mon 4 Jan 2027, 12:00 pm'],
+    // Midnight belongs to the day that ends (V2 r2 P3-4).
+    [new Date(2026, 10, 24, 0, 0), 'Today, midnight'],
+    [new Date(2026, 10, 27, 0, 0), 'Thu 26 Nov, midnight'],
   ])('%s → %s', (date, label) => {
     expect(formatClosingDate(date.toISOString(), now)).toBe(label);
   });

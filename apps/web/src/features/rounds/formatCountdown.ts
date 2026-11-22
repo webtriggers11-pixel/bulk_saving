@@ -51,6 +51,12 @@ export function formatClock(deadlineIso: string, now: number = Date.now()): stri
 export function formatClosingDate(deadlineIso: string, now: Date = new Date(), { time: withTime = true } = {}): string {
   const d = new Date(deadlineIso);
   if (Number.isNaN(d.getTime())) return '';
+  // V2 r2 P3-4: 00:00 reads as the END of the day before ("Wed 25 Nov, midnight"), not
+  // "Tomorrow, 12:00 am", which people take as the night after.
+  if (d.getHours() === 0 && d.getMinutes() === 0) {
+    const dayBefore = new Date(d.getTime() - 60_000);
+    return formatClosingDate(dayBefore.toISOString(), now, { time: false }) + (withTime ? ', midnight' : '');
+  }
   const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const dayDiff = Math.round((startOf(d) - startOf(now)) / 86_400_000);

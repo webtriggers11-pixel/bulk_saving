@@ -388,9 +388,12 @@ export class RoundsAdminService {
     if (deadline) {
       // After commit (V2 P2-1). Run whenever a deadline was sent, so saving again retries a
       // move that failed. If it fails, the close job still re-arms itself for the real deadline.
+      // V2 r2 P3-1: move to the COMMITTED deadline, not the request's, so two edits whose moves
+      // finish out of order still leave the jobs at whatever the database says.
       try {
-        await this.scheduler.reschedule(roundId, deadline);
-        await this.reminders.reschedule(roundId, deadline);
+        const { deadline: committed } = await this.prisma.round.findUniqueOrThrow({ where: { id: roundId }, select: { deadline: true } });
+        await this.scheduler.reschedule(roundId, committed);
+        await this.reminders.reschedule(roundId, committed);
       } catch (err) {
         this.logger.error(`Round ${roundId}: saved, but moving its jobs failed: ${err instanceof Error ? err.message : String(err)}`);
         throw new ServiceUnavailableException({
