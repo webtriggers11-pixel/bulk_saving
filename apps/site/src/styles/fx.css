@@ -685,3 +685,10 @@ html.gsap .hero__copy > * {
     display: none;
   }
 }
+
+/* V2 P3-1: with reduced motion the banner has no keyframes; the class shows it, a timer hides it */
+@media (prefers-reduced-motion: reduce) {
+  .scene__unlock.is-on {
+    opacity: 1;
+  }
+}

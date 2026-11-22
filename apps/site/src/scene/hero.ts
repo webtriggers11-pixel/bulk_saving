@@ -103,6 +103,9 @@ export function mountHero(root: HTMLElement) {
   let myUnits = 0;
   let building: Building | null = null;
   let inviteTimer = 0;
+  let unlockTimer = 0;
+  let bannerTimer = 0;
+  let tipTimer = 0;
 
   const units = () => neighbours + myUnits;
   const noun = (n: number) => (n === 1 ? unit : unitPlural);
@@ -185,11 +188,18 @@ export function mountHero(root: HTMLElement) {
     building?.setUnits(u);
 
     if (isUnlock) {
-      building?.burst();
-      restart(price, 'flash');
-      if (track) restart(track, 'is-unlock');
-      banner.textContent = `${rupees(p)} unlocked for everyone`;
-      restart(banner, 'is-on');
+      // The celebration lands with the chip, on the new price (V2 P3-4).
+      clearTimeout(unlockTimer);
+      unlockTimer = window.setTimeout(() => {
+        building?.burst();
+        restart(price, 'flash');
+        if (track) restart(track, 'is-unlock');
+        banner.textContent = `${rupees(p)} unlocked for everyone`;
+        restart(banner, 'is-on');
+        // Reduced motion has no keyframes to fade it: the class itself shows it (V2 P3-1).
+        clearTimeout(bannerTimer);
+        bannerTimer = window.setTimeout(() => banner.classList.remove('is-on'), 2300);
+      }, priceDelay);
     }
   }
 
@@ -278,9 +288,17 @@ export function mountHero(root: HTMLElement) {
   let autoTimer = 0;
   let autoStopped = reduced;
   let heroVisible = true;
+  /** A tick that found the hero off-screen waits here for it to come back (V2 P3-2). */
+  let autoParked = false;
   function stopAuto() {
     autoStopped = true;
+    autoParked = false;
     clearTimeout(autoTimer);
+  }
+  function resumeAuto() {
+    if (!autoParked || autoStopped || !heroVisible || document.hidden) return;
+    autoParked = false;
+    scheduleAuto(700);
   }
   function nudge() {
     sceneHint.textContent = 'Your turn: tap a window';
@@ -290,7 +308,10 @@ export function mountHero(root: HTMLElement) {
     if (autoStopped) return;
     autoTimer = window.setTimeout(() => {
       if (autoStopped) return;
-      if (!heroVisible || document.hidden) return scheduleAuto(900);
+      if (!heroVisible || document.hidden) {
+        autoParked = true;
+        return;
+      }
       if (units() >= AUTO_UNTIL || !addNeighbour(null)) {
         stopAuto();
         nudge();
@@ -299,17 +320,24 @@ export function mountHero(root: HTMLElement) {
       scheduleAuto(AUTO_EVERY);
     }, delay);
   }
-  // The visitor's first touch, click or key in the hero ends the autoplay for good.
-  root.addEventListener('pointerdown', stopAuto, { capture: true });
+  // The visitor's first click, tap or key in the hero ends the autoplay for good. A finger
+  // that lands on the scene to scroll the page does not (V2 P3-3): touch stops on the tap.
+  root.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') stopAuto();
+  }, { capture: true });
+  root.addEventListener('click', stopAuto, { capture: true });
   root.addEventListener('keydown', stopAuto, { capture: true });
+  document.addEventListener('visibilitychange', resumeAuto);
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((entries) => {
       heroVisible = entries.some((e) => e.isIntersecting);
+      resumeAuto();
     }, { threshold: 0.35 }).observe(sceneEl);
   }
 
   // ---- the hover tip and the tap (3D only; the buttons cover every other path) -------------
   function showTip(index: number | null, at: { x: number; y: number }) {
+    clearTimeout(tipTimer);
     const w = index === null ? undefined : windows[index];
     if (!w || index === null) {
       tip.hidden = true;
@@ -321,17 +349,25 @@ export function mountHero(root: HTMLElement) {
     tip.style.top = `${at.y}px`;
     tip.hidden = false;
   }
+  /** A tap's tip stays a moment, then goes (a finger has no hover to clear it; V2 P2-1). */
+  function tapTip(index: number, at: { x: number; y: number }) {
+    showTip(index, at);
+    clearTimeout(tipTimer);
+    tipTimer = window.setTimeout(() => {
+      tip.hidden = true;
+    }, 1600);
+  }
   function onPick(index: number, at: { x: number; y: number }) {
     stopAuto();
     const w = windows[index];
     if (!w) return;
     if (lit().has(index) || units() >= target) {
-      showTip(index, at);
+      tapTip(index, at);
       restart(tip, 'is-shake');
       return;
     }
     addNeighbour(index);
-    showTip(index, at);
+    tapTip(index, at);
   }
 
   join.addEventListener('click', () => {
@@ -355,6 +391,7 @@ export function mountHero(root: HTMLElement) {
 
   reset.addEventListener('click', () => {
     clearTimeout(inviteTimer);
+    clearTimeout(unlockTimer);
     const before = units();
     neighbours = startUnits;
     myUnits = 0;

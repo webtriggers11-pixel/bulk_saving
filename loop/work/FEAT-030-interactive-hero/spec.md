@@ -17,6 +17,7 @@ The hero's 3D society only reacts to two buttons under it. Visitors look at it a
 - [ ] AC4 Idle autoplay: when the hero is visible and the visitor has not interacted, a neighbour joins every ~2.4 s until 6 units (crosses the first tier, burst + ring); any interaction stops it for good. Off under reduced motion.
 - [ ] AC5 A tier unlock adds a shockwave ring on the ground (3D); the scene's accent glow grows with progress. All colours are tokens; follows accent + scheme live.
 - [ ] AC6 A kicker above the headline invites the hand; scene shows "Drag to turn · tap a window". SVG fallback still works without WebGL (feed, chip, price all run).
+- [ ] AC8 (owner, mid-build: "this building looks very blurry … make it realistic and some clarity") The society reads as a crisp, lit architectural model: a sun with soft shadows on the plot, recessed window frames with sills, a slab line per floor, entrances with canopies, white model trees; no z-fighting (the halo sat at the glass's depth = the striped "blur"); full device pixel ratio up to 2.5; night scheme dark walls with glowing accent windows. Colours still from tokens.
 - [ ] AC7 Pure logic (flat labels, a flat's windows, promoting a flat in the lighting order) is unit-tested; page test pins the new hooks; V1, V2, V3.
 
 ## Out of scope
