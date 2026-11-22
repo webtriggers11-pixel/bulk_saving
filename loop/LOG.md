@@ -1707,3 +1707,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - P3 accepted/deferred: a SIGNED-IN person who opens a join link is sent to `/` by AnonymousRoute and the code is dropped. Residents opening an invite are signed out by definition; noted for the handoff. AC3 wording updated (inline card, not a sheet).
 - BUG-027 triaged (not mine): the BUG-004 offline onboarding test failed 1 of 3 full web runs while a reviewer gate loaded the machine; passes 5/5 alone.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-032 — V2 round 2 (code-reviewer)
+- Reviewed d3ed1eb (`git show d3ed1eb -- apps`), worktree detached at d3ed1eb. Ran `jest src/modules/societies` 6/6 (2 suites), plus vitest AdminSocietyDetailPage + design-system 54/54. Full gate not rerun by reviewer (coordinator running it).
+- P1 poster ink: fixed. `print:text-black` on the poster; `text-black` exists (tailwind colors are `extend`ed); the white-utility gate is unaffected; a test pins the class.
+- P3 print before QR: fixed (`disabled={!qr}`, "Preparing poster…").
+- P3 races: fixed. P2034 in remove → 409 CONFLICT (inner 404/409 still pass through); P2025 in update/rotate → 404 via goneIsNotFound. goneIsNotFound rethrows the original P2002 untouched, so withFreshCode still retries. Unit spec covers all three, and the rotate-retry test asserts 2 update calls.
+- Verdict: PASS. No new findings. Still open as P3 (accepted): the AnonymousRoute drops ?code= for signed-in users, and AC3 uses an inline card, not a sheet. Note: BUG-027 (a flaky offline onboarding test under load) matters for V3: one of the two back-to-back runs could differ.
+- By: code-reviewer subagent
+
+## 2026-11-22 — FEAT-033 — T1+T2 done (V1)
+- Backend (in AdminModule: AuthModule already imports ResidentsModule, so a residents-side AuthService import would cycle): `ResidentsAdminService` list (q over name/phone, societyId, role; paginated), update (self-role and last-admin guards, serializable tx), remove (self, last admin, live pledges in non-cancelled rounds → 409; `revokeAllSessions` after delete). `residents-admin.integration.spec.ts` (403, list/filter/paginate, rename/clear, grant/revoke, promotion live at next refresh, self guards, live-pledge guard, cancelled pledge ignored, removal kills refresh) + unit spec for the last-admin guard (the shared DB always holds seeded admins).
+- Web: `/admin/users` (search, society select, access chips, ShowMore), an edit sheet (name, Resident/Admin, remove behind ConfirmSheet; you can't change or remove yourself), nav "Users", "See its N users" on the society page.
+- V1 at c52898d (worktree, no other gate): exit 0: site 62/62, backend 593/593, web 731/731.
+- By: agent (autonomous)
