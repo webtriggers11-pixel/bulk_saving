@@ -16,7 +16,7 @@ import type {
   AdminRoundDetailDto,
   AdminRoundParticipantDto,
   AdminRoundSummaryDto,
-  AdminSocietyDto,
+  AdminSocietyDetailDto,
 } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
@@ -186,9 +186,9 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
   });
 
   describe('GET /admin/societies', () => {
-    it('lists every society (id, name, city, inviteCode) ordered by name', async () => {
+    it('lists every society (id, name, city, inviteCode + FEAT-032 counts) ordered by name', async () => {
       const res = await asAdmin(request(server()).get('/admin/societies')).expect(200);
-      const list = res.body.data as AdminSocietyDto[];
+      const list = res.body.data as AdminSocietyDetailDto[];
       const idxA = list.findIndex((s) => s.id === societyA.id);
       const idxB = list.findIndex((s) => s.id === societyB.id);
       expect(idxA).toBeGreaterThanOrEqual(0);
@@ -198,7 +198,12 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
         name: societyA.name,
         city: 'Pune',
         inviteCode: societyA.inviteCode,
+        // FEAT-032 (ADR-0043): the Societies screens show these and gate delete on them.
+        residentCount: expect.any(Number),
+        roundCount: expect.any(Number),
+        createdAt: societyA.createdAt.toISOString(),
       });
+      expect(list[idxA].roundCount).toBeGreaterThan(0);
     });
   });
 
