@@ -1644,3 +1644,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-22 — FEAT-030 — OPENED (triage: FEAT, P2, parent FEAT-028)
 - Owner asked for a more creative, interactive hero on the Astro site using the 3D model, same UI system. Classified FEAT (new interaction). Branch `feat/FEAT-030-interactive-hero`. Spec/plan/tasks in loop/work/FEAT-030-interactive-hero/. No new dependency, no new ADR (rides ADR-0039 §4).
 - By: agent (autonomous)
+
+## 2026-11-22 — CHORE-027 — opened and closed (docs only)
+- Owner asked for an md file listing all user logins and for the OTP to show as a toast at the top after sending the phone number.
+- The toast already exists (FEAT-026, ADR-0037), both doors. Checked against the running dev servers: `POST /auth/otp/request` for +919999900108/GREEN001 → requested; `GET /dev/otp` → `1111` (CHORE-026 fixed code). No code change needed.
+- Added `TEST_LOGINS.md` at the repo root: the societies, the 12 demo residents, the 2 SUPER_ADMINs, the vendors, the seed commands, and when the toast does and doesn't show (dev build only, OTP_DEV_LOG=true, same machine).
+- Docs only, no app code touched: verify.sh not re-run for this item.
+- By: agent (autonomous)
