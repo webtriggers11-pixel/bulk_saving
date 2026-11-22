@@ -615,7 +615,7 @@ export function AdminRoundDetailPage() {
 
   return (
     <AdminLayout title="Round">
-      <Link to="/admin" className="inline-flex items-center gap-1.5 text-meta font-extrabold text-brand-ink hover:underline">
+      <Link to="/admin/rounds" className="inline-flex items-center gap-1.5 text-meta font-extrabold text-brand-ink hover:underline">
         ← All rounds
       </Link>
 

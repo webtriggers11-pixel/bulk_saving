@@ -1,10 +1,13 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboard, roundSummary, society } from './admin.fixtures';
 import { fetchAdminRounds, fetchDashboard, fetchSocieties } from './admin.api';
 import { AdminDashboardPage } from './AdminDashboardPage';
+import { AdminReportsPage } from './AdminReportsPage';
+import { AdminRequestsPage } from './AdminRequestsPage';
+import { AdminRoundsPage } from './AdminRoundsPage';
 import { page } from '../../test/page';
 
 // Mock the whole API module so the hooks resolve against these fakes, never fetch.
@@ -39,7 +42,13 @@ function renderPage(url = '/admin') {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[url]}>
-        <AdminDashboardPage />
+        {/* FEAT-041: the dashboard's old sections live on their own pages now. */}
+        <Routes>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/rounds" element={<AdminRoundsPage />} />
+          <Route path="/admin/requests" element={<AdminRequestsPage />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -51,19 +60,32 @@ describe('AdminDashboardPage', () => {
     fetchSocietiesMock.mockResolvedValue([society]);
   });
 
-  it('renders status tiles, demand, payment totals and a linked round row', async () => {
+  it('the dashboard keeps the status tiles, each a link to the Rounds page filtered (FEAT-041)', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
-    fetchAdminRoundsMock.mockResolvedValue(page([roundSummary]));
     renderPage();
-
     const needsVendor = await screen.findByTestId('status-tile-CLOSED_MET');
     expect(needsVendor).toHaveTextContent('Needs vendor');
     expect(needsVendor).toHaveTextContent('2');
     expect(screen.getByTestId('status-tile-ASSIGNED')).toHaveTextContent('Awaiting delivery4');
-    expect(screen.getByTestId('payments-collected')).toHaveTextContent('₹12,000');
+    expect(needsVendor.closest('a')).toHaveAttribute('href', '/admin/rounds?status=CLOSED_MET');
+    // The rounds list, requests list and reports are no longer on the dashboard.
+    expect(screen.queryByTestId('admin-rounds-empty')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('asks')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payments-collected')).not.toBeInTheDocument();
+  });
+
+  it('Reports shows demand by society and the payment totals (FEAT-041)', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    renderPage('/admin/reports');
+    expect(await screen.findByTestId('payments-collected')).toHaveTextContent('₹12,000');
     expect(screen.getByTestId('payments-outstanding')).toHaveTextContent('₹4,500');
     expect(screen.getByText('42')).toBeInTheDocument();
+  });
 
+  it('Rounds lists every round with a link to its page (FEAT-041)', async () => {
+    fetchDashboardMock.mockResolvedValue(dashboard);
+    fetchAdminRoundsMock.mockResolvedValue(page([roundSummary]));
+    renderPage('/admin/rounds');
     const link = await screen.findByRole('link', { name: 'AC Servicing' });
     expect(link).toHaveAttribute('href', '/admin/rounds/round_1');
     const row = screen.getByTestId('admin-round-row');
@@ -75,7 +97,7 @@ describe('AdminDashboardPage', () => {
   it('refetches rounds with the chosen status and society filters', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     fetchAdminRoundsMock.mockResolvedValue(page([]));
-    renderPage();
+    renderPage('/admin/rounds');
 
     await screen.findByTestId('admin-rounds-empty');
     expect(fetchAdminRoundsMock).toHaveBeenCalledWith({});
@@ -103,7 +125,7 @@ describe('AdminDashboardPage', () => {
   it('filters rounds on the server from the URL — a shared link opens the same list (FEAT-015)', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     fetchAdminRoundsMock.mockResolvedValue(page([roundSummary]));
-    renderPage(`/admin?status=CLOSED_MET&societyId=${society.id}&q=ac&category=Appliances`);
+    renderPage(`/admin/rounds?status=CLOSED_MET&societyId=${society.id}&q=ac&category=Appliances`);
 
     await screen.findAllByTestId('admin-round-row');
     expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith({
@@ -119,7 +141,7 @@ describe('AdminDashboardPage', () => {
   it('drops a status the server would refuse instead of sending it', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     fetchAdminRoundsMock.mockResolvedValue(page([]));
-    renderPage('/admin?status=BOGUS');
+    renderPage('/admin/rounds?status=BOGUS');
     await screen.findByTestId('admin-rounds-empty');
     expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
   });
@@ -139,7 +161,7 @@ describe('AdminDashboardPage', () => {
       ],
     });
     fetchAdminRoundsMock.mockResolvedValue(page([]));
-    renderPage();
+    renderPage('/admin/requests');
     const row = await screen.findByTestId('ask-row-tank');
     expect(row).toHaveTextContent('Water Tank Cleaning');
     expect(row).toHaveTextContent('Green Park');
@@ -153,7 +175,7 @@ describe('AdminDashboardPage', () => {
   it('says so when nobody is waiting', async () => {
     fetchDashboardMock.mockResolvedValue(dashboard);
     fetchAdminRoundsMock.mockResolvedValue(page([]));
-    renderPage();
+    renderPage('/admin/requests');
     expect(await screen.findByTestId('asks')).toHaveTextContent('Nobody is waiting');
   });
 
@@ -206,7 +228,7 @@ describe('AdminDashboardPage', () => {
     it('marks a request from the last 24 hours as New in the list', async () => {
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage();
+      renderPage('/admin/requests');
       expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('New');
       expect(within(screen.getByTestId('ask-row-tank')).queryByTestId('ask-new')).not.toBeInTheDocument();
     });
@@ -214,7 +236,7 @@ describe('AdminDashboardPage', () => {
     it('sorts newest first by default, most asked on request, and keeps the choice in the URL (FEAT-037)', async () => {
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage();
+      renderPage('/admin/requests');
       const list = await screen.findByTestId('asks');
       const order = () => within(list).getAllByTestId(/^ask-row-/).map((row) => row.getAttribute('data-testid'));
       expect(order()).toEqual(['ask-row-ro', 'ask-row-tank']);
@@ -226,38 +248,31 @@ describe('AdminDashboardPage', () => {
       const oldButPopular = { ...old, society: { id: 'soc_x', name: 'Far Away' }, service: { id: 'svc_far', name: 'Sofa Cleaning', slug: 'sofa' }, askCount: 15 };
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh], asksMostAsked: [oldButPopular, fresh], asksWaiting: 25 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage();
+      renderPage('/admin/requests');
       const list = await screen.findByTestId('asks');
       expect(within(list).queryByTestId('ask-row-sofa')).not.toBeInTheDocument();
       fireEvent.click(within(list).getByRole('radio', { name: 'Most asked' }));
       expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-sofa');
     });
 
-    it('the sort and the rounds filters keep each other\'s URL params (FEAT-037 V2 P3-3)', async () => {
+    it('the "+N more waiting" link opens the Requests page (FEAT-041)', async () => {
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
-      fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage('/admin?status=OPEN&asks=most');
-      const list = await screen.findByTestId('asks');
-      expect(within(list).getByRole('radio', { name: 'Most asked' })).toBeChecked();
-      await waitFor(() => expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'OPEN' })));
-      // Changing the sort leaves the rounds filter in place.
-      fireEvent.click(within(list).getByRole('radio', { name: 'Newest first' }));
-      fireEvent.click(within(list).getByRole('radio', { name: 'Most asked' }));
-      await waitFor(() => expect(fetchAdminRoundsMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'OPEN' })));
-      expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-tank');
+      renderPage();
+      const more = await screen.findByRole('link', { name: '+1 more waiting' });
+      expect(more).toHaveAttribute('href', '/admin/requests');
     });
 
     it('"Newest" goes to the latest request even when it is not listed first (FEAT-037 V2 P3-3)', async () => {
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [old, fresh], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage();
+      renderPage('/admin/requests');
       expect(within(await screen.findByTestId('ask-row-ro')).getByTestId('ask-new')).toHaveTextContent('Newest');
     });
 
     it('a shared ?asks=most link opens in most-asked order (FEAT-037)', async () => {
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, old], asksMostAsked: [old, fresh], asksWaiting: 2 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage('/admin?asks=most');
+      renderPage('/admin/requests?asks=most');
       const list = await screen.findByTestId('asks');
       expect(within(list).getAllByTestId(/^ask-row-/)[0]).toHaveAttribute('data-testid', 'ask-row-tank');
       expect(within(list).getByRole('radio', { name: 'Most asked' })).toBeChecked();
@@ -267,7 +282,7 @@ describe('AdminDashboardPage', () => {
       const second = { ...fresh, service: { id: 'svc_geyser', name: 'Geyser Service', slug: 'geyser' }, latest: '2026-11-22T10:00:00.000Z' };
       fetchDashboardMock.mockResolvedValue({ ...dashboard, asks: [fresh, second, old], asksMostAsked: [old, fresh, second], asksWaiting: 3 });
       fetchAdminRoundsMock.mockResolvedValue(page([]));
-      renderPage();
+      renderPage('/admin/requests');
       const newest = await screen.findByTestId('ask-row-ro');
       expect(within(newest).getByTestId('ask-new')).toHaveTextContent('Newest');
       expect(newest.className).toContain('before:border-amber-ink');
@@ -280,7 +295,7 @@ describe('AdminDashboardPage', () => {
       fetchDashboardMock.mockResolvedValue(dashboard);
       fetchAdminRoundsMock.mockResolvedValue(page([]));
       renderPage();
-      await screen.findByTestId('asks');
+      await screen.findByTestId('status-tile-OPEN');
       expect(screen.queryByTestId('asks-alert')).not.toBeInTheDocument();
     });
   });

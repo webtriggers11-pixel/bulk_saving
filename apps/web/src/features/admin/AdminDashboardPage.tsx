@@ -147,7 +147,8 @@ function AsksCard({ asks, mostAsked }: { asks: AdminServiceAsk[]; mostAsked: Adm
 }
 
 /** Status tiles, demand by society and payment totals from GET /admin/dashboard. */
-function DashboardSummary() {
+/** FEAT-041: the lifecycle at a glance on the dashboard; each tile opens the Rounds page filtered. */
+export function DashboardSummary() {
   const dashboard = useAdminDashboard();
   const { data, isLoading, refetch } = dashboard;
   // BUG-004: offline pauses rather than errors, so gate on both.
@@ -196,71 +197,19 @@ function DashboardSummary() {
           const count = data.statusCounts[status];
           const needsAction = ACTION_STATUSES.includes(status) && count > 0;
           return (
-            <StatCard
-              key={status}
-              label={STATUS_LABELS[status]}
-              value={String(count)}
-              emphasis={needsAction ? 'alert' : 'quiet'}
-              density="dense"
-              data-testid={`status-tile-${status}`}
-            />
+            <Link key={status} to={`/admin/rounds?status=${status}`} className="rounded-tile no-underline focus-visible:shadow-focus focus-visible:outline-none" aria-label={`${STATUS_LABELS[status]}: ${count}. Open these rounds`}>
+              <StatCard
+                label={STATUS_LABELS[status]}
+                value={String(count)}
+                emphasis={needsAction ? 'alert' : 'quiet'}
+                density="dense"
+                data-testid={`status-tile-${status}`}
+              />
+            </Link>
           );
         })}
       </section>
 
-      {/* FEAT-022 (ADR-0033): what residents are asking for, as a to-do list for rounds. */}
-      <AsksCard asks={data.asks} mostAsked={data.asksMostAsked} />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Demand by society</CardTitle>
-            {/* FEAT-010: this figure sums units ACROSS services, so there is no single
-                unit to name — 3 rooms of painting and 2 ACs are 5 here. Said explicitly
-                rather than labelled with one service's word, which would be wrong. */}
-            <CardDescription>
-              Units pledged in open rounds — mixed services, so counts are not comparable
-            </CardDescription>
-          </CardHeader>
-          {data.demandBySociety.length === 0 ? (
-            <p className="text-caption text-ink-muted">No societies yet.</p>
-          ) : (
-            <DataRows>
-              {data.demandBySociety.map((row) => (
-                <DataRow
-                  key={row.society.id}
-                  title={row.society.name}
-                  meta={row.society.city}
-                  columns={
-                    <>
-                      <DataCell label="Open rounds" value={row.openRounds} />
-                      <DataCell label="Units (mixed)" value={row.unitsPledged} />
-                      <DataCell label="Residents joined" value={row.residentsJoined} />
-                    </>
-                  }
-                />
-              ))}
-            </DataRows>
-          )}
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <StatCard
-            label="Collected"
-            value={formatRupees(data.payments.collectedAmount)}
-            icon="check"
-            note="Assigned, delivered and rated rounds"
-            emphasis="lead"
-            data-testid="payments-collected"
-          />
-          <StatCard
-            label="Outstanding"
-            value={formatRupees(data.payments.outstandingAmount)}
-            icon="clock"
-            data-testid="payments-outstanding"
-          />
-        </div>
-      </div>
     </>
   );
 }
@@ -276,7 +225,7 @@ const ROUND_FILTER_VALID = {
  * search over service, society and vendor name (FEAT-015). The filters live in the URL,
  * so a refresh — or a link sent to a colleague — opens the same list.
  */
-function RoundsPanel() {
+export function RoundsPanel() {
   const { filters: raw, setFilters, clear, activeCount, generation } = useUrlFilters(ROUND_FILTER_KEYS, ROUND_FILTER_VALID);
   const [search, setSearch] = useDebouncedSearch(raw.q, (q) => setFilters({ q }), generation);
   const filters: AdminRoundsQuery = {
@@ -464,9 +413,9 @@ function AsksAlert() {
               {more > 0 && (
                 <>
                   {' '}
-                  <a href="#asks" className="font-bold text-brand-ink underline">
+                  <Link to="/admin/requests" className="font-bold text-brand-ink underline">
                     +{more} more waiting
-                  </a>
+                  </Link>
                 </>
               )}
             </span>
@@ -485,7 +434,11 @@ function AsksAlert() {
 }
 
 /**
- * Super-admin dashboard (FEAT-005): where to act at a glance. Status tiles (the
+ * Super-admin dashboard (FEAT-005; FEAT-041 decluttered): the request alert, quick actions, the
+ * platform numbers and the rounds by status. Requests, the rounds list and reports have their
+ * own sidebar pages.
+ *
+ * Originally: where to act at a glance. Status tiles (the
  * "Needs vendor" and "Awaiting delivery" tiles are highlighted), demand pledged per
  * society, payment totals, and the filterable rounds list.
  */
@@ -495,7 +448,87 @@ export function AdminDashboardPage() {
       <AsksAlert />
       <AdminOverview />
       <DashboardSummary />
-      <RoundsPanel />
     </AdminLayout>
   );
+}
+
+/**
+ * FEAT-041: Reports — demand by society and the payment totals, moved off the dashboard to
+ * their own page. Reads the same dashboard query.
+ */
+export function ReportsSummary() {
+  const dashboard = useAdminDashboard();
+  const { data, isLoading, refetch } = dashboard;
+  const isError = queryStalled(dashboard);
+  if (isLoading) {
+    return (
+      <SkeletonScreen label="Loading reports…" testId="reports-skeleton" className="grid gap-4 md:grid-cols-3">
+        <Skeleton radius="inset" className="h-40 md:col-span-2" />
+        <Skeleton radius="inset" className="h-40" delay={1} />
+      </SkeletonScreen>
+    );
+  }
+  if (isError || !data) return <PanelError subject="reports" onRetry={() => void refetch()} />;
+  return (
+      <div className="grid gap-4 md:grid-cols-3">
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>Demand by society</CardTitle>
+          {/* FEAT-010: this figure sums units ACROSS services, so there is no single
+              unit to name — 3 rooms of painting and 2 ACs are 5 here. Said explicitly
+              rather than labelled with one service's word, which would be wrong. */}
+          <CardDescription>
+            Units pledged in open rounds — mixed services, so counts are not comparable
+          </CardDescription>
+        </CardHeader>
+        {data.demandBySociety.length === 0 ? (
+          <p className="text-caption text-ink-muted">No societies yet.</p>
+        ) : (
+          <DataRows>
+            {data.demandBySociety.map((row) => (
+              <DataRow
+                key={row.society.id}
+                title={row.society.name}
+                meta={row.society.city}
+                columns={
+                  <>
+                    <DataCell label="Open rounds" value={row.openRounds} />
+                    <DataCell label="Units (mixed)" value={row.unitsPledged} />
+                    <DataCell label="Residents joined" value={row.residentsJoined} />
+                  </>
+                }
+              />
+            ))}
+          </DataRows>
+        )}
+      </Card>
+
+      <div className="flex flex-col gap-4">
+        <StatCard
+          label="Collected"
+          value={formatRupees(data.payments.collectedAmount)}
+          icon="check"
+          note="Assigned, delivered and rated rounds"
+          emphasis="lead"
+          data-testid="payments-collected"
+        />
+        <StatCard
+          label="Outstanding"
+          value={formatRupees(data.payments.outstandingAmount)}
+          icon="clock"
+          data-testid="payments-outstanding"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** FEAT-041: Requests — what residents are asking for, on its own page. */
+export function RequestsList() {
+  const dashboard = useAdminDashboard();
+  const { data, isLoading, refetch } = dashboard;
+  const isError = queryStalled(dashboard);
+  if (isLoading) return <SkeletonScreen label="Loading requests…" testId="requests-skeleton"><Skeleton radius="inset" className="h-40" /></SkeletonScreen>;
+  if (isError || !data) return <PanelError subject="requests" onRetry={() => void refetch()} />;
+  return <AsksCard asks={data.asks} mostAsked={data.asksMostAsked} />;
 }

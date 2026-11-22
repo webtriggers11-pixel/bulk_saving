@@ -26,7 +26,7 @@ function Stats({ data }: { data: AdminOverviewDto }) {
     { label: 'Societies', value: data.societies, to: '/admin/societies', icon: 'building', testId: 'overview-societies' },
     { label: 'Users', value: data.users, to: '/admin/users', icon: 'profile', testId: 'overview-users' },
     { label: 'Admins', value: data.admins, to: '/admin/users?role=SUPER_ADMIN', icon: 'bolt', testId: 'overview-admins' },
-    { label: 'Open rounds', value: data.openRounds, to: '/admin', icon: 'clock', testId: 'overview-open-rounds' },
+    { label: 'Open rounds', value: data.openRounds, to: '/admin/rounds?status=OPEN', icon: 'clock', testId: 'overview-open-rounds' },
   ];
   return (
     <section aria-label="Platform" className="stagger grid grid-cols-2 gap-3 lg:grid-cols-4">

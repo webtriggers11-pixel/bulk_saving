@@ -1951,3 +1951,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-038: jobs follow the COMMITTED deadline (re-read after commit); `changeDelay` racing a promotion falls through instead of a spurious 503; the web invalidates the round on error too (a 503 means saved); ADR-0047 §5a records the accepted edges (immediate reminder inside 24 h; late close if a move-earlier fails).
 - FEAT-040: midnight reads as the end of the day before ("Thu 26 Nov, midnight"); AC2 reworded (no calendar icon in the set). The date on My Requests is now asserted (added with FEAT-039). Not taken: P3-3 (labels on three pages can go stale past midnight, same as their countdowns) and P3-4 of FEAT-038 (a real-BullMQ re-arm test; the reviewer's probe confirmed the behaviour).
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-041 — built
+- The dashboard keeps the alert, quick actions, the platform numbers and the status tiles (now links to Rounds filtered). New pages: Requests (asks + sort; the sidebar badge moved here), Rounds (the filters list + New round), Reports (demand, collected, outstanding). Links re-pointed (+N more → Requests, Open rounds tile → Rounds?status=OPEN, round back link → Rounds). The page components stay in AdminDashboardPage.tsx and are exported; thin page files wrap them.
+- Tests moved to the page that now owns each section (a router harness mounts all four), plus new tests for the tile links, Reports, Rounds, and +N more → Requests; sidebar test updated. Web admin 159/159.
+- By: agent (autonomous)

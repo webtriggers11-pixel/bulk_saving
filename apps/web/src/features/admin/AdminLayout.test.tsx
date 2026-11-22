@@ -28,7 +28,7 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     renderAt('/admin');
     const nav = screen.getByRole('navigation', { name: 'Admin' });
     for (const group of ['Overview', 'Onboarding', 'Group buys', 'Catalog']) expect(within(nav).getByText(group)).toBeInTheDocument();
-    for (const link of ['Dashboard', 'Societies', 'Users', 'New round', 'Services', 'Vendors', 'Back to app']) {
+    for (const link of ['Dashboard', 'Societies', 'Users', 'Requests', 'Rounds', 'New round', 'Reports', 'Services', 'Vendors', 'Back to app']) {
       expect(within(nav).getByRole('link', { name: link })).toBeInTheDocument();
     }
   });
@@ -116,12 +116,12 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     }
   });
 
-  it('the sidebar counts waiting requests on New round (BUG-029)', async () => {
+  it('the sidebar counts waiting requests on Requests (BUG-029, FEAT-041)', async () => {
     vi.mocked(fetchOverview).mockResolvedValueOnce({ societies: 1, users: 1, admins: 1, openRounds: 0, waitingAsks: 2, recentSocieties: [], recentUsers: [] });
     renderAt('/admin/users');
     const nav = screen.getByRole('navigation', { name: 'Admin' });
     const badge = await within(nav).findByTestId('nav-asks-badge');
     expect(badge).toHaveTextContent('2');
-    expect(within(nav).getByRole('link', { name: /New round.*2 waiting/ })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Requests.*2 waiting/ })).toBeInTheDocument();
   });
 });

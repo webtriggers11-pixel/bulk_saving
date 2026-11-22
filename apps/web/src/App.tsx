@@ -4,6 +4,9 @@ import { AdminNewRoundPage } from './features/admin/AdminNewRoundPage';
 import { AdminRoundDetailPage } from './features/admin/AdminRoundDetailPage';
 import { AdminRoute } from './features/admin/AdminRoute';
 import { AdminLoginPage } from './features/auth/AdminLoginPage';
+import { AdminReportsPage } from './features/admin/AdminReportsPage';
+import { AdminRequestsPage } from './features/admin/AdminRequestsPage';
+import { AdminRoundsPage } from './features/admin/AdminRoundsPage';
 import { AdminServicesPage } from './features/admin/AdminServicesPage';
 import { AdminVendorsPage } from './features/admin/AdminVendorsPage';
 import { AdminSocietiesPage } from './features/admin/AdminSocietiesPage';
@@ -97,6 +100,30 @@ export default function App() {
         element={
           <AdminRoute>
             <AdminDashboardPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/requests"
+        element={
+          <AdminRoute>
+            <AdminRequestsPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/rounds"
+        element={
+          <AdminRoute>
+            <AdminRoundsPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <AdminRoute>
+            <AdminReportsPage />
           </AdminRoute>
         }
       />

@@ -28,7 +28,15 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { to: '/admin/users', label: 'Users', end: false, icon: 'profile' },
     ],
   },
-  { label: 'Group buys', items: [{ to: '/admin/rounds/new', label: 'New round', end: true, icon: 'plus' }] },
+  {
+    label: 'Group buys',
+    items: [
+      { to: '/admin/requests', label: 'Requests', end: true, icon: 'bell' },
+      { to: '/admin/rounds', label: 'Rounds', end: true, icon: 'clock' },
+      { to: '/admin/rounds/new', label: 'New round', end: true, icon: 'plus' },
+      { to: '/admin/reports', label: 'Reports', end: true, icon: 'trend' },
+    ],
+  },
   {
     label: 'Catalog',
     items: [
@@ -63,7 +71,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => void }) {
   // FEAT-036 (ADR-0046): a platform admin has no resident app to go back to.
   const platformAdmin = useAuthStore((state) => state.resident?.societyId === null);
-  // BUG-029: waiting requests are counted on New round, on every admin page.
+  // BUG-029 / FEAT-041: waiting requests are counted on Requests, on every admin page.
   const waiting = useAdminOverview().data?.waitingAsks ?? 0;
   return (
     <nav aria-label={label} className="flex flex-1 flex-col gap-5 overflow-y-auto">
@@ -74,7 +82,7 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClass} onClick={onNavigate}>
               <Icon name={item.icon} size={18} strokeWidth={1.9} />
               {item.label}
-              {item.to === '/admin/rounds/new' && waiting > 0 && (
+              {item.to === '/admin/requests' && waiting > 0 && (
                 <span
                   data-testid="nav-asks-badge"
                   className="num ml-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-amber-ink/15 px-1.5 text-caption font-extrabold text-amber-ink"
