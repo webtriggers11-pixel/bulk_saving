@@ -1907,3 +1907,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Running backend (:3000, watcher) picked up the new code (`POST /admin/admins` → 401, not 404). Not pushed (origin refuses this credential, see earlier entry).
 - Note for the owner: a browser already signed in as +919999900001 holds the OLD row's session, which is now a resident. Sign out and back in at /admin/login.
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-038 — OPENED (triage)
+- Owner: "Once I have created a round, I am not able to edit it … update that so we can update it also". FEAT P1. ADR-0047 (High; judgment call): OPEN rounds only; deadline + tiers; the round row lock; jobs moved inside the tx; a new deadline-aware close (`closeRoundIfDue`) so a close job already running can't close a round whose deadline was just extended. No notification of an edit in v1 (revisit trigger).
+- Branch `feat/FEAT-038-edit-round` off `main` df0486a, in the scratchpad worktree on the isolated DB.
+- By: agent (autonomous)
