@@ -106,3 +106,4 @@
 | BUG-026 | The site's content test fails at main: FEAT-029 closed as done but never added to `features.ts` (the gate's site suite is red); found by FEAT-030 V1 | done | P2 | 2026-11-22 | 2026-11-22 | — | ADR-0039 |
 | FEAT-032 | Admin onboards a society: create/edit/rotate/delete, invite code, deep link + QR, printable poster, invitation message (copy/share/WhatsApp), `/onboard?code=` pre-fill | in progress | P1 | 2026-11-22 | — | loop/work/FEAT-032-society-onboarding/ | ADR-0043 |
 | FEAT-033 | Admin manages every user: list across societies (search/filter), edit name, grant/revoke admin, remove (self + last-admin guards) | in progress | P1 | 2026-11-22 | — | loop/work/FEAT-033-user-access-admin/ | ADR-0044 |
+| BUG-027 | Flaky: `OnboardingPage` "QUEUED when offline" (BUG-004) test failed 1 of 3 full web runs under CPU load (a reviewer gate running in parallel); passes 5/5 alone. Shared-load timing family of BUG-018/022 | triaged | P2 | 2026-11-22 | — | — | — |

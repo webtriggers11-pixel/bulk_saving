@@ -33,7 +33,10 @@ export class SocietiesService {
    * round counts (FEAT-032). This is the explicit cross-tenant read.
    */
   async listAll(): Promise<AdminSocietyDetailDto[]> {
-    const rows = await this.prisma.society.findMany({ include: WITH_COUNTS, orderBy: [{ name: 'asc' }, { id: 'asc' }] });
+    const rows = await this.prisma.society.findMany({
+      include: WITH_COUNTS,
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
     return rows.map(toDetail);
   }
 
@@ -47,21 +50,28 @@ export class SocietiesService {
   /** Create a society with a server-generated invite code (retried on the rare clash). */
   create(body: CreateSocietyBody): Promise<AdminSocietyDetailDto> {
     return this.withFreshCode(async (inviteCode) =>
-      toDetail(await this.prisma.society.create({ data: { name: body.name, city: body.city, inviteCode }, include: WITH_COUNTS })),
+      toDetail(
+        await this.prisma.society.create({
+          data: { name: body.name, city: body.city, inviteCode },
+          include: WITH_COUNTS,
+        }),
+      ),
     );
   }
 
   /** Rename or move a society. The invite code is untouched (see {@link rotateInviteCode}). */
   async update(id: string, body: UpdateSocietyBody): Promise<AdminSocietyDetailDto> {
     await this.getDetail(id);
-    const row = await this.prisma.society.update({
-      where: { id },
-      data: {
-        ...(body.name !== undefined ? { name: body.name } : {}),
-        ...(body.city !== undefined ? { city: body.city } : {}),
-      },
-      include: WITH_COUNTS,
-    });
+    const row = await this.prisma.society
+      .update({
+        where: { id },
+        data: {
+          ...(body.name !== undefined ? { name: body.name } : {}),
+          ...(body.city !== undefined ? { city: body.city } : {}),
+        },
+        include: WITH_COUNTS,
+      })
+      .catch(goneIsNotFound);
     return toDetail(row);
   }
 
@@ -72,7 +82,11 @@ export class SocietiesService {
   async rotateInviteCode(id: string): Promise<AdminSocietyDetailDto> {
     await this.getDetail(id);
     return this.withFreshCode(async (inviteCode) =>
-      toDetail(await this.prisma.society.update({ where: { id }, data: { inviteCode }, include: WITH_COUNTS })),
+      toDetail(
+        await this.prisma.society
+          .update({ where: { id }, data: { inviteCode }, include: WITH_COUNTS })
+          .catch(goneIsNotFound),
+      ),
     );
   }
 
@@ -83,17 +97,32 @@ export class SocietiesService {
    * swept away with it.
    */
   async remove(id: string): Promise<{ deleted: true }> {
-    await this.prisma.$transaction(async (tx) => {
-      const row = await tx.society.findUnique({ where: { id }, include: WITH_COUNTS });
-      if (!row) throw notFound();
-      if (row._count.residents > 0 || row._count.rounds > 0) {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: `This society has ${row._count.residents} resident(s) and ${row._count.rounds} round(s); only an empty society can be deleted.`,
-        });
-      }
-      await tx.society.delete({ where: { id } });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    await this.prisma
+      .$transaction(
+        async (tx) => {
+          const row = await tx.society.findUnique({ where: { id }, include: WITH_COUNTS });
+          if (!row) throw notFound();
+          if (row._count.residents > 0 || row._count.rounds > 0) {
+            throw new ConflictException({
+              code: ErrorCode.CONFLICT,
+              message: `This society has ${row._count.residents} resident(s) and ${row._count.rounds} round(s); only an empty society can be deleted.`,
+            });
+          }
+          await tx.society.delete({ where: { id } });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      )
+      .catch((err: unknown) => {
+        // V2 P3: a resident joining mid-delete aborts the serializable transaction (P2034).
+        // That is the "not empty" answer, so say 409 rather than a 500.
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'The society changed while deleting it. Reload and try again.',
+          });
+        }
+        throw err;
+      });
     return { deleted: true };
   }
 
@@ -107,6 +136,12 @@ export class SocietiesService {
       }
     }
   }
+}
+
+/** V2 P3: a society deleted between the read and the write is a 404, not a 500 (Prisma P2025). */
+function goneIsNotFound(err: unknown): never {
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') throw notFound();
+  throw err;
 }
 
 function notFound(): NotFoundException {

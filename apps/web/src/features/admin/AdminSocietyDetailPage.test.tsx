@@ -68,6 +68,8 @@ describe('AdminSocietyDetailPage (FEAT-032)', () => {
     expect(poster).not.toBeNull();
     expect(poster?.className).toContain('hidden');
     expect(poster?.className).toContain('print:flex');
+    // V2 P1: its own ink, so dark mode does not print white text on white paper.
+    expect(poster?.className).toContain('print:text-black');
     expect(poster).toHaveTextContent('Lakeview');
     expect(poster).toHaveTextContent('AB23 CD45');
   });

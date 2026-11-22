@@ -81,8 +81,9 @@ function InviteCard({ society, link, qr }: { society: AdminSocietyDetailDto; lin
               <CopyButton text={link} label="Copy link" testId="copy-link" />
             </div>
           </div>
-          <Button className="self-start" onClick={() => window.print()} data-testid="print-poster">
-            Print poster
+          {/* V2 P3: a poster printed before the QR renders would have no QR on it. */}
+          <Button className="self-start" disabled={!qr} onClick={() => window.print()} data-testid="print-poster">
+            {qr ? 'Print poster' : 'Preparing poster…'}
           </Button>
         </div>
       </div>
@@ -237,7 +238,9 @@ function ManageCard({ society }: { society: AdminSocietyDetailDto }) {
  */
 function Poster({ society, qr }: { society: AdminSocietyDetailDto; qr: string | null }) {
   return (
-    <div data-print-poster className="hidden print:flex print:flex-col print:items-center print:gap-6 print:p-10 print:text-center">
+    // V2 P1: the poster sets its own ink. It inherits `--ink`, which is near-white in dark mode, and
+    // Chrome drops backgrounds when printing, so the name and code would print white on white paper.
+    <div data-print-poster className="hidden print:flex print:flex-col print:items-center print:gap-6 print:p-10 print:text-center print:text-black">
       <p className="text-[22px] font-bold uppercase tracking-[0.2em]">Bulk Saving</p>
       <h2 className="text-[44px] font-extrabold leading-tight">{society.name}</h2>
       <p className="text-[20px]">Book home services together with your neighbours, and everyone pays less.</p>

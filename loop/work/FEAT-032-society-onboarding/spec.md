@@ -14,7 +14,7 @@ and has nothing to give residents except the bare code. BRIEF.md lists `Societie
   stops working at once); `DELETE /admin/societies/:id` → 200 `{deleted:true}` only when it has no residents and no rounds, else 409 CONFLICT.
 - [ ] AC2 — Invite codes: 8 characters from an unambiguous alphabet (A–Z and 2–9, without O/I/L/0/1), from a CSPRNG,
   retried on the unique-constraint clash. They still match the existing `^[A-Z0-9]{8}$`.
-- [ ] AC3 — Web `/admin/societies`: a list (name, city, code, resident count) with "New society", and a sheet to create or edit.
+- [ ] AC3 — Web `/admin/societies`: a list (name, city, code, resident count) with a "New society" form card; editing lives in a "Details" card on the society page (V2 P3: an inline card instead of a sheet, same job).
   The nav gains "Societies".
 - [ ] AC4 — Web `/admin/societies/:id`: the code (Copy), the join link `<origin>/onboard?code=XXXX`, a QR code of that link,
   and "Print poster" (a print-only A4 layout: society name, big QR, the code, three steps). Also "Rotate code"

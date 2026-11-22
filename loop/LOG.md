@@ -1689,3 +1689,21 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1 (worktree, .env without WHATSAPP_*): verify.sh exit 0: backend 578/578, web 725/725, site green.
 - Browser pass (branch build on :3100/:5180, headless 390×844): admin sign-in → create "Sunrise Heights" → code 2DYMFB2B, QR, link, message, WhatsApp href → print media shows only the A4 poster → rotate → CAN637W2 → `/onboard?code=CAN637W2` pre-fills → delete (empty) → back on the list.
 - By: agent (autonomous)
+
+## 2026-11-22 — FEAT-032 — V2 (code-reviewer)
+- Gate (run by reviewer, worktree @ cf9c0e7): exit 0 — site 62/62 (9 files), backend 578/578 (51 suites, incl. societies-admin.integration + invite-code.spec), web 725/725 (84 files); lint, typecheck, build, css-class gate OK.
+- Verdict: FAIL (one P1). Findings:
+  - P1 AdminSocietyDetailPage.tsx:240 — the poster has no print text colour, so it inherits `body { color: rgb(var(--ink)) }`; in dark scheme --ink is near-white (theme.css:164), so in Chrome (backgrounds off by default) the name, code and steps print near-white on white paper. Fix: `print:text-black` on the poster (or force a light scheme under @media print).
+  - P3 Print poster is enabled before the QR has rendered (qr null → poster prints without QR).
+  - P3 Concurrent-delete paths surface as 500: serializable failure (P2034) in remove(), and P2025 in update/rotate after getDetail if the row vanishes in between. 409/404 would be nicer.
+  - P3 /onboard sits behind AnonymousRoute: a signed-in user (e.g. the admin testing the QR on their own phone) is redirected to / and the code is dropped.
+  - P3 AC3 asked for a "sheet" to create/edit; it is an inline card (functionally equivalent).
+  - Verified OK: class-level @Roles(SUPER_ADMIN) + 403 test for all 6 routes; crypto.randomInt (unbiased) over a 31-char alphabet; client inviteCode stripped by whitelist (tested); trim survives (whitelist → classToPlain path) and is tested; only inviteCode is @unique so P2002 retry is correct; rotate tested against /auth/otp/request (old 400 INVALID_INVITE_CODE, new 200); delete refuses with 409 and leaves residents intact; query invalidation on all writes; QR encodes the join link; clipboard failure handled; navigator.share guarded; wa.me encodeURIComponent; ?code= uppercased + shape-checked; no `any`.
+- By: code-reviewer subagent
+
+## 2026-11-22 — FEAT-032 — V2 findings taken
+- P1 fixed: the print poster sets `print:text-black` (it inherited near-white `--ink` in dark mode; Chrome drops backgrounds, so it would print white on white). Test asserts the class.
+- P3 fixed: "Print poster" is disabled ("Preparing poster…") until the QR has rendered; `remove()` maps a serialization failure (P2034) to 409; `update` and `rotateInviteCode` map P2025 (deleted between read and write) to 404. New `societies.service.spec.ts` (race outcomes + P2002 retry on rotate).
+- P3 accepted/deferred: a SIGNED-IN person who opens a join link is sent to `/` by AnonymousRoute and the code is dropped. Residents opening an invite are signed out by definition; noted for the handoff. AC3 wording updated (inline card, not a sheet).
+- BUG-027 triaged (not mine): the BUG-004 offline onboarding test failed 1 of 3 full web runs while a reviewer gate loaded the machine; passes 5/5 alone.
+- By: agent (autonomous)
