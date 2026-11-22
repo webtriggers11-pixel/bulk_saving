@@ -1969,3 +1969,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-041 taken: P3-1 old `/admin?status=…` / `?asks=` links redirect to Rounds / Requests with the same query; P3-2 Rounds stays lit on a round's own page (not on New round, via `except`); P3-3 the dashboard skeleton drops the moved cards; P3-5 tests for the redirect, the Rounds page's New round action, and the nav active states. Not taken: P3-4 (the tile link's aria-label wording; correct as is).
 - Web admin 164/164.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-23 — FEAT-038, BUG-030, FEAT-039, FEAT-040, FEAT-041 — browser pass; closing
+- Browser pass (headless Chromium, worktree servers :3100/:5180, isolated DB), 14 checks, all PASS: sidebar → Requests / Rounds / Reports; the dashboard no longer carries the lists; BUG-030 rising price refused in the New round form; a round opened, edited (tiers + deadline, "Saved", ₹750 shown); cancel blocked until a reason is given, then the reason shown on the cancelled round; reopened with a new deadline (the Edit card is back); console clean. Resident at 390 px: the round card shows "Closes in 3 days" with the highlighted "Fri 27 Nov, 1:31 am" chip under it, no horizontal overflow (the FEAT-040 P3-2 layout check). Screenshots r1–r5 in the scratchpad.
+- Found by the dashboard screenshot: round-edit and round-cancel-reopen suites leaked one platform admin per run (a society delete does not cascade to a society-less row). Fixed (deleted in afterAll), and 20 leftovers removed from the worktree DB.
+- Closing: registry → done for FEAT-038, BUG-030, FEAT-039, FEAT-040, FEAT-041; site entries added for the four FEATs (before V3).
+- By: agent (autonomous)

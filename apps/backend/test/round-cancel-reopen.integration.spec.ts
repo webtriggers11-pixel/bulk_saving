@@ -23,6 +23,7 @@ describe('Cancel with a reason, and reopen (integration, needs DB + Redis)', () 
   let service: Service;
   let resident: Resident;
   let adminToken: string;
+  let adminId: string;
   let residentToken: string;
   let closing: Queue;
   let reminders: Queue;
@@ -47,6 +48,7 @@ describe('Cancel with a reason, and reopen (integration, needs DB + Redis)', () 
     });
     await prisma.serviceOffering.create({ data: { societyId: society.id, serviceId: service.id, enabled: true } });
     const admin = await prisma.resident.create({ data: { societyId: null, phone: randomPhone(), role: 'SUPER_ADMIN' } });
+    adminId = admin.id;
     resident = await prisma.resident.create({ data: { societyId: society.id, phone: randomPhone(), role: 'RESIDENT' } });
     adminToken = (await auth.issueTokens(admin)).accessToken;
     residentToken = (await auth.issueTokens(resident)).accessToken;
@@ -56,6 +58,8 @@ describe('Cancel with a reason, and reopen (integration, needs DB + Redis)', () 
     const ids = (await prisma.round.findMany({ where: { societyId: society.id }, select: { id: true } })).map((r) => r.id);
     await Promise.all(ids.map(async (id) => { await (await closing.getJob(id))?.remove(); await (await reminders.getJob(reminderJobId(id)))?.remove(); }));
     await prisma.society.delete({ where: { id: society.id } });
+    // A platform admin belongs to no society, so the society delete does not cascade to it.
+    await prisma.resident.deleteMany({ where: { id: adminId } });
     await prisma.service.delete({ where: { id: service.id } });
     await app.close();
   });
