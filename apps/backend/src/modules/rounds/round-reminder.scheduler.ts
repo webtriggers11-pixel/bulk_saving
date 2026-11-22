@@ -93,6 +93,43 @@ export class RoundReminderScheduler {
     return true;
   }
 
+  /**
+   * Move a round's reminder to a new deadline (FEAT-038, V2 P2-1/P2-2). Delayed → `changeDelay`.
+   * A deadline pulled inside the 24 h lead fires the reminder NOW instead of dropping it; the
+   * `ROUND_CLOSING_SOON:<round>:<resident>` dedupe key stops anyone getting it twice. A deadline
+   * already past: nothing to remind about.
+   */
+  async reschedule(roundId: string, deadline: Date): Promise<void> {
+    if (deadline.getTime() <= Date.now()) {
+      await this.cancel(roundId);
+      return;
+    }
+    const delay = RoundReminderScheduler.delayFor(deadline) ?? 0;
+    const jobId = reminderJobId(roundId);
+    const job = await this.queue.getJob(jobId);
+    if (job) {
+      const state = await job.getState();
+      if (state === 'delayed') {
+        await job.changeDelay(delay);
+        return;
+      }
+      if (state === 'waiting' || state === 'active' || state === 'prioritized') return;
+      await job.remove();
+    }
+    await this.queue.add(
+      ROUND_REMINDER_JOB,
+      { roundId },
+      {
+        jobId,
+        delay,
+        attempts: ROUND_REMINDER_ATTEMPTS,
+        backoff: ROUND_JOB_BACKOFF,
+        removeOnComplete: true,
+        removeOnFail: ROUND_JOB_REMOVE_ON_FAIL,
+      },
+    );
+  }
+
   /** Best-effort removal of a round's pending reminder (idempotent no-op if gone). */
   async cancel(roundId: string): Promise<void> {
     try {

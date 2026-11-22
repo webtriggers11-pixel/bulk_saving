@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  ServiceUnavailableException,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -62,6 +64,8 @@ const PAYABLE_STATUSES: RoundStatus[] = [
 
 @Injectable()
 export class RoundsAdminService {
+  private readonly logger = new Logger(RoundsAdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly rounds: RoundsService,
@@ -354,20 +358,25 @@ export class RoundsAdminService {
     }
     if (body.tiers !== undefined) this.assertTiersValid(body.tiers);
     if (body.deadline !== undefined) this.assertDeadlineFuture(body.deadline);
-    await this.rounds.updateOpenRound(
-      roundId,
-      {
-        ...(body.deadline !== undefined ? { deadline: new Date(body.deadline) } : {}),
-        ...(body.tiers !== undefined ? { tiers: body.tiers } : {}),
-      },
-      async (deadline) => {
-        // A pending job keeps its old delay, so move both: cancel, then schedule at the new time.
-        await this.scheduler.cancel(roundId);
-        await this.scheduler.schedule(roundId, deadline);
-        await this.reminders.cancel(roundId);
-        await this.reminders.schedule(roundId, deadline);
-      },
-    );
+    const deadline = body.deadline !== undefined ? new Date(body.deadline) : undefined;
+    await this.rounds.updateOpenRound(roundId, {
+      ...(deadline ? { deadline } : {}),
+      ...(body.tiers !== undefined ? { tiers: body.tiers } : {}),
+    });
+    if (deadline) {
+      // After commit (V2 P2-1). Run whenever a deadline was sent, so saving again retries a
+      // move that failed. If it fails, the close job still re-arms itself for the real deadline.
+      try {
+        await this.scheduler.reschedule(roundId, deadline);
+        await this.reminders.reschedule(roundId, deadline);
+      } catch (err) {
+        this.logger.error(`Round ${roundId}: saved, but moving its jobs failed: ${err instanceof Error ? err.message : String(err)}`);
+        throw new ServiceUnavailableException({
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'The change is saved, but the automatic close time could not be moved. Save again to retry.',
+        });
+      }
+    }
     return this.getRoundDetail(roundId);
   }
 

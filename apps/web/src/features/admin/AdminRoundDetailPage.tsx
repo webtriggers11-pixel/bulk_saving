@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useIsMutating } from '@tanstack/react-query';
 import type {
-  RoundServiceSummary, AdminRoundDetailDto, RoundStatus } from '@bulk/shared';
+  RoundServiceSummary, AdminRoundDetailDto, RoundStatus,
+  RoundTierDto,
+} from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { ConfirmSheet } from '../../components/ui/confirm-sheet';
 import { Fact } from '../../components/ui/fact';
@@ -443,20 +445,28 @@ function EditRound({ round }: { round: AdminRoundDetailDto }) {
       setFormError('Choose a deadline.');
       return;
     }
-    const parsed = parseTiers(tiers.rows);
-    if ('error' in parsed) {
-      setFormError(parsed.error);
-      return;
+    const deadlineChanged = deadline !== toLocalInput(round.deadline);
+    // V2 P2-3: validate the tiers only if they were touched. A round stored before BUG-030 (prices
+    // that rise) can still have just its deadline moved.
+    const raw = (rows: Array<{ threshold: string | number; price: string | number }>) =>
+      JSON.stringify(rows.map((r) => [String(r.threshold).trim(), String(r.price).trim()]));
+    const tiersChanged = raw(tiers.rows) !== raw(round.tiers);
+    let parsedTiers: RoundTierDto[] | undefined;
+    if (tiersChanged) {
+      const parsed = parseTiers(tiers.rows);
+      if ('error' in parsed) {
+        setFormError(parsed.error);
+        return;
+      }
+      parsedTiers = parsed.tiers;
     }
     setFormError(null);
-    const deadlineChanged = deadline !== toLocalInput(round.deadline);
-    const tiersChanged = JSON.stringify(parsed.tiers) !== JSON.stringify(round.tiers.map((t) => ({ threshold: t.threshold, price: t.price })));
     if (!deadlineChanged && !tiersChanged) {
       setOpen(false);
       return;
     }
     update.mutate(
-      { ...(deadlineChanged ? { deadline: deadlineDate.toISOString() } : {}), ...(tiersChanged ? { tiers: parsed.tiers } : {}) },
+      { ...(deadlineChanged ? { deadline: deadlineDate.toISOString() } : {}), ...(parsedTiers ? { tiers: parsedTiers } : {}) },
       { onSuccess: () => setOpen(false) },
     );
   }

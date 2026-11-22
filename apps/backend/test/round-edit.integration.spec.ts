@@ -9,6 +9,8 @@ import { ErrorCode } from '../src/common/error-codes';
 import { ROUND_CLOSING_QUEUE } from '../src/modules/rounds/round-closing.scheduler';
 import { ROUND_REMINDER_QUEUE, reminderJobId } from '../src/modules/rounds/round-reminder.scheduler';
 import { RoundsService } from '../src/modules/rounds/rounds.service';
+import { RoundCloserProcessor } from '../src/modules/rounds/round-closer.processor';
+import { DelayedError, type Job } from 'bullmq';
 import { CapturingChannel, createTestApp, randomInviteCode, randomPhone } from './helpers/test-app';
 
 /**
@@ -89,6 +91,7 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
   it('moves the deadline and both queued jobs (AC3)', async () => {
     const id = await openRound(5);
     const newDeadline = futureIso(9);
+    const before = Date.now();
     await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ deadline: newDeadline }).expect(200);
     const row = await prisma.round.findUniqueOrThrow({ where: { id } });
     expect(row.deadline.toISOString()).toBe(newDeadline);
@@ -96,10 +99,11 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
     const remind = await reminders.getJob(reminderJobId(id));
     expect(close).toBeTruthy();
     expect(remind).toBeTruthy();
-    // Each job now fires near its new time (close at the deadline, reminder 24 h before).
-    const fireAt = (job: { timestamp: number; delay: number }) => job.timestamp + job.delay;
-    expect(Math.abs(fireAt(close!) - new Date(newDeadline).getTime())).toBeLessThan(5_000);
-    expect(Math.abs(fireAt(remind!) - (new Date(newDeadline).getTime() - 86_400_000))).toBeLessThan(5_000);
+    // Each job was moved in place (changeDelay): it fires near its new time (close at the deadline,
+    // the reminder 24 h before), measured from when the edit was made.
+    expect(await close!.getState()).toBe('delayed');
+    expect(Math.abs(before + close!.delay - new Date(newDeadline).getTime())).toBeLessThan(5_000);
+    expect(Math.abs(before + remind!.delay - (new Date(newDeadline).getTime() - 86_400_000))).toBeLessThan(5_000);
   });
 
   it('the deadline job does nothing for a round that is not due yet (AC3, ADR-0047 §5)', async () => {
@@ -153,5 +157,42 @@ describe('Edit an open round (integration, needs DB + Redis)', () => {
     expect(edited.body.error.message).toMatch(/lower than the one before/);
     // Equal prices are refused too: a tier that saves nothing is a mistake.
     await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: [{ threshold: 5, price: 700 }, { threshold: 8, price: 700 }] }).expect(400);
+  });
+
+  it('a close job that finds the round not due re-arms itself for the real deadline (V2 P1-1)', async () => {
+    const id = await openRound(5);
+    const processor = app.get(RoundCloserProcessor);
+    const moveToDelayed = jest.fn().mockResolvedValue(undefined);
+    const job = { data: { roundId: id }, opts: { attempts: 6 }, attemptsMade: 0, moveToDelayed } as unknown as Job<{ roundId: string }>;
+    await expect(processor.process(job, 'tok')).rejects.toBeInstanceOf(DelayedError);
+    const row = await prisma.round.findUniqueOrThrow({ where: { id } });
+    expect(row.status).toBe('OPEN');
+    expect(moveToDelayed).toHaveBeenCalledWith(row.deadline.getTime(), 'tok');
+  });
+
+  it('a tiers-only edit leaves the queued jobs where they were', async () => {
+    const id = await openRound(5);
+    const before = await closing.getJob(id);
+    await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: [{ threshold: 4, price: 950 }, { threshold: 9, price: 750 }] }).expect(200);
+    const after = await closing.getJob(id);
+    expect(after?.delay).toBe(before?.delay);
+    expect(after?.timestamp).toBe(before?.timestamp);
+  });
+
+  it('pulling the deadline inside 24 h sends the reminder now instead of dropping it (V2 P2-2)', async () => {
+    const id = await openRound(5);
+    const soon = new Date(Date.now() + 6 * 3_600_000).toISOString();
+    await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ deadline: soon }).expect(200);
+    const remind = await reminders.getJob(reminderJobId(id));
+    // Delay 0: due now (a worker may already have picked it up).
+    if (remind) expect(remind.delay).toBe(0);
+  });
+
+  it('refuses an edit once the deadline has passed (the close is under way) and a null tiers list (V2 P3-1, P3-3)', async () => {
+    const id = await openRound(5);
+    await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: null }).expect(400);
+    await prisma.round.update({ where: { id }, data: { deadline: new Date(Date.now() - 1_000) } });
+    const res = await asAdmin(http().patch(`/admin/rounds/${id}`)).send({ tiers: [{ threshold: 3, price: 900 }] }).expect(409);
+    expect(res.body.error.message).toMatch(/reached its deadline/);
   });
 });

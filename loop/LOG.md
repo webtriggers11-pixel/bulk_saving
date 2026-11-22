@@ -1931,3 +1931,12 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `formatClosingDate` ("Today, 6:30 pm" / "Tomorrow, …" / "Thu 26 Nov, 6:30 pm", the year only when it isn't this year; viewer's time zone). The round card shows a brand-tone date chip under the countdown (screen readers hear "Closes …"). Home lead, Services and My Requests append the date after the countdown. Tests: 5 formatter cases (local-time dates, TZ-proof) + the card chip. Web 785.
 - FEAT-041 triaged (declutter the dashboard into sidebar pages), queued after FEAT-039.
 - By: agent (autonomous)
+
+## 2026-11-23 — FEAT-038 + BUG-030 — V2 r1: FEAT-038 FAIL, BUG-030 PASS-conditional → fixed
+- V2 r1 (code-reviewer subagent, its own gate at 8853a31: EXIT 0, site 71, backend 639, web 779).
+- **P1-1 (blocker):** an extension racing a close job that was already running left the round with NO close job (`cancel` can't remove an active job, `schedule` saw it active and skipped, and the job then found the round not due and was removed). Fix: the processor re-arms the same job for the real deadline (`moveToDelayed` + `DelayedError`). Test drives `processor.process` on a not-due round.
+- P2-1: jobs are moved AFTER commit with atomic `changeDelay` (schedulers' new `reschedule`); a failed move returns 503 and the re-arm heals it. P2-2: a deadline pulled inside 24 h fires the reminder now (dedupe stops repeats). P2-3 (BUG-030): the edit form validates tiers only when they were touched, so a legacy rising-price round can still have its deadline moved. P3-1: `tiers: null` → 400 (was 500). P3-2: ADR text matches the code. P3-3: edits refused once the deadline has passed (409). P3-4: AC5 wording.
+- New tests: processor re-arm, tiers-only edit leaves jobs, <24 h reminder now, deadline passed → 409, null tiers → 400; web: legacy rising tiers + deadline-only, no-change save, Cancel. Round suites 48/48, round page 17/17.
+- Not taken: concurrency test of edit vs join (both take the same row lock, already covered by design and the existing lock tests).
+- FEAT-039 WIP (schema + migration) parked in the scratchpad while these fixes go through the gate.
+- By: agent (autonomous) + code-reviewer subagent

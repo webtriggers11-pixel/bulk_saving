@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { RoundStatus } from '@bulk/shared';
-import type { Job } from 'bullmq';
+import { DelayedError, type Job } from 'bullmq';
 import {
   ROUND_CLOSING_QUEUE,
   type RoundClosingJobData,
@@ -30,10 +30,19 @@ export class RoundCloserProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<RoundClosingJobData>): Promise<RoundCloserJobResult> {
+  async process(job: Job<RoundClosingJobData>, token?: string): Promise<RoundCloserJobResult> {
     const { roundId } = job.data;
     // FEAT-038 (ADR-0047 §5): only if due — the deadline may have been extended since this job was queued.
     const result = await this.rounds.closeRound(roundId, '', { onlyIfDue: true });
+    // V2 P1-1: not due (an extension raced this job while it was already running, or this worker's
+    // clock is ahead). Re-arm THIS job for the round's real deadline rather than finishing — a
+    // finished job is removed, and nothing else would ever close the round.
+    if (result && result.status === 'OPEN') {
+      const at = new Date(result.deadline).getTime();
+      this.logger.log(`Round ${roundId} close job → not due; re-armed for ${result.deadline}`);
+      await job.moveToDelayed(at, token);
+      throw new DelayedError();
+    }
     if (!result) {
       // Not found: either deleted, or created in a transaction that has not
       // committed yet (the job is enqueued before commit). Throw to use the

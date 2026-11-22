@@ -310,6 +310,29 @@ describe('AdminRoundDetailPage', () => {
       expect(await screen.findByText(/already closed/)).toBeInTheDocument();
     });
 
+    it('an old round with rising prices can still have just its deadline moved (V2 P2-3)', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail({ tiers: [{ threshold: 5, price: 700 }, { threshold: 6, price: 800 }] }));
+      vi.mocked(updateRound).mockResolvedValue(roundDetail());
+      renderPage();
+      fireEvent.click(await screen.findByTestId('edit-round-open'));
+      fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '2030-01-15T18:30' } });
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      await waitFor(() => expect(updateRound).toHaveBeenCalled());
+      expect(vi.mocked(updateRound).mock.calls[0][1]).toEqual({ deadline: new Date('2030-01-15T18:30').toISOString() });
+    });
+
+    it('saving with nothing changed sends nothing; Cancel closes the editor', async () => {
+      fetchAdminRoundMock.mockResolvedValue(roundDetail());
+      renderPage();
+      fireEvent.click(await screen.findByTestId('edit-round-open'));
+      fireEvent.click(screen.getByTestId('edit-round-save'));
+      await waitFor(() => expect(screen.queryByTestId('edit-round-save')).not.toBeInTheDocument());
+      expect(updateRound).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByTestId('edit-round-open'));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByTestId('edit-round-save')).not.toBeInTheDocument();
+    });
+
     it('is not offered once the round has closed', async () => {
       fetchAdminRoundMock.mockResolvedValue(roundDetail({ status: 'CLOSED_MET' }));
       renderPage();

@@ -573,14 +573,14 @@ export class RoundsService {
   /**
    * Edit an OPEN round's deadline and/or tiers (FEAT-038, ADR-0047). Under the round row lock,
    * so it serialises with joins, leaves, close and cancel. Tiers are replaced as a set; pledges
-   * and `unitsCount` are untouched (price is derived on read). `onDeadlineChanged` runs INSIDE the
-   * transaction (it moves the queued jobs), so a queue failure rolls the edit back. Unknown → 404;
-   * not OPEN → 409 ROUND_CLOSED.
+   * and `unitsCount` are untouched (price is derived on read). The queued jobs are moved by the
+   * caller AFTER commit (V2 P2-1): if that move fails, the close job re-arms itself for the real
+   * deadline. Unknown → 404; not OPEN → 409 ROUND_CLOSED; deadline already reached (the close is
+   * under way) → 409 ROUND_CLOSED (V2 P3-3).
    */
   async updateOpenRound(
     roundId: string,
     change: { deadline?: Date; tiers?: Array<{ threshold: number; price: number }> },
-    onDeadlineChanged: (deadline: Date) => Promise<void>,
   ): Promise<void> {
     await this.inRoundTx(async (tx) => {
       const locked = await this.lockRoundForUpdate(tx, roundId);
@@ -593,20 +593,23 @@ export class RoundsService {
           message: 'Only an open round can be edited. This one has already closed.',
         });
       }
+      const { deadline } = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: { deadline: true } });
+      if (deadline.getTime() <= Date.now()) {
+        throw new ConflictException({
+          code: ErrorCode.ROUND_CLOSED,
+          message: 'This round has reached its deadline and is closing, so it can no longer be edited.',
+        });
+      }
       if (change.tiers) {
         await tx.roundTier.deleteMany({ where: { roundId } });
         await tx.roundTier.createMany({
           data: change.tiers.map((t) => ({ roundId, threshold: t.threshold, price: t.price })),
         });
       }
-      if (change.deadline) {
-        const before = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: { deadline: true } });
-        await tx.round.update({ where: { id: roundId }, data: { deadline: change.deadline } });
-        if (before.deadline.getTime() !== change.deadline.getTime()) await onDeadlineChanged(change.deadline);
-      } else {
-        // Touch updatedAt so the edit is visible on the row.
-        await tx.round.update({ where: { id: roundId }, data: { updatedAt: new Date() } });
-      }
+      await tx.round.update({
+        where: { id: roundId },
+        data: change.deadline ? { deadline: change.deadline } : { updatedAt: new Date() },
+      });
     });
   }
 

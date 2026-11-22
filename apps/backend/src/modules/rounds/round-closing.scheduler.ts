@@ -68,6 +68,25 @@ export class RoundClosingScheduler {
     );
   }
 
+  /**
+   * Move a round's close job to a new deadline (FEAT-038, V2 P2-1). A delayed job is moved
+   * atomically with `changeDelay` — no remove-then-add gap. A job that is already waiting or
+   * running is left alone: the processor closes the round if it is due, and otherwise re-arms
+   * itself for the round's real deadline. No job (or a finished one): schedule afresh.
+   */
+  async reschedule(roundId: string, deadline: Date): Promise<void> {
+    const job = await this.queue.getJob(roundId);
+    if (job) {
+      const state = await job.getState();
+      if (state === 'delayed') {
+        await job.changeDelay(Math.max(0, deadline.getTime() - Date.now()));
+        return;
+      }
+      if (state === 'waiting' || state === 'active' || state === 'prioritized') return;
+    }
+    await this.schedule(roundId, deadline);
+  }
+
   /** Best-effort removal of a round's pending close job (idempotent no-op if gone). */
   async cancel(roundId: string): Promise<void> {
     try {

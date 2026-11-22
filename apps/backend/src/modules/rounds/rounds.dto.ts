@@ -15,6 +15,7 @@ import {
   MaxLength,
   Min,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
 import type {
   AdminRoundsQuery,
@@ -63,11 +64,12 @@ export class CreateRoundDto implements CreateRoundBody {
 
 /** `PATCH /admin/rounds/:id` (FEAT-038): deadline and/or tiers; at least one (checked in the service). */
 export class UpdateRoundDto implements UpdateRoundBody {
-  @IsOptional()
+  @ValidateIf((o: UpdateRoundDto) => o.deadline !== undefined)
   @IsISO8601()
   deadline?: string;
 
-  @IsOptional()
+  // V2 P3-1: ValidateIf, not IsOptional — `null` must be refused (400), not reach the service.
+  @ValidateIf((o: UpdateRoundDto) => o.tiers !== undefined)
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
