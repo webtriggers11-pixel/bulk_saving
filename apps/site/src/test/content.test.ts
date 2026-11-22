@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { audiences, catalog, features, featuresIn, internalFeatures, roadmap, sections } from '../content/features';
+import { audiences, catalog, features, featuresIn, internalFeatures, roadmap, sections, siteFeatures } from '../content/features';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const registry = readFileSync(`${here}/../../../../loop/REGISTRY.md`, 'utf8');
@@ -28,7 +28,7 @@ describe('features.ts against loop/REGISTRY.md', () => {
 
   it('every done FEAT in the registry appears on the site, except the site itself and internal tooling', () => {
     const missing = [...registryFeats]
-      .filter(([id, status]) => status.startsWith('done') && id !== 'FEAT-028' && !internalFeatures.has(id))
+      .filter(([id, status]) => status.startsWith('done') && !siteFeatures.has(id) && !internalFeatures.has(id))
       .map(([id]) => id)
       .filter((id) => !features.some((f) => f.id === id));
     expect(missing).toEqual([]);
