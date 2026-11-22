@@ -297,6 +297,23 @@ describe('Sign in with WhatsApp (integration, needs DB + Redis)', () => {
     expect(await prisma.resident.count({ where: { phone: strangerPhone } })).toBe(0);
   });
 
+  it('admin door: a platform admin (no society) gets a session with societyId null (FEAT-036 AC2)', async () => {
+    const phone = randomPhone();
+    const row = await prisma.resident.create({ data: { societyId: null, phone, name: 'Platform', role: 'SUPER_ADMIN' } });
+    try {
+      const start = (await request(server()).post('/auth/admin/wa/start').send({}).expect(200)).body.data;
+      await webhook(textMessage(waId(phone), whatsAppLoginMessage(start.code), 'Platform')).expect(200);
+      await webhook(buttonReply(waId(phone), `wa-login:${start.code}:${start.matchNumber}`)).expect(200);
+      const done = await status(start.requestId).expect(200);
+      expect(done.body.data.status).toBe('confirmed');
+      expect(done.body.data.resident).toMatchObject({ id: row.id, societyId: null, role: 'SUPER_ADMIN' });
+      const me = await request(server()).get('/me').set('Authorization', `Bearer ${done.body.data.accessToken}`).expect(200);
+      expect(me.body.data.society).toBeNull();
+    } finally {
+      await prisma.resident.deleteMany({ where: { id: row.id } });
+    }
+  });
+
   it('an unknown invite code starts nothing; a client gets a budget of starts per hour', async () => {
     const bad = await start('NOPE0000').expect(400);
     expect(bad.body.error.code).toBe(ErrorCode.INVALID_INVITE_CODE);

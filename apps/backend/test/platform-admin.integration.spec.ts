@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Prisma, type Resident, type Society } from '@prisma/client';
+import type { Resident, Society } from '@prisma/client';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { ErrorCode } from '../src/common/error-codes';
@@ -91,12 +91,27 @@ describe('Platform admin, no society (integration, needs DB + Redis)', () => {
     expect(verified.body.data.resident).toMatchObject({ id: standalone.id, societyId: null });
   });
 
+  it('a switched-off platform row does not hide an active admin row in a society (V2 P3-1)', async () => {
+    const phone = randomPhone();
+    const off = await prisma.resident.create({ data: { phone, role: 'SUPER_ADMIN', societyId: null, active: false } });
+    const member = await prisma.resident.create({ data: { phone, role: 'SUPER_ADMIN', societyId: society.id } });
+    created.push(off.id, member.id);
+    const before = channel.otps.length;
+    await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
+    const code = await waitForSend(before, phone);
+    const verified = await server().post('/auth/admin/otp/verify').send({ phone, code }).expect(200);
+    expect(verified.body.data.resident).toMatchObject({ id: member.id, societyId: society.id });
+  });
+
   it.each([
     ['GET', '/rounds'],
     ['GET', '/rounds/mine'],
     ['POST', '/rounds/r1/join'],
+    ['PATCH', '/rounds/r1/join'],
     ['DELETE', '/rounds/r1/join'],
     ['PUT', '/rounds/r1/rating'],
+    ['DELETE', '/rounds/r1/rating'],
+    ['POST', '/push/subscriptions'],
     ['GET', '/catalog'],
     ['POST', '/catalog/s1/ask'],
     ['DELETE', '/catalog/s1/ask'],
@@ -107,6 +122,7 @@ describe('Platform admin, no society (integration, needs DB + Redis)', () => {
       method === 'GET' ? await client.get(path)
       : method === 'POST' ? await client.post(path, { units: 1 })
       : method === 'PUT' ? await client.put(path, { stars: 5 })
+      : method === 'PATCH' ? await client.patch(path, { units: 2 })
       : await client.delete(path);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe(ErrorCode.NO_SOCIETY);
@@ -125,6 +141,11 @@ describe('Platform admin, no society (integration, needs DB + Redis)', () => {
     created.push(resident.id);
     const taken = await as(platformToken).post('/admin/admins', { phone: resident.phone }).expect(409);
     expect(taken.body.error.message).toContain(society.name);
+
+    const inSocietyAdmin = await prisma.resident.create({ data: { phone: randomPhone(), role: 'SUPER_ADMIN', societyId: society.id } });
+    created.push(inSocietyAdmin.id);
+    const already = await as(platformToken).post('/admin/admins', { phone: inSocietyAdmin.phone }).expect(409);
+    expect(already.body.error.message).toContain(`already an admin in ${society.name}`);
 
     await as(platformToken).post('/admin/admins', { phone: 'abc' }).expect(400);
 
@@ -156,6 +177,6 @@ describe('Platform admin, no society (integration, needs DB + Redis)', () => {
 
     await expect(
       prisma.resident.create({ data: { phone: platform.phone, role: 'SUPER_ADMIN', societyId: null } }),
-    ).rejects.toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+    ).rejects.toMatchObject({ code: 'P2002' });
   });
 });

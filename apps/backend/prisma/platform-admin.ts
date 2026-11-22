@@ -13,9 +13,16 @@ export async function upsertPlatformAdmin(prisma: PrismaClient, phone: string, n
   }
   const legacy = await prisma.resident.findFirst({
     where: { phone, role: 'SUPER_ADMIN', roundParticipations: { none: {} } },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
   if (legacy) {
-    await prisma.resident.update({ where: { id: legacy.id }, data: { societyId: null, name, active: true } });
+    // Its asks and push subscriptions carry the old society; a platform admin has none (V2 P3-5).
+    await prisma.$transaction([
+      prisma.serviceAsk.deleteMany({ where: { residentId: legacy.id } }),
+      prisma.pushSubscription.deleteMany({ where: { residentId: legacy.id } }),
+      prisma.resident.update({ where: { id: legacy.id }, data: { societyId: null, name, active: true } }),
+    ]);
+    console.log(`  Adopted ${phone} as a platform admin (moved out of its society).`);
     return;
   }
   await prisma.resident.create({

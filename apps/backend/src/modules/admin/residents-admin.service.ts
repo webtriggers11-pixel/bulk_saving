@@ -134,12 +134,16 @@ export class ResidentsAdminService {
     if (!phone) {
       throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'phone must be a valid phone number.' });
     }
+    // Society-less row first, then any admin row, so the message names the most relevant one.
     const existing = await this.prisma.resident.findFirst({
       where: { phone },
-      orderBy: [{ societyId: { sort: 'asc', nulls: 'first' } }],
+      orderBy: [{ societyId: { sort: 'asc', nulls: 'first' } }, { role: 'desc' }],
       include: { society: { select: { name: true } } },
     });
     if (existing?.societyId === null) throw conflict('This number is already a platform admin.');
+    if (existing?.role === Role.SUPER_ADMIN) {
+      throw conflict(`This number is already an admin in ${existing.society?.name ?? 'a society'}.`);
+    }
     if (existing) {
       throw conflict(
         `This number belongs to a resident of ${existing.society?.name ?? 'a society'}. Open them in Users and make them an admin instead.`,

@@ -10,7 +10,7 @@ import type {
 const INVITE_CODE = /^[A-Z0-9]{8}$/;
 // BUG-019: formatting (spaces, dashes, brackets) is allowed in; `normalisePhone` in the
 // controller is the real check and the only thing that decides what is stored.
-const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
+export const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
 // CHORE-026: residents' OTPs are 4 digits, an administrator's number gets 8 (ADR-0040). Both
 // doors accept both shapes, so the format check says nothing about whose number it is.
 const OTP_CODE = /^(\d{4}|\d{8})$/;

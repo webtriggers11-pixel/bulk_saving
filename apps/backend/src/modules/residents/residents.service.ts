@@ -76,14 +76,16 @@ export class ResidentsService {
    * the caller is told about an unverified number.
    */
   async findAdminByPhone(phone: string): Promise<Resident | null> {
-    // FEAT-036 (ADR-0046 §4): a society-less (platform) admin row wins. It is unique per phone
-    // (partial index), so there is no ambiguity to resolve.
+    // FEAT-036 (ADR-0046 §4): an ACTIVE society-less (platform) admin row wins. It is unique per
+    // phone (partial index), so there is no ambiguity. A switched-off one falls through to the
+    // ADR-0023 rule, so it cannot hide an active admin row the person holds in a society (V2 P3-1).
     const standalone = await this.prisma.resident.findFirst({
-      where: { phone, role: 'SUPER_ADMIN', societyId: null },
+      where: { phone, role: 'SUPER_ADMIN', societyId: null, active: true },
     });
     if (standalone) return standalone;
+    // In-society admin rows only: a switched-off platform row must not make this ambiguous.
     const admins = await this.prisma.resident.findMany({
-      where: { phone, role: 'SUPER_ADMIN' },
+      where: { phone, role: 'SUPER_ADMIN', societyId: { not: null } },
       take: 2,
     });
     return admins.length === 1 ? admins[0] : null;

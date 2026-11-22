@@ -14,7 +14,12 @@ ADR-0023 made the admin door a phone plus a code, and the admin's society came f
 1. `societyId String?`. DB CHECK: `"societyId" IS NOT NULL OR role = 'SUPER_ADMIN'`. A partial unique index on `phone WHERE "societyId" IS NULL`, because the composite `(societyId, phone)` unique doesn't constrain NULLs in Postgres.
 2. Tokens carry `societyId: null`. `AuthContext.societyId` is `string | null`. Society-scoped handlers take `@CurrentMember()`, which narrows to a non-null society or answers **403 `NO_SOCIETY`** before the service runs. Tenant scope still comes only from the token (ADR-0003 is unchanged in spirit).
 3. Admins created from the console are society-less (`POST /admin/admins`). Granting the role to an existing resident (ADR-0044) stays: that person remains a member of their society too. A society-less admin can't be demoted, because RESIDENT requires a society.
-4. The admin door: when a phone has a society-less admin row, sign into it. Otherwise keep the ADR-0023 rule (exactly one admin row).
+4. The admin door: when a phone has an **active** society-less admin row, sign into it (a switched-off one falls through, V2 P3-1). Otherwise keep the ADR-0023 rule (exactly one admin row).
+
+## Rollback
+This one is destructive: every platform admin must first be deleted or moved into a society. Then:
+`DROP INDEX "Resident_phone_standalone_key"; ALTER TABLE "Resident" DROP CONSTRAINT "Resident_society_or_admin_check"; ALTER TABLE "Resident" ALTER COLUMN "societyId" SET NOT NULL;`
+(The migration's own comment, "SET NOT NULL once no NULL rows exist", is incomplete. Per V2 P3-6, the full steps are recorded here rather than by editing an applied migration.)
 
 ## Confidence
 **Level:** High. The change is mechanical, and the compiler surfaces every place that has to handle a missing society.
