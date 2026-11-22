@@ -1912,3 +1912,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Owner: "Once I have created a round, I am not able to edit it … update that so we can update it also". FEAT P1. ADR-0047 (High; judgment call): OPEN rounds only; deadline + tiers; the round row lock; jobs moved inside the tx; a new deadline-aware close (`closeRoundIfDue`) so a close job already running can't close a round whose deadline was just extended. No notification of an edit in v1 (revisit trigger).
 - Branch `feat/FEAT-038-edit-round` off `main` df0486a, in the scratchpad worktree on the isolated DB.
 - By: agent (autonomous)
+
+## 2026-11-23 — BUG-030, FEAT-039, FEAT-040 — triaged (owner, mid-FEAT-038)
+- BUG-030 (P1): the owner's screenshot shows an RO round with tiers 5 → ₹700, 6 → ₹800. A group-buy price must fall as units rise; create (and now edit) validate only ascending thresholds. Fix next: prices strictly descending, server and form, with a failing test first.
+- FEAT-039 (P1): a cancel reason (required) plus reopening a cancelled round. Needs a migration (`cancelReason`) and a CANCELLED → OPEN transition (an ADR).
+- FEAT-040 (P2): the closing date next to "Closes in N days" on the resident card, highlighted.
+- Order: BUG-030 → FEAT-038 close → FEAT-039 → FEAT-040.
+- By: agent (autonomous)
