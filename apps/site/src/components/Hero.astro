@@ -2,6 +2,8 @@
 /**
  * The hero: the claim on the left, the society on the right. The round card under the scene
  * is the app's own round card (title, price, ladder, meta, actions). hero.ts drives it.
+ * FEAT-030: the society is the control — tap a window to invite that flat, drag to turn it;
+ * a feed, a hover tip, an unlock banner and the flying "+N" chips live in this markup.
  */
 import { catalog, demoRound } from '../content/features';
 import { SOCIETY, FLOOR_HEIGHT, allWindows, rupees } from '../scene/model';
@@ -37,6 +39,12 @@ const svgWindows = wins
 
 <section class="wrap hero" id="hero" aria-labelledby="hero-title">
   <div class="hero__copy">
+    <p class="hero__kicker">
+      <span class="hero__kicker-dot" aria-hidden="true"></span>
+      <span>Live demo</span>
+      <span class="hero__kicker-sep" aria-hidden="true"></span>
+      <span class="soft">Tap a window. Watch the price fall.</span>
+    </p>
     <h1 class="display" id="hero-title">Your whole society, one price.</h1>
     <p class="lede">
       Bulk Saving pools what your neighbours already need, from AC servicing to a 25 kg pack of
@@ -54,9 +62,14 @@ const svgWindows = wins
   </div>
 
   <div class="demo" data-hero>
-    <div class="scene" data-scene role="img" aria-label="A society building whose windows light up as neighbours join">
+    <div class="scene" data-scene role="img" aria-label="A society building whose windows light up as neighbours join. Tap a window to invite that flat; drag to turn the towers.">
+      <span class="scene__glow" aria-hidden="true"></span>
       <span class="pill pill--live scene__tag">Open round</span>
-      <span class="scene__count" data-count>{startUnits} of {target} {unitPlural}</span>
+      <span class="scene__count figure" data-count>{startUnits} of {target} {unitPlural}</span>
+      <ol class="feed" data-feed aria-live="polite" aria-label="Who just joined"></ol>
+      <span class="scene__hint" data-scene-hint aria-hidden="true">Drag to turn · tap a window</span>
+      <span class="scene__tip" data-tip hidden aria-hidden="true"></span>
+      <span class="scene__unlock" data-unlock aria-live="polite"></span>
       <svg class="scene__fallback" viewBox={`0 0 420 ${H}`} aria-hidden="true">
         <line class="edge" x1="20" y1={H - 20} x2="400" y2={H - 20}></line>
         {towers.map((t) => (
