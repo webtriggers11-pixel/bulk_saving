@@ -1,0 +1,1117 @@
+- generic [active] [ref=f13e1]:
+  - banner [ref=f13e2]:
+    - generic [ref=f13e3]:
+      - link "Bulk Saving, home" [ref=f13e4] [cursor=pointer]:
+        - /url: "#top"
+        - text: Bulk Saving
+      - navigation "Sections" [ref=f13e10]:
+        - link "Overview" [ref=f13e11] [cursor=pointer]:
+          - /url: "#overview"
+        - link "How it works" [ref=f13e12] [cursor=pointer]:
+          - /url: "#how"
+        - link "Services" [ref=f13e13] [cursor=pointer]:
+          - /url: "#book"
+        - link "Updates" [ref=f13e14] [cursor=pointer]:
+          - /url: "#notify"
+        - link "Trust" [ref=f13e15] [cursor=pointer]:
+          - /url: "#trust"
+        - link "Phone" [ref=f13e16] [cursor=pointer]:
+          - /url: "#phone"
+        - link "Look" [ref=f13e17] [cursor=pointer]:
+          - /url: "#look"
+        - link "Operators" [ref=f13e18] [cursor=pointer]:
+          - /url: "#operators"
+        - link "Staples" [ref=f13e19] [cursor=pointer]:
+          - /url: "#staples"
+        - link "Savings" [ref=f13e20] [cursor=pointer]:
+          - /url: "#calculator"
+        - link "Roadmap" [ref=f13e21] [cursor=pointer]:
+          - /url: "#roadmap"
+      - button "Switch between light and dark" [ref=f13e22] [cursor=pointer]
+  - main [ref=f13e26]:
+    - region "Your whole society, one price." [ref=f13e27]:
+      - generic [ref=f13e28]:
+        - paragraph [ref=f13e29]:
+          - generic [ref=f13e31]: Live demo
+          - generic [ref=f13e33]: Tap a window. Watch the price fall.
+        - heading "Your whole society, one price." [level=1] [ref=f13e34]:
+          - generic [aria-hidden] [ref=f13e36]:
+            - generic [aria-hidden] [ref=f13e37]: "Y"
+            - generic [aria-hidden] [ref=f13e38]: o
+            - generic [aria-hidden] [ref=f13e39]: u
+            - generic [aria-hidden] [ref=f13e40]: r
+          - generic [aria-hidden] [ref=f13e42]:
+            - generic [aria-hidden] [ref=f13e43]: w
+            - generic [aria-hidden] [ref=f13e44]: h
+            - generic [aria-hidden] [ref=f13e45]: o
+            - generic [aria-hidden] [ref=f13e46]: l
+            - generic [aria-hidden] [ref=f13e47]: e
+          - generic [aria-hidden] [ref=f13e49]:
+            - generic [aria-hidden] [ref=f13e50]: s
+            - generic [aria-hidden] [ref=f13e51]: o
+            - generic [aria-hidden] [ref=f13e52]: c
+            - generic [aria-hidden] [ref=f13e53]: i
+            - generic [aria-hidden] [ref=f13e54]: e
+            - generic [aria-hidden] [ref=f13e55]: t
+            - generic [aria-hidden] [ref=f13e56]: "y"
+            - generic [aria-hidden] [ref=f13e57]: ","
+          - generic [aria-hidden] [ref=f13e59]:
+            - generic [aria-hidden] [ref=f13e60]: o
+            - generic [aria-hidden] [ref=f13e61]: "n"
+            - generic [aria-hidden] [ref=f13e62]: e
+          - generic [aria-hidden] [ref=f13e64]:
+            - generic [aria-hidden] [ref=f13e65]: p
+            - generic [aria-hidden] [ref=f13e66]: r
+            - generic [aria-hidden] [ref=f13e67]: i
+            - generic [aria-hidden] [ref=f13e68]: c
+            - generic [aria-hidden] [ref=f13e69]: e
+            - generic [aria-hidden] [ref=f13e70]: .
+        - paragraph [ref=f13e71]: Bulk Saving pools what your neighbours already need, from AC servicing to a 25 kg pack of rice, and books it as one job. The more flats join, the less everyone pays. You tap once.
+        - generic [ref=f13e72]:
+          - link "See how a round works" [ref=f13e73] [cursor=pointer]:
+            - /url: "#how"
+          - link "Bring it to your society" [ref=f13e74] [cursor=pointer]:
+            - /url: "#operators"
+        - generic [ref=f13e75]:
+          - generic [ref=f13e76]:
+            - term [ref=f13e77]: ₹1,000 → ₹700
+            - definition [ref=f13e78]: one AC service, alone vs pooled
+          - generic [ref=f13e79]:
+            - term [ref=f13e80]: "0"
+            - definition [ref=f13e81]: minutes spent organising
+          - generic [ref=f13e82]:
+            - term [ref=f13e83]: 1 tap
+            - definition [ref=f13e84]: to pledge, change, or leave
+      - generic [ref=f13e85]:
+        - img "A society building whose windows light up as neighbours join. Tap a window to invite that flat; drag to turn the towers." [ref=f13e86]:
+          - generic [ref=f13e87]: Open round
+          - generic [ref=f13e88]: 3 of 10 ACs
+          - list "Who just joined"
+          - generic [aria-hidden]: Drag to turn · tap a window
+        - generic [ref=f13e146]:
+          - generic [ref=f13e147]:
+            - generic [ref=f13e148]:
+              - generic [ref=f13e149]: AC servicing
+              - generic [ref=f13e150]:
+                - generic [ref=f13e151]: Blue Waters Society
+                - generic [ref=f13e152]: closes in 3 days
+            - generic [ref=f13e153]:
+              - generic [ref=f13e154]: ₹1,000
+              - text: per AC
+          - generic "Price ladder" [ref=f13e155]:
+            - list [ref=f13e158]:
+              - listitem [ref=f13e159]:
+                - strong [ref=f13e160]: ₹1,000
+                - generic [ref=f13e161]: alone
+              - listitem [ref=f13e162]:
+                - strong [ref=f13e163]: ₹800
+                - generic [ref=f13e164]: at 5 ACs
+              - listitem [ref=f13e165]:
+                - strong [ref=f13e166]: ₹700
+                - generic [ref=f13e167]: at 10 ACs
+          - paragraph [ref=f13e168]: 2 more ACs to unlock ₹800
+          - generic [ref=f13e169]:
+            - button "Join with 2 ACs" [ref=f13e170] [cursor=pointer]
+            - button "Invite a neighbour" [ref=f13e171] [cursor=pointer]
+          - paragraph
+    - generic "Services in the catalog" [ref=f13e173]:
+      - generic [ref=f13e174]:
+        - generic [ref=f13e175]:
+          - text: AC servicing
+          - generic [ref=f13e177]: Appliances
+        - generic [ref=f13e178]:
+          - text: RO water purifier service
+          - generic [ref=f13e180]: Appliances
+        - generic [ref=f13e181]:
+          - text: Washing machine service
+          - generic [ref=f13e183]: Appliances
+        - generic [ref=f13e184]:
+          - text: Kitchen chimney cleaning
+          - generic [ref=f13e186]: Appliances
+        - generic [ref=f13e187]:
+          - text: Geyser service
+          - generic [ref=f13e189]: Appliances
+        - generic [ref=f13e190]:
+          - text: Pest control
+          - generic [ref=f13e192]: Home Care
+        - generic [ref=f13e193]:
+          - text: Deep cleaning
+          - generic [ref=f13e195]: Home Care
+        - generic [ref=f13e196]:
+          - text: Bathroom wash
+          - generic [ref=f13e198]: Home Care
+        - generic [ref=f13e199]:
+          - text: Sofa shampooing
+          - generic [ref=f13e201]: Home Care
+        - generic [ref=f13e202]:
+          - text: Termite treatment
+          - generic [ref=f13e204]: Home Care
+        - generic [ref=f13e205]:
+          - text: Bed bug treatment
+          - generic [ref=f13e207]: Home Care
+        - generic [ref=f13e208]:
+          - text: Mattress cleaning
+          - generic [ref=f13e210]: Home Care
+        - generic [ref=f13e211]:
+          - text: Painting
+          - generic [ref=f13e213]: Renovation
+        - generic [ref=f13e214]:
+          - text: Pre-monsoon waterproofing
+          - generic [ref=f13e216]: Renovation
+        - generic [ref=f13e217]:
+          - text: Water tank cleaning
+          - generic [ref=f13e219]: Utilities
+        - generic [ref=f13e220]:
+          - text: Inverter battery check
+          - generic [ref=f13e222]: Utilities
+        - generic [ref=f13e223]:
+          - text: Mosquito mesh fitting
+          - generic [ref=f13e225]: Utilities
+        - generic [ref=f13e226]:
+          - text: Doorstep car wash
+          - generic [ref=f13e228]: Vehicle
+        - generic [ref=f13e229]:
+          - text: Car interior detailing
+          - generic [ref=f13e231]: Vehicle
+        - generic [ref=f13e232]:
+          - text: Bike service
+          - generic [ref=f13e234]: Vehicle
+        - generic [ref=f13e235]:
+          - text: Basmati rice, 25 kg
+          - generic [ref=f13e237]: Bulk Staples
+        - generic [ref=f13e238]:
+          - text: Sunflower oil, 15 L
+          - generic [ref=f13e240]: Bulk Staples
+        - generic [ref=f13e241]:
+          - text: Whole wheat atta, 10 kg
+          - generic [ref=f13e243]: Bulk Staples
+      - generic [aria-hidden] [ref=f13e244]:
+        - generic [ref=f13e245]:
+          - text: AC servicing
+          - generic [ref=f13e247]: Appliances
+        - generic [ref=f13e248]:
+          - text: RO water purifier service
+          - generic [ref=f13e250]: Appliances
+        - generic [ref=f13e251]:
+          - text: Washing machine service
+          - generic [ref=f13e253]: Appliances
+        - generic [ref=f13e254]:
+          - text: Kitchen chimney cleaning
+          - generic [ref=f13e256]: Appliances
+        - generic [ref=f13e257]:
+          - text: Geyser service
+          - generic [ref=f13e259]: Appliances
+        - generic [ref=f13e260]:
+          - text: Pest control
+          - generic [ref=f13e262]: Home Care
+        - generic [ref=f13e263]:
+          - text: Deep cleaning
+          - generic [ref=f13e265]: Home Care
+        - generic [ref=f13e266]:
+          - text: Bathroom wash
+          - generic [ref=f13e268]: Home Care
+        - generic [ref=f13e269]:
+          - text: Sofa shampooing
+          - generic [ref=f13e271]: Home Care
+        - generic [ref=f13e272]:
+          - text: Termite treatment
+          - generic [ref=f13e274]: Home Care
+        - generic [ref=f13e275]:
+          - text: Bed bug treatment
+          - generic [ref=f13e277]: Home Care
+        - generic [ref=f13e278]:
+          - text: Mattress cleaning
+          - generic [ref=f13e280]: Home Care
+        - generic [ref=f13e281]:
+          - text: Painting
+          - generic [ref=f13e283]: Renovation
+        - generic [ref=f13e284]:
+          - text: Pre-monsoon waterproofing
+          - generic [ref=f13e286]: Renovation
+        - generic [ref=f13e287]:
+          - text: Water tank cleaning
+          - generic [ref=f13e289]: Utilities
+        - generic [ref=f13e290]:
+          - text: Inverter battery check
+          - generic [ref=f13e292]: Utilities
+        - generic [ref=f13e293]:
+          - text: Mosquito mesh fitting
+          - generic [ref=f13e295]: Utilities
+        - generic [ref=f13e296]:
+          - text: Doorstep car wash
+          - generic [ref=f13e298]: Vehicle
+        - generic [ref=f13e299]:
+          - text: Car interior detailing
+          - generic [ref=f13e301]: Vehicle
+        - generic [ref=f13e302]:
+          - text: Bike service
+          - generic [ref=f13e304]: Vehicle
+        - generic [ref=f13e305]:
+          - text: Basmati rice, 25 kg
+          - generic [ref=f13e307]: Bulk Staples
+        - generic [ref=f13e308]:
+          - text: Sunflower oil, 15 L
+          - generic [ref=f13e310]: Bulk Staples
+        - generic [ref=f13e311]:
+          - text: Whole wheat atta, 10 kg
+          - generic [ref=f13e313]: Bulk Staples
+    - region "What Bulk Saving is, in one go" [ref=f13e314]:
+      - generic [ref=f13e315]:
+        - generic [ref=f13e316]:
+          - heading "What Bulk Saving is, in one go" [level=2] [ref=f13e317]:
+            - generic [aria-hidden] [ref=f13e319]: What
+            - generic [aria-hidden] [ref=f13e321]: Bulk
+            - generic [aria-hidden] [ref=f13e323]: Saving
+            - generic [aria-hidden] [ref=f13e325]: is,
+            - generic [aria-hidden] [ref=f13e327]: in
+            - generic [aria-hidden] [ref=f13e329]: one
+            - generic [aria-hidden] [ref=f13e331]: go
+          - paragraph [ref=f13e332]: A demand-aggregation platform for home services, scoped to one housing society at a time. Neighbours pool what they already need; a negotiated vendor does it as one job; everyone pays the bulk price.
+        - list "The mechanic" [ref=f13e333]:
+          - listitem [ref=f13e334]:
+            - generic [ref=f13e335]: "1"
+            - heading "Neighbours pool" [level=3] [ref=f13e336]
+            - paragraph [ref=f13e337]: "A round opens for one service in one society with a deadline. Residents pledge units in one tap: 2 ACs, 3 rooms, one 25 kg bag."
+          - listitem [ref=f13e338]:
+            - generic [ref=f13e339]: "2"
+            - heading "The price drops" [level=3] [ref=f13e340]
+            - paragraph [ref=f13e341]: "Thresholds count units. Every pledge moves everyone down the ladder: ₹1,000 alone, ₹800 at five, ₹700 at ten."
+          - listitem [ref=f13e342]:
+            - generic [ref=f13e343]: "3"
+            - heading "One job, one visit" [level=3] [ref=f13e344]
+            - paragraph [ref=f13e345]: At the deadline the round closes itself. The operator books a rated vendor at the unlocked price; residents rate the work.
+        - generic [ref=f13e346]:
+          - figure "How money and work flow" [ref=f13e347]:
+            - img [aria-hidden] [ref=f13e348]:
+              - generic [ref=f13e349]:
+                - generic [ref=f13e351]: Residents
+                - generic [ref=f13e352]: pledge units
+              - generic [ref=f13e353]:
+                - generic [ref=f13e355]: The round
+                - generic [ref=f13e356]: pooled, priced by tier
+              - generic [ref=f13e357]:
+                - generic [ref=f13e359]: Vendor
+                - generic [ref=f13e360]: one visit, bulk price
+              - generic [ref=f13e362]: Operator
+            - generic [ref=f13e365]: "The job comes back to the society. The operator sees demand first, negotiates with the number in hand, books the work, and earns a commission on each pooled job. No inventory, no payment risk in the pilot: residents pay the vendor, the app tracks it."
+          - generic [ref=f13e366]:
+            - generic [ref=f13e367]:
+              - strong [ref=f13e368]: ₹300
+              - generic [ref=f13e369]: saved on a ₹1,000 AC service when ten AC units pool, the brief's worked example
+            - generic [ref=f13e370]:
+              - strong [ref=f13e371]: 100–400
+              - generic [ref=f13e372]: "flats in a typical urban society: dozens wanting the same service in the same season"
+            - generic [ref=f13e373]:
+              - strong [ref=f13e374]: "23"
+              - generic [ref=f13e375]: services live across six categories, from AC servicing to a 25 kg bag of rice
+            - generic [ref=f13e376]:
+              - strong [ref=f13e377]: 4.0+
+              - generic [ref=f13e378]: "out of 5: the delivered-job rating the pilot must average, the bar every vendor is measured against"
+        - generic [ref=f13e379]:
+          - tablist "Who gains what" [ref=f13e380]:
+            - tab "Residents" [selected] [ref=f13e381] [cursor=pointer]
+            - tab "Societies" [ref=f13e382] [cursor=pointer]
+            - tab "Vendors" [ref=f13e383] [cursor=pointer]
+            - tab "The platform" [ref=f13e384] [cursor=pointer]
+          - tabpanel "Residents" [ref=f13e385]:
+            - heading "Cheaper, trusted, zero organising" [level=3] [ref=f13e386]
+            - list [ref=f13e387]:
+              - listitem [ref=f13e388]: "Pay the pooled price, not the single-customer price: about ₹300 less on a ₹1,000 AC service."
+              - listitem [ref=f13e389]: One tap to join; the deadline and the vendor are handled.
+              - listitem [ref=f13e390]: A rating on every job keeps vendors honest.
+        - generic [ref=f13e391]:
+          - heading "Why it holds" [level=3] [ref=f13e392]
+          - generic [ref=f13e393]:
+            - generic [ref=f13e394]:
+              - strong [ref=f13e395]: The discount is real economics.
+              - paragraph [ref=f13e396]: Pooling removes the vendor's per-job acquisition and travel cost. The lower price is not a subsidy.
+            - generic [ref=f13e397]:
+              - strong [ref=f13e398]: Demand before supply.
+              - paragraph [ref=f13e399]: Residents ask and pledge before anyone buys; the operator negotiates with a number, not a hope.
+            - generic [ref=f13e400]:
+              - strong [ref=f13e401]: Trust is measured.
+              - paragraph [ref=f13e402]: Every delivered job is rated by the people who paid for it; vendors earn the next round.
+            - generic [ref=f13e403]:
+              - strong [ref=f13e404]: Built to multiply.
+              - paragraph [ref=f13e405]: "Multi-tenant from the first line: a new society is an invite code; a new service is a row, not a release."
+    - region "How a group buy works" [ref=f13e406]:
+      - generic [ref=f13e407]:
+        - generic [ref=f13e408]:
+          - heading "How a group buy works" [level=2] [ref=f13e409]:
+            - generic [aria-hidden] [ref=f13e411]: How
+            - generic [aria-hidden] [ref=f13e413]: a
+            - generic [aria-hidden] [ref=f13e415]: group
+            - generic [aria-hidden] [ref=f13e417]: buy
+            - generic [aria-hidden] [ref=f13e419]: works
+          - paragraph [ref=f13e420]: A round is a shared deadline and a price that falls as neighbours join.
+        - generic [ref=f13e421]:
+          - list [ref=f13e422]:
+            - listitem [ref=f13e423]:
+              - heading "The operator opens a round" [level=3] [ref=f13e424]
+              - paragraph [ref=f13e425]: "One service, one society, a deadline, and a price ladder negotiated with a vendor: ₹1,000 alone, ₹800 at 5 ACs, ₹700 at 10."
+              - generic [aria-hidden] [ref=f13e426]:
+                - generic [ref=f13e427]:
+                  - generic [ref=f13e428]: AC servicing
+                  - generic [ref=f13e429]: open
+                - generic [ref=f13e430]: Blue Waters Society · closes in 3 days
+                - list [ref=f13e431]:
+                  - listitem [ref=f13e432]:
+                    - strong [ref=f13e433]: ₹1,000
+                    - generic [ref=f13e434]: alone
+                  - listitem [ref=f13e435]:
+                    - strong [ref=f13e436]: ₹800
+                    - generic [ref=f13e437]: at 5
+                  - listitem [ref=f13e438]:
+                    - strong [ref=f13e439]: ₹700
+                    - generic [ref=f13e440]: at 10
+            - listitem [ref=f13e441]:
+              - heading "You pledge what you need" [level=3] [ref=f13e442]
+              - paragraph [ref=f13e443]: Two ACs, three rooms, one 25 kg pack. One tap, and an SMS confirms it. Change or leave any time before the deadline.
+              - generic [aria-hidden] [ref=f13e444]:
+                - generic [ref=f13e445]:
+                  - generic [ref=f13e446]: Your pledge
+                  - generic [ref=f13e447]: 2 ACs
+                - generic [ref=f13e448]:
+                  - generic [ref=f13e449]: −
+                  - status [ref=f13e450]: "2"
+                  - generic [ref=f13e451]: +
+                - generic [ref=f13e452]:
+                  - time [ref=f13e453]: 10:02
+                  - text: "You're in: 2 ACs in the AC servicing round. 5 of 10 so far, ₹800 each."
+            - listitem [ref=f13e454]:
+              - heading "Neighbours join, the price drops" [level=3] [ref=f13e455]
+              - paragraph [ref=f13e456]: Every pledge moves the ladder for everyone. Share the round to the society group with one tap; the people you bring in lower your own price.
+              - generic [aria-hidden] [ref=f13e457]:
+                - generic [ref=f13e458]:
+                  - generic [ref=f13e459]: Neighbours in
+                  - generic [ref=f13e460]: 9 of 10
+                - generic [ref=f13e461]:
+                  - generic [ref=f13e462]: AR
+                  - generic [ref=f13e463]: MJ
+                  - generic [ref=f13e464]: PI
+                  - generic [ref=f13e465]: RD
+                  - generic [ref=f13e466]: NK
+                  - generic [ref=f13e467]: VM
+                  - generic [ref=f13e468]: FK
+                  - generic [ref=f13e469]: KS
+                  - generic [ref=f13e470]: DM
+                  - generic [ref=f13e471]: AS
+                - generic [ref=f13e474]: 1 more AC unit unlocks ₹700 for everyone
+            - listitem [ref=f13e475]:
+              - heading "The deadline closes it, a person books it" [level=3] [ref=f13e476]
+              - paragraph [ref=f13e477]: At the deadline the round closes on its own. The operator assigns the vendor at the unlocked price, the job gets done, and you rate it.
+              - generic [aria-hidden] [ref=f13e478]:
+                - generic [ref=f13e479]:
+                  - generic [ref=f13e480]: Closed · met
+                  - generic [ref=f13e481]: 11 ACs
+                - generic [ref=f13e482]: CoolBreeze AC Services booked · Sat 10 am to 2 pm · ₹700 each
+                - generic [ref=f13e483]:
+                  - generic [ref=f13e484]: ★
+                  - generic [ref=f13e485]: ★
+                  - generic [ref=f13e486]: ★
+                  - generic [ref=f13e487]: ★
+                  - generic [ref=f13e488]: ★
+                  - emphasis [ref=f13e489]: "4.6"
+          - img "The same society, filling as the steps go by" [ref=f13e491]:
+            - generic [aria-hidden] [ref=f13e492]:
+              - generic [ref=f13e493]:
+                - generic [ref=f13e494]: Opening
+                - generic [ref=f13e495]: 0 of 10
+              - generic [ref=f13e496]: ₹1,000per AC
+        - list [ref=f13e499]:
+          - listitem [ref=f13e500]:
+            - heading "Group-buy rounds" [level=3] [ref=f13e501]
+            - generic [ref=f13e502]:
+              - paragraph [ref=f13e503]: A round is a time-boxed group buy for one service in your society. You join with the number of units you need, and everyone pays the best price the pooled units have reached.
+              - paragraph [ref=f13e504]: Thresholds count units, not people, so one flat with three ACs moves the group as much as three flats.
+          - listitem [ref=f13e505]:
+            - heading "A price ladder you can see" [level=3] [ref=f13e506]
+            - generic [ref=f13e507]:
+              - paragraph [ref=f13e508]: Each round shows every tier, where the count is now, and how many more units unlock the next price. A live countdown runs inside the last day, and one tap shares the round with neighbours.
+              - paragraph [ref=f13e509]: The more neighbours join, the cheaper it gets for everyone. That has to be seen, not read in a footnote.
+          - listitem [ref=f13e510]:
+            - heading "Deadlines that mean it" [level=3] [ref=f13e511]
+            - generic [ref=f13e512]:
+              - paragraph [ref=f13e513]: Rounds close themselves at the deadline. If the minimum tier was reached, the round goes to the operator for a vendor; if not, everyone is told it expired.
+              - paragraph [ref=f13e514]: A deadline only creates urgency when the system keeps it without anyone watching the clock.
+          - listitem [ref=f13e515]:
+            - heading "Units in the service’s own words" [level=3] [ref=f13e516]
+            - generic [ref=f13e517]:
+              - paragraph [ref=f13e518]: You pledge 2 rooms for deep cleaning, 3 ACs for servicing, or one 25 kg pack of rice. Every count on screen uses the service’s own noun.
+              - paragraph [ref=f13e519]: “2 units” is abstract and causes mistakes; “2 rooms” is a pledge you can trust.
+    - region "Browse, ask, book" [ref=f13e520]:
+      - generic [ref=f13e521]:
+        - generic [ref=f13e522]:
+          - heading "Browse, ask, book" [level=2] [ref=f13e523]:
+            - generic [aria-hidden] [ref=f13e525]: Browse,
+            - generic [aria-hidden] [ref=f13e527]: ask,
+            - generic [aria-hidden] [ref=f13e529]: book
+          - paragraph [ref=f13e530]: Every service in your society, one tap from a pledge. No open round yet? Ask.
+        - generic [ref=f13e531]:
+          - generic [ref=f13e532]:
+            - searchbox "Search services" [ref=f13e536]
+            - group "Filter by category" [ref=f13e537]:
+              - button "All 23" [pressed] [ref=f13e538] [cursor=pointer]:
+                - text: All
+                - generic [ref=f13e539]: "23"
+              - button "Appliances 5" [ref=f13e540] [cursor=pointer]:
+                - text: Appliances
+                - generic [ref=f13e541]: "5"
+              - button "Home Care 7" [ref=f13e542] [cursor=pointer]:
+                - text: Home Care
+                - generic [ref=f13e543]: "7"
+              - button "Renovation 2" [ref=f13e544] [cursor=pointer]:
+                - text: Renovation
+                - generic [ref=f13e545]: "2"
+              - button "Utilities 3" [ref=f13e546] [cursor=pointer]:
+                - text: Utilities
+                - generic [ref=f13e547]: "3"
+              - button "Vehicle 3" [ref=f13e548] [cursor=pointer]:
+                - text: Vehicle
+                - generic [ref=f13e549]: "3"
+              - button "Bulk Staples 3" [ref=f13e550] [cursor=pointer]:
+                - text: Bulk Staples
+                - generic [ref=f13e551]: "3"
+          - paragraph [ref=f13e552]: 23 services · 5 open rounds · 9 with neighbours asking
+          - list [ref=f13e553]:
+            - listitem [ref=f13e554]:
+              - generic [ref=f13e555]:
+                - generic [ref=f13e559]: Appliances
+                - generic [ref=f13e560]: open
+              - heading "AC servicing" [level=3] [ref=f13e561]
+              - generic [ref=f13e562]: ₹449per AC unit
+              - generic [ref=f13e563]:
+                - generic [ref=f13e566]:
+                  - generic [ref=f13e567]: 6 of 10 AC units
+                  - generic [ref=f13e568]: closes in 2d 4h
+                - paragraph [ref=f13e569]: 4 more unlock ₹399
+                - button "Join this round" [ref=f13e570] [cursor=pointer]
+            - listitem [ref=f13e571]:
+              - generic [ref=f13e572]: Appliances
+              - heading "RO water purifier service" [level=3] [ref=f13e577]
+              - generic [ref=f13e578]: ₹399per purifier
+              - generic [ref=f13e579]:
+                - paragraph [ref=f13e580]: No one has asked yet
+                - button "Ask for this" [ref=f13e581] [cursor=pointer]
+            - listitem [ref=f13e582]:
+              - generic [ref=f13e583]: Appliances
+              - heading "Washing machine service" [level=3] [ref=f13e588]
+              - generic [ref=f13e589]: ₹449per machine
+              - generic [ref=f13e590]:
+                - paragraph [ref=f13e591]: 2 neighbours asked
+                - button "Ask for this" [ref=f13e592] [cursor=pointer]
+            - listitem [ref=f13e593]:
+              - generic [ref=f13e594]: Appliances
+              - heading "Kitchen chimney cleaning" [level=3] [ref=f13e599]
+              - generic [ref=f13e600]: ₹699per chimney
+              - generic [ref=f13e601]:
+                - paragraph [ref=f13e602]: No one has asked yet
+                - button "Ask for this" [ref=f13e603] [cursor=pointer]
+            - listitem [ref=f13e604]:
+              - generic [ref=f13e605]: Appliances
+              - heading "Geyser service" [level=3] [ref=f13e610]
+              - generic [ref=f13e611]: ₹349per geyser
+              - generic [ref=f13e612]:
+                - paragraph [ref=f13e613]: 5 neighbours asked
+                - button "Ask for this" [ref=f13e614] [cursor=pointer]
+            - listitem [ref=f13e615]:
+              - generic [ref=f13e616]: Home Care
+              - heading "Pest control" [level=3] [ref=f13e621]
+              - generic [ref=f13e622]: ₹899per flat
+              - generic [ref=f13e623]:
+                - paragraph [ref=f13e624]: 4 neighbours asked
+                - button "Ask for this" [ref=f13e625] [cursor=pointer]
+            - listitem [ref=f13e626]:
+              - generic [ref=f13e627]:
+                - generic [ref=f13e631]: Home Care
+                - generic [ref=f13e632]: open
+              - heading "Deep cleaning" [level=3] [ref=f13e633]
+              - generic [ref=f13e634]: ₹2,199per flat
+              - generic [ref=f13e635]:
+                - generic [ref=f13e638]:
+                  - generic [ref=f13e639]: 7 of 12 flats
+                  - generic [ref=f13e640]: closes in 4d 4h
+                - paragraph [ref=f13e641]: 5 more unlock ₹1,999
+                - button "Join this round" [ref=f13e642] [cursor=pointer]
+            - listitem [ref=f13e643]:
+              - generic [ref=f13e644]: Home Care
+              - heading "Bathroom wash" [level=3] [ref=f13e649]
+              - generic [ref=f13e650]: ₹599per bathroom
+              - generic [ref=f13e651]:
+                - paragraph [ref=f13e652]: No one has asked yet
+                - button "Ask for this" [ref=f13e653] [cursor=pointer]
+            - listitem [ref=f13e654]:
+              - generic [ref=f13e655]: Home Care
+              - heading "Sofa shampooing" [level=3] [ref=f13e660]
+              - generic [ref=f13e661]: ₹249per seat
+              - generic [ref=f13e662]:
+                - paragraph [ref=f13e663]: 2 neighbours asked
+                - button "Ask for this" [ref=f13e664] [cursor=pointer]
+            - listitem [ref=f13e665]:
+              - generic [ref=f13e666]: Home Care
+              - heading "Termite treatment" [level=3] [ref=f13e671]
+              - generic [ref=f13e672]: ₹2,999per flat
+              - generic [ref=f13e673]:
+                - paragraph [ref=f13e674]: 6 neighbours asked
+                - button "Ask for this" [ref=f13e675] [cursor=pointer]
+            - listitem [ref=f13e676]:
+              - generic [ref=f13e677]: Home Care
+              - heading "Bed bug treatment" [level=3] [ref=f13e682]
+              - generic [ref=f13e683]: ₹1,499per flat
+              - generic [ref=f13e684]:
+                - paragraph [ref=f13e685]: No one has asked yet
+                - button "Ask for this" [ref=f13e686] [cursor=pointer]
+            - listitem [ref=f13e687]:
+              - generic [ref=f13e688]: Home Care
+              - heading "Mattress cleaning" [level=3] [ref=f13e693]
+              - generic [ref=f13e694]: ₹499per mattress
+              - generic [ref=f13e695]:
+                - paragraph [ref=f13e696]: No one has asked yet
+                - button "Ask for this" [ref=f13e697] [cursor=pointer]
+            - listitem [ref=f13e698]:
+              - generic [ref=f13e699]: Renovation
+              - heading "Painting" [level=3] [ref=f13e704]
+              - generic [ref=f13e705]: ₹3,500per room
+              - generic [ref=f13e706]:
+                - paragraph [ref=f13e707]: No one has asked yet
+                - button "Ask for this" [ref=f13e708] [cursor=pointer]
+            - listitem [ref=f13e709]:
+              - generic [ref=f13e710]: Renovation
+              - heading "Pre-monsoon waterproofing" [level=3] [ref=f13e715]
+              - generic [ref=f13e716]: ₹2,499per area
+              - generic [ref=f13e717]:
+                - paragraph [ref=f13e718]: 3 neighbours asked
+                - button "Ask for this" [ref=f13e719] [cursor=pointer]
+            - listitem [ref=f13e720]:
+              - generic [ref=f13e721]:
+                - generic [ref=f13e725]: Utilities
+                - generic [ref=f13e726]: open
+              - heading "Water tank cleaning" [level=3] [ref=f13e727]
+              - generic [ref=f13e728]: ₹799per tank
+              - generic [ref=f13e729]:
+                - generic [ref=f13e732]:
+                  - generic [ref=f13e733]: 3 of 8 tanks
+                  - generic [ref=f13e734]: closes in 1d 6h
+                - paragraph [ref=f13e735]: 1 more unlocks ₹699
+                - button "Join this round" [ref=f13e736] [cursor=pointer]
+            - listitem [ref=f13e737]:
+              - generic [ref=f13e738]: Utilities
+              - heading "Inverter battery check" [level=3] [ref=f13e743]
+              - generic [ref=f13e744]: ₹299per battery
+              - generic [ref=f13e745]:
+                - paragraph [ref=f13e746]: No one has asked yet
+                - button "Ask for this" [ref=f13e747] [cursor=pointer]
+            - listitem [ref=f13e748]:
+              - generic [ref=f13e749]: Utilities
+              - heading "Mosquito mesh fitting" [level=3] [ref=f13e754]
+              - generic [ref=f13e755]: ₹650per window
+              - generic [ref=f13e756]:
+                - paragraph [ref=f13e757]: 1 neighbour asked
+                - button "Ask for this" [ref=f13e758] [cursor=pointer]
+            - listitem [ref=f13e759]:
+              - generic [ref=f13e760]:
+                - generic [ref=f13e764]: Vehicle
+                - generic [ref=f13e765]: open
+              - heading "Doorstep car wash" [level=3] [ref=f13e766]
+              - generic [ref=f13e767]: ₹399per car
+              - generic [ref=f13e768]:
+                - generic [ref=f13e771]:
+                  - generic [ref=f13e772]: 5 of 12 cars
+                  - generic [ref=f13e773]: closes in 20h
+                - paragraph [ref=f13e774]: 1 more unlocks ₹349
+                - button "Join this round" [ref=f13e775] [cursor=pointer]
+            - listitem [ref=f13e776]:
+              - generic [ref=f13e777]: Vehicle
+              - heading "Car interior detailing" [level=3] [ref=f13e782]
+              - generic [ref=f13e783]: ₹1,499per car
+              - generic [ref=f13e784]:
+                - paragraph [ref=f13e785]: No one has asked yet
+                - button "Ask for this" [ref=f13e786] [cursor=pointer]
+            - listitem [ref=f13e787]:
+              - generic [ref=f13e788]: Vehicle
+              - heading "Bike service" [level=3] [ref=f13e793]
+              - generic [ref=f13e794]: ₹599per bike
+              - generic [ref=f13e795]:
+                - paragraph [ref=f13e796]: 3 neighbours asked
+                - button "Ask for this" [ref=f13e797] [cursor=pointer]
+            - listitem [ref=f13e798]:
+              - generic [ref=f13e799]:
+                - generic [ref=f13e803]: Bulk Staples
+                - generic [ref=f13e804]: open
+              - heading "Basmati rice, 25 kg" [level=3] [ref=f13e805]
+              - generic [ref=f13e806]: ₹2,600per bag
+              - generic [ref=f13e807]:
+                - generic [ref=f13e810]:
+                  - generic [ref=f13e811]: 14 of 20 bags
+                  - generic [ref=f13e812]: closes in 5d 20h
+                - paragraph [ref=f13e813]: 6 more unlock ₹2,450
+                - button "Join this round" [ref=f13e814] [cursor=pointer]
+            - listitem [ref=f13e815]:
+              - generic [ref=f13e816]: Bulk Staples
+              - heading "Sunflower oil, 15 L" [level=3] [ref=f13e821]
+              - generic [ref=f13e822]: ₹2,100per tin
+              - generic [ref=f13e823]:
+                - paragraph [ref=f13e824]: No one has asked yet
+                - button "Ask for this" [ref=f13e825] [cursor=pointer]
+            - listitem [ref=f13e826]:
+              - generic [ref=f13e827]: Bulk Staples
+              - heading "Whole wheat atta, 10 kg" [level=3] [ref=f13e832]
+              - generic [ref=f13e833]: ₹480per bag
+              - generic [ref=f13e834]:
+                - paragraph [ref=f13e835]: 4 neighbours asked
+                - button "Ask for this" [ref=f13e836] [cursor=pointer]
+        - list [ref=f13e838]:
+          - listitem [ref=f13e839]:
+            - heading "A catalog for your society" [level=3] [ref=f13e840]
+            - generic [ref=f13e841]:
+              - paragraph [ref=f13e842]: Services shows what is offered to your society, with an indicative price and what the job covers.
+              - paragraph [ref=f13e843]: One society’s deal never leaks into another’s.
+          - listitem [ref=f13e844]:
+            - heading "From a service to booking in one tap" [level=3] [ref=f13e845]
+            - generic [ref=f13e846]:
+              - paragraph [ref=f13e847]: "A service with an open round shows it on its card: today’s price, units joined, when it closes. Tapping the card opens that round with the pledge sheet already up."
+              - paragraph [ref=f13e848]: Sessions last about thirty seconds. Every extra screen between intent and pledge loses a neighbour.
+          - listitem [ref=f13e849]:
+            - heading "Ask for this service" [level=3] [ref=f13e850]
+            - generic [ref=f13e851]:
+              - paragraph [ref=f13e852]: No round open? Tap Ask for this and see how many neighbours already asked. When the operator opens a round, everyone who asked hears first.
+              - paragraph [ref=f13e853]: Asking turns invisible intent into a number the operator can act on, and rewards the askers with first notice.
+          - listitem [ref=f13e854]:
+            - heading "Twenty-three services across six categories" [level=3] [ref=f13e855]
+            - generic [ref=f13e856]:
+              - paragraph [ref=f13e857]: Appliances, home care, renovation, utilities, vehicle care and bulk staples. The operator switches each one on per society and sets its price.
+              - paragraph [ref=f13e858]: A catalog the operator cannot shape is not a product.
+    - region "Never miss a round" [ref=f13e859]:
+      - generic [ref=f13e860]:
+        - generic [ref=f13e861]:
+          - heading "Never miss a round" [level=2] [ref=f13e862]:
+            - generic [aria-hidden] [ref=f13e864]: Never
+            - generic [aria-hidden] [ref=f13e866]: miss
+            - generic [aria-hidden] [ref=f13e868]: a
+            - generic [aria-hidden] [ref=f13e870]: round
+          - paragraph [ref=f13e871]: You hear about every step by SMS and, on an installed phone, by push.
+        - generic [ref=f13e872]:
+          - list "Example messages, in order. Tinted ones also arrive as push on an installed phone." [ref=f13e873]:
+            - listitem [ref=f13e874]:
+              - time [ref=f13e875]: Mon 10:02
+              - text: "You're in: 2 ACs in the AC servicing round at Blue Waters. 6 of 10 so far, ₹800 each. Closes Thu."
+            - listitem [ref=f13e876]:
+              - time [ref=f13e877]: Wed 09:15
+              - text: "Closing tomorrow: AC servicing at Blue Waters. 9 of 10 ACs, ₹800 now. One more unlocks ₹700 for everyone."
+            - listitem [ref=f13e878]:
+              - time [ref=f13e879]: Thu 18:01
+              - text: "Closed and met: 11 ACs at ₹700 each. The operator is booking the vendor."
+            - listitem [ref=f13e880]:
+              - time [ref=f13e881]: Fri 12:30
+              - text: "Vendor scheduled: CoolCare, Sat 10 am to 2 pm. Pay ₹1,400 to the technician after the job."
+            - listitem [ref=f13e882]:
+              - time [ref=f13e883]: Sat 14:10
+              - text: Delivered. How did it go? Rate it in My Requests.
+            - listitem [ref=f13e884]:
+              - time [ref=f13e885]: Mar 3, 11:20
+              - text: A round opened for pest control at Blue Waters, which you asked for. ₹1,200 now, ₹950 at 8 flats.
+          - list [ref=f13e886]:
+            - listitem [ref=f13e887]:
+              - heading "An SMS for every step" [level=3] [ref=f13e888]
+              - generic [ref=f13e889]:
+                - paragraph [ref=f13e890]: Pledge confirmed, closing soon, closed with the final price, vendor assigned, job delivered, round cancelled. Nothing to set up.
+                - paragraph [ref=f13e891]: Each message is written in the same database transaction as the event, so you never get one for something that did not happen, and never get it twice.
+            - listitem [ref=f13e892]:
+              - heading "Push notifications in your colour" [level=3] [ref=f13e893]
+              - generic [ref=f13e894]:
+                - paragraph [ref=f13e895]: On an installed phone, a push arrives written for the event and tinted in the accent you chose. Tapping it opens the right round.
+                - paragraph [ref=f13e896]: Bursts of hundreds of devices are sent by parallel workers that retry safely, never double-send and prune dead devices on their own.
+    - region "Trust and accountability" [ref=f13e897]:
+      - generic [ref=f13e898]:
+        - generic [ref=f13e899]:
+          - heading "Trust and accountability" [level=2] [ref=f13e900]:
+            - generic [aria-hidden] [ref=f13e902]: Trust
+            - generic [aria-hidden] [ref=f13e904]: and
+            - generic [aria-hidden] [ref=f13e906]: accountability
+          - paragraph [ref=f13e907]: A person negotiates every deal. A rating follows every job.
+        - generic [ref=f13e908]:
+          - list [ref=f13e909]:
+            - listitem [ref=f13e910]:
+              - heading "A person negotiates every deal" [level=3] [ref=f13e911]
+              - generic [ref=f13e912]:
+                - paragraph [ref=f13e913]: When a round closes met, the operator picks the vendor, records the negotiated price, marks the job delivered and tracks who has paid. Payment stays between you and the vendor.
+                - paragraph [ref=f13e914]: Pooled demand is only worth something once someone turns it into a real job.
+            - listitem [ref=f13e915]:
+              - heading "Rate every delivered job" [level=3] [ref=f13e916]
+              - generic [ref=f13e917]:
+                - paragraph [ref=f13e918]: After delivery, every participant rates the job from 1 to 5 with an optional note. You can correct a mis-tap.
+                - paragraph [ref=f13e919]: The moment we recommend a vendor, a bad job is on us. Ratings attach to the round, so a vendor’s score is the honest sum of the jobs they did.
+            - listitem [ref=f13e920]:
+              - heading "Ratings the operator can see" [level=3] [ref=f13e921]
+              - generic [ref=f13e922]:
+                - paragraph [ref=f13e923]: You rate from My Requests; the operator sees each vendor’s average and each round’s score.
+                - paragraph [ref=f13e924]: The number has to be in front of the person who chooses the next vendor.
+            - listitem [ref=f13e925]:
+              - heading "A confirm before anything you cannot undo" [level=3] [ref=f13e926]
+              - generic [ref=f13e927]:
+                - paragraph [ref=f13e928]: Leaving a round, removing a rating, withdrawing an ask or logging out all ask once first, and say so honestly if you are offline.
+                - paragraph [ref=f13e929]: A mis-tap must never cost a neighbour their place in a round.
+          - generic [aria-hidden] [ref=f13e931]:
+            - generic [ref=f13e932]:
+              - generic [ref=f13e933]: 9:41
+              - generic [ref=f13e934]: Ops
+            - generic [ref=f13e935]: Vendors
+            - generic [ref=f13e936]:
+              - generic [ref=f13e937]:
+                - generic [ref=f13e938]: CoolCare Services
+                - generic [ref=f13e939]: "4.6"
+              - generic [ref=f13e940]: AC servicing · 7 rounds delivered · 38 ratings
+            - generic [ref=f13e941]:
+              - generic [ref=f13e942]:
+                - generic [ref=f13e943]: PestFree Pune
+                - generic [ref=f13e944]: "4.2"
+              - generic [ref=f13e945]: Pest control · 3 rounds delivered · 19 ratings
+            - generic [ref=f13e946]:
+              - generic [ref=f13e947]:
+                - generic [ref=f13e948]: AquaClean
+                - generic [ref=f13e949]: "3.4"
+              - generic [ref=f13e950]: Water tank · 2 rounds delivered · 9 ratings · review before next assignment
+            - generic [ref=f13e951]:
+              - generic [ref=f13e952]: Payments, AC servicing
+              - generic [ref=f13e953]:
+                - generic [ref=f13e954]: A-204 · 2 ACs · ₹1,400
+                - generic [ref=f13e955]: Collected
+              - generic [ref=f13e956]:
+                - generic [ref=f13e957]: B-101 · 1 AC · ₹700
+                - generic [ref=f13e958]: Mark collected
+    - region "Built for a phone in a society" [ref=f13e959]:
+      - generic [ref=f13e960]:
+        - generic [ref=f13e961]:
+          - heading "Built for a phone in a society" [level=2] [ref=f13e962]:
+            - generic [aria-hidden] [ref=f13e964]: Built
+            - generic [aria-hidden] [ref=f13e966]: for
+            - generic [aria-hidden] [ref=f13e968]: a
+            - generic [aria-hidden] [ref=f13e970]: phone
+            - generic [aria-hidden] [ref=f13e972]: in
+            - generic [aria-hidden] [ref=f13e974]: a
+            - generic [aria-hidden] [ref=f13e976]: society
+          - paragraph [ref=f13e977]: No passwords, no app store, no re-login. Works when the signal drops.
+        - generic [ref=f13e978]:
+          - list [ref=f13e979]:
+            - listitem [ref=f13e980]:
+              - heading "Your society code and your phone" [level=3] [ref=f13e981]
+              - generic [ref=f13e982]:
+                - paragraph [ref=f13e983]: Enter the invite code your society gave you and your number. A one-time code arrives by SMS and you are in. Everything you see is scoped to your society.
+                - paragraph [ref=f13e984]: In a society the phone is the identity. Codes live in memory with a time limit and are never logged or shown.
+            - listitem [ref=f13e985]:
+              - heading "Sign in with WhatsApp" [level=3] [ref=f13e986]
+              - generic [ref=f13e987]:
+                - paragraph [ref=f13e988]: Tap Continue with WhatsApp, send the message it opens, tap the number you see on screen, and you are back in the app, signed in. On a laptop, scan a QR code with your phone. The SMS code stays as the fallback.
+                - paragraph [ref=f13e989]: WhatsApp already verified your number, and a message you start costs nothing. Three taps, nothing to type.
+            - listitem [ref=f13e990]:
+              - heading "Sign in once per phone" [level=3] [ref=f13e991]
+              - generic [ref=f13e992]:
+                - paragraph [ref=f13e993]: After the first code, this phone stays signed in. You can end a session from Profile.
+                - paragraph [ref=f13e994]: You use this before summer and once a quarter. Being asked for a code every time kills a thirty-second visit.
+            - listitem [ref=f13e995]:
+              - heading "Add it to your home screen" [level=3] [ref=f13e996]
+              - generic [ref=f13e997]:
+                - paragraph [ref=f13e998]: Installs from the browser with no app store. A thumb-reachable bar for Home, Services, My Requests and Profile. When the signal drops it says so and shows what is stale.
+                - paragraph [ref=f13e999]: A lost signal mid-round must never look like your round disappeared.
+            - listitem [ref=f13e1000]:
+              - heading "A real app icon on your home screen" [level=3] [ref=f13e1001]
+              - generic [ref=f13e1002]:
+                - paragraph [ref=f13e1003]: Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests. Home shows a small card explaining how to install on your phone.
+                - paragraph [ref=f13e1004]: Something you open once a quarter has to be easy to find, and look like it belongs next to your other apps.
+            - listitem [ref=f13e1005]:
+              - heading "Home opens on what you can save today" [level=3] [ref=f13e1006]
+              - generic [ref=f13e1007]:
+                - paragraph [ref=f13e1008]: The first screen shows how many rounds are open and the three closing soonest, each one tap from its pledge sheet.
+                - paragraph [ref=f13e1009]: The first screen should answer the only question you came with.
+            - listitem [ref=f13e1010]:
+              - heading "Feels like an app, not a page" [level=3] [ref=f13e1011]
+              - generic [ref=f13e1012]:
+                - paragraph [ref=f13e1013]: Bottom sheets for pledging and rating, large titles that tuck into a blurred bar as you scroll, safe-area aware, and a night mode that reveals itself in a circle from the switch.
+                - paragraph [ref=f13e1014]: A page that feels like a website gets ignored; one that feels native gets installed.
+            - listitem [ref=f13e1015]:
+              - heading "A separate door for the operator" [level=3] [ref=f13e1016]
+              - generic [ref=f13e1017]:
+                - paragraph [ref=f13e1018]: The operator signs in on their own page with a phone number alone, with its own rate limits.
+                - paragraph [ref=f13e1019]: Operators have no society invite code, and their door should not share a resident’s.
+          - generic [aria-hidden] [ref=f13e1021]:
+            - generic [ref=f13e1022]:
+              - generic [ref=f13e1023]: 9:41
+              - generic [ref=f13e1024]: offline · showing what we last saw
+            - generic [ref=f13e1025]: Home
+            - generic [ref=f13e1026]:
+              - generic [ref=f13e1027]:
+                - generic [ref=f13e1028]: 3 group buys open
+                - generic [ref=f13e1029]: Blue Waters
+              - generic [ref=f13e1030]: AC servicing closes in 3 days · Deep cleaning in 5 · Rice, 25 kg in 6
+            - generic [ref=f13e1031]:
+              - generic [ref=f13e1032]:
+                - generic [ref=f13e1033]: Deep cleaning
+                - generic [ref=f13e1034]: ₹2,400
+              - generic [ref=f13e1035]:
+                - generic [ref=f13e1036]: "You: 2 rooms · 7 of 12 rooms"
+                - generic [ref=f13e1037]: Change
+            - generic [ref=f13e1038]:
+              - generic [ref=f13e1039]:
+                - generic [ref=f13e1040]: Add to home screen
+                - generic [ref=f13e1041]: Install
+              - generic [ref=f13e1042]: Opens like an app. No store, no update prompts.
+            - generic [ref=f13e1043]:
+              - generic [ref=f13e1044]: Home
+              - generic [ref=f13e1045]: Services
+              - generic [ref=f13e1046]: Requests
+              - generic [ref=f13e1047]: Profile
+    - region "A look you want to open" [ref=f13e1048]:
+      - generic [ref=f13e1049]:
+        - generic [ref=f13e1050]:
+          - heading "A look you want to open" [level=2] [ref=f13e1051]:
+            - generic [aria-hidden] [ref=f13e1053]: A
+            - generic [aria-hidden] [ref=f13e1055]: look
+            - generic [aria-hidden] [ref=f13e1057]: you
+            - generic [aria-hidden] [ref=f13e1059]: want
+            - generic [aria-hidden] [ref=f13e1061]: to
+            - generic [aria-hidden] [ref=f13e1063]: open
+          - paragraph [ref=f13e1064]: Flat, quiet and precise, in your colour, day and night.
+        - generic [ref=f13e1065]:
+          - generic [ref=f13e1066]:
+            - generic [ref=f13e1067]:
+              - group "Pick a colour pair for this page" [ref=f13e1068]:
+                - button "Mono" [pressed] [ref=f13e1069] [cursor=pointer]
+                - button "Ocean" [ref=f13e1070] [cursor=pointer]
+                - button "Aurora" [ref=f13e1071] [cursor=pointer]
+                - button "Bloom" [ref=f13e1072] [cursor=pointer]
+                - button "Sunset" [ref=f13e1073] [cursor=pointer]
+                - button "Forest" [ref=f13e1074] [cursor=pointer]
+                - button "Lagoon" [ref=f13e1075] [cursor=pointer]
+              - button "Switch day and night" [ref=f13e1076] [cursor=pointer]
+            - paragraph [ref=f13e1077]: These switches change this page the way Appearance changes the app. Your choice is remembered on this device.
+            - generic [aria-hidden] [ref=f13e1078]:
+              - generic [ref=f13e1079]:
+                - generic [ref=f13e1080]: Could save ₹600
+                - generic [ref=f13e1081]: 2 ACs · best price unlocked
+              - generic [ref=f13e1082]:
+                - generic [ref=f13e1083]: Could save ₹600
+                - generic [ref=f13e1084]: 2 ACs · best price unlocked
+              - generic [ref=f13e1085]:
+                - generic [ref=f13e1086]: Could save ₹600
+                - generic [ref=f13e1087]: 2 ACs · best price unlocked
+          - list [ref=f13e1088]:
+            - listitem [ref=f13e1089]:
+              - heading "Flat paper, hairlines, Geist" [level=3] [ref=f13e1090]
+              - generic [ref=f13e1091]:
+                - paragraph [ref=f13e1092]: Surfaces are paper with a one-pixel line. Corners are tight. The primary button is ink by day and near-white by night.
+                - paragraph [ref=f13e1093]: Calm and precise reads as trustworthy. Nothing glows that does not need to.
+            - listitem [ref=f13e1094]:
+              - heading "Seven colour pairs, one look" [level=3] [ref=f13e1095]
+              - generic [ref=f13e1096]:
+                - paragraph [ref=f13e1097]: Pick mono, ocean, aurora, bloom, sunset, forest or lagoon. The geometry never changes; only the accent does. Small sparks mark a saving unlocked, and all of it stops if your phone asks for less motion.
+                - paragraph [ref=f13e1098]: Choice without losing coherence.
+            - listitem [ref=f13e1099]:
+              - heading "One set of tokens under everything" [level=3] [ref=f13e1100]
+              - generic [ref=f13e1101]:
+                - paragraph [ref=f13e1102]: Colour, radius and type are variables, and every text-on-surface pair is tested for contrast in light and dark.
+                - paragraph [ref=f13e1103]: This site and the app share the same token sheet, pinned by a test, so what you see here is what you get.
+            - listitem [ref=f13e1104]:
+              - heading "Search and filters that stick" [level=3] [ref=f13e1105]
+              - generic [ref=f13e1106]:
+                - paragraph [ref=f13e1107]: Search any list by name, filter by category or status. The filter lives in the address, so a refresh or a shared link keeps it.
+                - paragraph [ref=f13e1108]: A catalog of twenty-three services and lists across societies need real search.
+    - region "For the people who run it" [ref=f13e1109]:
+      - generic [ref=f13e1110]:
+        - generic [ref=f13e1111]:
+          - heading "For the people who run it" [level=2] [ref=f13e1112]:
+            - generic [aria-hidden] [ref=f13e1114]: For
+            - generic [aria-hidden] [ref=f13e1116]: the
+            - generic [aria-hidden] [ref=f13e1118]: people
+            - generic [aria-hidden] [ref=f13e1120]: who
+            - generic [aria-hidden] [ref=f13e1122]: run
+            - generic [aria-hidden] [ref=f13e1124]: it
+          - paragraph [ref=f13e1125]: One dashboard turns pooled demand into a real job and tracks who has paid.
+        - generic [ref=f13e1126]:
+          - generic [aria-hidden] [ref=f13e1127]:
+            - generic [ref=f13e1128]:
+              - generic [ref=f13e1129]:
+                - strong [ref=f13e1130]: "14"
+                - generic [ref=f13e1131]: rounds open
+              - generic [ref=f13e1132]:
+                - strong [ref=f13e1133]: "3"
+                - generic [ref=f13e1134]: closed, need a vendor
+              - generic [ref=f13e1135]:
+                - strong [ref=f13e1136]: ₹41,300
+                - generic [ref=f13e1137]: to collect this week
+              - generic [ref=f13e1138]:
+                - strong [ref=f13e1139]: "4.5"
+                - generic [ref=f13e1140]: average rating, 30 days
+            - generic [ref=f13e1142]:
+              - generic [ref=f13e1143]:
+                - generic [ref=f13e1144]:
+                  - text: Residents are asking for
+                  - generic [ref=f13e1145]: per society and service, longest wait first
+                - generic [ref=f13e1146]: Open a round
+              - generic [ref=f13e1147]:
+                - generic [ref=f13e1148]:
+                  - text: Pest control · Green Meadows
+                  - generic [ref=f13e1149]: 9 asked · waiting 12 days
+                - generic [ref=f13e1150]: Open
+              - generic [ref=f13e1151]:
+                - generic [ref=f13e1152]:
+                  - text: Water tank cleaning · Blue Waters
+                  - generic [ref=f13e1153]: 6 asked · waiting 8 days
+                - generic [ref=f13e1154]: Open
+              - generic [ref=f13e1155]:
+                - generic [ref=f13e1156]:
+                  - text: Atta, 10 kg · Blue Waters
+                  - generic [ref=f13e1157]: 4 asked · waiting 3 days
+                - generic [ref=f13e1158]: Open
+          - generic [ref=f13e1159]:
+            - generic [ref=f13e1160]:
+              - heading "What the operator does" [level=3] [ref=f13e1161]
+              - paragraph [ref=f13e1162]: "Sees demand across societies, opens rounds, negotiates with vendors offline, assigns the job at the unlocked price, marks it delivered, and ticks off each flat's payment. Manages the catalog per society and a short vendor list. Lean by design: a phone, this dashboard, and vendor relationships that compound."
+            - list [ref=f13e1163]:
+              - listitem [ref=f13e1164]:
+                - heading "Lists that stay fast" [level=3] [ref=f13e1165]
+                - generic [ref=f13e1166]:
+                  - paragraph [ref=f13e1167]: Every list loads a page at a time with an explicit Show more, across societies and rounds.
+                  - paragraph [ref=f13e1168]: Nothing is silently cut off as the number of societies grows.
+    - 'region "A pilot: bulk staples" [ref=f13e1169]':
+      - generic [ref=f13e1170]:
+        - generic [ref=f13e1171]:
+          - 'heading "A pilot: bulk staples" [level=2] [ref=f13e1172]':
+            - generic [aria-hidden] [ref=f13e1174]: A
+            - generic [aria-hidden] [ref=f13e1176]: "pilot:"
+            - generic [aria-hidden] [ref=f13e1178]: bulk
+            - generic [aria-hidden] [ref=f13e1180]: staples
+          - paragraph [ref=f13e1181]: The same round, for a single product in a fixed pack, delivered once to the gate.
+        - generic [ref=f13e1182]:
+          - generic [aria-hidden] [ref=f13e1183]:
+            - generic [ref=f13e1184]:
+              - strong [ref=f13e1185]: Rice
+              - generic [ref=f13e1186]: 25 kg
+            - generic [ref=f13e1187]:
+              - strong [ref=f13e1188]: Oil
+              - generic [ref=f13e1189]: 15 L
+            - generic [ref=f13e1190]:
+              - strong [ref=f13e1191]: Atta
+              - generic [ref=f13e1192]: 10 kg
+          - paragraph [ref=f13e1193]: "If ten flats want the same pack in the same week, a wholesaler delivers once and everyone pays less. No baskets, no fresh produce, no delivery slots: one product, one pack, one drop. We are testing whether staples rounds fill the way service rounds do."
+    - region "What one society is worth" [ref=f13e1194]:
+      - generic [ref=f13e1195]:
+        - generic [ref=f13e1196]:
+          - heading "What one society is worth" [level=2] [ref=f13e1197]:
+            - generic [aria-hidden] [ref=f13e1199]: What
+            - generic [aria-hidden] [ref=f13e1201]: one
+            - generic [aria-hidden] [ref=f13e1203]: society
+            - generic [aria-hidden] [ref=f13e1205]: is
+            - generic [aria-hidden] [ref=f13e1207]: worth
+          - paragraph [ref=f13e1208]: Move the sliders. The defaults are the brief's worked example (₹1,000 → ₹700 for one AC service); the commission is an illustration, not a term.
+        - generic [ref=f13e1209]:
+          - generic [ref=f13e1210]:
+            - generic [ref=f13e1211]:
+              - generic [ref=f13e1212]:
+                - text: Flats in the society
+                - status [ref=f13e1213]: "200"
+              - slider "Flats in the society" [ref=f13e1214] [cursor=pointer]: "200"
+            - generic [ref=f13e1215]:
+              - generic [ref=f13e1216]:
+                - text: Flats joining at least one round a year
+                - status [ref=f13e1217]: 30%
+              - slider "Flats joining at least one round a year" [ref=f13e1218] [cursor=pointer]: "30"
+            - generic [ref=f13e1219]:
+              - generic [ref=f13e1220]:
+                - text: Jobs per joining flat, per year
+                - status [ref=f13e1221]: "2"
+              - slider "Jobs per joining flat, per year" [ref=f13e1222] [cursor=pointer]: "2"
+            - generic [ref=f13e1223]:
+              - generic [ref=f13e1224]:
+                - text: Average single-customer price per job
+                - status [ref=f13e1225]: ₹1,000
+              - slider "Average single-customer price per job" [ref=f13e1226] [cursor=pointer]: "1000"
+            - generic [ref=f13e1227]:
+              - generic [ref=f13e1228]:
+                - text: Pooled discount
+                - status [ref=f13e1229]: 30%
+              - slider "Pooled discount" [ref=f13e1230] [cursor=pointer]: "30"
+            - generic [ref=f13e1231]:
+              - generic [ref=f13e1232]:
+                - text: Platform commission (illustrative)
+                - status [ref=f13e1233]: 10%
+              - slider "Platform commission (illustrative)" [ref=f13e1234] [cursor=pointer]: "10"
+          - generic [ref=f13e1235]:
+            - generic [ref=f13e1236]:
+              - generic [ref=f13e1237]: The society saves, per year
+              - strong [ref=f13e1238]: ₹36,000
+              - generic [ref=f13e1239]:
+                - text: that is
+                - strong [ref=f13e1240]: ₹180
+                - text: per flat averaged over every flat, across
+                - strong [ref=f13e1241]: "120"
+                - text: pooled jobs
+            - generic [ref=f13e1242]:
+              - generic [ref=f13e1243]:
+                - strong [ref=f13e1244]: ₹700
+                - generic [ref=f13e1245]: pooled price per job
+              - generic [ref=f13e1246]:
+                - strong [ref=f13e1247]: ₹300
+                - generic [ref=f13e1248]: saved per job vs going alone
+              - generic [ref=f13e1249]:
+                - strong [ref=f13e1250]: ₹84,000
+                - generic [ref=f13e1251]: pooled spend through the platform, per year
+              - generic [ref=f13e1252]:
+                - strong [ref=f13e1253]: ₹8,400
+                - generic [ref=f13e1254]: platform revenue at the illustrative commission
+            - paragraph [ref=f13e1255]: "One society. The platform is built for many: a new society is an invite code."
+    - region "Where it goes from here" [ref=f13e1256]:
+      - generic [ref=f13e1257]:
+        - generic [ref=f13e1258]:
+          - heading "Where it goes from here" [level=2] [ref=f13e1259]:
+            - generic [aria-hidden] [ref=f13e1261]: Where
+            - generic [aria-hidden] [ref=f13e1263]: it
+            - generic [aria-hidden] [ref=f13e1265]: goes
+            - generic [aria-hidden] [ref=f13e1267]: from
+            - generic [aria-hidden] [ref=f13e1269]: here
+          - paragraph [ref=f13e1270]: Shipped, next, and later. The pilot proves fill rates and ratings in one city; the platform is already built to multiply.
+        - list [ref=f13e1271]:
+          - listitem [ref=f13e1272]:
+            - heading "Now" [level=3] [ref=f13e1273]
+            - list [ref=f13e1275]:
+              - listitem [ref=f13e1276]:
+                - strong [ref=f13e1277]: Ready for the first societies
+                - paragraph [ref=f13e1278]: Phone sign-in, the catalog, group-buy rounds, SMS and push, ratings, the operator dashboard, and a bulk-staples pilot are built and verified; the first society goes live in the pilot.
+              - listitem [ref=f13e1279]:
+                - strong [ref=f13e1280]: Sign in with WhatsApp
+                - paragraph [ref=f13e1281]: "Tap to verify: the resident sends one message, taps the matching number, and is signed in. Free per login; the SMS code stays as the fallback."
+          - listitem [ref=f13e1282]:
+            - heading "Next" [level=3] [ref=f13e1283]
+            - list [ref=f13e1285]:
+              - listitem [ref=f13e1286]:
+                - strong [ref=f13e1287]: WhatsApp round updates
+                - paragraph [ref=f13e1288]: Round alerts over WhatsApp where societies already live, behind the same notification interface that sends SMS and push today.
+              - listitem [ref=f13e1289]:
+                - strong [ref=f13e1290]: More services, more societies
+                - paragraph [ref=f13e1291]: "The catalog is data, not code: the operator adds a service and switches it on per society. The platform is multi-tenant from day one."
+          - listitem [ref=f13e1292]:
+            - heading "Later" [level=3] [ref=f13e1293]
+            - list [ref=f13e1295]:
+              - listitem [ref=f13e1296]:
+                - strong [ref=f13e1297]: Recurring plans and warranty
+                - paragraph [ref=f13e1298]: "Own the relationship, not just the first job: a quarterly pest-control or pre-summer AC plan, with the vendor accountable through us."
+              - listitem [ref=f13e1299]:
+                - strong [ref=f13e1300]: Vendor tools and new cities
+                - paragraph [ref=f13e1301]: A vendor-side view and regional operators once the pilot proves fill rates and ratings in one city.
+    - region "Bring Bulk Saving to your society." [ref=f13e1302]:
+      - generic [ref=f13e1303]:
+        - generic [ref=f13e1304]:
+          - heading "Bring Bulk Saving to your society." [level=2] [ref=f13e1305]
+          - paragraph [ref=f13e1306]: One city for now. Tell us your society's name and roughly how many flats; we will come back with a first round to try.
+        - link "Write to us" [ref=f13e1307] [cursor=pointer]:
+          - /url: mailto:hello@bulksaving.example?subject=Bulk%20Saving%20for%20our%20society
+  - contentinfo [ref=f13e1308]:
+    - generic [ref=f13e1309]: Bulk Saving. Group buys for housing societies, one city at a time.
+    - navigation "Footer" [ref=f13e1310]:
+      - link "How it works" [ref=f13e1311] [cursor=pointer]:
+        - /url: "#how"
+      - link "For operators" [ref=f13e1312] [cursor=pointer]:
+        - /url: "#operators"
+      - link "Roadmap" [ref=f13e1313] [cursor=pointer]:
+        - /url: "#roadmap"
+      - link "Talk to us" [ref=f13e1314] [cursor=pointer]:
+        - /url: mailto:hello@bulksaving.example
