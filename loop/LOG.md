@@ -1980,3 +1980,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 6daa4e9: runs 9 (01:33:07–01:35:57) and 10 (01:35:57–01:39:25), both EXIT 0 and identical: site 71/71, backend 654/654, web 801/801. Logs v3-9.log, v3-10.log in the session scratchpad.
 - All five → done. Branch `feat/FEAT-038-edit-round` is NOT merged: merging into `main` and applying the FEAT-039 migration to the shared dev DB wait for the owner's explicit approval.
 - By: agent (autonomous)
+
+## 2026-11-23 — Merge of FEAT-038, BUG-030, FEAT-039, FEAT-040, FEAT-041 into `main` (owner: "merge into main all")
+- `main` fast-forwarded df0486a → 803ff07. Main checkout: `pnpm install --offline`, shared build, `prisma migrate deploy` (applied `20261123090000_feat_039_cancel_reason_reopen` to the shared dev DB `bulk_saving`, additive), `prisma generate`; the running backend (:3000, watcher) reloaded.
+- Checked live: `POST /admin/rounds/:id/reopen` and `PATCH /admin/rounds/:id` → 401 (they exist); an admin session gets 200 from overview (`waitingAsks`), dashboard (`asksMostAsked`, `asksWaiting`) and rounds (`cancelReason`, `cancelledAt`, `canReopen`); web :5174 serves `/admin/requests`. Not pushed (origin refuses this credential).
+- By: agent (autonomous)
