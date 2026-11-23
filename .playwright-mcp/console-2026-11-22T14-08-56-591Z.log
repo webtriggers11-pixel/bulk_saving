@@ -1,0 +1,220 @@
+[   49838ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[   54359ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[   59676ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/dev/otp?phone=%2B918419997952:1
+[   60085ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/dev/otp?phone=%2B918419997952:1
+[   60897ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/dev/otp?phone=%2B918419997952:1
+[   61626ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/auth/admin/otp/verify:1
+[   62503ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/dev/otp?phone=%2B918419997952:1
+[  116754ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/dev/otp?phone=%2B919999900001:1
+[  119991ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3000/auth/admin/otp/verify:1
+[ 1950933ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 1951068ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 1951069ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 1951069ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[ 1951087ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[ 5027000ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 5027106ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 5027109ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 5027123ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[ 5027124ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[ 5044561ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 5066033ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 5363127ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 5757239ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 6510609ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 6510609ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 6510609ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[ 6510610ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[ 6545100ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 6545425ms] [ERROR] %o
+
+%s
+
+%s
+ TypeError: mostAsked is not iterable
+    at AsksCard (http://localhost:5174/src/features/admin/AdminDashboardPage.tsx?t=1795363080968:103:31)
+    at Object.react_stack_bottom_frame (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:20259:20)
+    at renderWithHooks (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:5918:24)
+    at updateFunctionComponent (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:7763:21)
+    at beginWork (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:8843:20)
+    at runWithFiberInDEV (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:1133:72)
+    at performUnitOfWork (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13598:98)
+    at workLoopSync (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13461:43)
+    at renderRootSync (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13445:13)
+    at performWorkOnRoot (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:12861:37) The above error occurred in the <AsksCard> component. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:7276
+[ 6545428ms] [ERROR] [ErrorBoundary] TypeError: mostAsked is not iterable
+    at AsksCard (http://localhost:5174/src/features/admin/AdminDashboardPage.tsx?t=1795363080968:103:31)
+    at Object.react_stack_bottom_frame (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:20259:20)
+    at renderWithHooks (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:5918:24)
+    at updateFunctionComponent (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:7763:21)
+    at beginWork (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:8843:20)
+    at runWithFiberInDEV (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:1133:72)
+    at performUnitOfWork (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13598:98)
+    at workLoopSync (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13461:43)
+    at renderRootSync (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:13445:13)
+    at performWorkOnRoot (http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:12861:37) 
+    at AsksCard (http://localhost:5174/src/features/admin/AdminDashboardPage.tsx?t=1795363080968:98:21)
+    at DashboardSummary (http://localhost:5174/src/features/admin/AdminDashboardPage.tsx?t=1795363080968:239:21)
+    at ErrorBoundary (http://localhost:5174/src/components/ErrorBoundary.tsx:23:8)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at AdminLayout (http://localhost:5174/src/features/admin/AdminLayout.tsx?t=1795363080966:255:3)
+    at AdminDashboardPage (<anonymous>)
+    at ErrorBoundary (http://localhost:5174/src/components/ErrorBoundary.tsx:23:8)
+    at AdminRoute (http://localhost:5174/src/features/admin/AdminRoute.tsx?t=1795363080966:30:30)
+    at RenderedRoute (http://localhost:5174/node_modules/.vite/deps/react-router-dom.js?v=589568a1:6758:26)
+    at Routes (http://localhost:5174/node_modules/.vite/deps/react-router-dom.js?v=589568a1:7700:3)
+    at App (<anonymous>)
+    at ServiceWorkerProvider (http://localhost:5174/src/features/shell/ServiceWorkerProvider.tsx:22:41)
+    at ErrorBoundary (http://localhost:5174/src/components/ErrorBoundary.tsx:23:8)
+    at RootErrorBoundary (http://localhost:5174/src/components/ErrorBoundary.tsx:113:37)
+    at Router (http://localhost:5174/node_modules/.vite/deps/react-router-dom.js?v=589568a1:7639:13)
+    at BrowserRouter (http://localhost:5174/node_modules/.vite/deps/react-router-dom.js?v=589568a1:10955:3)
+    at QueryClientProvider (http://localhost:5174/node_modules/.vite/deps/@tanstack_react-query.js?v=589568a1:26:30) @ http://localhost:5174/src/components/ErrorBoundary.tsx:32
+[ 7407435ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7407435ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7407470ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7407471ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7408440ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7408441ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7408474ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7408475ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7410453ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 7410455ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 7410478ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7410479ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7410480ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7410481ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7414486ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7414486ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7414493ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7414493ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7458842ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 7458930ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7458938ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7458939ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7458941ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7459936ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7459941ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7459942ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7459946ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7461946ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7461948ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7461949ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7461951ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7465960ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7465965ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7465965ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7465967ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7466077ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 7466123ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7466125ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7466128ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7466140ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7467128ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7467129ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7467130ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7467144ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7469131ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7469132ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7469133ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7469146ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7473148ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7473151ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7473155ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7473155ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7483976ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7484982ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7486987ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7488594ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 7488641ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7488643ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7488657ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7488665ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7489648ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7489649ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7489663ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7489668ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7491654ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7491655ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7491665ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7491671ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7495658ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7495664ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7495670ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7495674ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7527060ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 7527144ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7527160ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7527164ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7527167ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7528149ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7528163ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7528166ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7528170ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7530156ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7530167ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7530171ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7530173ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7534162ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7534176ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7534184ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7534188ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7538072ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7539081ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7541086ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7545092ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7557275ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7558283ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7560007ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 7560054ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7560056ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7560057ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7560059ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7561060ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7561062ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7561062ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7561063ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7563065ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7563066ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7563066ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7563067ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 7567079ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 7567089ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 7567089ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 7567089ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 8426722ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5174/@vite/client:964
+[ 8427807ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[ 8428089ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 8428116ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 8428161ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[ 8428172ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[ 8428205ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 8428239ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 8428252ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 8428260ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 8429221ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 8429245ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 8429256ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 8429264ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 8431229ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 8431251ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 8431261ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 8431269ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[ 9482066ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[ 9482068ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[ 9482074ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[ 9482086ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[ 9482110ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/overview:1
+[ 9482112ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/dashboard:1
+[ 9482112ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/societies:1
+[ 9482122ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3000/admin/rounds:1
+[31194265ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5174/@vite/client:964
+[31196169ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
+[31196637ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/societies:1
+[31196654ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/overview:1
+[31196654ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/rounds:1
+[31196665ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/admin/dashboard:1
+[31197771ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/auth/refresh:1
+[36278464ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5174/@vite/client:964
+[36280718ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=589568a1:22165
