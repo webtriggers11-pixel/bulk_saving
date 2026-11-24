@@ -2050,3 +2050,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at f0fd588 (FEAT-043 worktree, own DB, WHATSAPP_* stripped): runs 3 (07:44:41–07:45:45) and 4 (07:45:46–07:46:51), both EXIT 0 (the gate's own status this time) and identical: site 71/71, backend 658/658, web 825/825. Logs v3-43-3.log, v3-43-4.log. The earlier pair's flake is BUG-031.
 - FEAT-043 → done. Branch `feat/FEAT-043-society-address` (stacked on FEAT-042), not merged. The migration `20261124090000_feat_043_society_address` is applied only to `bulk_saving_feat043`; the shared dev DB waits for the owner's approval at merge.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-044 — built; V1
+- What: audit of every GET (spec table). Paged with the ADR-0035 contract: `GET /admin/societies` (q: name/city/PIN prefix; status), `GET /admin/residents/:id/pledges`, `GET /admin/rounds/:id/participants`, `GET /admin/dashboard/demand`. The details keep counts only. Platform payment totals and demand's distinct residents are now SQL aggregates (tagged `$queryRaw` in the service) instead of loading every participant. Web: `SocietySelect` (first 50, search past 50, "Show more" option, off-page selection fetched by id) replaces four society dropdowns; Services' "Manage societies" pages its own list; Societies page has search + Show more; participants, pledges and demand use Show more. ADR-0051.
+- Found on the way: `AdminResidentDto.pledgeCount` already means live pledges, so the `activePledgeCount` I added duplicated it and was removed.
+- V1 (FEAT-044 worktree, `bulk_saving_feat043` DB, WHATSAPP_* stripped): EXIT 0, site 71, backend 662, web 830.
+- By: agent (autonomous)

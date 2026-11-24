@@ -104,7 +104,7 @@ describe('Active flags (integration, needs DB)', () => {
     });
     const detail = (await asAdmin.get(`/admin/residents/${neha.id}`).expect(200)).body.data as AdminResidentDetailDto;
     expect(detail).toMatchObject({ id: neha.id, active: true, society: { id: society.id } });
-    expect(detail).toMatchObject({ pledgeCount: 1, activePledgeCount: 1 });
+    expect(detail).toMatchObject({ pledgeCount: 1 });
     // FEAT-044: the pledges are paged.
     const pledges = (await asAdmin.get(`/admin/residents/${neha.id}/pledges`).expect(200)).body.data as Page<AdminResidentPledgeDto>;
     expect(pledges).toMatchObject({ total: 1, nextCursor: null });

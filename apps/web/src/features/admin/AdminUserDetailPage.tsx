@@ -126,7 +126,7 @@ function StatusCard({ user, isSelf }: { user: AdminResidentDetailDto; isSelf: bo
   const update = useUpdateUser();
   const remove = useRemoveUser();
   const [asking, setAsking] = useState<'off' | 'remove' | null>(null);
-  const history = user.activePledgeCount;
+  const history = user.pledgeCount;
 
   function setActive(next: boolean) {
     if (!next) {

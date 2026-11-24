@@ -83,7 +83,7 @@ describe('Pagination of admin details (FEAT-044, integration, needs DB + Redis)'
       });
       if (n === 0) bigRound = round;
     }
-    // One of the pledges is in a cancelled round: counted in pledgeCount, not activePledgeCount.
+    // One of the pledges is in a cancelled round: paged with the rest, not in the live pledgeCount.
     await prisma.round.updateMany({ where: { serviceId: serviceIds[6] }, data: { status: 'CANCELLED' } });
   });
 
@@ -118,8 +118,9 @@ describe('Pagination of admin details (FEAT-044, integration, needs DB + Redis)'
   });
 
   it("GET /admin/residents/:id/pledges pages a user's pledges newest first; the detail carries counts", async () => {
-    const detail = (await get(`/admin/residents/${busy.id}`).expect(200)).body.data as { pledgeCount: number; activePledgeCount: number };
-    expect(detail).toMatchObject({ pledgeCount: 7, activePledgeCount: 6 });
+    const detail = (await get(`/admin/residents/${busy.id}`).expect(200)).body.data as { pledgeCount: number };
+    // pledgeCount is live pledges (the cancelled round's doesn't count); the pages hold all 7.
+    expect(detail.pledgeCount).toBe(6);
     expect('pledges' in detail).toBe(false);
 
     const all = await walk<AdminResidentPledgeDto>(`/admin/residents/${busy.id}/pledges`, 3, (p) => p.roundId);

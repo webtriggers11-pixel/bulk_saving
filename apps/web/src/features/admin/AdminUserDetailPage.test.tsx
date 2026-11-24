@@ -29,12 +29,11 @@ const asha: UserFixture = {
   createdAt: '2026-11-01T10:00:00.000Z',
   society: { id: 'soc_1', name: 'Green Park' },
   pledgeCount: 1,
-  activePledgeCount: 1,
   pledges: [
     { roundId: 'r1', serviceName: 'AC Servicing', status: 'OPEN', units: 2, paid: false, deadline: '2026-12-01T10:00:00.000Z', joinedAt: '2026-11-02T10:00:00.000Z' },
   ],
 };
-const fresh: UserFixture = { ...asha, id: 'res_new', name: 'New Person', pledgeCount: 0, activePledgeCount: 0, pledges: [] };
+const fresh: UserFixture = { ...asha, id: 'res_new', name: 'New Person', pledgeCount: 0, pledges: [] };
 
 function renderPage(id = 'res_asha') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });

@@ -552,12 +552,9 @@ export interface AdminResidentPledgeDto {
 
 /**
  * `GET /admin/residents/:id` (FEAT-035). FEAT-044: the pledges themselves are paged at
- * `GET /admin/residents/:id/pledges`, newest first; the detail carries the counts.
+ * `GET /admin/residents/:id/pledges`, newest first; `pledgeCount` (live pledges) stays.
  */
-export interface AdminResidentDetailDto extends AdminResidentDto {
-  /** (`pledgeCount`, every pledge ever made, comes from AdminResidentDto.) Pledges in rounds that weren't cancelled (what "N group buys" means). */
-  activePledgeCount: number;
-}
+export type AdminResidentDetailDto = AdminResidentDto;
 
 /** `PATCH /admin/residents/:id`. `name: null` clears the name. */
 /** `POST /admin/admins` (FEAT-036, ADR-0046): a platform admin, in no society. */
