@@ -2041,3 +2041,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Also: my V3 loop echoed `date`'s exit status, not the gate's ("EXIT 0" on a failed run). The counts were read from the log; the loop is fixed for the re-run.
 - FEAT-043 V3 to be re-run as a fresh back-to-back pair; precedent BUG-027/028 (flakes triaged, item closed on a clean pair).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-043 — V2 r2 pass
+- V2 r2 (same reviewer, own worktree + DB, gate at 333555b: EXIT 0, site 71, backend 658, web 825): pass. One P3 taken: `displayPhone` moved above AddressCard's doc comment.
+- By: agent (autonomous) + code-reviewer subagent

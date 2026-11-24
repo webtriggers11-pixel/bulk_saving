@@ -135,16 +135,16 @@ function InvitationCard({ society, message }: { society: AdminSocietyDetailDto; 
   );
 }
 
-/**
- * FEAT-043 (ADR-0050): where the society is and who to call. A society created before the
- * address was required says so, and points at the form below.
- */
 /** "+919876543210" → "+91 98765 43210" for reading; the tel: link keeps the canonical form. */
 function displayPhone(phone: string): string {
   const m = /^\+91(\d{5})(\d{5})$/.exec(phone);
   return m ? `+91 ${m[1]} ${m[2]}` : phone;
 }
 
+/**
+ * FEAT-043 (ADR-0050): where the society is and who to call. A society created before the
+ * address was required says so, and points at the form below.
+ */
 function AddressCard({ society }: { society: AdminSocietyDetailDto }) {
   const complete = hasSocietyAddress(society);
   const address = formatSocietyAddress(society);
