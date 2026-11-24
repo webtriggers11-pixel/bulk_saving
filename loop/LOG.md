@@ -2106,3 +2106,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `checkInvite()`; OnboardingPage asks the server on Continue (shape-checked codes only, BUG-021 kept). A wrong code stays on the invite step with an error Notice: "This is an invalid invite code. Check it with your society and try again." Other details: aria-invalid, the error clears on edit, "Checking…" + disabled while pending, offline → queued notice. `INVITE_CHECK_RATE_LIMITED` message. Existing tests answer the check; 6 new tests.
 - V1: gate in the worktree at 947bf25 (WHATSAPP_* stripped): EXIT 0 — backend 670/670, web 837/837. The first try failed lint (unused mock param), fixed.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-045 — V2; fixes; BUG-032 triaged
+- V2 (independent reviewer subagent, gate run itself in the scratch worktree at 83cefcd): run 1 exit 139 (pnpm segfault mid-backend), run 2 exit 1 (auth.integration 400→404, roles.integration 403→401, files not in this diff; they pass alone, 11/11, and with invite-check, 18/18), run 3 EXIT 0 (backend 670, web 837, site 71). Verdict: pass with follow-ups. No P0/P1.
+- Taken: P2-1, an edit made during "Checking…" was advanced on the old code's answer. The checked code now travels as the mutation variable, and the step advances only if the field still holds it (tested). P3-2: the budget key gets a TTL back if it ever lost one (tested). P3-3: test for the 429 message on the invite step. P3-1 (the old doors are not budgeted) is recorded as accepted in ADR-0052.
+- The run-2 difference was triaged as BUG-032 (flaky, shared DB/Redis family). It is not in FEAT-045's code.
+- Closing: site entry added (phone section), registry FEAT-045 → done, before V3 (per the site content test).
+- By: agent (autonomous)

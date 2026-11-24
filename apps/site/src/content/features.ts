@@ -236,6 +236,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-045',
+    title: 'A wrong invite code is caught straight away',
+    what: 'When you enter your society’s invite code, the app checks it with the server before going on. A wrong one stays on that screen with “This is an invalid invite code.”',
+    why: 'Finding out the code was wrong only after typing your phone number wastes a step and puts the error on the wrong screen.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-029',
     title: 'A real app icon on your home screen',
     what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests.',
