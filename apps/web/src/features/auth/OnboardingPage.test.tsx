@@ -33,6 +33,17 @@ function jsonResponse({ ok, status, body }: MockResponse) {
   return { ok, status, json: () => Promise.resolve(body) };
 }
 
+/** FEAT-045: every walk through the invite step asks the server first; by default the code is real. */
+function inviteCheckAnswer(url: string, answer: MockResponse = INVITE_VALID) {
+  return url.endsWith('/auth/invite/check') ? Promise.resolve(jsonResponse(answer)) : null;
+}
+const INVITE_VALID: MockResponse = { ok: true, status: 200, body: { success: true, data: { valid: true } } };
+const INVITE_UNKNOWN: MockResponse = {
+  ok: false,
+  status: 400,
+  body: { success: false, error: { code: 'INVALID_INVITE_CODE', message: 'This is an invalid invite code.' } },
+};
+
 /**
  * Route the mocked fetch by URL; verify can be overridden to fail. The OTP request
  * payload is `{ requested: true }` and nothing else — CHORE-007 removed the dev code
@@ -42,6 +53,8 @@ function installFetch(verify: MockResponse, requestData: unknown = { requested: 
   // `init` is received (and recorded by vi.fn) so a test can read the body it sent (BUG-019).
   const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
     const url = String(args[0]);
+    const checked = inviteCheckAnswer(url);
+    if (checked) return checked;
     if (url.endsWith('/auth/otp/request')) {
       return Promise.resolve(
         jsonResponse({ ok: true, status: 200, body: { success: true, data: requestData } }),
@@ -71,7 +84,7 @@ async function walkToOtpStep(mock: ReturnType<typeof installFetch>) {
   fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-  fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919876543210' } });
+  fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919876543210' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
   await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
@@ -113,7 +126,7 @@ describe('OnboardingPage', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '99999 00201' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '99999 00201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
     await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
 
@@ -142,7 +155,7 @@ describe('OnboardingPage', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '022 2345 6789' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '022 2345 6789' } });
     expect(screen.getByRole('button', { name: 'Send code' })).toBeDisabled();
     expect(screen.getByTestId('phone-hint')).toHaveTextContent(/10-digit mobile/);
     expect(screen.getByLabelText('Phone number').getAttribute('aria-describedby')).toContain('phone-hint');
@@ -156,15 +169,16 @@ describe('OnboardingPage', () => {
 
   it('a number the server refuses gets the phone message, not a generic apology (BUG-019)', async () => {
     const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) =>
-      String(args[0]).endsWith('/auth/otp/request')
+      inviteCheckAnswer(String(args[0])) ??
+      (String(args[0]).endsWith('/auth/otp/request')
         ? Promise.resolve(jsonResponse({ ok: false, status: 400, body: { success: false, error: { code: 'VALIDATION_ERROR', message: 'phone must be a valid phone number.' } } }))
-        : Promise.reject(new Error('unexpected')),
+        : Promise.reject(new Error('unexpected'))),
     );
     vi.stubGlobal('fetch', mock);
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '98765 43210' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '98765 43210' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
     expect(await screen.findByText(/doesn't look like a phone number/)).toBeInTheDocument();
   });
@@ -174,6 +188,8 @@ describe('OnboardingPage', () => {
     vi.stubEnv('MODE', 'development');
     const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
       const url = String(args[0]);
+      const checked = inviteCheckAnswer(url);
+      if (checked) return checked;
       if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
       if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '6543' } } }));
       return Promise.reject(new Error(`unexpected fetch: ${url}`));
@@ -182,7 +198,7 @@ describe('OnboardingPage', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('6543');
@@ -200,6 +216,8 @@ describe('OnboardingPage', () => {
     vi.stubEnv('MODE', 'development');
     const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
       const url = String(args[0]);
+      const checked = inviteCheckAnswer(url);
+      if (checked) return checked;
       if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
       if (url.includes('/dev/otp')) return Promise.resolve(jsonResponse({ ok: false, status: 404, body: { success: false, error: { code: 'NOT_FOUND', message: 'no' } } }));
       return Promise.reject(new Error(`unexpected fetch: ${url}`));
@@ -208,7 +226,7 @@ describe('OnboardingPage', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919999900201' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
     await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -244,7 +262,7 @@ describe('OnboardingPage', () => {
 
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+919876543210' } });
+    fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919876543210' } });
 
     act(() => {
       onlineManager.setOnline(false);
@@ -252,8 +270,11 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     expect(await screen.findByTestId('onboarding-offline')).toHaveTextContent('reconnect');
-    // Nothing was SENT: the only call so far is the page asking which methods exist (FEAT-027).
-    expect(mock.mock.calls.filter(([url]) => !String(url).endsWith('/auth/methods'))).toHaveLength(0);
+    // Nothing was SENT: the only calls so far are the page asking which methods exist (FEAT-027)
+    // and whether the invite code is real (FEAT-045).
+    expect(
+      mock.mock.calls.filter(([url]) => !/\/auth\/(methods|invite\/check)$/.test(String(url))),
+    ).toHaveLength(0);
 
     act(() => {
       onlineManager.setOnline(true);
@@ -279,6 +300,8 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
     const queue = [...statuses];
     const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      const checked = inviteCheckAnswer(url);
+      if (checked) return checked;
       if (typeof init?.body === 'string') sent.set(url.replace(/^.*(\/auth\/)/, '$1'), JSON.parse(init.body));
       if (url.endsWith('/auth/methods')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { whatsapp: true } } }));
       if (url.endsWith('/auth/wa/start')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: session } }));
@@ -343,7 +366,7 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'BLUE0002' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.queryByTestId('invite-hint')).toBeNull();
-    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
   });
 
   it('when the server does not offer WhatsApp, the invite code leads straight to the phone step', async () => {
@@ -351,7 +374,96 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
     renderOnboarding();
     fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByLabelText('Phone number')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
     expect(screen.queryByTestId('continue-whatsapp')).toBeNull();
+  });
+});
+
+/** FEAT-045 (ADR-0052): the invite step asks the server before moving on. */
+describe('OnboardingPage — the server checks the invite code', () => {
+  function installCheck(answer: MockResponse | (() => Promise<unknown>)) {
+    const mock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/auth/invite/check')) {
+        return typeof answer === 'function' ? answer() : Promise.resolve(jsonResponse(answer));
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', mock);
+    return mock;
+  }
+
+  beforeEach(() => {
+    useAuthStore.getState().logout();
+  });
+  afterEach(() => {
+    onlineManager.setOnline(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('a wrong code stays on the invite step with "This is an invalid invite code."', async () => {
+    const mock = installCheck(INVITE_UNKNOWN);
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'ZZ99ZZ99' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByTestId('invite-error')).toHaveTextContent('This is an invalid invite code.');
+    expect(screen.getByLabelText('Invite code')).toBeInTheDocument();
+    expect(screen.getByLabelText('Invite code')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByLabelText('Phone number')).toBeNull();
+    expect(screen.queryByTestId('onboarding-choose')).toBeNull();
+    const check = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/invite/check'));
+    expect(JSON.parse(String(check?.[1]?.body))).toEqual({ inviteCode: 'ZZ99ZZ99' });
+  });
+
+  it('editing the code clears the error, and a right code then moves on', async () => {
+    let answer = INVITE_UNKNOWN;
+    installCheck(() => Promise.resolve(jsonResponse(answer)));
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'ZZ99ZZ99' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await screen.findByTestId('invite-error');
+
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    expect(screen.queryByTestId('invite-error')).toBeNull();
+
+    answer = INVITE_VALID;
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
+  });
+
+  it('while the server answers, the button reads "Checking…" and cannot be tapped twice', async () => {
+    let release: (value: unknown) => void = () => undefined;
+    const mock = installCheck(() => new Promise((resolve) => { release = resolve; }));
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const button = await screen.findByRole('button', { name: 'Checking…' });
+    expect(button).toBeDisabled();
+    fireEvent.submit(button.closest('form') as HTMLFormElement);
+    expect(mock.mock.calls.filter(([url]) => String(url).endsWith('/auth/invite/check'))).toHaveLength(1);
+
+    await act(async () => {
+      release(jsonResponse(INVITE_VALID));
+    });
+    expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
+  });
+
+  it('offline: the check is QUEUED and says so, then runs on reconnect (BUG-004 pattern)', async () => {
+    const mock = installCheck(INVITE_VALID);
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    act(() => {
+      onlineManager.setOnline(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByTestId('invite-offline')).toHaveTextContent('reconnect');
+    expect(mock.mock.calls.filter(([url]) => String(url).endsWith('/auth/invite/check'))).toHaveLength(0);
+
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
   });
 });

@@ -2,6 +2,8 @@ import type {
   AdminOtpRequestBody,
   AdminOtpVerifyBody,
   AuthResult,
+  InviteCheckBody,
+  InviteCheckResponse,
   MeResponse,
   OtpRequestBody,
   OtpRequestResponse,
@@ -10,6 +12,18 @@ import type {
   SignOutResponse,
 } from '@bulk/shared';
 import { apiRequest } from '../../lib/api';
+
+/**
+ * POST /auth/invite/check (FEAT-045, ADR-0052) — is this a real, active society's code? A wrong
+ * one rejects with INVALID_INVITE_CODE, so the invite step can say so before moving on.
+ */
+export function checkInvite(body: InviteCheckBody): Promise<InviteCheckResponse> {
+  return apiRequest<InviteCheckResponse>('/auth/invite/check', {
+    method: 'POST',
+    body,
+    auth: false,
+  });
+}
 
 /** POST /auth/otp/request — dispatches an OTP. Never returns the code. */
 export function requestOtp(body: OtpRequestBody): Promise<OtpRequestResponse> {

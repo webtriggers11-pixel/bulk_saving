@@ -15,7 +15,10 @@ export const INVITE_CODE_SHAPE = /^[A-Z0-9]{8}$/;
 export function authErrorMessage(code: string, serverMessage?: string): string {
   switch (code) {
     case 'INVALID_INVITE_CODE':
-      return "We couldn't find that invite code. Check it with your society and try again.";
+      // FEAT-045: the owner's words ("This is an invalid invite code."), then what to do about it.
+      return 'This is an invalid invite code. Check it with your society and try again.';
+    case 'INVITE_CHECK_RATE_LIMITED':
+      return 'Too many invite codes tried. Please wait a while, then try again.';
     case 'OTP_INVALID':
       return 'That code is incorrect. Please check the SMS and try again.';
     case 'OTP_EXPIRED':

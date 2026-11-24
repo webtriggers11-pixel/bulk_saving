@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { requestOtp, verifyOtp } from './auth.api';
+import { checkInvite, requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
@@ -63,6 +63,12 @@ export function OnboardingPage() {
       navigate('/', { replace: true });
     },
   );
+  // FEAT-045 (ADR-0052): a well-formed code is asked about BEFORE the next step; a wrong one
+  // keeps the resident here with "This is an invalid invite code."
+  const inviteMutation = useMutation({
+    mutationFn: () => checkInvite({ inviteCode }),
+    onSuccess: () => setStep(methods.whatsapp ? 'choose' : 'phone'),
+  });
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
     mutationFn: () => requestOtp({ inviteCode, phone: canonicalPhone ?? phone }),
@@ -94,7 +100,8 @@ export function OnboardingPage() {
       return;
     }
     setInviteTried(false);
-    setStep(methods.whatsapp ? 'choose' : 'phone');
+    if (inviteMutation.isPending) return;
+    inviteMutation.mutate();
   }
 
   function submitPhone(event: FormEvent) {
@@ -110,6 +117,9 @@ export function OnboardingPage() {
     verifyMutation.mutate();
   }
 
+  const inviteError = inviteMutation.isError ? messageFromError(inviteMutation.error) : null;
+  // Offline pauses the check exactly like the OTP request (BUG-004): say so, don't spin.
+  const inviteQueued = inviteMutation.isPaused;
   const requestError = requestMutation.isError ? messageFromError(requestMutation.error) : null;
   // BUG-004 (V2 P2): offline PAUSES a mutation — isPending stays true and nothing
   // rejects — so "Sending…" / "Verifying…" hung forever on the app's front door.
@@ -174,18 +184,47 @@ export function OnboardingPage() {
               placeholder="e.g. AB12CD34"
               maxLength={8}
               value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
+              onChange={(e) => {
+                setInviteCode(e.target.value.toUpperCase().replace(/\s/g, ''));
+                // A new code is a new question: the last answer no longer applies.
+                if (inviteMutation.isError) inviteMutation.reset();
+              }}
               className="num text-center"
-              aria-describedby={inviteImplausible ? 'invite-hint' : undefined}
+              aria-invalid={inviteError ? true : undefined}
+              aria-describedby={inviteImplausible ? 'invite-hint' : inviteError ? 'invite-error' : undefined}
             />
             {inviteImplausible && (
               <p id="invite-hint" role="alert" className="mt-2 text-caption text-ink-muted" data-testid="invite-hint">
                 {INVITE_HINT}
               </p>
             )}
-            <Button className="mt-[22px] w-full" type="submit" disabled={inviteCode.length === 0}>
-              Continue
-              <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
+            {inviteQueued && (
+              <Notice tone="warn" data-testid="invite-offline">
+                {OFFLINE_QUEUED_TEXT}
+              </Notice>
+            )}
+            {inviteError && (
+              <div id="invite-error">
+                <Notice tone="error" data-testid="invite-error">
+                  {inviteError}
+                </Notice>
+              </div>
+            )}
+            <Button
+              className="mt-[22px] w-full"
+              type="submit"
+              disabled={inviteCode.length === 0 || inviteMutation.isPending}
+            >
+              {inviteQueued ? (
+                OFFLINE_WAITING_LABEL
+              ) : inviteMutation.isPending ? (
+                'Checking…'
+              ) : (
+                <>
+                  Continue
+                  <Icon name="forward" size={18} strokeWidth={2.2} className="nudge" />
+                </>
+              )}
             </Button>
           </form>
         )}

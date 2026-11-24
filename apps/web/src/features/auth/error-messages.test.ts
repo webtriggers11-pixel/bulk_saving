@@ -20,3 +20,14 @@ describe('authErrorMessage — validation refusals', () => {
     expect(authErrorMessage('ACCOUNT_DISABLED')).toMatch(/switched off/);
   });
 });
+
+/** FEAT-045: the owner's wording for a code no society answers to. */
+describe('authErrorMessage — invite code', () => {
+  it('an unknown invite code reads "This is an invalid invite code."', () => {
+    expect(authErrorMessage('INVALID_INVITE_CODE')).toMatch(/^This is an invalid invite code\./);
+  });
+
+  it('too many wrong codes says to wait', () => {
+    expect(authErrorMessage('INVITE_CHECK_RATE_LIMITED')).toMatch(/wait/);
+  });
+});
