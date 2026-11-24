@@ -2056,3 +2056,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Found on the way: `AdminResidentDto.pledgeCount` already means live pledges, so the `activePledgeCount` I added duplicated it and was removed.
 - V1 (FEAT-044 worktree, `bulk_saving_feat043` DB, WHATSAPP_* stripped): EXIT 0, site 71, backend 662, web 830.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-044 — browser pass
+- Headless Chromium 390×844 against FEAT-044 worktree servers (:3101 API, :5181 web; CORS added in a Playwright route), with 75 extra societies inserted in `bulk_saving_feat043` (ids `bp44_*`). Societies: 20 rows → Show more → 40; search "Nashik" → 20 + "Show 18 more"; New round picker: a search box (more than 50), 50 options + "Show more societies (30 more)…", choosing it loads the next page and leaves the value empty, search "422007" → one match; Reports: demand pages; no overflow; no console errors; network shows only the paged endpoints.
+- Found: the shared ShowMore said "Show 50 more of 60" while lists load 20 (FEAT-025's label assumed the max page). Taken: `pageSize` prop, default PAGE_LIMIT_DEFAULT; test updated.
+- By: agent (autonomous)

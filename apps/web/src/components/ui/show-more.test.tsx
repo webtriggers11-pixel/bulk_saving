@@ -21,6 +21,9 @@ describe('ShowMore (FEAT-025)', () => {
     const { rerender } = render(<ShowMore hasMore loaded={20} total={21} onMore={vi.fn()} noun={['request', 'requests']} />);
     expect(screen.getByTestId('show-more')).toHaveTextContent('Show 1 more request');
     rerender(<ShowMore hasMore loaded={20} total={120} onMore={vi.fn()} noun={['request', 'requests']} />);
+    // FEAT-044: the next page is 20 (the API default), so it says 20, not 50.
+    expect(screen.getByTestId('show-more')).toHaveTextContent('Show 20 more of 100 requests');
+    rerender(<ShowMore hasMore loaded={20} total={120} pageSize={50} onMore={vi.fn()} noun={['request', 'requests']} />);
     expect(screen.getByTestId('show-more')).toHaveTextContent('Show 50 more of 100 requests');
     rerender(<ShowMore hasMore loaded={20} onMore={vi.fn()} noun={['request', 'requests']} />);
     expect(screen.getByTestId('show-more')).toHaveTextContent('Show more');

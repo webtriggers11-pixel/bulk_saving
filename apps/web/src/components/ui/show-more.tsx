@@ -1,3 +1,4 @@
+import { PAGE_LIMIT_DEFAULT } from '@bulk/shared';
 import { Button } from './button';
 import { Icon } from './icon';
 
@@ -11,6 +12,8 @@ interface ShowMoreProps {
   onMore: () => void;
   /** The things being counted, e.g. ['round', 'rounds']. */
   noun: [string, string];
+  /** How many the next page brings (FEAT-044: it said 50 while lists load 20). Default: the API default. */
+  pageSize?: number;
   'data-testid'?: string;
 }
 
@@ -19,11 +22,11 @@ interface ShowMoreProps {
  * finds, that pauses honestly offline and that a test can press. Says how much is left,
  * because "Show more" alone is a promise of unknown size.
  */
-export function ShowMore({ hasMore, loaded, total, busy = false, onMore, noun, 'data-testid': testId = 'show-more' }: ShowMoreProps) {
+export function ShowMore({ hasMore, loaded, total, busy = false, onMore, noun, pageSize = PAGE_LIMIT_DEFAULT, 'data-testid': testId = 'show-more' }: ShowMoreProps) {
   if (!hasMore) return null;
   const left = total !== undefined ? Math.max(0, total - loaded) : undefined;
   const label =
-    left === undefined ? 'Show more' : `Show ${Math.min(left, 50)} more${left > 50 ? ` of ${left}` : ''} ${left === 1 ? noun[0] : noun[1]}`;
+    left === undefined ? 'Show more' : `Show ${Math.min(left, pageSize)} more${left > pageSize ? ` of ${left}` : ''} ${left === 1 ? noun[0] : noun[1]}`;
   return (
     <div className="flex justify-center pt-1">
       <Button variant="secondary" size="sm" disabled={busy} onClick={onMore} data-testid={testId}>
