@@ -125,7 +125,7 @@ export function InstallToast() {
         duration={null}
         onDismiss={dismiss}
         action={
-          <Button size="sm" variant="primary" onClick={install} className="shrink-0 self-center" data-testid="install-toast-install">
+          <Button size="sm" variant="secondary" onClick={install} className="shrink-0 self-center" data-testid="install-toast-install">
             Install
           </Button>
         }

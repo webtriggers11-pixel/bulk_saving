@@ -2003,3 +2003,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - What: `install-platform.ts` (pure classifier, real-UA tests), `InstallToast` at the root (2 s delay, one-tap on a held prompt, steps sheet elsewhere, per-visit snooze, switches to one-tap when the prompt arrives late), Home card removed, ADR-0049, site entry (coming-soon until close).
 - V1 at 4615b37 in a detached scratchpad worktree (main tree's .env carries WHATSAPP_* → BUG-024's known red; stripped in the worktree): EXIT 0, site 71, backend 654, web 809.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-042 — V2 r1; fixes; browser pass
+- V2 r1 (code-reviewer subagent, its own gate at aa24a5a: EXIT 0, site 71, backend 654, web 809): pass with fixes. P1-1 the install toast covered the dev OTP toast. P2-1 an iOS app's Safari view sends Safari's UA but has no Add to Home Screen. P2-2 Android WebViews got "use the ⋮ menu". P3-1 steps sheet unmounted when a prompt arrived. P3-2 focus lost on close. P3-3 dead `isIosSafari`. P3-4 no root-mount test, a tautological test. P3-5 act warnings.
+- All taken: `Toast.yieldTop` (a top toast steps aside while another top toast is up), `android-inapp`, a Safari-view fallback step, sheet platform frozen on open, closing the sheet returns to the toast, `isIosSafari` removed, InstallToast mounted in App.tsx and asserted on /onboard, /admin/login and /, test fixes. Not taken: P3-6 desktop Chromium still gets the one-tap ask (cheap and useful for operators; flagged to the owner).
+- Gate at the fix commit (fresh worktree): EXIT 0, site 71, backend 654, web 818.
+- Browser pass (headless Chromium, 390×844, dev server :5174): Android UA → `android-manual` toast on /onboard and /admin/login, steps sheet correct; iPhone Safari UA → `ios-safari`, four steps; close then reload → no toast (same session); no horizontal overflow; no console errors. Found: the Install button was dark-on-dark → `secondary`, like the OTP toast's "Use it".
+- By: agent (autonomous) + code-reviewer subagent
