@@ -2081,3 +2081,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 7e4bde0 (FEAT-044 worktree, WHATSAPP_* stripped): runs 3 (08:16:15–08:17:16) and 4 (08:17:16–08:18:18), both EXIT 0 and identical: site 71/71, backend 663/663, web 831/831. Logs v3-44-3.log, v3-44-4.log. The earlier pair's flake is BUG-031 (second occurrence).
 - FEAT-044 → done. Branch `feat/FEAT-044-paginate-everything` (stacked on FEAT-043, FEAT-042), not merged; no migration of its own.
 - By: agent (autonomous)
+
+## 2026-11-24 — session — handoff
+- FEAT-042, FEAT-043, FEAT-044 closed on stacked branches (not merged); BUG-031 triaged. HANDOFF.md updated with the merge steps, the worktree DB, and the leftover servers to stop.
+- By: agent (autonomous)

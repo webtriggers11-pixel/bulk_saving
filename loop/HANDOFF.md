@@ -3,6 +3,17 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
+## Session D (2026-11-24): FEAT-042 install toast, FEAT-043 society address, FEAT-044 pagination everywhere; BUG-031 triaged. Stacked branches, NOT merged
+
+- **Branches** (each stacked on the previous, all off `main` 3806efd): `feat/FEAT-042-install-toast` (cffcbcc) → `feat/FEAT-043-society-address` (a4233b4) → `feat/FEAT-044-paginate-everything` (3706fea, which carries all three). All three are closed: V1, V2 (subagent, 2 rounds each), browser pass, V3 identical pairs (FEAT-042 site 71 / backend 654 / web 818; FEAT-043 71/658/825; FEAT-044 71/663/831).
+- **FEAT-042** (ADR-0049): `InstallToast` in App.tsx on every route. Opens 2 s after load; one-tap native install on Chromium; per-platform steps (iOS Safari incl. in-app Safari views, iOS Chrome/Edge, iOS/Android in-app WebViews, Android without a prompt). "Not now" lasts one visit (sessionStorage). The Home install card is removed. `Toast.yieldTop` lets the dev OTP toast win the top slot.
+- **FEAT-043** (ADR-0050): additive migration `20261124090000_feat_043_society_address` (six nullable Society columns). Line 1, state and 6-digit PIN are required on create and all-or-nothing on PATCH; the phone is optional, canonical +91. Address card on the society page; "No address" in the list; seeds carry addresses.
+- **FEAT-044** (ADR-0051): paged `GET /admin/societies` (q, status), `/admin/residents/:id/pledges`, `/admin/rounds/:id/participants`, `/admin/dashboard/demand`. Payment totals are a SQL aggregate. `SocietySelect` replaces four dropdowns. The service/vendor pickers stay one walk (curated catalogs), and `fetchAllPages` throws at 2,000. ShowMore now counts the real page size.
+- **To merge (owner approval needed):** fast-forward `main` to `feat/FEAT-044-paginate-everything`. Then in the main checkout: `corepack pnpm install --offline`, `corepack pnpm --filter @bulk/shared build`, `cd apps/backend && npx prisma migrate deploy` (applies the FEAT-043 migration, additive) `&& npx prisma generate`, then restart the backend. Optionally `corepack pnpm seed` to give the two seeded societies addresses.
+- **Worktree DB** `bulk_saving_feat043` (FEAT-043 and FEAT-044 gates) can be dropped after the merge.
+- **BUG-031 (P2, triaged):** two one-off 404s from Redis-held keys (wa-login status, admin OTP verify), each in one run of a V3 pair. Both happened while leftover browser-pass backends ran on :3100 (FEAT-043) and :3101 (FEAT-044) against the shared Redis, with vites on :5180/:5181. The agent was not permitted to stop them. **Stop them first:** `lsof -ti:3100,5180,3101,5181 | xargs kill`, then try to reproduce.
+- Open questions for the owner: the install toast also shows on desktop Chromium (phones only?); searchable pickers for services/vendors (deferred, ADR-0051 §5); the per-round payment summary is still computed from participants (ADR-0051 §6).
+
 ## Session C, part 2 (2026-11-23): FEAT-038 edit a round, BUG-030 prices must fall, FEAT-039 cancel reason + reopen, FEAT-040 closing date, FEAT-041 decluttered dashboard. Branch `feat/FEAT-038-edit-round` (off `main` df0486a), NOT merged
 
 - All five closed: V1, V2 (4 review rounds, findings taken, including a real P1 where a close job racing a deadline extension stranded the round), browser pass, V3 identical at 6daa4e9 (site 71, backend 654, web 801).
