@@ -2095,3 +2095,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Owner: "once the invite code is sent, also check in the back end that invite code is correct or not … otherwise … error: This is an invalid invite code." Checked: not done. The invite step checked only the shape (BUG-021); the server first checked the code at `/auth/otp/request`, after the phone step.
 - Classified FEAT (new endpoint + flow change). Spec, plan, tasks written; ADR-0052 (separate pre-check endpoint, failures budgeted 20/hour per IP bucket; Medium, judgment call). Branch `feat/FEAT-045-check-invite-code`.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-045 — T1 done (backend endpoint)
+- `POST /auth/invite/check` + `InviteCheckService`: lookup via `findByInviteCode` (inactive = unknown); wrong codes reserve from a per-IP-bucket budget (20/hour) atomically BEFORE the lookup and right codes refund, so parallel guesses can't overshoot and a right code can't be found past the cap. 7 integration tests.
+- V1: the main tree's gate failed only BUG-024 (owner's .env WhatsApp creds; known, pre-existing). Gate in the scratch worktree with WHATSAPP_* stripped: EXIT 0 — backend 670/670, web 831/831.
+- Note: `bulk_saving_postgres`/`bulk_saving_redis` were stopped; started them (`docker start`) so tests could run.
+- By: agent (autonomous)
