@@ -2090,3 +2090,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `main` fast-forwarded 3806efd → 0093144. Main checkout: `pnpm install --offline`, shared build, `prisma migrate deploy` (applied `20261124090000_feat_043_society_address` to the shared dev DB `bulk_saving`, additive; `migrate status` up to date), `prisma generate`. The backend compiles (`tsc -p tsconfig.build.json` clean).
 - The running dev backend (:3000, `nest start --watch`, started before this session) did not rebuild: new routes answer 404 and dist is from 07:15. Restarting it is left to the owner (the agent doesn't kill the owner's processes). Not pushed (origin refuses this credential, see the 2026-11-22 handoff).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-045 — triaged + opened
+- Owner: "once the invite code is sent, also check in the back end that invite code is correct or not … otherwise … error: This is an invalid invite code." Checked: not done. The invite step checked only the shape (BUG-021); the server first checked the code at `/auth/otp/request`, after the phone step.
+- Classified FEAT (new endpoint + flow change). Spec, plan, tasks written; ADR-0052 (separate pre-check endpoint, failures budgeted 20/hour per IP bucket; Medium, judgment call). Branch `feat/FEAT-045-check-invite-code`.
+- By: agent (autonomous)
