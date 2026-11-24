@@ -20,6 +20,12 @@ const empty: AdminSocietyDetailDto = {
   name: 'Lakeview',
   city: 'Pune',
   inviteCode: 'AB23CD45',
+  addressLine1: 'Plot 12, Baner Road',
+  addressLine2: 'Baner',
+  landmark: null,
+  state: 'Maharashtra',
+  pincode: '411045',
+  contactPhone: null,
   active: true,
   residentCount: 0,
   roundCount: 0,
@@ -146,7 +152,39 @@ describe('AdminSocietyDetailPage (FEAT-032)', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
     });
-    expect(updateSociety).toHaveBeenCalledWith('soc_lake', { name: 'Lakeview Towers', city: 'Pune' });
+    expect(updateSociety).toHaveBeenCalledWith('soc_lake', {
+      name: 'Lakeview Towers',
+      city: 'Pune',
+      addressLine1: 'Plot 12, Baner Road',
+      addressLine2: 'Baner',
+      landmark: null,
+      state: 'Maharashtra',
+      pincode: '411045',
+      contactPhone: null,
+    });
+  });
+
+  it('shows the full address, the phone as a tel: link, and a Maps link (FEAT-043)', async () => {
+    vi.mocked(fetchSociety).mockResolvedValue({ ...occupied, landmark: 'Balewadi Phata', contactPhone: '+919876543210' });
+    renderPage();
+    expect(await screen.findByTestId('society-address')).toHaveTextContent('Plot 12, Baner Road, Baner, near Balewadi Phata, Pune, Maharashtra 411045');
+    expect(screen.getByRole('link', { name: '+919876543210' })).toHaveAttribute('href', 'tel:+919876543210');
+    expect(screen.getByRole('link', { name: 'Open in Maps' }).getAttribute('href')).toContain('google.com/maps/search');
+    expect(screen.queryByTestId('society-address-missing')).toBeNull();
+  });
+
+  it('an old society without an address says so, and saving requires one (FEAT-043)', async () => {
+    const old = { ...occupied, addressLine1: null, addressLine2: null, state: null, pincode: null };
+    vi.mocked(fetchSociety).mockResolvedValue(old);
+    vi.mocked(updateSociety).mockResolvedValue(old);
+    renderPage();
+    expect(await screen.findByTestId('society-address-missing')).toHaveTextContent('Address missing');
+    fireEvent.change(screen.getByLabelText('Society name'), { target: { value: 'Lakeview Towers' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
+    });
+    expect(updateSociety).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter the building and street.')).toBeInTheDocument();
   });
 
   it('the Active switch turns the society off and back on (FEAT-035)', async () => {

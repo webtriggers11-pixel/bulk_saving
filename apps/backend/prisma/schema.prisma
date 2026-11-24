@@ -57,6 +57,15 @@ model Society {
   id         String            @id @default(cuid())
   name       String
   city       String
+  // FEAT-043 (ADR-0050): the full postal address and an optional contact phone. Nullable in
+  // the DB so societies created before it keep working; the API requires line 1, state and
+  // pincode on create.
+  addressLine1 String?
+  addressLine2 String?
+  landmark     String?
+  state        String?
+  pincode      String?
+  contactPhone String?
   inviteCode String            @unique
   // FEAT-035 (ADR-0045): an inactive society's code refuses new joins; members are untouched.
   active     Boolean           @default(true)

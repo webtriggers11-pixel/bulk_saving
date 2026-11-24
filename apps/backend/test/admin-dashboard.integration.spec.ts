@@ -199,6 +199,13 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
         city: 'Pune',
         inviteCode: societyA.inviteCode,
         active: true, // FEAT-035
+        // FEAT-043 (ADR-0050): a society made without an address reads back as nulls.
+        addressLine1: null,
+        addressLine2: null,
+        landmark: null,
+        state: null,
+        pincode: null,
+        contactPhone: null,
         // FEAT-032 (ADR-0043): the Societies screens show these and gate delete on them.
         residentCount: expect.any(Number),
         roundCount: expect.any(Number),

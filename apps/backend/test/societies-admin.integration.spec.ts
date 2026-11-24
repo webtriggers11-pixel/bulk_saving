@@ -46,8 +46,11 @@ describe('Societies admin API (integration, needs DB)', () => {
     delete: (path: string) => request(app.getHttpServer()).delete(path).set('Authorization', `Bearer ${token}`),
   });
 
+  /** FEAT-043: the address every create now needs. */
+  const ADDRESS = { addressLine1: 'Plot 4, Link Road', state: 'Maharashtra', pincode: '400053' };
+
   async function createSociety(name: string): Promise<AdminSocietyDetailDto> {
-    const res = await as(adminToken).post('/admin/societies', { name, city: '  Mumbai ' }).expect(201);
+    const res = await as(adminToken).post('/admin/societies', { name, city: '  Mumbai ', ...ADDRESS }).expect(201);
     const society = res.body.data as AdminSocietyDetailDto;
     created.push(society.id);
     return society;
@@ -72,15 +75,15 @@ describe('Societies admin API (integration, needs DB)', () => {
 
   it('ignores a client-chosen invite code (the server always generates it)', async () => {
     // The global ValidationPipe (whitelist) strips the unknown property.
-    const res = await as(adminToken).post('/admin/societies', { name: `Chosen ${tag}`, city: 'Pune', inviteCode: 'AAAAAAAA' }).expect(201);
+    const res = await as(adminToken).post('/admin/societies', { name: `Chosen ${tag}`, city: 'Pune', ...ADDRESS, inviteCode: 'AAAAAAAA' }).expect(201);
     created.push(res.body.data.id);
     expect(res.body.data.inviteCode).not.toBe('AAAAAAAA');
   });
 
   it('validates name and city', async () => {
-    await as(adminToken).post('/admin/societies', { name: ' ', city: 'Pune' }).expect(400);
-    await as(adminToken).post('/admin/societies', { name: 'Okay name', city: '' }).expect(400);
-    await as(adminToken).post('/admin/societies', { name: 'x'.repeat(81), city: 'Pune' }).expect(400);
+    await as(adminToken).post('/admin/societies', { name: ' ', city: 'Pune', ...ADDRESS }).expect(400);
+    await as(adminToken).post('/admin/societies', { name: 'Okay name', city: '', ...ADDRESS }).expect(400);
+    await as(adminToken).post('/admin/societies', { name: 'x'.repeat(81), city: 'Pune', ...ADDRESS }).expect(400);
   });
 
   it('lists every society with resident and round counts', async () => {
@@ -126,5 +129,85 @@ describe('Societies admin API (integration, needs DB)', () => {
     expect(busy.body.error.code).toBe(ErrorCode.CONFLICT);
     expect(await prisma.resident.count({ where: { societyId: home.id } })).toBe(2);
     await as(adminToken).delete('/admin/societies/does-not-exist').expect(404);
+  });
+  describe('address and contact phone (FEAT-043)', () => {
+    it('create stores the full address and canonicalises an optional phone', async () => {
+      const res = await as(adminToken)
+        .post('/admin/societies', {
+          name: `Addressed ${tag}`,
+          city: 'Pune',
+          addressLine1: '  Plot 12, Baner Road ',
+          addressLine2: 'Baner',
+          landmark: '  ',
+          state: 'Maharashtra',
+          pincode: '411045',
+          contactPhone: '098765 43210',
+        })
+        .expect(201);
+      const s = res.body.data as AdminSocietyDetailDto;
+      created.push(s.id);
+      expect(s).toMatchObject({
+        addressLine1: 'Plot 12, Baner Road',
+        addressLine2: 'Baner',
+        landmark: null,
+        state: 'Maharashtra',
+        pincode: '411045',
+        contactPhone: '+919876543210',
+      });
+      const detail = (await as(adminToken).get(`/admin/societies/${s.id}`).expect(200)).body.data as AdminSocietyDetailDto;
+      expect(detail.contactPhone).toBe('+919876543210');
+    });
+
+    it('the phone is optional: omitted or blank stores null', async () => {
+      const a = (await as(adminToken).post('/admin/societies', { name: `No phone ${tag}`, city: 'Pune', ...ADDRESS }).expect(201)).body.data as AdminSocietyDetailDto;
+      const b = (await as(adminToken).post('/admin/societies', { name: `Blank phone ${tag}`, city: 'Pune', ...ADDRESS, contactPhone: '' }).expect(201)).body.data as AdminSocietyDetailDto;
+      created.push(a.id, b.id);
+      expect(a.contactPhone).toBeNull();
+      expect(b.contactPhone).toBeNull();
+    });
+
+    it('create refuses a missing or bad address line, state, pincode or phone with 400', async () => {
+      const base = { name: `Bad ${tag}`, city: 'Pune', ...ADDRESS };
+      const bad: Record<string, unknown>[] = [
+        { addressLine1: undefined },
+        { addressLine1: '  ' },
+        { state: undefined },
+        { state: 'Atlantis' },
+        { pincode: undefined },
+        { pincode: '41104' },
+        { pincode: '011045' },
+        { pincode: '41104a' },
+        { contactPhone: '12345' },
+        { contactPhone: '+14155550100' },
+        { contactPhone: '5876543210' },
+      ];
+      for (const patch of bad) {
+        const res = await as(adminToken).post('/admin/societies', { ...base, ...patch });
+        expect({ patch, status: res.status }).toEqual({ patch, status: 400 });
+        expect(res.body.success).toBe(false);
+      }
+    });
+
+    it('edit fills in an old society, clears optional parts, and refuses clearing required ones', async () => {
+      const old = await prisma.society.create({ data: { name: `Old ${tag}`, city: 'Pune', inviteCode: randomInviteCode() } });
+      created.push(old.id);
+      const before = (await as(adminToken).get(`/admin/societies/${old.id}`).expect(200)).body.data as AdminSocietyDetailDto;
+      expect(before).toMatchObject({ addressLine1: null, state: null, pincode: null, contactPhone: null });
+
+      const filled = (
+        await as(adminToken)
+          .patch(`/admin/societies/${old.id}`, { addressLine1: 'Tower B, MG Road', landmark: 'Metro station', state: 'Karnataka', pincode: '560001', contactPhone: '+91 99999 00111' })
+          .expect(200)
+      ).body.data as AdminSocietyDetailDto;
+      expect(filled).toMatchObject({ addressLine1: 'Tower B, MG Road', landmark: 'Metro station', state: 'Karnataka', pincode: '560001', contactPhone: '+919999900111' });
+
+      const cleared = (await as(adminToken).patch(`/admin/societies/${old.id}`, { landmark: '', contactPhone: null }).expect(200)).body.data as AdminSocietyDetailDto;
+      expect(cleared).toMatchObject({ landmark: null, contactPhone: null, addressLine1: 'Tower B, MG Road' });
+
+      for (const patch of [{ addressLine1: null }, { addressLine1: '' }, { state: null }, { pincode: '' }, { pincode: '12' }, { contactPhone: 'call me' }]) {
+        const res = await as(adminToken).patch(`/admin/societies/${old.id}`, patch);
+        expect({ patch, status: res.status }).toEqual({ patch, status: 400 });
+      }
+    });
   });
 });

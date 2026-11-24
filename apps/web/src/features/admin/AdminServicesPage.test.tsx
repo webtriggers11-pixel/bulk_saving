@@ -36,7 +36,7 @@ const createServiceMock = vi.mocked(createService);
 const updateServiceMock = vi.mocked(updateService);
 const upsertOfferingMock = vi.mocked(upsertOffering);
 
-const blue = { id: 'soc_2', name: 'Blue Waters', city: 'Mumbai', inviteCode: 'BLUE0002', active: true, residentCount: 0, roundCount: 0, createdAt: '2026-11-01T10:00:00.000Z' };
+const blue = { ...society, id: 'soc_2', name: 'Blue Waters', city: 'Mumbai', inviteCode: 'BLUE0002', active: true, residentCount: 0, roundCount: 0, createdAt: '2026-11-01T10:00:00.000Z' };
 
 const tank: AdminServiceDto = {
   id: 'svc_tank',

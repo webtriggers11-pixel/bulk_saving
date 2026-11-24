@@ -14,8 +14,17 @@ import { upsertPlatformAdmin } from './platform-admin';
 const prisma = new PrismaClient();
 
 const SOCIETIES = [
-  { name: 'Green Meadows', city: 'Pune', inviteCode: 'GREEN001' },
-  { name: 'Blue Waters', city: 'Mumbai', inviteCode: 'BLUE0002' },
+  // FEAT-043: seeded societies carry a full address (demo data, not real places).
+  {
+    name: 'Green Meadows', city: 'Pune', inviteCode: 'GREEN001',
+    addressLine1: 'Plot 12, Baner Road', addressLine2: 'Baner', landmark: 'Balewadi Phata',
+    state: 'Maharashtra', pincode: '411045', contactPhone: '+919999900300',
+  },
+  {
+    name: 'Blue Waters', city: 'Mumbai', inviteCode: 'BLUE0002',
+    addressLine1: '7 Carter Road', addressLine2: 'Bandra West', landmark: null,
+    state: 'Maharashtra', pincode: '400050', contactPhone: null,
+  },
 ];
 
 const SUPER_ADMIN_PHONE = '+919999900001';
@@ -117,7 +126,7 @@ async function main(): Promise<void> {
     await prisma.society.upsert({
       where: { inviteCode: s.inviteCode },
       create: s,
-      update: { name: s.name, city: s.city },
+      update: { name: s.name, city: s.city, addressLine1: s.addressLine1, addressLine2: s.addressLine2, landmark: s.landmark, state: s.state, pincode: s.pincode, contactPhone: s.contactPhone },
     });
   }
 

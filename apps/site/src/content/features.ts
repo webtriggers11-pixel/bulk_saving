@@ -320,6 +320,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-043',
+    title: 'Every society has a real address',
+    what: 'Creating a society now asks for the building, street, area, landmark, city, state and PIN code, plus an optional contact number. Each society page shows the address with a tap-to-call number and a Maps link.',
+    why: 'A vendor has to find the gate on the first try.',
+    section: 'operators',
+    status: 'coming-soon',
+  },
+  {
     id: 'FEAT-041',
     title: 'A calmer dashboard',
     what: 'The operator dashboard keeps only what needs attention now. Requests, every round and the money reports each get their own page in the sidebar.',

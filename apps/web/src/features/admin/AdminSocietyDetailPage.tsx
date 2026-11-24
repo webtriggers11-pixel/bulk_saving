@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { AdminSocietyDetailDto } from '@bulk/shared';
+import { formatSocietyAddress, hasSocietyAddress, type AdminSocietyDetailDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { ConfirmSheet } from '../../components/ui/confirm-sheet';
@@ -11,7 +11,7 @@ import { Switch } from '../../components/ui/switch';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
 import { invitationMessage, joinLink, spacedCode, whatsappShareHref } from './invitation';
-import { SocietyFields, validateSocietyForm, type SocietyFormErrors, type SocietyFormValues } from './AdminSocietiesPage';
+import { societyBody, SocietyFields, societyFormValues, validateSocietyForm, type SocietyFormErrors, type SocietyFormValues } from './AdminSocietiesPage';
 import { useAdminSociety, useDeleteSociety, useRotateInviteCode, useUpdateSociety } from './useAdmin';
 import { useQrCode } from './useQrCode';
 
@@ -135,12 +135,58 @@ function InvitationCard({ society, message }: { society: AdminSocietyDetailDto; 
   );
 }
 
+/**
+ * FEAT-043 (ADR-0050): where the society is and who to call. A society created before the
+ * address was required says so, and points at the form below.
+ */
+function AddressCard({ society }: { society: AdminSocietyDetailDto }) {
+  const complete = hasSocietyAddress(society);
+  const address = formatSocietyAddress(society);
+  return (
+    <Card data-testid="society-address-card">
+      <CardHeader>
+        <CardTitle>Address</CardTitle>
+      </CardHeader>
+      {complete ? (
+        <div className="flex flex-col gap-3">
+          <p className="flex items-start gap-2.5 text-body text-ink" data-testid="society-address">
+            <Icon name="building" size={16} strokeWidth={2} className="mt-1 shrink-0 text-ink-muted" />
+            <span>{address}</span>
+          </p>
+          <p className="flex items-center gap-2.5 text-body" data-testid="society-contact-phone">
+            <Icon name="phone" size={16} strokeWidth={2} className="shrink-0 text-ink-muted" />
+            {society.contactPhone ? (
+              <a href={`tel:${society.contactPhone}`} className="num font-bold text-brand-ink underline">
+                {society.contactPhone}
+              </a>
+            ) : (
+              <span className="text-ink-muted">No contact phone</span>
+            )}
+          </p>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${society.name}, ${address}`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="self-start text-meta font-bold text-brand-ink underline"
+          >
+            Open in Maps
+          </a>
+        </div>
+      ) : (
+        <Notice tone="warn" data-testid="society-address-missing">
+          Address missing. Add the building, street, state and PIN code under Details below.
+        </Notice>
+      )}
+    </Card>
+  );
+}
+
 function EditDetailsCard({ society }: { society: AdminSocietyDetailDto }) {
   const update = useUpdateSociety(society.id);
-  const [values, setValues] = useState<SocietyFormValues>({ name: society.name, city: society.city });
+  const [values, setValues] = useState<SocietyFormValues>(() => societyFormValues(society));
   const [errors, setErrors] = useState<SocietyFormErrors>({});
   const [saved, setSaved] = useState(false);
-  const dirty = values.name.trim() !== society.name || values.city.trim() !== society.city;
+  const dirty = JSON.stringify(societyBody(values)) !== JSON.stringify(societyBody(societyFormValues(society)));
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -148,7 +194,7 @@ function EditDetailsCard({ society }: { society: AdminSocietyDetailDto }) {
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setSaved(false);
-    update.mutate({ name: values.name.trim(), city: values.city.trim() }, { onSuccess: () => setSaved(true) });
+    update.mutate(societyBody(values), { onSuccess: () => setSaved(true) });
   }
 
   return (
@@ -319,7 +365,8 @@ export function AdminSocietyDetailPage() {
             </Link>
             <InviteCard society={data} link={link} qr={qr} />
             <InvitationCard society={data} message={message} />
-            <EditDetailsCard key={`${data.name}|${data.city}`} society={data} />
+            <AddressCard society={data} />
+            <EditDetailsCard key={JSON.stringify(societyFormValues(data))} society={data} />
             <ManageCard society={data} />
           </div>
         </AdminLayout>

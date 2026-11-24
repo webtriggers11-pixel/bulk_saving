@@ -2020,3 +2020,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 4b53f42 (detached worktree, WHATSAPP_* stripped): runs 1 (07:31:59–07:33:00) and 2 (07:33:00–07:34:00), both EXIT 0 and identical: site 71/71, backend 654/654, web 818/818. Logs v3-1.log, v3-2.log in the session scratchpad.
 - FEAT-042 → done. On branch `feat/FEAT-042-install-toast`, not merged to main (waits for the owner).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-043 — built; V1
+- What: additive migration (six nullable Society columns), DTOs (line 1 / state from INDIAN_STATES / 6-digit PIN required on create, never clearable; line 2, landmark, phone optional and clearable; phone canonical +91 mobile), shared `formatSocietyAddress` / `hasSocietyAddress`, admin form fields (state select, numeric PIN, fixed-+91 phone), Address card (formatted address, tel: link, Maps link, "Address missing"), "No address" in the list, seeds carry addresses. ADR-0050.
+- V1 in the FEAT-043 worktree on its own DB `bulk_saving_feat043` (migration not on the shared dev DB): EXIT 0, site 71, backend 658, web 813.
+- By: agent (autonomous)
