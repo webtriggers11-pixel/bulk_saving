@@ -5,7 +5,7 @@
 **Owner request (2026-11-24):** "make sure … we added server side pagination for everything because later on when we have much more data it should not be lagged. So use server side pagination, use cursor … and proper working."
 
 ## Now
-FEAT-025 (ADR-0036's `Page<T>` keyset envelope) paginated `GET /rounds`, `/rounds/mine`, `/catalog`, `/admin/rounds`, `/admin/services` and `/admin/vendors`. Lists added since (societies FEAT-032, users FEAT-033, the admin requests/asks page and reports FEAT-037/041, round participants, notifications, anything else) have to be audited.
+FEAT-025 (ADR-0035's `Page<T>` keyset envelope) paginated `GET /rounds`, `/rounds/mine`, `/catalog`, `/admin/rounds`, `/admin/services` and `/admin/vendors`. Lists added since (societies FEAT-032, users FEAT-033, the admin requests/asks page and reports FEAT-037/041, round participants, notifications, anything else) have to be audited.
 
 ## Acceptance criteria (draft)
 - AC1. Audit: every endpoint returning an array whose length grows with data is listed in this spec, with paginated / to-paginate / bounded-by-design (with the bound stated).
