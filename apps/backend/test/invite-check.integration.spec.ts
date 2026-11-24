@@ -117,4 +117,11 @@ describe('POST /auth/invite/check (integration, needs DB + Redis)', () => {
     await check(await unknownCode()).expect(400);
     expect(await redis.get(failKey)).toBe('1');
   });
+
+  it('a budget key that lost its TTL gets one back on the next miss (never a permanent lock)', async () => {
+    await redis.set(failKey, '3');
+    expect(await redis.ttl(failKey)).toBe(-1);
+    await check(await unknownCode()).expect(400);
+    expect(await redis.ttl(failKey)).toBeGreaterThan(0);
+  });
 });

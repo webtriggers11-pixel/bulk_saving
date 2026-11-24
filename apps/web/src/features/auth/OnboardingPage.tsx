@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { checkInvite, requestOtp, verifyOtp } from './auth.api';
@@ -65,9 +65,15 @@ export function OnboardingPage() {
   );
   // FEAT-045 (ADR-0052): a well-formed code is asked about BEFORE the next step; a wrong one
   // keeps the resident here with "This is an invalid invite code."
+  // FEAT-045 V2 P2-1: the code asked about travels with the request, and the answer counts only
+  // if the field still holds that code — an edit during "Checking…" is never advanced unchecked.
+  const currentInvite = useRef(inviteCode);
+  currentInvite.current = inviteCode;
   const inviteMutation = useMutation({
-    mutationFn: () => checkInvite({ inviteCode }),
-    onSuccess: () => setStep(methods.whatsapp ? 'choose' : 'phone'),
+    mutationFn: (code: string) => checkInvite({ inviteCode: code }),
+    onSuccess: (_result, code) => {
+      if (code === currentInvite.current) setStep(methods.whatsapp ? 'choose' : 'phone');
+    },
   });
   const requestMutation = useMutation({
     // BUG-019: the canonical form, so the number shown back is the one the server keeps.
@@ -101,7 +107,7 @@ export function OnboardingPage() {
     }
     setInviteTried(false);
     if (inviteMutation.isPending) return;
-    inviteMutation.mutate();
+    inviteMutation.mutate(inviteCode);
   }
 
   function submitPhone(event: FormEvent) {

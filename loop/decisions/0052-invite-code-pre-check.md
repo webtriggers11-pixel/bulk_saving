@@ -34,4 +34,6 @@ Option 1. The check runs through `SocietiesService.findByInviteCode`, so an inac
 - One more unauthenticated endpoint. It reveals only what `/auth/otp/request` already revealed (code validity), and more slowly.
 - Residents behind one NAT who mistype 20 times in an hour wait up to an hour to check; the OTP door does not depend on this budget.
 
+- Accepted (V2 P3-1): the OTP and WhatsApp doors still answer INVALID_INVITE_CODE with only the global throttle plus their own OTP budgets. So this endpoint's budget is not the only way to test a code. With 36^8 codes the risk is negligible. If guessing ever shows up, move `InviteCheckService`'s reserve/refund onto those doors too.
+
 **Revisit trigger:** production logs show real users hitting `INVITE_CHECK_RATE_LIMITED`, or guessing traffic shows up on this route.

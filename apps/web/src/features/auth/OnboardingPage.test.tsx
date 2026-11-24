@@ -467,4 +467,34 @@ describe('OnboardingPage — the server checks the invite code', () => {
     });
     expect(await screen.findByLabelText('Phone number')).toBeInTheDocument();
   });
+
+  it('an edit made while "Checking…" is not advanced on the old code\'s answer (V2 P2-1)', async () => {
+    let release: (value: unknown) => void = () => undefined;
+    installCheck(() => new Promise((resolve) => { release = resolve; }));
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await screen.findByRole('button', { name: 'Checking…' });
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'WRONG123' } });
+
+    await act(async () => {
+      release(jsonResponse(INVITE_VALID));
+    });
+    await screen.findByRole('button', { name: 'Continue' });
+    expect(screen.queryByLabelText('Phone number')).toBeNull();
+    expect(screen.getByLabelText('Invite code')).toHaveValue('WRONG123');
+  });
+
+  it('too many wrong codes (429) shows the wait message on the invite step', async () => {
+    installCheck({
+      ok: false,
+      status: 429,
+      body: { success: false, error: { code: 'INVITE_CHECK_RATE_LIMITED', message: 'Too many invite codes tried. Try again later.' } },
+    });
+    renderOnboarding();
+    fireEvent.change(screen.getByLabelText('Invite code'), { target: { value: 'AB12CD34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByTestId('invite-error')).toHaveTextContent(/wait/);
+    expect(screen.queryByLabelText('Phone number')).toBeNull();
+  });
 });

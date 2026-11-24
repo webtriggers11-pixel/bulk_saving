@@ -20,7 +20,8 @@ if tonumber(redis.call('GET', KEYS[1]) or '0') >= tonumber(ARGV[1]) then
   return -1
 end
 local n = redis.call('INCR', KEYS[1])
-if n == 1 then
+-- First hit, or a key that somehow lost its TTL (V2 P3-2): never a budget that cannot expire.
+if n == 1 or redis.call('TTL', KEYS[1]) == -1 then
   redis.call('EXPIRE', KEYS[1], ARGV[2])
 end
 return n`;
