@@ -11,7 +11,10 @@ import { normalisePhone } from '@bulk/shared';
  * there unless a test opts in, so the page suites never see a request they did not ask for.
  */
 export function devOtpToastEnabled(): boolean {
-  return import.meta.env.DEV && import.meta.env.MODE !== 'test';
+  // BUG-033: a demo server builds in production mode (no SMS provider, the API runs the stub
+  // channel), so it opts in explicitly with `VITE_DEV_OTP_TOAST=true` at build time. Unset in
+  // every other build, the comparison folds to `false` and the bundle stays clean.
+  return (import.meta.env.DEV && import.meta.env.MODE !== 'test') || import.meta.env.VITE_DEV_OTP_TOAST === 'true';
 }
 
 export function useDevOtp(): { code: string | null; fetchFor: (phone: string) => void; clear: () => void } {

@@ -26,6 +26,27 @@ describe('useDevOtp', () => {
     expect(result.current.code).toBeNull();
   });
 
+  // BUG-033: the demo server builds in production mode; an explicit build flag opts it in.
+  it('a production build with VITE_DEV_OTP_TOAST=true still shows the code (demo server)', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('MODE', 'production');
+    vi.stubEnv('VITE_DEV_OTP_TOAST', 'true');
+    apiMock.mockResolvedValue({ code: '4321' });
+    const { result } = renderHook(() => useDevOtp());
+    act(() => result.current.fetchFor('+919999900201'));
+    await waitFor(() => expect(result.current.code).toBe('4321'));
+  });
+
+  it('a production build without the flag stays silent', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('MODE', 'production');
+    const { result } = renderHook(() => useDevOtp());
+    act(() => result.current.fetchFor('+919999900201'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(apiMock).not.toHaveBeenCalled();
+    expect(result.current.code).toBeNull();
+  });
+
   it('retries while the (queued) code is not stashed yet, then gives up quietly', async () => {
     vi.stubEnv('DEV', true);
     vi.stubEnv('MODE', 'development');

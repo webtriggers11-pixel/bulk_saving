@@ -2126,3 +2126,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — Merge of FEAT-045 (+ BUG-032 triage) into `main` (owner: "merge everything into main")
 - `main` fast-forwarded 4d81437 → 3669ec7. Every local branch is now contained in `main`. Main checkout: shared rebuilt; backend compiles (`tsc -p tsconfig.build.json` clean); no migration (`migrate status` up to date). No dev backend was running on :3000. Not pushed.
 - By: agent (autonomous)
+
+## 2026-11-24 — BUG-033 — triaged, root cause, failing test, fix
+- Owner: "check on server why we not receiving OTP toast". Read-only on the server: the API runs NODE_ENV=development + OTP_DEV_LOG=true (`/dev/otp` mapped, stub SMS logs codes), but `deploy.sh` builds the PWA with `pnpm --filter web build` (production), so `devOtpToastEnabled()` folded to false and 0 bundle files contain `dev/otp`.
+- Regression test first (`useDevOtp.test.tsx`: DEV false + `VITE_DEV_OTP_TOAST=true` → shows the code), failed as expected. Fix: the flag also enables the toast. Default prod build still clean (`check-dev-only.mjs` OK); flagged build contains the path (1 file).
+- Risk told to owner: the server's `/dev/otp` is public; demo only.
+- By: agent (autonomous)
