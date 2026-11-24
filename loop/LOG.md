@@ -1998,3 +1998,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — FEAT-044 — triaged (queued behind FEAT-042, FEAT-043)
 - What: owner asked for server-side cursor pagination on everything. FEAT-025 covered six endpoints; this audits the rest and paginates what can grow.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-042 — T1–T4 done; V1
+- What: `install-platform.ts` (pure classifier, real-UA tests), `InstallToast` at the root (2 s delay, one-tap on a held prompt, steps sheet elsewhere, per-visit snooze, switches to one-tap when the prompt arrives late), Home card removed, ADR-0049, site entry (coming-soon until close).
+- V1 at 4615b37 in a detached scratchpad worktree (main tree's .env carries WHATSAPP_* → BUG-024's known red; stripped in the worktree): EXIT 0, site 71, backend 654, web 809.
+- By: agent (autonomous)
