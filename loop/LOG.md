@@ -2045,3 +2045,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — FEAT-043 — V2 r2 pass
 - V2 r2 (same reviewer, own worktree + DB, gate at 333555b: EXIT 0, site 71, backend 658, web 825): pass. One P3 taken: `displayPhone` moved above AddressCard's doc comment.
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-24 — FEAT-043 — V3; CLOSED
+- V3 at f0fd588 (FEAT-043 worktree, own DB, WHATSAPP_* stripped): runs 3 (07:44:41–07:45:45) and 4 (07:45:46–07:46:51), both EXIT 0 (the gate's own status this time) and identical: site 71/71, backend 658/658, web 825/825. Logs v3-43-3.log, v3-43-4.log. The earlier pair's flake is BUG-031.
+- FEAT-043 → done. Branch `feat/FEAT-043-society-address` (stacked on FEAT-042), not merged. The migration `20261124090000_feat_043_society_address` is applied only to `bulk_saving_feat043`; the shared dev DB waits for the owner's approval at merge.
+- By: agent (autonomous)
