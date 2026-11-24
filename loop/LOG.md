@@ -2010,3 +2010,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Gate at the fix commit (fresh worktree): EXIT 0, site 71, backend 654, web 818.
 - Browser pass (headless Chromium, 390×844, dev server :5174): Android UA → `android-manual` toast on /onboard and /admin/login, steps sheet correct; iPhone Safari UA → `ios-safari`, four steps; close then reload → no toast (same session); no horizontal overflow; no console errors. Found: the Install button was dark-on-dark → `secondary`, like the OTP toast's "Use it".
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-24 — FEAT-042 — V2 r2 pass; closing
+- V2 r2 (same reviewer, its own gate at 66d9466: EXIT 0, site 71, backend 654, web 818): pass, every r1 finding fixed with a test. New P3s: (a) the steps sheet closes without its exit animation, not taken (cosmetic); (b) the top-slot claim ran after paint, taken (useLayoutEffect); (c) Install primary→secondary, deliberate (browser pass found dark-on-dark).
+- Closing: registry → done, site entry → done (before V3).
+- By: agent (autonomous) + code-reviewer subagent

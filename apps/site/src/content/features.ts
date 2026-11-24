@@ -249,7 +249,7 @@ export const features: Feature[] = [
     what: 'Each time you open Bulk Saving in a browser, a small banner offers to install it. On Android it is one tap; on iPhone it shows the exact Share-sheet steps for your browser.',
     why: 'An app on the home screen gets opened; a bookmark gets forgotten.',
     section: 'phone',
-    status: 'coming-soon',
+    status: 'done',
   },
   {
     id: 'FEAT-023',

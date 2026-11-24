@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import { Icon } from './icon';
 
@@ -60,7 +60,8 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
   const holdsTop = visible && placement === 'top' && !yieldTop;
   const othersOnTop = useSyncExternalStore(subscribeTop, topBusy, topBusy);
 
-  useEffect(() => {
+  // Layout effect: claim the slot before paint, so a yielding toast never flashes on top (FEAT-042 V2 r2 P3-b).
+  useLayoutEffect(() => {
     if (!holdsTop) return;
     const token = Symbol('top-toast');
     topHolders.add(token);
