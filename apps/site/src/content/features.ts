@@ -238,10 +238,18 @@ export const features: Feature[] = [
   {
     id: 'FEAT-029',
     title: 'A real app icon on your home screen',
-    what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests. Home shows a small card explaining how to install on your phone.',
+    what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests.',
     why: 'Something you open once a quarter has to be easy to find, and look like it belongs next to your other apps.',
     section: 'phone',
     status: 'done',
+  },
+  {
+    id: 'FEAT-042',
+    title: 'Install it like an app, on any phone',
+    what: 'Each time you open Bulk Saving in a browser, a small banner offers to install it. On Android it is one tap; on iPhone it shows the exact Share-sheet steps for your browser.',
+    why: 'An app on the home screen gets opened; a bookmark gets forgotten.',
+    section: 'phone',
+    status: 'coming-soon',
   },
   {
     id: 'FEAT-023',

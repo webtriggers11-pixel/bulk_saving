@@ -8,6 +8,7 @@ import { initAppearance } from './lib/appearance';
 import { queryClient } from './lib/query-client';
 import './index.css';
 import { ServiceWorkerProvider } from './features/shell/ServiceWorkerProvider';
+import { InstallToast } from './features/shell/InstallToast';
 // Side effect: attach the beforeinstallprompt capture at startup, not at first
 // render of the Profile tab — Chromium fires it once, on load (FEAT-008 AC5).
 import './features/shell/useInstallPrompt';
@@ -28,6 +29,8 @@ if (rootElement) {
             {/* FEAT-029: registers the service worker on EVERY route, sign-in and admin included. */}
             <ServiceWorkerProvider>
               <App />
+              {/* FEAT-042: the install ask, on every route, each time the app is opened. */}
+              <InstallToast />
             </ServiceWorkerProvider>
           </RootErrorBoundary>
         </BrowserRouter>
