@@ -5,4 +5,4 @@
 - [x] T3. Remove the Home `InstallCard` and its test; Profile untouched (AC6)
 - [x] T4. ADR-0049 (amends ADR-0041 decision 4); site entry; V1 gate (AC7)
 - [x] T5. V2 code-reviewer subagent; browser pass at 390 px (Android + iPhone UA)
-- [ ] T6. Close: registry done, V3 twice
+- [x] T6. Close: registry done, V3 twice

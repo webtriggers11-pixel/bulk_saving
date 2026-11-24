@@ -2015,3 +2015,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 r2 (same reviewer, its own gate at 66d9466: EXIT 0, site 71, backend 654, web 818): pass, every r1 finding fixed with a test. New P3s: (a) the steps sheet closes without its exit animation, not taken (cosmetic); (b) the top-slot claim ran after paint, taken (useLayoutEffect); (c) Install primary→secondary, deliberate (browser pass found dark-on-dark).
 - Closing: registry → done, site entry → done (before V3).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-24 — FEAT-042 — V3; CLOSED
+- V3 at 4b53f42 (detached worktree, WHATSAPP_* stripped): runs 1 (07:31:59–07:33:00) and 2 (07:33:00–07:34:00), both EXIT 0 and identical: site 71/71, backend 654/654, web 818/818. Logs v3-1.log, v3-2.log in the session scratchpad.
+- FEAT-042 → done. On branch `feat/FEAT-042-install-toast`, not merged to main (waits for the owner).
+- By: agent (autonomous)
