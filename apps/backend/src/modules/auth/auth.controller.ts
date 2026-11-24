@@ -15,6 +15,7 @@ import {
 import type {
   AuthResult,
   AuthTokens,
+  InviteCheckResponse,
   MeResponse,
   OtpRequestResponse,
   SignOutResponse,
@@ -30,10 +31,12 @@ import { AuthService } from './auth.service';
 import {
   AdminOtpRequestDto,
   AdminOtpVerifyDto,
+  InviteCheckDto,
   OtpRequestDto,
   OtpVerifyDto,
   RefreshDto,
 } from './auth.dto';
+import { InviteCheckService } from './invite-check.service';
 import { ADMIN_OTP_LENGTH, ADMIN_OTP_SCOPE, OTP_LENGTH, OtpService } from './otp.service';
 
 /**
@@ -55,7 +58,30 @@ export class AuthController {
     private readonly residents: ResidentsService,
     private readonly otp: OtpService,
     private readonly auth: AuthService,
+    private readonly inviteCheck: InviteCheckService,
   ) {}
+
+  /**
+   * FEAT-045 (ADR-0052): the invite step asks whether its code is real BEFORE the resident
+   * moves on to WhatsApp or the phone number. Nothing is sent and nothing is created. An
+   * inactive society's code is "invalid" too (ADR-0045 §4). The doors below still check the
+   * code themselves; this answer is a courtesy to the screen, never a credential.
+   */
+  @Post('auth/invite/check')
+  @HttpCode(HttpStatus.OK)
+  async checkInvite(@Body() dto: InviteCheckDto, @Ip() clientIp: string): Promise<InviteCheckResponse> {
+    const result = await this.inviteCheck.check(dto.inviteCode, clientIp);
+    if (result === 'RATE_LIMITED') {
+      throw new HttpException(
+        { code: ErrorCode.INVITE_CHECK_RATE_LIMITED, message: 'Too many invite codes tried. Try again later.' },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (result === 'INVALID') {
+      throw new BadRequestException({ code: ErrorCode.INVALID_INVITE_CODE, message: 'This is an invalid invite code.' });
+    }
+    return { valid: true };
+  }
 
   @Post('auth/otp/request')
   @HttpCode(HttpStatus.OK)

@@ -15,6 +15,8 @@ export const ErrorCode = {
   OTP_EXPIRED: 'OTP_EXPIRED',
   OTP_LOCKED: 'OTP_LOCKED',
   OTP_RATE_LIMITED: 'OTP_RATE_LIMITED',
+  /** FEAT-045 (ADR-0052): too many wrong invite codes from this client. */
+  INVITE_CHECK_RATE_LIMITED: 'INVITE_CHECK_RATE_LIMITED',
   TOKEN_REVOKED: 'TOKEN_REVOKED',
   // Admin sign-in (FEAT-012)
   NOT_AN_ADMIN: 'NOT_AN_ADMIN',

@@ -2,6 +2,7 @@ import { IsOptional, IsString, Length, Matches } from 'class-validator';
 import type {
   AdminOtpRequestBody,
   AdminOtpVerifyBody,
+  InviteCheckBody,
   OtpRequestBody,
   OtpVerifyBody,
   RefreshBody,
@@ -14,6 +15,12 @@ export const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
 // CHORE-026: residents' OTPs are 4 digits, an administrator's number gets 8 (ADR-0040). Both
 // doors accept both shapes, so the format check says nothing about whose number it is.
 const OTP_CODE = /^(\d{4}|\d{8})$/;
+
+/** `POST /auth/invite/check` (FEAT-045): the code alone, in the shape every door accepts. */
+export class InviteCheckDto implements InviteCheckBody {
+  @Matches(INVITE_CODE, { message: 'inviteCode must be 8 uppercase alphanumeric characters.' })
+  inviteCode!: string;
+}
 
 export class OtpRequestDto implements OtpRequestBody {
   @Matches(INVITE_CODE, { message: 'inviteCode must be 8 uppercase alphanumeric characters.' })

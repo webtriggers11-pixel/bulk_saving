@@ -9,6 +9,7 @@ import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 import { AccessTokenGuard } from './access-token.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { InviteCheckService } from './invite-check.service';
 import { OtpSendProcessor, OTP_SEND_QUEUE } from './otp-send.processor';
 import { OtpService } from './otp.service';
 import { RolesGuard } from './roles.guard';
@@ -33,7 +34,7 @@ import { WaWebhookController } from './wa-webhook.controller';
     WhatsAppModule,
   ],
   controllers: [AuthController, ResidentsController, WaLoginController, WaWebhookController],
-  providers: [OtpService, OtpSendProcessor, AuthService, AccessTokenGuard, RolesGuard, WaLoginService],
+  providers: [OtpService, InviteCheckService, OtpSendProcessor, AuthService, AccessTokenGuard, RolesGuard, WaLoginService],
   exports: [AuthService, AccessTokenGuard, RolesGuard, WaLoginService],
 })
 export class AuthModule {}

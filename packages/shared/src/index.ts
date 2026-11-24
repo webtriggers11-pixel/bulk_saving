@@ -75,6 +75,19 @@ export interface OtpRequestResponse {
   requested: true;
 }
 
+/** `POST /auth/invite/check` body (FEAT-045, ADR-0052): is this invite code one a society answers to? */
+export interface InviteCheckBody {
+  inviteCode: string;
+}
+
+/**
+ * `POST /auth/invite/check` success payload. Nothing about the society: a name would hand
+ * society names to anyone guessing codes (ADR-0052). A wrong code is a 400 INVALID_INVITE_CODE.
+ */
+export interface InviteCheckResponse {
+  valid: true;
+}
+
 /** `POST /auth/otp/verify` body. */
 export interface OtpVerifyBody {
   inviteCode: string;
