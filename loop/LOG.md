@@ -2085,3 +2085,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — session — handoff
 - FEAT-042, FEAT-043, FEAT-044 closed on stacked branches (not merged); BUG-031 triaged. HANDOFF.md updated with the merge steps, the worktree DB, and the leftover servers to stop.
 - By: agent (autonomous)
+
+## 2026-11-24 — Merge of FEAT-042, FEAT-043, FEAT-044 (+ BUG-031 triage) into `main` (owner: "yes everything merged")
+- `main` fast-forwarded 3806efd → 0093144. Main checkout: `pnpm install --offline`, shared build, `prisma migrate deploy` (applied `20261124090000_feat_043_society_address` to the shared dev DB `bulk_saving`, additive; `migrate status` up to date), `prisma generate`. The backend compiles (`tsc -p tsconfig.build.json` clean).
+- The running dev backend (:3000, `nest start --watch`, started before this session) did not rebuild: new routes answer 404 and dist is from 07:15. Restarting it is left to the owner (the agent doesn't kill the owner's processes). Not pushed (origin refuses this credential, see the 2026-11-22 handoff).
+- By: agent (autonomous)
