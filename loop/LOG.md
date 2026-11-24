@@ -2035,3 +2035,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 r1 (code-reviewer subagent, own worktree + own DB `bulk_saving_review43`, gate at 654258a: EXIT 0, site 71, backend 658, web 822; `prisma migrate diff` clean): pass with fixes. P2-1 a half-typed phone left Save disabled with no message (dirty compared request bodies). P2-2 PATCH accepted part of an address. P3-1 the phone was raw and hidden while the address was incomplete. P3-2 browser address autofill. P3-3 no test of filling an old society. P3-4 site entry still coming-soon.
 - All taken: dirty from raw values, a service guard (line 1, state and PIN set together → 400 VALIDATION_ERROR) with integration cases, "+91 98765 43210" display with the phone shown in both branches, `autoComplete="off"` on the society fields, three web tests. Closing: registry → done, site entry → done (before V3).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-24 — BUG-031 — triaged (found by FEAT-043 V3)
+- What: FEAT-043 V3 run 1 (07:39:50) failed `wa-login.integration.spec.ts:197` (status 404 instead of 200 "denied"); run 2 (07:40:41) passed 658/658. Same commit, different results → flaky, triaged per rule 5. Not in FEAT-043's code (no auth/WhatsApp change). Suspect: shared Redis with the browser-pass backend still running on :3100 from the FEAT-043 worktree (stopping it was not permitted to the agent). Log: bug031-run.log in the session scratchpad.
+- Also: my V3 loop echoed `date`'s exit status, not the gate's ("EXIT 0" on a failed run). The counts were read from the log; the loop is fixed for the re-run.
+- FEAT-043 V3 to be re-run as a fresh back-to-back pair; precedent BUG-027/028 (flakes triaged, item closed on a clean pair).
+- By: agent (autonomous)
