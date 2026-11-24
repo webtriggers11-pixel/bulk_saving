@@ -2101,3 +2101,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1: the main tree's gate failed only BUG-024 (owner's .env WhatsApp creds; known, pre-existing). Gate in the scratch worktree with WHATSAPP_* stripped: EXIT 0 — backend 670/670, web 831/831.
 - Note: `bulk_saving_postgres`/`bulk_saving_redis` were stopped; started them (`docker start`) so tests could run.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-045 — T2 done (web)
+- `checkInvite()`; OnboardingPage asks the server on Continue (shape-checked codes only, BUG-021 kept). A wrong code stays on the invite step with an error Notice: "This is an invalid invite code. Check it with your society and try again." Other details: aria-invalid, the error clears on edit, "Checking…" + disabled while pending, offline → queued notice. `INVITE_CHECK_RATE_LIMITED` message. Existing tests answer the check; 6 new tests.
+- V1: gate in the worktree at 947bf25 (WHATSAPP_* stripped): EXIT 0 — backend 670/670, web 837/837. The first try failed lint (unused mock param), fixed.
+- By: agent (autonomous)
