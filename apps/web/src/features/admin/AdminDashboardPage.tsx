@@ -13,11 +13,12 @@ import { Select } from '../../components/ui/select';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { StatCard } from '../../components/ui/stat';
 import { AdminLayout } from './AdminLayout';
+import { SocietySelect } from './SocietySelect';
 import { AdminOverview } from './AdminOverview';
-import { STATUS_LABELS, STATUS_ORDER, formatDateTime, formatRupees, isRecent, openRoundHref, timeAgo } from './adminFormat';
+import { STATUS_LABELS, STATUS_ORDER, errorMessage, formatDateTime, formatRupees, isRecent, openRoundHref, timeAgo } from './adminFormat';
 import { Badge } from '../../components/ui/badge';
 import { StatusBadge } from './StatusBadge';
-import { useAdminDashboard, useAdminRounds, useAdminSocieties } from './useAdmin';
+import { useAdminDashboard, useAdminDemand, useAdminRounds } from './useAdmin';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { queryStalled } from '../../lib/offline';
 import { ShowMore } from '../../components/ui/show-more';
@@ -222,7 +223,6 @@ export function RoundsPanel() {
     q: raw.q,
     category: raw.category,
   };
-  const societies = useAdminSocieties();
   const roundsQuery = useAdminRounds(filters);
   const { data, isLoading, isPlaceholderData, refetch } = roundsQuery;
   const isError = queryStalled(roundsQuery);
@@ -267,18 +267,7 @@ export function RoundsPanel() {
         </Field>
         <Field label="Society">
           {(props) => (
-            <Select
-              {...props}
-              value={filters.societyId ?? ''}
-              onChange={(e) => setFilters({ societyId: e.target.value || undefined })}
-            >
-              <option value="">All societies</option>
-              {(societies.data ?? []).map((society) => (
-                <option key={society.id} value={society.id}>
-                  {society.name}
-                </option>
-              ))}
-            </Select>
+            <SocietySelect {...props} value={filters.societyId ?? ''} onChange={(id) => setFilters({ societyId: id || undefined })} emptyLabel="All societies" />
           )}
         </Field>
       </div>
@@ -480,26 +469,7 @@ export function ReportsSummary() {
             Units pledged in open rounds — mixed services, so counts are not comparable
           </CardDescription>
         </CardHeader>
-        {data.demandBySociety.length === 0 ? (
-          <p className="text-caption text-ink-muted">No societies yet.</p>
-        ) : (
-          <DataRows>
-            {data.demandBySociety.map((row) => (
-              <DataRow
-                key={row.society.id}
-                title={row.society.name}
-                meta={row.society.city}
-                columns={
-                  <>
-                    <DataCell label="Open rounds" value={row.openRounds} />
-                    <DataCell label="Units (mixed)" value={row.unitsPledged} />
-                    <DataCell label="Residents joined" value={row.residentsJoined} />
-                  </>
-                }
-              />
-            ))}
-          </DataRows>
-        )}
+        <DemandRows />
       </Card>
 
       <div className="flex flex-col gap-4">
@@ -530,4 +500,34 @@ export function RequestsList() {
   if (isLoading) return <SkeletonScreen label="Loading requests…" testId="requests-skeleton"><Skeleton radius="inset" className="h-40" /></SkeletonScreen>;
   if (isError || !data) return <PanelError subject="requests" onRetry={() => void refetch()} />;
   return <AsksCard asks={data.asks} mostAsked={data.asksMostAsked} />;
+}
+
+/** FEAT-044: demand per society, a page at a time by name (there may be thousands). */
+function DemandRows() {
+  const demand = useAdminDemand();
+  const list = demand.data ?? [];
+  if (demand.isLoading) return <Skeleton radius="inset" className="h-24" />;
+  if (demand.isError) return <p role="alert" className="text-caption font-bold text-danger-ink">{errorMessage(demand.error, "Couldn't load demand.")}</p>;
+  if (list.length === 0) return <p className="text-caption text-ink-muted">No societies yet.</p>;
+  return (
+    <>
+      <DataRows>
+        {list.map((row) => (
+          <DataRow
+            key={row.society.id}
+            title={row.society.name}
+            meta={row.society.city}
+            columns={
+              <>
+                <DataCell label="Open rounds" value={row.openRounds} />
+                <DataCell label="Units (mixed)" value={row.unitsPledged} />
+                <DataCell label="Residents joined" value={row.residentsJoined} />
+              </>
+            }
+          />
+        ))}
+      </DataRows>
+      <ShowMore hasMore={demand.hasMore} loaded={list.length} total={demand.total} busy={demand.loadingMore} onMore={demand.loadMore} noun={['society', 'societies']} />
+    </>
+  );
 }

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminSocietyDetailDto } from '@bulk/shared';
 import { createSociety, fetchSocieties } from './admin.api';
 import { AdminSocietiesPage, validateSocietyForm } from './AdminSocietiesPage';
+import { page } from '../../test/page';
 
 vi.mock('./admin.api', () => ({
   fetchSocieties: vi.fn(),
@@ -50,7 +51,7 @@ describe('AdminSocietiesPage (FEAT-032)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('lists every society with its city, resident count and spaced invite code, linking to its page', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([lakeview]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([lakeview]));
     renderPage();
     const row = await screen.findByTestId('society-row');
     expect(row).toHaveTextContent('Lakeview');
@@ -60,13 +61,13 @@ describe('AdminSocietiesPage (FEAT-032)', () => {
   });
 
   it('an empty list says how to start', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([]));
     renderPage();
     expect(await screen.findByText('No societies yet')).toBeInTheDocument();
   });
 
   it('creates a society with trimmed fields and opens its page', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([]));
     vi.mocked(createSociety).mockResolvedValue(lakeview);
     renderPage();
     fireEvent.change(screen.getByLabelText('Society name'), { target: { value: '  Lakeview ' } });
@@ -95,7 +96,7 @@ describe('AdminSocietiesPage (FEAT-032)', () => {
   });
 
   it('refuses a blank form without calling the API', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([]));
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Create society' }));
     expect(await screen.findByText('Enter the society name.')).toBeInTheDocument();
@@ -138,7 +139,7 @@ describe('AdminSocietiesPage (FEAT-032)', () => {
   });
 
   it('sends a given contact phone in its canonical +91 form', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([]));
     vi.mocked(createSociety).mockResolvedValue(lakeview);
     renderPage();
     fireEvent.change(screen.getByLabelText('Society name'), { target: { value: 'Lakeview' } });
@@ -154,14 +155,28 @@ describe('AdminSocietiesPage (FEAT-032)', () => {
   });
 
   it('marks a society that has no address yet in the list', async () => {
-    vi.mocked(fetchSocieties).mockResolvedValue([
+    vi.mocked(fetchSocieties).mockResolvedValue(page([
       lakeview,
       { ...lakeview, id: 'soc_old', name: 'Old Towers', addressLine1: null, state: null, pincode: null },
-    ]);
+    ]));
     renderPage();
     const rows = await screen.findAllByTestId('society-row');
     expect(rows).toHaveLength(2);
     expect(screen.getAllByTestId('society-no-address')).toHaveLength(1);
     expect(rows[1]).toHaveTextContent('No address');
+  });
+
+  it('searches societies on the server and pages with Show more (FEAT-044)', async () => {
+    vi.mocked(fetchSocieties)
+      .mockResolvedValueOnce(page([lakeview], { nextCursor: 'soc_lake', total: 2 }))
+      .mockResolvedValueOnce(page([{ ...lakeview, id: 'soc_2', name: 'Maple Court' }], { nextCursor: null, total: 2 }))
+      .mockResolvedValue(page([lakeview], { total: 1 }));
+    renderPage();
+    expect(await screen.findAllByTestId('society-row')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /Show 1 more society/ }));
+    expect(await screen.findByText('Maple Court')).toBeInTheDocument();
+    expect(vi.mocked(fetchSocieties).mock.calls[1][0]).toMatchObject({ cursor: 'soc_lake' });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search societies' }), { target: { value: 'Pune' } });
+    await waitFor(() => expect(vi.mocked(fetchSocieties)).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'Pune' })), { timeout: 2000 });
   });
 });

@@ -16,6 +16,7 @@ import { AdminLayout } from './AdminLayout';
 import { parseTiers, TierFields, useTierRows } from './RoundTierFields';
 import { errorMessage, timeAgo } from './adminFormat';
 import { useAdminDashboard, useAllServices, useAdminSocieties, useCreateRound } from './useAdmin';
+import { SOCIETY_PICKER_PAGE, SocietySelect } from './SocietySelect';
 
 /**
  * Super-admin "open a round" form (FEAT-005): society, active service, deadline and
@@ -24,7 +25,8 @@ import { useAdminDashboard, useAllServices, useAdminSocieties, useCreateRound } 
  */
 export function AdminNewRoundPage() {
   const navigate = useNavigate();
-  const societies = useAdminSocieties();
+  // Same key as the picker's first page, so it's one request (FEAT-044).
+  const societies = useAdminSocieties({}, SOCIETY_PICKER_PAGE);
   const services = useAllServices();
   const create = useCreateRound();
 
@@ -107,14 +109,7 @@ export function AdminNewRoundPage() {
             )}
             <Field label="Society" id="round-society">
               {(props) => (
-                <Select {...props} value={societyId} onChange={(e) => setSocietyId(e.target.value)}>
-                  <option value="">Select a society</option>
-                  {(societies.data ?? []).map((society) => (
-                    <option key={society.id} value={society.id}>
-                      {society.name} ({society.city})
-                    </option>
-                  ))}
-                </Select>
+                <SocietySelect {...props} value={societyId} onChange={setSocietyId} emptyLabel="Select a society" />
               )}
             </Field>
 

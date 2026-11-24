@@ -55,7 +55,7 @@ describe('admin surfaces when the browser is offline', () => {
     vi.mocked(fetchDashboard).mockResolvedValue(dashboard);
     vi.mocked(fetchAdminRounds).mockResolvedValue(page([]));
     vi.mocked(fetchVendors).mockResolvedValue(page([]));
-    vi.mocked(fetchSocieties).mockResolvedValue([]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([]));
     vi.mocked(fetchServices).mockResolvedValue(page([]));
     vi.mocked(fetchAdminRound).mockResolvedValue(roundDetail({ status: 'CLOSED_MET' }));
   });

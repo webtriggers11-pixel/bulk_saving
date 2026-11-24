@@ -320,6 +320,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-044',
+    title: 'Fast with ten societies or ten thousand',
+    what: 'Every operator list (societies, a resident\'s group buys, a round\'s participants, demand by society) loads a page at a time with search, and society pickers search as you type. Totals are counted by the database, not the browser.',
+    why: 'The console should feel the same on day one and in year three.',
+    section: 'operators',
+    status: 'coming-soon',
+  },
+  {
     id: 'FEAT-043',
     title: 'Every society has a real address',
     what: 'Creating a society now asks for the building, street, area, landmark, city, state and PIN code, plus an optional contact number. Each society page shows the address with a tap-to-call number and a Maps link.',

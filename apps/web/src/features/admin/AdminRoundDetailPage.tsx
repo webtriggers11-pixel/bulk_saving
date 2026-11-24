@@ -32,7 +32,9 @@ import {
   useAllVendors,
   useUpdateRound,
   useReopenRound,
+  useRoundParticipants,
 } from './useAdmin';
+import { ShowMore } from '../../components/ui/show-more';
 
 /** Final price bounds (integer ₹ per unit), mirroring the backend AssignRoundBody validation. */
 const MIN_FINAL_PRICE = 1;
@@ -313,6 +315,9 @@ function RoundActions({ round }: { round: AdminRoundDetailDto }) {
 function Participants({ round }: { round: AdminRoundDetailDto }) {
   const payment = useSetPayment(round.id);
   const payable = PAYABLE.includes(round.status);
+  // FEAT-044: paged, joined first; a payment toggle refreshes the loaded pages (same key prefix).
+  const participants = useRoundParticipants(round.id);
+  const list = participants.data ?? [];
 
   return (
     <Card>
@@ -331,7 +336,11 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
           it IS tabular data with six columns, the unit word lives in a columnheader
           that FEAT-010 asserts, and a screen reader reads a table better than a list
           of rows. The cost is accepted and named: it scrolls sideways on a phone. */}
-      {round.participants.length === 0 ? (
+      {participants.isLoading ? (
+        <Skeleton className="h-24" radius="tile" />
+      ) : participants.isError ? (
+        <p role="alert" className="mt-1 text-meta font-bold text-danger-ink">{errorMessage(participants.error, "Couldn't load participants.")}</p>
+      ) : list.length === 0 ? (
         <p className="mt-1 text-caption text-ink-muted">No residents have joined this round.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -349,7 +358,7 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-line/10">
-              {round.participants.map((participant) => {
+              {list.map((participant) => {
                 const name = participant.resident.name ?? 'Resident';
                 return (
                   <tr key={participant.id} data-testid="participant-row">
@@ -415,6 +424,14 @@ function Participants({ round }: { round: AdminRoundDetailDto }) {
           </table>
         </div>
       )}
+      <ShowMore
+        hasMore={participants.hasMore}
+        loaded={list.length}
+        total={participants.total}
+        busy={participants.loadingMore}
+        onMore={participants.loadMore}
+        noun={['participant', 'participants']}
+      />
 
       {payment.isPaused && (
         <p role="status" data-testid="payment-offline" className="mt-3 flex items-center gap-2 rounded-chip border border-paper/60 bg-amber-ink/15 px-3 py-2 text-meta font-bold text-amber-ink">

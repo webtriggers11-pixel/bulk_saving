@@ -13,14 +13,14 @@ import { Notice } from '../../components/ui/notice';
 import { indianPhone, PhoneField } from '../../components/ui/phone-field';
 import { ResultSummary } from '../../components/ui/result-summary';
 import { SearchField } from '../../components/ui/search-field';
-import { Select } from '../../components/ui/select';
 import { ShowMore } from '../../components/ui/show-more';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { useAuthStore } from '../auth/auth.store';
 import { AdminLayout } from './AdminLayout';
+import { SocietySelect } from './SocietySelect';
 import { errorMessage, societyLabel } from './adminFormat';
-import { useAdminSocieties, useAdminUsers, useCreateAdmin } from './useAdmin';
+import { useAdminUsers, useCreateAdmin } from './useAdmin';
 
 const FILTER_KEYS = ['q', 'society', 'role', 'status'] as const;
 const isRole = (value: string): boolean => value === Role.RESIDENT || value === Role.SUPER_ADMIN;
@@ -119,7 +119,6 @@ export function AdminUsersPage() {
   const role = filters.role && isRole(filters.role) ? (filters.role as Role) : undefined;
   const status = filters.status === 'active' || filters.status === 'inactive' ? filters.status : undefined;
   const users = useAdminUsers({ q: filters.q, societyId: filters.society, role, status });
-  const societies = useAdminSocieties();
   const me = useAuthStore((state) => state.resident?.id);
   const { data, isLoading, isPlaceholderData } = users;
 
@@ -136,14 +135,7 @@ export function AdminUsersPage() {
             <SearchField label="Search users" placeholder="Search by name or phone" value={search} onChange={setSearch} maxLength={80} />
             <Field label="Society" id="users-society">
               {(props) => (
-                <Select {...props} value={filters.society ?? ''} onChange={(e) => setFilters({ society: e.target.value || undefined })}>
-                  <option value="">All societies</option>
-                  {(societies.data ?? []).map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </Select>
+                <SocietySelect {...props} value={filters.society ?? ''} onChange={(id) => setFilters({ society: id || undefined })} emptyLabel="All societies" />
               )}
             </Field>
             <FilterChips label="Access" options={ROLE_CHIPS} value={role ?? ''} onChange={(next) => setFilters({ role: next || undefined })} />

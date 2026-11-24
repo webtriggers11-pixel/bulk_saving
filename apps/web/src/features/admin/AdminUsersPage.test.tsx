@@ -48,7 +48,7 @@ function renderPage(path = '/admin/users') {
 describe('AdminUsersPage (FEAT-033)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fetchSocieties).mockResolvedValue([society]);
+    vi.mocked(fetchSocieties).mockResolvedValue(page([society]));
     vi.mocked(fetchUsers).mockResolvedValue(page([me, asha]));
     useAuthStore.setState({
       status: 'authenticated',

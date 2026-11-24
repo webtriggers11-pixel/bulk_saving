@@ -16,6 +16,9 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminSocietiesQuery,
+  AdminSocietyDemand,
+  AdminResidentPledgeDto,
   AdminOverviewDto,
   AdminResidentDto,
   AdminResidentDetailDto,
@@ -52,6 +55,9 @@ import {
   createSociety,
   deleteSociety,
   fetchSocieties,
+  fetchDemand,
+  fetchRoundParticipants,
+  fetchUserPledges,
   fetchSociety,
   fetchOverview,
   fetchUsers,
@@ -83,7 +89,13 @@ export const adminKeys = {
   /** Prefix of every filtered vendor list — invalidate this to refresh them all. */
   vendors: ['admin', 'vendors'] as const,
   vendorsFiltered: (filters: AdminVendorsQuery) => ['admin', 'vendors', filters] as const,
+  /** Prefix of every societies page / picker search (FEAT-044). */
   societies: ['admin', 'societies'] as const,
+  societiesFiltered: (filters: AdminSocietiesQuery) => ['admin', 'societies', filters] as const,
+  /** FEAT-044: demand by society, paged. Under the dashboard prefix so its invalidation covers it. */
+  demand: ['admin', 'dashboard', 'demand'] as const,
+  roundParticipants: (id: string) => ['admin', 'round', id, 'participants'] as const,
+  userPledges: (id: string) => ['admin', 'user', id, 'pledges'] as const,
   society: (id: string) => ['admin', 'society', id] as const,
   /** Prefix of every filtered user list (FEAT-033). */
   users: ['admin', 'users'] as const,
@@ -139,8 +151,29 @@ export function useAdminRound(id: string): UseQueryResult<AdminRoundDetailDto> {
 }
 
 /** GET /admin/societies. */
-export function useAdminSocieties(): UseQueryResult<AdminSocietyDetailDto[]> {
-  return useQuery({ queryKey: adminKeys.societies, queryFn: fetchSocieties });
+/** GET /admin/societies, a page at a time (FEAT-044); `q` searches name, city or PIN code. */
+export function useAdminSocieties(filters: AdminSocietiesQuery = {}, limit?: number): Paged<AdminSocietyDetailDto> {
+  return usePagedQuery({
+    queryKey: [...adminKeys.societiesFiltered(filters), limit ?? 'default'],
+    fetchPage: (page) => fetchSocieties({ ...filters, ...page }),
+    limit,
+    placeholderData: 'keepPrevious',
+  });
+}
+
+/** GET /admin/dashboard/demand, a page at a time (FEAT-044). */
+export function useAdminDemand(): Paged<AdminSocietyDemand> {
+  return usePagedQuery({ queryKey: adminKeys.demand, fetchPage: (page) => fetchDemand(page) });
+}
+
+/** GET /admin/rounds/:id/participants, a page at a time (FEAT-044). Under the round's key, so a payment toggle refreshes it. */
+export function useRoundParticipants(id: string): Paged<AdminRoundParticipantDto> {
+  return usePagedQuery({ queryKey: adminKeys.roundParticipants(id), fetchPage: (page) => fetchRoundParticipants(id, page), enabled: id !== '' });
+}
+
+/** GET /admin/residents/:id/pledges, a page at a time (FEAT-044). */
+export function useUserPledges(id: string): Paged<AdminResidentPledgeDto> {
+  return usePagedQuery({ queryKey: adminKeys.userPledges(id), fetchPage: (page) => fetchUserPledges(id, page), enabled: id !== '' });
 }
 
 /** GET /admin/services, filtered on the server (FEAT-015). No filters = every service. */

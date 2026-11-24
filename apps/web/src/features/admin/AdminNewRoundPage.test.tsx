@@ -104,7 +104,7 @@ async function fillForm(tiers: Array<[string, string]>) {
 describe('AdminNewRoundPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchSocietiesMock.mockResolvedValue([society]);
+    fetchSocietiesMock.mockResolvedValue(page([society]));
     fetchServicesMock.mockResolvedValue(page([
       service,
       { ...service, id: 'svc_off', name: 'Retired Service', active: false },

@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ActiveFilter, AdminServiceDto, AdminServicesQuery, AdminSocietyDto, ServiceOfferingDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
 import { ShowMore } from '../../components/ui/show-more';
@@ -20,6 +20,7 @@ import { CATEGORY_FILTER_OPTIONS, isListedCategory } from '../../lib/categories'
 import { isActiveFilter, useDebouncedSearch, useUrlFilters } from '../../lib/filters';
 import { OFFLINE_QUEUED_TEXT, OFFLINE_WAITING_LABEL, queryStalled } from '../../lib/offline';
 import { AdminLayout } from './AdminLayout';
+import { SocietySelect } from './SocietySelect';
 import { errorMessage, formatRupees } from './adminFormat';
 import {
   EMPTY_SERVICE_FORM,
@@ -39,6 +40,7 @@ import {
 import {
   useAdminServices,
   useAdminSocieties,
+  useAdminSociety,
   useCreateService,
   useUpdateService,
   useOfferingSavePaused,
@@ -343,7 +345,35 @@ function OfferingControl({
 }
 
 /** One service: read view with Edit + activate toggle and its offerings, or an inline edit form. */
-function ServiceRow({ service, societies }: { service: AdminServiceDto; societies: AdminSocietyDto[] }) {
+/**
+ * FEAT-044: the societies a service can be offered in, a page at a time with search, loaded
+ * only while the panel is open (there may be thousands).
+ */
+function OfferingsPanel({ service }: { service: AdminServiceDto }) {
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setQ(text.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [text]);
+  const societies = useAdminSocieties(q ? { q } : {});
+  const list = societies.data ?? [];
+  return (
+    <div id={`offerings-${service.id}`} className="animate-rise flex flex-col gap-4">
+      {(q !== '' || (societies.total ?? 0) > list.length) && (
+        <SearchField label={`Search societies for ${service.name}`} placeholder="Search by name, city or PIN code" value={text} onChange={setText} maxLength={80} />
+      )}
+      {societies.isLoading && <Skeleton className="h-12" radius="tile" />}
+      {list.map((society) => (
+        <OfferingControl key={society.id} service={service} society={society} offering={service.offerings.find((o) => o.societyId === society.id)} />
+      ))}
+      {q !== '' && societies.total === 0 && <p className="text-meta text-ink-muted">No society matches “{q}”.</p>}
+      <ShowMore hasMore={societies.hasMore} loaded={list.length} total={societies.total} busy={societies.loadingMore} onMore={societies.loadMore} noun={['society', 'societies']} />
+    </div>
+  );
+}
+
+function ServiceRow({ service, societyTotal }: { service: AdminServiceDto; societyTotal: number | undefined }) {
   const update = useUpdateService();
   const [editing, setEditing] = useState(false);
   // Closed by default: with every society's controls open, 23 services made a phone
@@ -411,8 +441,8 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
                   <SavedTick trigger={update.isSuccess ? update.submittedAt : null} />
                 </div>
                 <p className="mt-1 text-meta text-ink-muted">
-                  Priced per {service.unitLabel} · offered in {offeredIn} of {societies.length}{' '}
-                  {societies.length === 1 ? 'society' : 'societies'}
+                  Priced per {service.unitLabel} · offered in {offeredIn}
+                  {societyTotal !== undefined && <> of {societyTotal} {societyTotal === 1 ? 'society' : 'societies'}</>}
                 </p>
                 {service.unitDescription && (
                   <p className="mt-1.5 text-meta text-ink-soft">{service.unitDescription}</p>
@@ -453,18 +483,7 @@ function ServiceRow({ service, societies }: { service: AdminServiceDto; societie
             >
               {showSocieties ? 'Hide societies' : 'Manage societies'}
             </Button>
-            {showSocieties && (
-            <div id={`offerings-${service.id}`} className="animate-rise flex flex-col gap-4">
-              {societies.map((society) => (
-                <OfferingControl
-                  key={society.id}
-                  service={service}
-                  society={society}
-                  offering={service.offerings.find((o) => o.societyId === society.id)}
-                />
-              ))}
-            </div>
-            )}
+            {showSocieties && <OfferingsPanel service={service} />}
           </div>
         )}
         {update.isPaused && <OfflineLine testId="service-update-offline" />}
@@ -508,12 +527,13 @@ export function AdminServicesPage() {
     offeredIn: filters.offeredIn,
   };
   const servicesQuery = useAdminServices(query);
-  const societiesQuery = useAdminSocieties();
+  // FEAT-044: only the count; the pickers and panels page their own societies.
+  const societyTotal = useAdminSocieties({}, 1).total;
+  const offeredInSociety = useAdminSociety(filters.offeredIn ?? '');
   const { data, isLoading, isPlaceholderData, refetch } = servicesQuery;
-  const societies = societiesQuery.data ?? [];
   // BUG-004: offline pauses the read instead of failing it.
   const failed = queryStalled(servicesQuery);
-  const offeredInName = societies.find((s) => s.id === filters.offeredIn)?.name;
+  const offeredInName = offeredInSociety.data?.name;
 
   return (
     <AdminLayout title="Services" subtitle="What residents can pool, and in which societies">
@@ -529,18 +549,16 @@ export function AdminServicesPage() {
               onChange={setSearch}
               maxLength={80}
             />
-            <Select
-              aria-label="Offered in"
-              value={filters.offeredIn ?? ''}
-              onChange={(e) => setFilters({ offeredIn: e.target.value || undefined })}
-            >
-              <option value="">Offered anywhere or nowhere</option>
-              {societies.map((society) => (
-                <option key={society.id} value={society.id}>
-                  Offered in {society.name}
-                </option>
-              ))}
-            </Select>
+            <Field label="Offered in" id="services-offered-in">
+              {(props) => (
+                <SocietySelect
+                  {...props}
+                  value={filters.offeredIn ?? ''}
+                  onChange={(id) => setFilters({ offeredIn: id || undefined })}
+                  emptyLabel="Offered anywhere or nowhere"
+                />
+              )}
+            </Field>
           </div>
           <FilterChips
             label="Category"
@@ -631,7 +649,7 @@ export function AdminServicesPage() {
               </CardHeader>
               <DataRows>
                 {services.map((service) => (
-                  <ServiceRow key={service.id} service={service} societies={societies} />
+                  <ServiceRow key={service.id} service={service} societyTotal={societyTotal} />
                 ))}
               </DataRows>
             </Card>

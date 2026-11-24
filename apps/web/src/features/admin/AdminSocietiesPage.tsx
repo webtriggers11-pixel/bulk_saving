@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { hasSocietyAddress, INDIAN_STATES, PINCODE_PATTERN, type AdminSocietyDetailDto } from '@bulk/shared';
 import { Button } from '../../components/ui/button';
@@ -11,6 +11,8 @@ import { Input } from '../../components/ui/input';
 import { indianPhone, PhoneField, toLocalDigits } from '../../components/ui/phone-field';
 import { Select } from '../../components/ui/select';
 import { Notice } from '../../components/ui/notice';
+import { SearchField } from '../../components/ui/search-field';
+import { ShowMore } from '../../components/ui/show-more';
 import { Skeleton, SkeletonScreen } from '../../components/ui/skeleton';
 import { AdminLayout } from './AdminLayout';
 import { errorMessage } from './adminFormat';
@@ -221,29 +223,46 @@ function SocietyRow({ society }: { society: AdminSocietyDetailDto }) {
   );
 }
 
-/** `/admin/societies` (FEAT-032): every society, and the form that onboards a new one. */
+/** `/admin/societies` (FEAT-032): every society, searchable and paged (FEAT-044), and the form that onboards a new one. */
 export function AdminSocietiesPage() {
-  const societies = useAdminSocieties();
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setQ(text.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [text]);
+  const societies = useAdminSocieties(q ? { q } : {});
+  const list = societies.data;
   return (
     <AdminLayout title="Societies" subtitle="Create a society, then share its invite code or QR poster.">
       <div className="flex flex-col gap-6">
         <AddSocietyForm />
         <section aria-label="All societies" className="flex flex-col gap-3">
-          {societies.isPending ? (
+          <div role="search" aria-label="Filter societies">
+            <SearchField label="Search societies" placeholder="Search by name, city or PIN code" value={text} onChange={setText} maxLength={80} />
+          </div>
+          {societies.isLoading ? (
             <SkeletonScreen label="Loading societies">
               <Skeleton className="h-16" />
               <Skeleton className="h-16" />
             </SkeletonScreen>
-          ) : societies.isError ? (
+          ) : societies.isError || !list ? (
             <Notice tone="error">{errorMessage(societies.error, "Couldn't load societies.")}</Notice>
-          ) : societies.data.length === 0 ? (
-            <EmptyState icon="building" title="No societies yet" description="Create the first one above." />
+          ) : list.length === 0 ? (
+            q ? (
+              <EmptyState icon="search" title="No societies match" description="Try another name, city or PIN code." />
+            ) : (
+              <EmptyState icon="building" title="No societies yet" description="Create the first one above." />
+            )
           ) : (
-            <DataRows>
-              {societies.data.map((society) => (
-                <SocietyRow key={society.id} society={society} />
-              ))}
-            </DataRows>
+            <div className="results flex flex-col gap-3" aria-busy={societies.isPlaceholderData}>
+              <DataRows>
+                {list.map((society) => (
+                  <SocietyRow key={society.id} society={society} />
+                ))}
+              </DataRows>
+              <ShowMore hasMore={societies.hasMore} loaded={list.length} total={societies.total} busy={societies.loadingMore} onMore={societies.loadMore} noun={['society', 'societies']} />
+            </div>
           )}
         </section>
       </div>

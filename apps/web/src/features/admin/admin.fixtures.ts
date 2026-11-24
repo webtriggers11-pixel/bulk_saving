@@ -1,6 +1,8 @@
 import type {
   AdminDashboardDto,
   AdminRoundDetailDto,
+  AdminRoundParticipantDto,
+  AdminSocietyDemand,
   AdminRoundSummaryDto,
   AdminSocietyDetailDto,
   ResidentDto,
@@ -51,7 +53,13 @@ export const roundSummary: AdminRoundSummaryDto = {
   canReopen: false,
 };
 
-export function roundDetail(overrides: Partial<AdminRoundDetailDto> = {}): AdminRoundDetailDto {
+/**
+ * FEAT-044: the API pages participants separately; fixtures keep them on the round so a test
+ * can hand both to the mocks (`fetchRoundParticipants` → `page(round.participants)`).
+ */
+export type RoundDetailFixture = AdminRoundDetailDto & { participants: AdminRoundParticipantDto[] };
+
+export function roundDetail(overrides: Partial<RoundDetailFixture> = {}): RoundDetailFixture {
   return {
     ...roundSummary,
     participants: [
@@ -82,7 +90,7 @@ export function roundDetail(overrides: Partial<AdminRoundDetailDto> = {}): Admin
 }
 
 /** An ASSIGNED round with a vendor, final price, and one participant already paid. */
-export function assignedRoundDetail(): AdminRoundDetailDto {
+export function assignedRoundDetail(): RoundDetailFixture {
   const base = roundDetail();
   return {
     ...base,
@@ -123,7 +131,8 @@ export const inactiveVendor: VendorDto = {
   active: false,
 };
 
-export const dashboard: AdminDashboardDto = {
+/** FEAT-044: `demandBySociety` is test-only here; the API pages it at /admin/dashboard/demand. */
+export const dashboard: AdminDashboardDto & { demandBySociety: AdminSocietyDemand[] } = {
   statusCounts: {
     OPEN: 3,
     CLOSED_MET: 2,

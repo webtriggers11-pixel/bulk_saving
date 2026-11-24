@@ -2,20 +2,24 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AdminResidentDetailDto } from '@bulk/shared';
-import { fetchUser, removeUser, updateUser } from './admin.api';
+import type { AdminResidentDetailDto, AdminResidentPledgeDto } from '@bulk/shared';
+import { fetchUser, fetchUserPledges, removeUser, updateUser } from './admin.api';
+import { page } from '../../test/page';
 import { AdminUserDetailPage } from './AdminUserDetailPage';
 import { useAuthStore } from '../auth/auth.store';
 
 vi.mock('./admin.api', () => ({
   fetchUser: vi.fn(),
+  fetchUserPledges: vi.fn(),
   fetchUsers: vi.fn(),
   updateUser: vi.fn(),
   removeUser: vi.fn(),
   fetchSocieties: vi.fn(),
 }));
 
-const asha: AdminResidentDetailDto = {
+/** FEAT-044: `pledges` is test-only here; the page loads them from the paged endpoint. */
+type UserFixture = AdminResidentDetailDto & { pledges: AdminResidentPledgeDto[] };
+const asha: UserFixture = {
   id: 'res_asha',
   name: 'Asha Rao',
   phone: '+919999900101',
@@ -25,11 +29,12 @@ const asha: AdminResidentDetailDto = {
   createdAt: '2026-11-01T10:00:00.000Z',
   society: { id: 'soc_1', name: 'Green Park' },
   pledgeCount: 1,
+  activePledgeCount: 1,
   pledges: [
     { roundId: 'r1', serviceName: 'AC Servicing', status: 'OPEN', units: 2, paid: false, deadline: '2026-12-01T10:00:00.000Z', joinedAt: '2026-11-02T10:00:00.000Z' },
   ],
 };
-const fresh: AdminResidentDetailDto = { ...asha, id: 'res_new', name: 'New Person', pledgeCount: 0, pledges: [] };
+const fresh: UserFixture = { ...asha, id: 'res_new', name: 'New Person', pledgeCount: 0, activePledgeCount: 0, pledges: [] };
 
 function renderPage(id = 'res_asha') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -48,6 +53,11 @@ function renderPage(id = 'res_asha') {
 describe('AdminUserDetailPage (FEAT-035)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // FEAT-044: serve the pledges of whichever fixture fetchUser returns.
+    vi.mocked(fetchUserPledges).mockImplementation(async (id: string) => {
+      const user = (await vi.mocked(fetchUser).getMockImplementation()?.(id)) as UserFixture | undefined;
+      return page(user?.pledges ?? []);
+    });
     useAuthStore.setState({
       status: 'authenticated',
       accessToken: 'a',
@@ -63,9 +73,9 @@ describe('AdminUserDetailPage (FEAT-035)', () => {
     renderPage();
     expect(await screen.findByTestId('user-profile')).toHaveTextContent('+919999900101');
     expect(screen.getByTestId('user-society-link')).toHaveAttribute('href', '/admin/societies/soc_1');
-    const pledges = screen.getByTestId('user-pledges');
-    expect(pledges).toHaveTextContent('AC Servicing');
-    expect(screen.getByRole('link', { name: 'AC Servicing' })).toHaveAttribute('href', '/admin/rounds/r1');
+    // FEAT-044: the pledges load from their own paged endpoint.
+    expect(await screen.findByRole('link', { name: 'AC Servicing' })).toHaveAttribute('href', '/admin/rounds/r1');
+    expect(screen.getByTestId('user-pledges')).toHaveTextContent('AC Servicing');
   });
 
   it('makes a resident an admin', async () => {

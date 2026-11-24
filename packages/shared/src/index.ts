@@ -555,9 +555,7 @@ export interface AdminResidentPledgeDto {
  * `GET /admin/residents/:id/pledges`, newest first; the detail carries the counts.
  */
 export interface AdminResidentDetailDto extends AdminResidentDto {
-  /** Every pledge ever made. */
-  pledgeCount: number;
-  /** Pledges in rounds that weren't cancelled (what "N group buys" means). */
+  /** (`pledgeCount`, every pledge ever made, comes from AdminResidentDto.) Pledges in rounds that weren't cancelled (what "N group buys" means). */
   activePledgeCount: number;
 }
 

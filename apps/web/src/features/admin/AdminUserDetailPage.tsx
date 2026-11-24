@@ -16,7 +16,8 @@ import { useAuthStore } from '../auth/auth.store';
 import { AdminLayout } from './AdminLayout';
 import { PLATFORM_ADMIN_LABEL, errorMessage, formatDateTime, societyLabel } from './adminFormat';
 import { StatusBadge } from './StatusBadge';
-import { useAdminUser, useRemoveUser, useUpdateUser } from './useAdmin';
+import { useAdminUser, useRemoveUser, useUpdateUser, useUserPledges } from './useAdmin';
+import { ShowMore } from '../../components/ui/show-more';
 
 const ROLE_LABEL: Record<Role, string> = { RESIDENT: 'Resident', SUPER_ADMIN: 'Admin' };
 
@@ -125,7 +126,7 @@ function StatusCard({ user, isSelf }: { user: AdminResidentDetailDto; isSelf: bo
   const update = useUpdateUser();
   const remove = useRemoveUser();
   const [asking, setAsking] = useState<'off' | 'remove' | null>(null);
-  const history = user.pledges.filter((p) => p.status !== 'CANCELLED').length;
+  const history = user.activePledgeCount;
 
   function setActive(next: boolean) {
     if (!next) {
@@ -205,17 +206,24 @@ function StatusCard({ user, isSelf }: { user: AdminResidentDetailDto; isSelf: bo
 }
 
 function PledgesCard({ user }: { user: AdminResidentDetailDto }) {
+  // FEAT-044: paged, newest first.
+  const pledges = useUserPledges(user.id);
+  const list = pledges.data ?? [];
   return (
     <Card data-testid="user-pledges">
       <CardHeader>
         <CardTitle>Group buys</CardTitle>
         <CardDescription>Every round they pledged to, newest first.</CardDescription>
       </CardHeader>
-      {user.pledges.length === 0 ? (
+      {pledges.isLoading ? (
+        <Skeleton className="h-16" radius="tile" />
+      ) : pledges.isError ? (
+        <p role="alert" className="text-meta font-bold text-danger-ink">{errorMessage(pledges.error, "Couldn't load their group buys.")}</p>
+      ) : list.length === 0 ? (
         <p className="text-meta text-ink-muted">No pledges yet.</p>
       ) : (
         <DataRows>
-          {user.pledges.map((p) => (
+          {list.map((p) => (
             <DataRow
               key={p.roundId}
               title={<Link to={`/admin/rounds/${p.roundId}`}>{p.serviceName}</Link>}
@@ -231,6 +239,7 @@ function PledgesCard({ user }: { user: AdminResidentDetailDto }) {
           ))}
         </DataRows>
       )}
+      <ShowMore hasMore={pledges.hasMore} loaded={list.length} total={pledges.total} busy={pledges.loadingMore} onMore={pledges.loadMore} noun={['group buy', 'group buys']} />
     </Card>
   );
 }

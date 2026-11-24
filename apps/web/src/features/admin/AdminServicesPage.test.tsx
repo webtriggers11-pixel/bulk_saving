@@ -93,7 +93,8 @@ function openAddForm(): HTMLElement {
 /** Open a service's society controls (closed by default) and return them. */
 async function openSocieties(): Promise<HTMLElement[]> {
   fireEvent.click(await screen.findByRole('button', { name: 'Manage societies' }));
-  return screen.getAllByTestId('offering-control');
+  // FEAT-044: the panel pages its own societies.
+  return screen.findAllByTestId('offering-control');
 }
 
 function fill(form: HTMLElement, label: RegExp, value: string) {
@@ -107,7 +108,7 @@ describe('AdminServicesPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchSocietiesMock.mockResolvedValue([society, blue]);
+    fetchSocietiesMock.mockResolvedValue(page([society, blue]));
   });
 
   it('groups services under their category, in catalog order, with legacy categories last', async () => {

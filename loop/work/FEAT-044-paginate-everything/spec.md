@@ -1,6 +1,6 @@
 # FEAT-044: Server-side (cursor) pagination on every list that can grow
 
-**Status:** triaged · **Priority:** P1 · **Owner:** owner / agent · **Opened:** 2026-11-24
+**Status:** in-progress · **Priority:** P1 · **Owner:** owner / agent · **Opened:** 2026-11-24
 
 **Owner request (2026-11-24):** "make sure … we added server side pagination for everything because later on when we have much more data it should not be lagged. So use server side pagination, use cursor … and proper working."
 
@@ -15,14 +15,17 @@ FEAT-025 (ADR-0035's `Page<T>` keyset envelope) paginated `GET /rounds`, `/round
 | `GET /admin/societies` | every society, unbounded (`listAll`) | **to paginate**, plus `q` search. Also feeds four pickers (New round, Services offerings, Users filter, Dashboard), which move to a searchable, paged picker |
 | `GET /admin/residents/:id` | the user plus **every** pledge | **to paginate**: `GET /admin/residents/:id/pledges`; the detail keeps counts only |
 | `GET /admin/rounds/:id` | the round plus **every** participant | **to paginate**: `GET /admin/rounds/:id/participants`; the detail keeps totals (units, collected count) |
-| `GET /admin/dashboard` | `demandBySociety` has one row per society; payments are summed by loading every payable round's participants into memory | **to paginate** demand as `GET /admin/reports/demand`. Payments become one SQL aggregate (a `$queryRaw` SUM in the service; ADR-0005 allows raw SQL in services, not controllers) |
+| `GET /admin/dashboard` | `demandBySociety` has one row per society; payments are summed by loading every payable round's participants into memory | **to paginate** demand as `GET /admin/dashboard/demand`. Payments become one SQL aggregate (a `$queryRaw` SUM in the service; ADR-0005 allows raw SQL in services, not controllers) |
 | `GET /admin/overview` | `take: RECENT` (5) recent societies/users | bounded by design |
 | dashboard asks (`waitingAskGroups`) | `take: 100`, then top 20 | bounded by design (a to-do list; total `waiting` reported) |
 | `/auth/*`, `/push/*`, `/dev/*`, `/health`, `GET /residents/:id`, `GET /admin/societies/:id` | single objects | n/a |
 
-## Acceptance criteria (draft)
-- AC1. Audit: every endpoint returning an array whose length grows with data is listed in this spec, with paginated / to-paginate / bounded-by-design (with the bound stated).
-- AC2. Every to-paginate endpoint uses the same `Page<T>` envelope, keyset on a deterministic order + `id`, `limit` 1–50, an opaque cursor, 400 on a bad cursor, filters and search applied before paging, and `total` for the filtered set.
-- AC3. Web consumers use `useInfiniteQuery` + the shared "Show more (N left)" control; filters reset pages; nothing is fetched as "all then sliced" on the client.
-- AC4. Indexes back each keyset order (additive migration if needed; owner approval before the shared DB).
-- AC5. Tests per endpoint (first page, next page, last page, bad cursor, filter + paging) + gate; V2; V3.
+## Acceptance criteria
+- [x] AC1. Audit: every endpoint returning an array whose length grows with data is listed in this spec, with paginated / to-paginate / bounded-by-design (with the bound stated).
+- [x] AC2. Every to-paginate endpoint uses the same `Page<T>` envelope, keyset on a deterministic order + `id`, `limit` 1–50, an opaque cursor, 400 on a bad cursor, filters and search applied before paging, and `total` for the filtered set.
+- [x] AC3. Web consumers use `useInfiniteQuery` + the shared "Show more (N left)" control; filters reset pages; nothing is fetched as "all then sliced" on the client.
+- [x] AC4. Indexes: Society (name, id) is a small table, sorted per page. RoundParticipant already has `@@index([roundId])`, and residentId is covered by `@@unique([roundId, residentId])`'s FK lookups. No migration was needed; revisit if a list gets slow.
+- [ ] AC5. Tests per endpoint (first page, next page, last page, bad cursor, filter + paging) + gate; V2; V3.
+
+
+Pickers: see ADR-0051 §3. Bounded by design: ADR-0051 §5.

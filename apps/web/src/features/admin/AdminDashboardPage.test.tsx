@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboard, roundSummary, society } from './admin.fixtures';
-import { fetchAdminRounds, fetchDashboard, fetchSocieties } from './admin.api';
+import { fetchAdminRounds, fetchDashboard, fetchDemand, fetchSocieties } from './admin.api';
 import { AdminDashboardPage } from './AdminDashboardPage';
 import { AdminReportsPage } from './AdminReportsPage';
 import { AdminRequestsPage } from './AdminRequestsPage';
@@ -15,6 +15,7 @@ vi.mock('./admin.api', () => ({
   // FEAT-034: the overview section above the demand summary.
   fetchOverview: vi.fn().mockResolvedValue({ societies: 2, users: 9, admins: 1, openRounds: 3, recentSocieties: [], recentUsers: [] }),
   fetchDashboard: vi.fn(),
+  fetchDemand: vi.fn(),
   fetchSocieties: vi.fn(),
   fetchServices: vi.fn(),
   fetchAdminRounds: vi.fn(),
@@ -56,8 +57,10 @@ function renderPage(url = '/admin') {
 
 describe('AdminDashboardPage', () => {
   beforeEach(() => {
+    // FEAT-044: demand is its own paged endpoint.
+    vi.mocked(fetchDemand).mockResolvedValue(page(dashboard.demandBySociety));
     vi.clearAllMocks();
-    fetchSocietiesMock.mockResolvedValue([society]);
+    fetchSocietiesMock.mockResolvedValue(page([society]));
   });
 
   it('the dashboard keeps the status tiles, each a link to the Rounds page filtered (FEAT-041)', async () => {
@@ -96,7 +99,7 @@ describe('AdminDashboardPage', () => {
     renderPage('/admin/reports');
     expect(await screen.findByTestId('payments-collected')).toHaveTextContent('₹12,000');
     expect(screen.getByTestId('payments-outstanding')).toHaveTextContent('₹4,500');
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(await screen.findByText('42')).toBeInTheDocument();
   });
 
   it('Rounds lists every round with a link to its page (FEAT-041)', async () => {

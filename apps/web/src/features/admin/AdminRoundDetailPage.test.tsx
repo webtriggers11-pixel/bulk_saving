@@ -1,13 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError } from '../../lib/api';
 import {
   activeVendor,
   assignedRoundDetail,
   inactiveVendor,
   roundDetail,
+  type RoundDetailFixture,
 } from './admin.fixtures';
 import {
   assignRound,
@@ -15,6 +16,7 @@ import {
   closeRound,
   deliverRound,
   fetchAdminRound,
+  fetchRoundParticipants,
   fetchVendors,
   reopenRound,
   setPayment,
@@ -30,6 +32,7 @@ vi.mock('./admin.api', () => ({
   fetchServices: vi.fn(),
   fetchAdminRounds: vi.fn(),
   fetchAdminRound: vi.fn(),
+  fetchRoundParticipants: vi.fn(),
   createRound: vi.fn(),
   closeRound: vi.fn(),
   cancelRound: vi.fn(),
@@ -46,7 +49,8 @@ vi.mock('./admin.api', () => ({
   reopenRound: vi.fn(),
 }));
 
-const fetchAdminRoundMock = vi.mocked(fetchAdminRound);
+// FEAT-044: fixtures carry `participants`; the paged endpoint serves them from the current round mock.
+const fetchAdminRoundMock = vi.mocked(fetchAdminRound) as unknown as Mock<(id: string) => Promise<RoundDetailFixture>>;
 const fetchVendorsMock = vi.mocked(fetchVendors);
 const assignRoundMock = vi.mocked(assignRound);
 const closeRoundMock = vi.mocked(closeRound);
@@ -71,6 +75,11 @@ describe('AdminRoundDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fetchVendorsMock.mockResolvedValue(page([activeVendor, inactiveVendor]));
+    // Calls the round mock's implementation directly, so its call count stays the page's own.
+    vi.mocked(fetchRoundParticipants).mockImplementation(async () => {
+      const round = await fetchAdminRoundMock.getMockImplementation()?.('round_1');
+      return page(round?.participants ?? []);
+    });
   });
 
   it('OPEN: shows Close and Cancel only, and closing calls closeRound', async () => {
@@ -86,7 +95,7 @@ describe('AdminRoundDetailPage', () => {
     // No vendor yet, so no payment toggles.
     expect(screen.queryByText('Mark collected')).not.toBeInTheDocument();
     // Unnamed resident falls back to "Resident".
-    expect(screen.getAllByTestId('participant-row')[1]).toHaveTextContent('Resident');
+    expect((await screen.findAllByTestId('participant-row'))[1]).toHaveTextContent('Resident');
 
     fireEvent.click(close);
     await waitFor(() => expect(closeRoundMock).toHaveBeenCalledWith('round_1'));
@@ -138,7 +147,7 @@ describe('AdminRoundDetailPage', () => {
       '1 of 2 paid · ₹1,600 collected · ₹3,200 outstanding',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark collected for Asha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark collected for Asha' }));
     await waitFor(() =>
       expect(setPaymentMock).toHaveBeenCalledWith('round_1', 'p_1', { collected: true }),
     );
@@ -228,7 +237,7 @@ describe('AdminRoundDetailPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('round-rating')).toHaveTextContent('3.5 (2)');
-    const cells = screen.getAllByTestId('participant-rating').map((el) => el.textContent);
+    const cells = (await screen.findAllByTestId('participant-rating')).map((el) => el.textContent);
     expect(cells[0]).toContain('5 / 5');
     expect(cells[0]).toContain('Excellent.');
     // A participant who has not rated shows a dash, never a zero.
@@ -270,7 +279,7 @@ describe('AdminRoundDetailPage', () => {
     // Facts, tiers and the participants column.
     expect(screen.getByText('Rooms / residents')).toBeInTheDocument();
     expect(screen.getByText(/5 rooms\+/)).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Rooms' })).toBeInTheDocument();
+    expect(await screen.findByRole('columnheader', { name: 'Rooms' })).toBeInTheDocument();
     // The money field: a negotiated price is per WHAT.
     expect(await screen.findByLabelText('Final price per room (₹)')).toBeInTheDocument();
     // And nothing on the page still says the generic word.

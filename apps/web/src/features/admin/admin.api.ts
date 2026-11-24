@@ -7,6 +7,10 @@ import type {
   AdminServiceDto,
   AdminServicesQuery,
   AdminSocietyDetailDto,
+  AdminSocietiesQuery,
+  AdminSocietyDemand,
+  AdminResidentPledgeDto,
+  PageQuery,
   AdminOverviewDto,
   AdminResidentDto,
   AdminResidentDetailDto,
@@ -41,14 +45,19 @@ import { toQueryString } from '../../lib/filters';
  * guard is UX only. One typed function per endpoint.
  */
 
-/** GET /admin/dashboard — status counts, demand by society, payment totals. */
+/** GET /admin/dashboard — status counts, payment totals, asks (FEAT-044: demand is paged separately). */
 export function fetchDashboard(): Promise<AdminDashboardDto> {
   return apiRequest<AdminDashboardDto>('/admin/dashboard');
 }
 
-/** GET /admin/societies — every society (for filters and the new-round form). */
-export function fetchSocieties(): Promise<AdminSocietyDetailDto[]> {
-  return apiRequest<AdminSocietyDetailDto[]>('/admin/societies');
+/** GET /admin/societies — a page of societies by name, searchable (FEAT-044). */
+export function fetchSocieties(query: AdminSocietiesQuery = {}): Promise<Page<AdminSocietyDetailDto>> {
+  return apiRequest<Page<AdminSocietyDetailDto>>(`/admin/societies${toQueryString(query)}`);
+}
+
+/** GET /admin/dashboard/demand — demand per society, a page at a time (FEAT-044). */
+export function fetchDemand(query: PageQuery = {}): Promise<Page<AdminSocietyDemand>> {
+  return apiRequest<Page<AdminSocietyDemand>>(`/admin/dashboard/demand${toQueryString(query)}`);
 }
 
 /** GET /admin/services — master services, including inactive ones, filtered on the server (FEAT-015). */
@@ -94,7 +103,17 @@ export function fetchAdminRounds(query: AdminRoundsQuery = {}): Promise<Page<Adm
   return apiRequest<Page<AdminRoundSummaryDto>>(`/admin/rounds${buildRoundsQueryString(query)}`);
 }
 
-/** GET /admin/rounds/:id — one round plus its participants. */
+/** GET /admin/rounds/:id/participants — a round's participants, joined first (FEAT-044). */
+export function fetchRoundParticipants(id: string, query: PageQuery = {}): Promise<Page<AdminRoundParticipantDto>> {
+  return apiRequest<Page<AdminRoundParticipantDto>>(`/admin/rounds/${encodeURIComponent(id)}/participants${toQueryString(query)}`);
+}
+
+/** GET /admin/residents/:id/pledges — a user's pledges, newest first (FEAT-044). */
+export function fetchUserPledges(id: string, query: PageQuery = {}): Promise<Page<AdminResidentPledgeDto>> {
+  return apiRequest<Page<AdminResidentPledgeDto>>(`/admin/residents/${encodeURIComponent(id)}/pledges${toQueryString(query)}`);
+}
+
+/** GET /admin/rounds/:id — one round: summary, payment totals and rating aggregate. */
 export function fetchAdminRound(id: string): Promise<AdminRoundDetailDto> {
   return apiRequest<AdminRoundDetailDto>(`/admin/rounds/${encodeURIComponent(id)}`);
 }

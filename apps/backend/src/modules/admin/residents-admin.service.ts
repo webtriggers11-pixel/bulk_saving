@@ -169,11 +169,10 @@ export class ResidentsAdminService {
   async detail(id: string): Promise<AdminResidentDetailDto> {
     const row = await this.prisma.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
     if (!row) throw notFound();
-    const [pledgeCount, activePledgeCount] = await Promise.all([
-      this.prisma.roundParticipant.count({ where: { residentId: id } }),
-      this.prisma.roundParticipant.count({ where: { residentId: id, round: { status: { not: RoundStatus.CANCELLED } } } }),
-    ]);
-    return { ...toResidentDto(row), pledgeCount, activePledgeCount };
+    const activePledgeCount = await this.prisma.roundParticipant.count({
+      where: { residentId: id, round: { status: { not: RoundStatus.CANCELLED } } },
+    });
+    return { ...toResidentDto(row), activePledgeCount };
   }
 
   /** A user's pledges, newest first, a page at a time (FEAT-044, ADR-0035). Unknown user → 404. */
