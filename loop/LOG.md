@@ -2113,3 +2113,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - The run-2 difference was triaged as BUG-032 (flaky, shared DB/Redis family). It is not in FEAT-045's code.
 - Closing: site entry added (phone section), registry FEAT-045 → done, before V3 (per the site content test).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-045 — V3; CLOSED
+- V3 at a47f3f8 (scratch worktree, WHATSAPP_* stripped): run 1 (12:15:36–12:16:53) and run 2 (12:16:53–12:18:16), both EXIT 0 with identical results: site 71/71, backend 671/671, web 839/839. Logs v3-1.log, v3-2.log in the session scratchpad.
+- FEAT-045 → done. Branch `feat/FEAT-045-check-invite-code`, not merged; no migration.
+- By: agent (autonomous)
