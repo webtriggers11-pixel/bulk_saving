@@ -2071,3 +2071,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 r2 (same reviewer, own worktree + DB, gate at 442d335: EXIT 0, site 71, backend 663, web 831): pass. P2-1's recorded decision accepted; every r1 fix verified. New P3-7, taken: the catalog-cap error was retried 3× (~160 requests). It is now `CatalogTooLargeError`, and the two catalog queries use `retryUnlessTooLarge`; tested.
 - Closing: registry → done, site entry → done (before V3).
 - By: agent (autonomous) + code-reviewer subagent
+
+## 2026-11-24 — BUG-031 — second occurrence (FEAT-044 V3)
+- FEAT-044 V3 run 1 (08:13:52, at c08b6bf) failed `platform-admin.integration.spec.ts:102`: `POST /auth/admin/otp/verify` → 404 just after the code was requested. Run 2 (08:14:39) passed 663/663. Same shape as the wa-login flake: a Redis-held key gone between write and read. Both occurrences happened only while my browser-pass backends (:3100 FEAT-043, :3101 FEAT-044) ran against the same Redis (6399); the agent was not permitted to stop them. Strongest lead for BUG-031: stop leftover servers, then reproduce. Memory note #7 (kill leftover watchers before gates) applies.
+- FEAT-044 V3 re-run as a fresh pair (precedent BUG-027/028).
+- By: agent (autonomous)
