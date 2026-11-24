@@ -325,7 +325,7 @@ export const features: Feature[] = [
     what: 'Creating a society now asks for the building, street, area, landmark, city, state and PIN code, plus an optional contact number. Each society page shows the address with a tap-to-call number and a Maps link.',
     why: 'A vendor has to find the gate on the first try.',
     section: 'operators',
-    status: 'coming-soon',
+    status: 'done',
   },
   {
     id: 'FEAT-041',

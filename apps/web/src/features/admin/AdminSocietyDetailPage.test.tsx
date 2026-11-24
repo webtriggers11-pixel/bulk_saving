@@ -168,7 +168,7 @@ describe('AdminSocietyDetailPage (FEAT-032)', () => {
     vi.mocked(fetchSociety).mockResolvedValue({ ...occupied, landmark: 'Balewadi Phata', contactPhone: '+919876543210' });
     renderPage();
     expect(await screen.findByTestId('society-address')).toHaveTextContent('Plot 12, Baner Road, Baner, near Balewadi Phata, Pune, Maharashtra 411045');
-    expect(screen.getByRole('link', { name: '+919876543210' })).toHaveAttribute('href', 'tel:+919876543210');
+    expect(screen.getByRole('link', { name: '+91 98765 43210' })).toHaveAttribute('href', 'tel:+919876543210');
     expect(screen.getByRole('link', { name: 'Open in Maps' }).getAttribute('href')).toContain('google.com/maps/search');
     expect(screen.queryByTestId('society-address-missing')).toBeNull();
   });
@@ -185,6 +185,40 @@ describe('AdminSocietyDetailPage (FEAT-032)', () => {
     });
     expect(updateSociety).not.toHaveBeenCalled();
     expect(screen.getByText('Enter the building and street.')).toBeInTheDocument();
+  });
+
+  it('filling in an old society\'s address saves the full body (V2 P3-3)', async () => {
+    const old = { ...occupied, addressLine1: null, addressLine2: null, state: null, pincode: null };
+    vi.mocked(fetchSociety).mockResolvedValue(old);
+    vi.mocked(updateSociety).mockResolvedValue(occupied);
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Building and street'), { target: { value: 'Tower B, MG Road' } });
+    fireEvent.change(screen.getByLabelText('State'), { target: { value: 'Karnataka' } });
+    fireEvent.change(screen.getByLabelText('PIN code'), { target: { value: '560001' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
+    });
+    expect(updateSociety).toHaveBeenCalledWith('soc_lake', expect.objectContaining({ addressLine1: 'Tower B, MG Road', state: 'Karnataka', pincode: '560001', addressLine2: null }));
+  });
+
+  it('a half-typed phone enables Save and is refused with a message (V2 P2-1)', async () => {
+    vi.mocked(fetchSociety).mockResolvedValue(occupied);
+    renderPage();
+    fireEvent.change(await screen.findByLabelText(/Contact phone/), { target: { value: '98765' } });
+    const save = screen.getByRole('button', { name: 'Save details' });
+    expect(save).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(save);
+    });
+    expect(updateSociety).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter a 10-digit mobile number, or leave it empty.')).toBeInTheDocument();
+  });
+
+  it('shows the phone even while the address is incomplete (V2 P3-1)', async () => {
+    vi.mocked(fetchSociety).mockResolvedValue({ ...occupied, state: null, contactPhone: '+919876543210' });
+    renderPage();
+    expect(await screen.findByTestId('society-address-missing')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '+91 98765 43210' })).toBeInTheDocument();
   });
 
   it('the Active switch turns the society off and back on (FEAT-035)', async () => {

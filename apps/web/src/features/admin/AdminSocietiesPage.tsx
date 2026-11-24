@@ -113,7 +113,9 @@ export function SocietyFields({
           {...props}
           value={values[key]}
           placeholder={opts.placeholder}
-          {...(opts.numeric ? { inputMode: 'numeric' as const, autoComplete: 'postal-code' } : {})}
+          // The society's address, not the admin's own: no browser address suggestions (V2 P3-2).
+          autoComplete="off"
+          {...(opts.numeric ? { inputMode: 'numeric' as const } : {})}
           onChange={(e) => set(key, opts.numeric ? e.target.value.replace(/\D/g, '').slice(0, 6) : e.target.value)}
         />
       )}

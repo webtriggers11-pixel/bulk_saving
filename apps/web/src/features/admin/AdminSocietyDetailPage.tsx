@@ -139,6 +139,12 @@ function InvitationCard({ society, message }: { society: AdminSocietyDetailDto; 
  * FEAT-043 (ADR-0050): where the society is and who to call. A society created before the
  * address was required says so, and points at the form below.
  */
+/** "+919876543210" → "+91 98765 43210" for reading; the tel: link keeps the canonical form. */
+function displayPhone(phone: string): string {
+  const m = /^\+91(\d{5})(\d{5})$/.exec(phone);
+  return m ? `+91 ${m[1]} ${m[2]}` : phone;
+}
+
 function AddressCard({ society }: { society: AdminSocietyDetailDto }) {
   const complete = hasSocietyAddress(society);
   const address = formatSocietyAddress(society);
@@ -152,16 +158,6 @@ function AddressCard({ society }: { society: AdminSocietyDetailDto }) {
           <p className="flex items-start gap-2.5 text-body text-ink" data-testid="society-address">
             <Icon name="building" size={16} strokeWidth={2} className="mt-1 shrink-0 text-ink-muted" />
             <span>{address}</span>
-          </p>
-          <p className="flex items-center gap-2.5 text-body" data-testid="society-contact-phone">
-            <Icon name="phone" size={16} strokeWidth={2} className="shrink-0 text-ink-muted" />
-            {society.contactPhone ? (
-              <a href={`tel:${society.contactPhone}`} className="num font-bold text-brand-ink underline">
-                {society.contactPhone}
-              </a>
-            ) : (
-              <span className="text-ink-muted">No contact phone</span>
-            )}
           </p>
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${society.name}, ${address}`)}`}
@@ -177,6 +173,17 @@ function AddressCard({ society }: { society: AdminSocietyDetailDto }) {
           Address missing. Add the building, street, state and PIN code under Details below.
         </Notice>
       )}
+      {/* V2 P3-1: the phone shows whether or not the address is complete. */}
+      <p className="mt-3 flex items-center gap-2.5 text-body" data-testid="society-contact-phone">
+        <Icon name="phone" size={16} strokeWidth={2} className="shrink-0 text-ink-muted" />
+        {society.contactPhone ? (
+          <a href={`tel:${society.contactPhone}`} className="num font-bold text-brand-ink underline">
+            {displayPhone(society.contactPhone)}
+          </a>
+        ) : (
+          <span className="text-ink-muted">No contact phone</span>
+        )}
+      </p>
     </Card>
   );
 }
@@ -186,7 +193,10 @@ function EditDetailsCard({ society }: { society: AdminSocietyDetailDto }) {
   const [values, setValues] = useState<SocietyFormValues>(() => societyFormValues(society));
   const [errors, setErrors] = useState<SocietyFormErrors>({});
   const [saved, setSaved] = useState(false);
-  const dirty = JSON.stringify(societyBody(values)) !== JSON.stringify(societyBody(societyFormValues(society)));
+  // Raw values, not the request body (V2 P2-1): a half-typed phone maps to null like "no phone",
+  // and must still enable Save so validation can say what's wrong.
+  const trimmed = (v: SocietyFormValues) => JSON.stringify(Object.values(v).map((x) => x.trim()));
+  const dirty = trimmed(values) !== trimmed(societyFormValues(society));
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();

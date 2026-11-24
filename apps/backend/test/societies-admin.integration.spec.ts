@@ -194,12 +194,19 @@ describe('Societies admin API (integration, needs DB)', () => {
       const before = (await as(adminToken).get(`/admin/societies/${old.id}`).expect(200)).body.data as AdminSocietyDetailDto;
       expect(before).toMatchObject({ addressLine1: null, state: null, pincode: null, contactPhone: null });
 
+      // V2 P2-2: part of an address on an address-less society is refused.
+      const half = await as(adminToken).patch(`/admin/societies/${old.id}`, { addressLine1: 'Tower B' }).expect(400);
+      expect(half.body.error.message).toMatch(/set together/);
+
       const filled = (
         await as(adminToken)
           .patch(`/admin/societies/${old.id}`, { addressLine1: 'Tower B, MG Road', landmark: 'Metro station', state: 'Karnataka', pincode: '560001', contactPhone: '+91 99999 00111' })
           .expect(200)
       ).body.data as AdminSocietyDetailDto;
       expect(filled).toMatchObject({ addressLine1: 'Tower B, MG Road', landmark: 'Metro station', state: 'Karnataka', pincode: '560001', contactPhone: '+919999900111' });
+
+      // Once complete, one part can change alone.
+      await as(adminToken).patch(`/admin/societies/${old.id}`, { pincode: '560002' }).expect(200);
 
       const cleared = (await as(adminToken).patch(`/admin/societies/${old.id}`, { landmark: '', contactPhone: null }).expect(200)).body.data as AdminSocietyDetailDto;
       expect(cleared).toMatchObject({ landmark: null, contactPhone: null, addressLine1: 'Tower B, MG Road' });

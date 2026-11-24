@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Society } from '@prisma/client';
 import type { AdminSocietyDetailDto, CreateSocietyBody, UpdateSocietyBody } from '@bulk/shared';
 import { ErrorCode } from '../../common/error-codes';
@@ -77,7 +77,22 @@ export class SocietiesService {
 
   /** Rename or move a society. The invite code is untouched (see {@link rotateInviteCode}). */
   async update(id: string, body: UpdateSocietyBody): Promise<AdminSocietyDetailDto> {
-    await this.getDetail(id);
+    const current = await this.getDetail(id);
+    // FEAT-043 V2 P2-2: an address is all-or-nothing. Setting part of it on a society that has
+    // none would leave a half-filled row that never counts as addressed.
+    if (body.addressLine1 !== undefined || body.state !== undefined || body.pincode !== undefined) {
+      const merged = {
+        addressLine1: body.addressLine1 ?? current.addressLine1,
+        state: body.state ?? current.state,
+        pincode: body.pincode ?? current.pincode,
+      };
+      if (!merged.addressLine1 || !merged.state || !merged.pincode) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_ERROR,
+          message: 'addressLine1, state and pincode must be set together.',
+        });
+      }
+    }
     const row = await this.prisma.society
       .update({
         where: { id },
