@@ -2132,3 +2132,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Regression test first (`useDevOtp.test.tsx`: DEV false + `VITE_DEV_OTP_TOAST=true` → shows the code), failed as expected. Fix: the flag also enables the toast. Default prod build still clean (`check-dev-only.mjs` OK); flagged build contains the path (1 file).
 - Risk told to owner: the server's `/dev/otp` is public; demo only.
 - By: agent (autonomous)
+
+## 2026-11-24 — BUG-033 — V1, V2; server deploy script; closing
+- V1: gate in the scratch worktree: EXIT 0 (site 71, backend 671, web 841).
+- V2 (independent reviewer subagent; ran the gate itself: EXIT 0, same counts): APPROVE. It confirmed: default bundle clean, flagged bundle carries the path, only `'true'` enables it, nothing else blocks the toast, and the test fails without the fix. P2: an ADR was needed → ADR-0053 (amends ADR-0037 for the demo server; Medium; mandatory revisit before real residents). P3s noted in the ADR (the flag bypasses the test-mode guard; set it only in the deploy step).
+- Server: `/production/savebulk/deploy.sh` backed up to `deploy.sh.bak-2026-11-24`; the web build line now carries `VITE_DEV_OTP_TOAST=true`.
+- GitHub push refused (account has no write access); owner chose to ship via the server (git bundle → fast-forward the server checkout, then `deploy savebulk`).
+- By: agent (autonomous)

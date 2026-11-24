@@ -1,6 +1,6 @@
 # BUG-033: The demo server never shows the OTP toast, and no SMS is sent, so nobody can read their code
 
-**Status:** in-progress · **Priority:** P1 · **Opened:** 2026-11-24
+**Status:** done · **Priority:** P1 · **Opened:** 2026-11-24
 
 **Owner (2026-11-24):** "check on server why we not receiving OTP toast … find the root cause", then "do it".
 
