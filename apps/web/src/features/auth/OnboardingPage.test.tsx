@@ -382,8 +382,9 @@ describe('OnboardingPage — sign in with WhatsApp', () => {
 /** FEAT-045 (ADR-0052): the invite step asks the server before moving on. */
 describe('OnboardingPage — the server checks the invite code', () => {
   function installCheck(answer: MockResponse | (() => Promise<unknown>)) {
-    const mock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
-      const url = String(input);
+    // `init` is recorded by vi.fn through the rest tuple, so a test can read the body it sent.
+    const mock = vi.fn((...args: [RequestInfo | URL, RequestInit?]) => {
+      const url = String(args[0]);
       if (url.endsWith('/auth/invite/check')) {
         return typeof answer === 'function' ? answer() : Promise.resolve(jsonResponse(answer));
       }
