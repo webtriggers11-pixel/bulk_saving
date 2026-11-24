@@ -2076,3 +2076,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-044 V3 run 1 (08:13:52, at c08b6bf) failed `platform-admin.integration.spec.ts:102`: `POST /auth/admin/otp/verify` → 404 just after the code was requested. Run 2 (08:14:39) passed 663/663. Same shape as the wa-login flake: a Redis-held key gone between write and read. Both occurrences happened only while my browser-pass backends (:3100 FEAT-043, :3101 FEAT-044) ran against the same Redis (6399); the agent was not permitted to stop them. Strongest lead for BUG-031: stop leftover servers, then reproduce. Memory note #7 (kill leftover watchers before gates) applies.
 - FEAT-044 V3 re-run as a fresh pair (precedent BUG-027/028).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-044 — V3; CLOSED
+- V3 at 7e4bde0 (FEAT-044 worktree, WHATSAPP_* stripped): runs 3 (08:16:15–08:17:16) and 4 (08:17:16–08:18:18), both EXIT 0 and identical: site 71/71, backend 663/663, web 831/831. Logs v3-44-3.log, v3-44-4.log. The earlier pair's flake is BUG-031 (second occurrence).
+- FEAT-044 → done. Branch `feat/FEAT-044-paginate-everything` (stacked on FEAT-043, FEAT-042), not merged; no migration of its own.
+- By: agent (autonomous)
