@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import type { Resident, Round, RoundStatus, Society, Vendor } from '@prisma/client';
 import request from 'supertest';
-import type { AdminRoundDetailDto, MyRoundDto, RatingDto, VendorDto } from '@bulk/shared';
+import type { AdminRoundDetailDto, AdminRoundParticipantDto, MyRoundDto, Page, RatingDto, VendorDto } from '@bulk/shared';
 import { ErrorCode } from '../src/common/error-codes';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -358,8 +358,12 @@ describe('Ratings (integration, needs DB + Redis)', () => {
         .expect(200);
 
       const detail = res.body.data as AdminRoundDetailDto;
-      const aliceRow = detail.participants.find((p) => p.resident.id === alice.id);
-      const bobRow = detail.participants.find((p) => p.resident.id === bob.id);
+      // FEAT-044: each participant's rating rides on the paged participants list.
+      const parts = (
+        await request(app.getHttpServer()).get(`/admin/rounds/${round.id}/participants`).set('Authorization', `Bearer ${adminToken}`).expect(200)
+      ).body.data as Page<AdminRoundParticipantDto>;
+      const aliceRow = parts.items.find((p) => p.resident.id === alice.id);
+      const bobRow = parts.items.find((p) => p.resident.id === bob.id);
       expect(aliceRow?.rating).toMatchObject({ stars: 5, comment: 'Excellent.' });
       expect(bobRow?.rating).toMatchObject({ stars: 2, comment: null });
       expect(detail.ratings).toEqual({ average: 3.5, count: 2 });
@@ -375,7 +379,10 @@ describe('Ratings (integration, needs DB + Redis)', () => {
 
       const detail = res.body.data as AdminRoundDetailDto;
       expect(detail.ratings).toEqual({ average: null, count: 0 });
-      expect(detail.participants.every((p) => p.rating === null)).toBe(true);
+      const parts = (
+        await request(app.getHttpServer()).get(`/admin/rounds/${round.id}/participants`).set('Authorization', `Bearer ${adminToken}`).expect(200)
+      ).body.data as Page<AdminRoundParticipantDto>;
+      expect(parts.items.every((p) => p.rating === null)).toBe(true);
     });
 
     it('DENIES the admin round detail to a resident token', async () => {

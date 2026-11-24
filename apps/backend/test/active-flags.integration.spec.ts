@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { Resident, Society } from '@prisma/client';
-import type { AdminResidentDetailDto, AdminResidentDto, AdminSocietyDetailDto, Page } from '@bulk/shared';
+import type { AdminResidentDetailDto, AdminResidentDto, AdminSocietyDetailDto, AdminResidentPledgeDto, Page } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { RedisService } from '../src/redis/redis.service';
@@ -104,9 +104,14 @@ describe('Active flags (integration, needs DB)', () => {
     });
     const detail = (await asAdmin.get(`/admin/residents/${neha.id}`).expect(200)).body.data as AdminResidentDetailDto;
     expect(detail).toMatchObject({ id: neha.id, active: true, society: { id: society.id } });
-    expect(detail.pledges).toEqual([
+    expect(detail).toMatchObject({ pledgeCount: 1, activePledgeCount: 1 });
+    // FEAT-044: the pledges are paged.
+    const pledges = (await asAdmin.get(`/admin/residents/${neha.id}/pledges`).expect(200)).body.data as Page<AdminResidentPledgeDto>;
+    expect(pledges).toMatchObject({ total: 1, nextCursor: null });
+    expect(pledges.items).toEqual([
       expect.objectContaining({ serviceName: `Detail svc ${tag}`, status: 'OPEN', units: 2, paid: false }),
     ]);
+    await asAdmin.get('/admin/residents/nope/pledges').expect(404);
     await asAdmin.get('/admin/residents/nope').expect(404);
   });
 

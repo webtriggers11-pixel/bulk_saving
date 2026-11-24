@@ -1,6 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Society } from '@prisma/client';
-import type { AdminSocietyDetailDto, CreateSocietyBody, UpdateSocietyBody } from '@bulk/shared';
+import type { AdminSocietiesQuery, AdminSocietyDetailDto, CreateSocietyBody, Page, UpdateSocietyBody } from '@bulk/shared';
+import { pageArgs, pageOf } from '../../common/pagination';
+import { activeFrom, containsInsensitive, searchTerm } from '../../common/list-filters';
 import { ErrorCode } from '../../common/error-codes';
 import { PrismaService } from '../../prisma/prisma.service';
 import { generateInviteCode } from './invite-code';
@@ -35,15 +37,25 @@ export class SocietiesService {
   }
 
   /**
-   * Every society, ordered by name, for the super-admin (FEAT-005), with its resident and
-   * round counts (FEAT-032). This is the explicit cross-tenant read.
+   * Societies by name, a page at a time (FEAT-044, ADR-0035), with resident and round counts
+   * (FEAT-032). `q` matches name, city or PIN code. The explicit cross-tenant read.
    */
-  async listAll(): Promise<AdminSocietyDetailDto[]> {
-    const rows = await this.prisma.society.findMany({
-      include: WITH_COUNTS,
-      orderBy: [{ name: 'asc' }, { id: 'asc' }],
-    });
-    return rows.map(toDetail);
+  async list(query: AdminSocietiesQuery = {}): Promise<Page<AdminSocietyDetailDto>> {
+    const q = searchTerm(query.q);
+    const where: Prisma.SocietyWhereInput = {
+      ...(q ? { OR: [{ name: containsInsensitive(q) }, { city: containsInsensitive(q) }, { pincode: { startsWith: q } }] } : {}),
+      ...(query.status ? { active: activeFrom(query.status) } : {}),
+    };
+    const [rows, total] = await Promise.all([
+      this.prisma.society.findMany({
+        where,
+        include: WITH_COUNTS,
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+        ...pageArgs(query),
+      }),
+      this.prisma.society.count({ where }),
+    ]);
+    return pageOf(rows, query, total, toDetail);
   }
 
   /** One society with its counts, or 404. */

@@ -1,10 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import type { AdminResidentDetailDto, AdminResidentDto, Page } from '@bulk/shared';
+import type { AdminResidentDetailDto, AdminResidentDto, AdminResidentPledgeDto, Page } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentAuth, type AuthContext } from '../auth/auth-context';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { PageQueryDto } from '../../common/pagination';
 import { AdminResidentsQueryDto, CreateAdminDto, UpdateResidentDto } from './residents-admin.dto';
 import { ResidentsAdminService } from './residents-admin.service';
 
@@ -20,10 +21,16 @@ export class ResidentsAdminController {
     return this.residents.list(query);
   }
 
-  /** FEAT-035: the user detail page — profile plus every pledge. */
+  /** FEAT-035: the user detail page — profile plus pledge counts. */
   @Get(':id')
   detail(@Param('id') id: string): Promise<AdminResidentDetailDto> {
     return this.residents.detail(id);
+  }
+
+  /** FEAT-044: the user's pledges, newest first, a page at a time. */
+  @Get(':id/pledges')
+  pledges(@Param('id') id: string, @Query() query: PageQueryDto): Promise<Page<AdminResidentPledgeDto>> {
+    return this.residents.pledges(id, query);
   }
 
   @Patch(':id')

@@ -550,9 +550,15 @@ export interface AdminResidentPledgeDto {
   joinedAt: string;
 }
 
-/** `GET /admin/residents/:id` (FEAT-035): the user and every pledge they made, newest first. */
+/**
+ * `GET /admin/residents/:id` (FEAT-035). FEAT-044: the pledges themselves are paged at
+ * `GET /admin/residents/:id/pledges`, newest first; the detail carries the counts.
+ */
 export interface AdminResidentDetailDto extends AdminResidentDto {
-  pledges: AdminResidentPledgeDto[];
+  /** Every pledge ever made. */
+  pledgeCount: number;
+  /** Pledges in rounds that weren't cancelled (what "N group buys" means). */
+  activePledgeCount: number;
 }
 
 /** `PATCH /admin/residents/:id`. `name: null` clears the name. */
@@ -650,11 +656,19 @@ export interface AdminRoundParticipantDto {
   rating: { stars: number; comment: string | null; ratedAt: string } | null;
 }
 
-/** `GET /admin/rounds/:id`: the summary plus every participant and the round's ratings. */
+/**
+ * `GET /admin/rounds/:id`: the summary, payment totals and the round's ratings. FEAT-044: the
+ * participants are paged at `GET /admin/rounds/:id/participants` (joined first).
+ */
 export interface AdminRoundDetailDto extends AdminRoundSummaryDto {
-  participants: AdminRoundParticipantDto[];
   /** Average + count over this round's ratings (FEAT-007). */
   ratings: RatingSummary;
+}
+
+/** `GET /admin/societies` (FEAT-044): paged by name; `q` matches name, city or PIN code. */
+export interface AdminSocietiesQuery extends PageQuery {
+  q?: string;
+  status?: ActiveFilter;
 }
 
 /** `GET /admin/rounds` query filters (all optional). `q` matches service, society or vendor name. */
@@ -755,8 +769,6 @@ export interface AdminServiceAsk {
 export interface AdminDashboardDto {
   /** Count of rounds in every status (all 7 keys present, zeros included). */
   statusCounts: Record<RoundStatus, number>;
-  /** One entry per society (including societies with no open rounds), ordered by name. */
-  demandBySociety: AdminSocietyDemand[];
   /** FEAT-022: services residents are asking for, newest first (top 20; BUG-029). */
   asks: AdminServiceAsk[];
   /** FEAT-037: the 20 most-asked waiting requests (count desc, then newest), ranked over every waiting request. */

@@ -23,17 +23,13 @@ export const adminRoundSummaryInclude = {
 } satisfies Prisma.RoundInclude;
 
 /**
- * Prisma include for the super-admin round detail: the summary plus every
- * participant + resident, and (FEAT-007) every rating on the round, so the admin
- * sees what each resident thought of the job in the same read.
+ * Prisma include for the super-admin round detail: the summary plus the round's ratings
+ * (FEAT-007) for its aggregate. FEAT-044: the participants themselves are paged separately
+ * (`GET /admin/rounds/:id/participants`); the summary's payment fields still count them all.
  */
 export const adminRoundDetailInclude = {
-  society: true,
-  service: true,
-  vendor: true,
-  tiers: { orderBy: { threshold: 'asc' } },
-  participants: { include: { resident: true }, orderBy: { createdAt: 'asc' } },
-  ratings: true,
+  ...adminRoundSummaryInclude,
+  ratings: { select: { stars: true } },
 } satisfies Prisma.RoundInclude;
 
 export type AdminRoundSummaryRow = Prisma.RoundGetPayload<{
@@ -140,14 +136,10 @@ export function buildAdminParticipant(
   };
 }
 
-/** Shape a loaded round with participants + ratings into {@link AdminRoundDetailDto}. */
+/** Shape a loaded round with its ratings into {@link AdminRoundDetailDto}. */
 export function buildAdminRoundDetail(round: AdminRoundDetailRow): AdminRoundDetailDto {
-  const byResident = new Map(round.ratings.map((r) => [r.residentId, r]));
   return {
     ...buildAdminRoundSummary(round),
-    participants: round.participants.map((p) =>
-      buildAdminParticipant(p, round.finalPrice, byResident.get(p.residentId) ?? null),
-    ),
     ratings: summarise(round.ratings.map((r) => r.stars)),
   };
 }

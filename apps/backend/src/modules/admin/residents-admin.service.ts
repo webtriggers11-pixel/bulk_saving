@@ -4,6 +4,8 @@ import {
   normalisePhone,
   Role,
   type AdminResidentDetailDto,
+  type AdminResidentPledgeDto,
+  type PageQuery,
   type CreateAdminBody,
   type AdminResidentDto,
   type AdminResidentsQuery,
@@ -163,34 +165,46 @@ export class ResidentsAdminService {
     }
   }
 
-  /** One user with every pledge they made, newest first (FEAT-035). */
+  /** One user with how many pledges they made (FEAT-035; FEAT-044: the pledges are paged). */
   async detail(id: string): Promise<AdminResidentDetailDto> {
     const row = await this.prisma.resident.findUnique({ where: { id }, include: RESIDENT_ROW });
     if (!row) throw notFound();
-    const pledges = await this.prisma.roundParticipant.findMany({
-      where: { residentId: id },
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      select: {
-        units: true,
-        paymentCollectedAt: true,
-        createdAt: true,
-        round: {
-          select: { id: true, status: true, deadline: true, service: { select: { name: true } } },
+    const [pledgeCount, activePledgeCount] = await Promise.all([
+      this.prisma.roundParticipant.count({ where: { residentId: id } }),
+      this.prisma.roundParticipant.count({ where: { residentId: id, round: { status: { not: RoundStatus.CANCELLED } } } }),
+    ]);
+    return { ...toResidentDto(row), pledgeCount, activePledgeCount };
+  }
+
+  /** A user's pledges, newest first, a page at a time (FEAT-044, ADR-0035). Unknown user → 404. */
+  async pledges(id: string, query: PageQuery): Promise<Page<AdminResidentPledgeDto>> {
+    const exists = await this.prisma.resident.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) throw notFound();
+    const where: Prisma.RoundParticipantWhereInput = { residentId: id };
+    const [rows, total] = await Promise.all([
+      this.prisma.roundParticipant.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          units: true,
+          paymentCollectedAt: true,
+          createdAt: true,
+          round: { select: { id: true, status: true, deadline: true, service: { select: { name: true } } } },
         },
-      },
-    });
-    return {
-      ...toResidentDto(row),
-      pledges: pledges.map((p) => ({
-        roundId: p.round.id,
-        serviceName: p.round.service.name,
-        status: p.round.status as RoundStatus,
-        units: p.units,
-        paid: p.paymentCollectedAt !== null,
-        deadline: p.round.deadline.toISOString(),
-        joinedAt: p.createdAt.toISOString(),
-      })),
-    };
+        ...pageArgs(query),
+      }),
+      this.prisma.roundParticipant.count({ where }),
+    ]);
+    return pageOf(rows, query, total, (p) => ({
+      roundId: p.round.id,
+      serviceName: p.round.service.name,
+      status: p.round.status as RoundStatus,
+      units: p.units,
+      paid: p.paymentCollectedAt !== null,
+      deadline: p.round.deadline.toISOString(),
+      joinedAt: p.createdAt.toISOString(),
+    }));
   }
 
   /**

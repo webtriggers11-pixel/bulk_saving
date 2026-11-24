@@ -18,6 +18,7 @@ import type {
   CreateRoundBody,
   RoundDto,
   Page,
+  PageQuery,
   UpdateRoundBody,
 } from '@bulk/shared';
 import { RoundStatus } from '@bulk/shared';
@@ -34,7 +35,7 @@ import {
   adminRoundSummaryInclude,
   buildAdminRoundDetail,
   buildAdminRoundSummary,
-  computePaymentSummary,
+  buildAdminParticipant,
 } from './rounds-admin.mapper';
 import { buildRoundDto, type RoundWithView } from './rounds.mapper';
 import { ROUND_TX_OPTIONS, RoundsService } from './rounds.service';
@@ -197,7 +198,33 @@ export class RoundsAdminService {
     return pageOf(rounds, query, total, buildAdminRoundSummary);
   }
 
-  /** One round with every participant (resident name + phone, payment state). Unknown id → 404. */
+  /**
+   * One round's participants, joined first, a page at a time (FEAT-044, ADR-0035), each with
+   * their rating if they left one. Unknown round → 404.
+   */
+  async listParticipants(roundId: string, query: PageQuery): Promise<Page<AdminRoundParticipantDto>> {
+    const round = await this.prisma.round.findUnique({ where: { id: roundId }, select: { finalPrice: true } });
+    if (!round) {
+      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Round not found.' });
+    }
+    const where: Prisma.RoundParticipantWhereInput = { roundId };
+    const [rows, total] = await Promise.all([
+      this.prisma.roundParticipant.findMany({
+        where,
+        include: { resident: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        ...pageArgs(query),
+      }),
+      this.prisma.roundParticipant.count({ where }),
+    ]);
+    const ratings = await this.prisma.rating.findMany({
+      where: { roundId, residentId: { in: rows.map((r) => r.residentId) } },
+    });
+    const byResident = new Map(ratings.map((r) => [r.residentId, r]));
+    return pageOf(rows, query, total, (p) => buildAdminParticipant(p, round.finalPrice, byResident.get(p.residentId) ?? null));
+  }
+
+  /** One round: its summary (payment counts over every participant) and rating aggregate. Unknown id → 404. */
   async getRoundDetail(roundId: string): Promise<AdminRoundDetailDto> {
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },
@@ -218,31 +245,10 @@ export class RoundsAdminService {
    *    split by whether the participant's payment is collected.
    */
   async getDashboard(): Promise<AdminDashboardDto> {
-    const [statusGroups, societies, openGroups, openParticipants, payableRounds] =
-      await Promise.all([
-        this.prisma.round.groupBy({ by: ['status'], _count: { _all: true } }),
-        this.prisma.society.findMany({
-          select: { id: true, name: true, city: true },
-          orderBy: { name: 'asc' },
-        }),
-        this.prisma.round.groupBy({
-          by: ['societyId'],
-          where: { status: RoundStatus.OPEN },
-          _count: { _all: true },
-          _sum: { unitsCount: true },
-        }),
-        this.prisma.roundParticipant.findMany({
-          where: { round: { status: RoundStatus.OPEN } },
-          select: { residentId: true, round: { select: { societyId: true } } },
-        }),
-        this.prisma.round.findMany({
-          where: { status: { in: PAYABLE_STATUSES } },
-          select: {
-            finalPrice: true,
-            participants: { select: { units: true, paymentCollectedAt: true } },
-          },
-        }),
-      ]);
+    const [statusGroups, payments] = await Promise.all([
+      this.prisma.round.groupBy({ by: ['status'], _count: { _all: true } }),
+      this.paymentTotals(),
+    ]);
 
     const statusCounts = Object.fromEntries(
       Object.values(RoundStatus).map((status) => [status, 0]),
@@ -251,43 +257,76 @@ export class RoundsAdminService {
       statusCounts[group.status as RoundStatus] = group._count._all;
     }
 
-    const openBySociety = new Map(openGroups.map((g) => [g.societyId, g]));
-    const residentsBySociety = new Map<string, Set<string>>();
-    for (const p of openParticipants) {
-      const set = residentsBySociety.get(p.round.societyId) ?? new Set<string>();
-      set.add(p.residentId);
-      residentsBySociety.set(p.round.societyId, set);
-    }
-    const demandBySociety: AdminSocietyDemand[] = societies.map((society) => {
-      const open = openBySociety.get(society.id);
-      return {
-        society,
-        openRounds: open?._count._all ?? 0,
-        unitsPledged: open?._sum.unitsCount ?? 0,
-        residentsJoined: residentsBySociety.get(society.id)?.size ?? 0,
-      };
-    });
-
-    let collectedAmount = 0;
-    let outstandingAmount = 0;
-    for (const round of payableRounds) {
-      const summary = computePaymentSummary(round.finalPrice, round.participants);
-      collectedAmount += summary.collectedAmount;
-      outstandingAmount += summary.outstandingAmount;
-    }
-
     // FEAT-007: the BRIEF's success metric ("delivered jobs average >= 4.0 / 5").
     const ratings = await this.ratings.platformSummary();
     const { asks, mostAsked, waiting } = await this.askedFor();
     return {
       statusCounts,
-      demandBySociety,
       asks,
       asksMostAsked: mostAsked,
       asksWaiting: waiting,
-      payments: { collectedAmount, outstandingAmount },
+      payments,
       ratings,
     };
+  }
+
+  /**
+   * FEAT-044: `finalPrice × units` over ASSIGNED / DELIVERED / RATED rounds, split by whether the
+   * participant has paid, summed in Postgres. It used to load every payable participant into
+   * memory. A tagged `$queryRaw` (parameterised) in a service; ADR-0005 keeps raw SQL out of
+   * controllers only.
+   */
+  private async paymentTotals(): Promise<{ collectedAmount: number; outstandingAmount: number }> {
+    const statuses = PAYABLE_STATUSES as readonly string[];
+    const [row] = await this.prisma.$queryRaw<{ collected: bigint | null; outstanding: bigint | null }[]>`
+      SELECT
+        SUM(CASE WHEN p."paymentCollectedAt" IS NOT NULL THEN r."finalPrice"::bigint * p."units" ELSE 0 END) AS collected,
+        SUM(CASE WHEN p."paymentCollectedAt" IS NULL THEN r."finalPrice"::bigint * p."units" ELSE 0 END) AS outstanding
+      FROM "RoundParticipant" p
+      JOIN "Round" r ON r."id" = p."roundId"
+      WHERE r."status"::text IN (${Prisma.join(statuses)}) AND r."finalPrice" IS NOT NULL`;
+    return { collectedAmount: Number(row?.collected ?? 0), outstandingAmount: Number(row?.outstanding ?? 0) };
+  }
+
+  /**
+   * FEAT-044: demand by society, a page at a time by society name (ADR-0035): OPEN rounds,
+   * pledged units and distinct residents joined, computed for this page's societies only.
+   */
+  async demandBySociety(query: PageQuery): Promise<Page<AdminSocietyDemand>> {
+    const [societies, total] = await Promise.all([
+      this.prisma.society.findMany({
+        select: { id: true, name: true, city: true },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+        ...pageArgs(query),
+      }),
+      this.prisma.society.count(),
+    ]);
+    const ids = societies.map((s) => s.id);
+    const [openGroups, joined] = await Promise.all([
+      this.prisma.round.groupBy({
+        by: ['societyId'],
+        where: { status: RoundStatus.OPEN, societyId: { in: ids } },
+        _count: { _all: true },
+        _sum: { unitsCount: true },
+      }),
+      this.prisma.$queryRaw<{ societyId: string; residents: bigint }[]>`
+        SELECT r."societyId" AS "societyId", COUNT(DISTINCT p."residentId") AS residents
+        FROM "RoundParticipant" p
+        JOIN "Round" r ON r."id" = p."roundId"
+        WHERE r."status"::text = ${RoundStatus.OPEN} AND r."societyId" IN (${ids.length ? Prisma.join(ids) : Prisma.sql`NULL`})
+        GROUP BY r."societyId"`,
+    ]);
+    const openBySociety = new Map(openGroups.map((g) => [g.societyId, g]));
+    const joinedBySociety = new Map(joined.map((j) => [j.societyId, Number(j.residents)]));
+    return pageOf(societies, query, total, (society) => {
+      const open = openBySociety.get(society.id);
+      return {
+        society,
+        openRounds: open?._count._all ?? 0,
+        unitsPledged: open?._sum.unitsCount ?? 0,
+        residentsJoined: joinedBySociety.get(society.id) ?? 0,
+      };
+    });
   }
 
   /**

@@ -16,7 +16,9 @@ import type {
   AdminRoundDetailDto,
   AdminRoundParticipantDto,
   AdminRoundSummaryDto,
+  AdminSocietyDemand,
   AdminSocietyDetailDto,
+  Page,
 } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
@@ -186,9 +188,13 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
   });
 
   describe('GET /admin/societies', () => {
-    it('lists every society (id, name, city, inviteCode + FEAT-032 counts) ordered by name', async () => {
-      const res = await asAdmin(request(server()).get('/admin/societies')).expect(200);
-      const list = res.body.data as AdminSocietyDetailDto[];
+    it('lists societies (id, name, city, inviteCode + FEAT-032 counts) ordered by name, paged (FEAT-044)', async () => {
+      // FEAT-044: a page, searched down to this suite's two societies.
+      const res = await asAdmin(request(server()).get('/admin/societies').query({ q: `FEAT5 Dash ${suffix}` })).expect(200);
+      const page = res.body.data as Page<AdminSocietyDetailDto>;
+      expect(page.total).toBe(2);
+      expect(page.nextCursor).toBeNull();
+      const list = page.items;
       const idxA = list.findIndex((s) => s.id === societyA.id);
       const idxB = list.findIndex((s) => s.id === societyB.id);
       expect(idxA).toBeGreaterThanOrEqual(0);
@@ -284,7 +290,10 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
       const detail = res.body.data as AdminRoundDetailDto;
       expect(detail.id).toBe(open1.id);
       expect(detail.participantsCount).toBe(2);
-      expect(detail.participants).toEqual([
+      // FEAT-044: the participants are their own paged endpoint.
+      const parts = (await asAdmin(request(server()).get(`/admin/rounds/${open1.id}/participants`)).expect(200)).body.data as Page<AdminRoundParticipantDto>;
+      expect(parts.total).toBe(2);
+      expect(parts.items).toEqual([
         {
           id: open1Participants[0].id,
           resident: { id: r1.id, name: 'Resident One', phone: r1.phone },
@@ -404,7 +413,8 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
         },
       });
       expect(new Date(detail.assignedAt ?? 0).getTime()).toBeGreaterThanOrEqual(before - 1_000);
-      expect(detail.participants.map((p) => p.amountDue)).toEqual([1200, 1800]);
+      const parts = (await asAdmin(request(server()).get(`/admin/rounds/${met.id}/participants`)).expect(200)).body.data as Page<AdminRoundParticipantDto>;
+      expect(parts.items.map((p) => p.amountDue)).toEqual([1200, 1800]);
 
       const row = await dbRound(met.id);
       expect(row).toMatchObject({ status: 'ASSIGNED', vendorId: activeVendor.id, finalPrice: 600 });
@@ -540,21 +550,32 @@ describe('Super-admin dashboard API (integration, needs DB + Redis)', () => {
         expect(dash.statusCounts[status as RoundStatus]).toBeGreaterThanOrEqual(min);
       }
 
-      // Demand: exact for this suite's societies, which are adjacent in name order.
-      const idxA = dash.demandBySociety.findIndex((d) => d.society.id === societyA.id);
+      // FEAT-044: demand is paged at /admin/dashboard/demand, by society name. Walk the pages to
+      // this suite's societies, which are adjacent in name order.
+      const demand: AdminSocietyDemand[] = [];
+      let cursor: string | null = null;
+      do {
+        const page = (await asAdmin(request(server()).get('/admin/dashboard/demand').query({ limit: 50, ...(cursor ? { cursor } : {}) })).expect(200)).body
+          .data as Page<AdminSocietyDemand>;
+        demand.push(...page.items);
+        cursor = page.nextCursor;
+      } while (cursor);
+      const idxA = demand.findIndex((d) => d.society.id === societyA.id);
       expect(idxA).toBeGreaterThanOrEqual(0);
-      expect(dash.demandBySociety[idxA]).toEqual({
+      expect(demand[idxA]).toEqual({
         society: { id: societyA.id, name: societyA.name, city: 'Pune' },
         openRounds: 2,
         unitsPledged: 9,
         residentsJoined: 2, // r1 (in both OPEN rounds) + r2
       });
-      expect(dash.demandBySociety[idxA + 1]).toEqual({
+      expect(demand[idxA + 1]).toEqual({
         society: { id: societyB.id, name: societyB.name, city: 'Mumbai' },
         openRounds: 0,
         unitsPledged: 0,
         residentsJoined: 0,
       });
+      expect(new Set(demand.map((d) => d.society.id)).size).toBe(demand.length);
+      expect('demandBySociety' in dash).toBe(false);
 
       // Payments: the DELIVERED fixture contributes 1200 collected + 1800 outstanding.
       expect(dash.payments.collectedAmount).toBeGreaterThanOrEqual(1200);

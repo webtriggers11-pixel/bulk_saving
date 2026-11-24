@@ -13,6 +13,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminRoundsQueryDto, AssignRoundDto, CancelRoundDto, CreateRoundDto, ReopenRoundDto, SetPaymentDto, UpdateRoundDto } from './rounds.dto';
 import { RoundsAdminService } from './rounds-admin.service';
+import { PageQueryDto } from '../../common/pagination';
 
 /**
  * Super-admin round management (FEAT-003). SUPER_ADMIN-only via the reused
@@ -44,6 +45,12 @@ export class RoundsAdminController {
   @Get(':id')
   detail(@Param('id') id: string): Promise<AdminRoundDetailDto> {
     return this.admin.getRoundDetail(id);
+  }
+
+  /** FEAT-044: the round's participants, joined first, a page at a time. */
+  @Get(':id/participants')
+  participants(@Param('id') id: string, @Query() query: PageQueryDto): Promise<Page<AdminRoundParticipantDto>> {
+    return this.admin.listParticipants(id, query);
   }
 
   /** FEAT-038 (ADR-0047): edit an OPEN round's deadline and/or tiers. */

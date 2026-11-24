@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import type { AdminOverviewDto, AdminSocietyDetailDto } from '@bulk/shared';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import type { AdminOverviewDto, AdminSocietyDetailDto, Page } from '@bulk/shared';
 import { Role } from '@bulk/shared';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateSocietyDto, UpdateSocietyDto } from '../societies/societies.dto';
+import { AdminSocietiesQueryDto, CreateSocietyDto, UpdateSocietyDto } from '../societies/societies.dto';
 import { SocietiesService } from '../societies/societies.service';
 import { OverviewService } from './overview.service';
 
@@ -32,9 +32,10 @@ export class AdminController {
     return { pong: true };
   }
 
+  /** FEAT-044: paged by name, searchable (ADR-0035). */
   @Get('societies')
-  listSocieties(): Promise<AdminSocietyDetailDto[]> {
-    return this.societies.listAll();
+  listSocieties(@Query() query: AdminSocietiesQueryDto): Promise<Page<AdminSocietyDetailDto>> {
+    return this.societies.list(query);
   }
 
   @Get('societies/:id')

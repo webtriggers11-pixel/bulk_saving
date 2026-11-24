@@ -1,5 +1,7 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { ACTIVE_FILTERS, MAX_SEARCH, type ActiveFilter, type AdminSocietiesQuery } from '@bulk/shared';
+import { PageQueryDto } from '../../common/pagination';
 import { INDIAN_STATES, PINCODE_PATTERN, normalisePhone, type CreateSocietyBody, type UpdateSocietyBody } from '@bulk/shared';
 
 /** Trim string inputs before validation so whitespace-only names fail the length check. */
@@ -130,4 +132,16 @@ export class UpdateSocietyDto implements UpdateSocietyBody {
   @ValidateIf(present)
   @IsBoolean()
   active?: boolean;
+}
+
+/** `GET /admin/societies` (FEAT-044): a page, optional search and active filter. */
+export class AdminSocietiesQueryDto extends PageQueryDto implements AdminSocietiesQuery {
+  @IsOptional()
+  @IsString()
+  @Length(0, MAX_SEARCH)
+  q?: string;
+
+  @IsOptional()
+  @IsIn(ACTIVE_FILTERS, { message: `status must be one of: ${ACTIVE_FILTERS.join(', ')}.` })
+  status?: ActiveFilter;
 }

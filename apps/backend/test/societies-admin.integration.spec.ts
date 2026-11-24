@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { Resident, Society } from '@prisma/client';
-import type { AdminSocietyDetailDto } from '@bulk/shared';
+import type { AdminSocietyDetailDto, Page } from '@bulk/shared';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { ErrorCode } from '../src/common/error-codes';
@@ -86,9 +86,9 @@ describe('Societies admin API (integration, needs DB)', () => {
     await as(adminToken).post('/admin/societies', { name: 'x'.repeat(81), city: 'Pune', ...ADDRESS }).expect(400);
   });
 
-  it('lists every society with resident and round counts', async () => {
-    const res = await as(adminToken).get('/admin/societies').expect(200);
-    const mine = (res.body.data as AdminSocietyDetailDto[]).find((s) => s.id === home.id);
+  it('lists societies with resident and round counts (searched; FEAT-044 pages)', async () => {
+    const res = await as(adminToken).get(`/admin/societies?q=${encodeURIComponent(`Societies Admin ${tag}`)}`).expect(200);
+    const mine = (res.body.data as Page<AdminSocietyDetailDto>).items.find((s) => s.id === home.id);
     expect(mine).toMatchObject({ id: home.id, inviteCode: home.inviteCode, residentCount: 2, roundCount: 0 });
   });
 
