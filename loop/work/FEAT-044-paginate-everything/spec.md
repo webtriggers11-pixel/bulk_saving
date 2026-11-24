@@ -7,6 +7,19 @@
 ## Now
 FEAT-025 (ADR-0035's `Page<T>` keyset envelope) paginated `GET /rounds`, `/rounds/mine`, `/catalog`, `/admin/rounds`, `/admin/services` and `/admin/vendors`. Lists added since (societies FEAT-032, users FEAT-033, the admin requests/asks page and reports FEAT-037/041, round participants, notifications, anything else) have to be audited.
 
+## Audit (2026-11-24, every GET in apps/backend/src)
+| Endpoint | Returns | Verdict |
+|---|---|---|
+| `GET /rounds`, `/rounds/mine`, `/catalog`, `/admin/rounds`, `/admin/services`, `/admin/vendors` | `Page<T>` | paginated (FEAT-025) |
+| `GET /admin/residents` | `Page<T>` | paginated (FEAT-033) |
+| `GET /admin/societies` | every society, unbounded (`listAll`) | **to paginate**, plus `q` search. Also feeds four pickers (New round, Services offerings, Users filter, Dashboard), which move to a searchable, paged picker |
+| `GET /admin/residents/:id` | the user plus **every** pledge | **to paginate**: `GET /admin/residents/:id/pledges`; the detail keeps counts only |
+| `GET /admin/rounds/:id` | the round plus **every** participant | **to paginate**: `GET /admin/rounds/:id/participants`; the detail keeps totals (units, collected count) |
+| `GET /admin/dashboard` | `demandBySociety` has one row per society; payments are summed by loading every payable round's participants into memory | **to paginate** demand as `GET /admin/reports/demand`. Payments become one SQL aggregate (a `$queryRaw` SUM in the service; ADR-0005 allows raw SQL in services, not controllers) |
+| `GET /admin/overview` | `take: RECENT` (5) recent societies/users | bounded by design |
+| dashboard asks (`waitingAskGroups`) | `take: 100`, then top 20 | bounded by design (a to-do list; total `waiting` reported) |
+| `/auth/*`, `/push/*`, `/dev/*`, `/health`, `GET /residents/:id`, `GET /admin/societies/:id` | single objects | n/a |
+
 ## Acceptance criteria (draft)
 - AC1. Audit: every endpoint returning an array whose length grows with data is listed in this spec, with paginated / to-paginate / bounded-by-design (with the bound stated).
 - AC2. Every to-paginate endpoint uses the same `Page<T>` envelope, keyset on a deterministic order + `id`, `limit` 1–50, an opaque cursor, 400 on a bad cursor, filters and search applied before paging, and `total` for the filtered set.
