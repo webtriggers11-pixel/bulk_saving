@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import { Icon } from './icon';
 
@@ -18,7 +18,27 @@ interface ToastProps {
   placement?: 'bottom' | 'top';
   /** An action beside the message, e.g. "Use it". */
   action?: ReactNode;
+  /**
+   * FEAT-042 V2 P1-1: step aside while another top toast is up. The install ask yields, so it
+   * never covers the dev OTP code on sign-in. Only meaningful with `placement="top"`.
+   */
+  yieldTop?: boolean;
 }
+
+/**
+ * Top toasts that hold the slot right now (visible, not yielding). Module scope, because the
+ * two callers live in different trees (the install ask at the app root, the OTP code on a page).
+ */
+const topHolders = new Set<symbol>();
+const topListeners = new Set<() => void>();
+function notifyTop(): void {
+  for (const listener of topListeners) listener();
+}
+function subscribeTop(listener: () => void): () => void {
+  topListeners.add(listener);
+  return () => topListeners.delete(listener);
+}
+const topBusy = (): boolean => topHolders.size > 0;
 
 const TONES: Record<ToastTone, string> = {
   slate: 'bg-ink text-paper',
@@ -35,8 +55,21 @@ const TONES: Record<ToastTone, string> = {
  * from the bottom rather than appearing, and sits on the ink token so it reads as
  * the same product in every palette.
  */
-export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, label, placement = 'bottom', action }: ToastProps) {
+export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, label, placement = 'bottom', action, yieldTop = false }: ToastProps) {
   const visible = children !== null && children !== undefined && children !== false;
+  const holdsTop = visible && placement === 'top' && !yieldTop;
+  const othersOnTop = useSyncExternalStore(subscribeTop, topBusy, topBusy);
+
+  useEffect(() => {
+    if (!holdsTop) return;
+    const token = Symbol('top-toast');
+    topHolders.add(token);
+    notifyTop();
+    return () => {
+      topHolders.delete(token);
+      notifyTop();
+    };
+  }, [holdsTop]);
 
   useEffect(() => {
     if (!visible || duration === null) {
@@ -46,7 +79,7 @@ export function Toast({ children, tone = 'slate', onDismiss, duration = 8_000, l
     return () => clearTimeout(timer);
   }, [visible, duration, onDismiss, children]);
 
-  if (!visible) {
+  if (!visible || (yieldTop && othersOnTop)) {
     return null;
   }
 

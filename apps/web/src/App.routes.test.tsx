@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResidentDto } from '@bulk/shared';
 import App from './App';
 import { useAuthStore } from './features/auth/auth.store';
+import { INSTALL_SNOOZE_KEY, INSTALL_TOAST_DELAY_MS } from './features/shell/InstallToast';
 
 /**
  * The ROUTE TABLE, not a component.
@@ -100,5 +101,26 @@ describe('App route table', () => {
 
     await waitFor(() => expect(screen.queryByText('Enter your invite code')).not.toBeInTheDocument());
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
+  });
+
+  /** FEAT-042 V2 P3-4: the install ask is mounted by the route table itself, so every door has it. */
+  it.each(['/onboard', '/admin/login', '/'])('asks to install on %s', (path) => {
+    vi.useFakeTimers();
+    const realUA = navigator.userAgent;
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36',
+      configurable: true,
+    });
+    try {
+      sessionStorage.removeItem(INSTALL_SNOOZE_KEY);
+      renderAppAt(path);
+      act(() => {
+        vi.advanceTimersByTime(INSTALL_TOAST_DELAY_MS);
+      });
+      expect(screen.getByTestId('install-toast')).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window.navigator, 'userAgent', { value: realUA, configurable: true });
+      vi.useRealTimers();
+    }
   });
 });

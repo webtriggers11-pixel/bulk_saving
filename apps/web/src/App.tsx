@@ -21,10 +21,15 @@ import { ProfilePage } from './features/profile/ProfilePage';
 import { MyRequestsPage } from './features/requests/MyRequestsPage';
 import { RoundsPage } from './features/rounds/RoundsPage';
 import { AppShell } from './features/shell/AppShell';
+import { InstallToast } from './features/shell/InstallToast';
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      {/* FEAT-042: the install ask, on every route, each time the app is opened (here, not in
+          main.tsx, so the route tests can see it: V2 P3-4). */}
+      <InstallToast />
+      <Routes>
       <Route
         path="/onboard"
         element={
@@ -192,6 +197,7 @@ export default function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

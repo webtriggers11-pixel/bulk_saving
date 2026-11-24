@@ -35,6 +35,8 @@ const STEPS: Record<ManualPlatform, { description: string; steps: string[] }> = 
       'Tap the Share button (the square with an arrow). On newer iPhones it is under "⋯" next to the address bar.',
       'Scroll down and tap "Add to Home Screen".',
       'Tap "Add". Bulk Saving now opens from your home screen like any other app.',
+      // V2 P2-1: WhatsApp, Gmail and X open links in a Safari view that looks identical but has no "Add to Home Screen".
+      'Don\'t see "Add to Home Screen"? You are in an app\'s browser: tap the compass icon (or "Open in Safari") first.',
     ],
   },
   'ios-other': {
@@ -50,6 +52,13 @@ const STEPS: Record<ManualPlatform, { description: string; steps: string[] }> = 
     steps: [
       'Tap "⋯" or the compass icon and choose "Open in Safari" (or copy the link into Safari).',
       'In Safari, tap Share, then "Add to Home Screen".',
+    ],
+  },
+  'android-inapp': {
+    description: "This app's built-in browser can't install apps.",
+    steps: [
+      'Tap ⋮ at the top right and choose "Open in Chrome" (or "Open in browser").',
+      'In Chrome, tap ⋮ again, then "Install app" or "Add to Home screen".',
     ],
   },
   'android-manual': {
@@ -73,7 +82,8 @@ export function InstallToast() {
   const [ready, setReady] = useState(false);
   const [hidden, setHidden] = useState(snoozed);
   const [installed, setInstalled] = useState(false);
-  const [stepsOpen, setStepsOpen] = useState(false);
+  // Frozen when the sheet opens (V2 P3-1): a prompt arriving mid-read must not unmount it.
+  const [sheetFor, setSheetFor] = useState<ManualPlatform | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), INSTALL_TOAST_DELAY_MS);
@@ -99,18 +109,19 @@ export function InstallToast() {
       // The browser's dialog takes over; whatever they choose, don't ask again this visit.
       dismiss();
       void promptInstall();
-    } else {
-      setStepsOpen(true);
+    } else if (manual) {
+      setSheetFor(manual);
     }
   }
 
   const showToast = ready && !hidden && !installed && platform !== 'none';
-  const guide = manual ? STEPS[manual] : null;
+  const guide = sheetFor ? STEPS[sheetFor] : null;
 
   return (
     <>
       <Toast
         placement="top"
+        yieldTop
         duration={null}
         onDismiss={dismiss}
         action={
@@ -130,11 +141,9 @@ export function InstallToast() {
       </Toast>
       {guide && (
         <Sheet
-          open={stepsOpen}
-          onClose={() => {
-            setStepsOpen(false);
-            dismiss();
-          }}
+          open
+          // Closing returns to the toast and its Install button (V2 P3-2); the toast's own close snoozes.
+          onClose={() => setSheetFor(null)}
           title="Add Bulk Saving to your home screen"
           description={guide.description}
         >

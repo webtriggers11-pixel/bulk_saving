@@ -9,11 +9,13 @@ import { isStandalone } from './useInstallPrompt';
  *   Screen (iOS 16.4+), Safari as the fallback.
  * - `ios-inapp`: an app's built-in browser (Google app, Instagram, Facebook…) can't add to
  *   the home screen; the page has to be opened in Safari.
- * - `android-manual`: Android with no held prompt (Firefox, Samsung Internet, an in-app
- *   browser, or Chrome before its engagement check): the browser menu's Install item.
+ * - `android-inapp`: an Android app's WebView (`; wv)`, Instagram, Facebook…): no Install menu;
+ *   open in Chrome first (V2 P2-2).
+ * - `android-manual`: Android with no held prompt (Firefox, Samsung Internet, or Chrome before
+ *   its engagement check): the browser menu's Install item.
  * - `none`: already installed, or a desktop browser with nothing to offer.
  */
-export type InstallPlatform = 'prompt' | 'ios-safari' | 'ios-other' | 'ios-inapp' | 'android-manual' | 'none';
+export type InstallPlatform = 'prompt' | 'ios-safari' | 'ios-other' | 'ios-inapp' | 'android-inapp' | 'android-manual' | 'none';
 
 interface PlatformInput {
   userAgent: string;
@@ -31,14 +33,10 @@ export function isIos(ua: string, maxTouchPoints: number): boolean {
 
 /** Apps whose built-in browser can't add to the home screen. GSA = the Google app (it says "Safari" too). */
 const IOS_IN_APP = /GSA\/|FBAN|FBAV|FBIOS|Instagram|Line\/|Snapchat|LinkedInApp|Twitter/;
+/** Android in-app browsers: a WebView marks itself `; wv)`; some apps add their own token. */
+const ANDROID_IN_APP = /; wv\)|FBAN|FBAV|Instagram|Line\/|LinkedInApp|Snapchat/;
 /** Real browsers on iOS other than Safari. */
 const IOS_OTHER_BROWSER = /CriOS|FxiOS|EdgiOS|OPiOS/;
-
-/** Safari on iPhone/iPad: the one browser where the steps are the Share sheet. */
-export function isIosSafari(nav: Pick<Navigator, 'userAgent' | 'maxTouchPoints'> = navigator): boolean {
-  const ua = nav.userAgent;
-  return isIos(ua, nav.maxTouchPoints) && /Safari/.test(ua) && !IOS_OTHER_BROWSER.test(ua) && !IOS_IN_APP.test(ua);
-}
 
 /** Pure, so every branch is testable with a UA string. */
 export function classifyInstallPlatform({ userAgent: ua, maxTouchPoints, canPrompt, standalone }: PlatformInput): InstallPlatform {
@@ -50,7 +48,7 @@ export function classifyInstallPlatform({ userAgent: ua, maxTouchPoints, canProm
     // Safari says "Safari"; a bare WKWebView (most in-app browsers) does not.
     return /Safari/.test(ua) ? 'ios-safari' : 'ios-inapp';
   }
-  if (/Android/.test(ua)) return 'android-manual';
+  if (/Android/.test(ua)) return ANDROID_IN_APP.test(ua) ? 'android-inapp' : 'android-manual';
   return 'none';
 }
 
