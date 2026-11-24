@@ -2025,3 +2025,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - What: additive migration (six nullable Society columns), DTOs (line 1 / state from INDIAN_STATES / 6-digit PIN required on create, never clearable; line 2, landmark, phone optional and clearable; phone canonical +91 mobile), shared `formatSocietyAddress` / `hasSocietyAddress`, admin form fields (state select, numeric PIN, fixed-+91 phone), Address card (formatted address, tel: link, Maps link, "Address missing"), "No address" in the list, seeds carry addresses. ADR-0050.
 - V1 in the FEAT-043 worktree on its own DB `bulk_saving_feat043` (migration not on the shared dev DB): EXIT 0, site 71, backend 658, web 813.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-043 — browser pass
+- Headless Chromium at 390×844 against the worktree servers (:3100 API on `bulk_saving_feat043`, :5180 web; the API's CORS list predates :5180, so the test added CORS headers in a Playwright route, not on the server). Admin sign-in → Societies: a blank create shows the five required-field errors and none for the optional phone; a filled form (PIN typed "411 007", phone "98765 43210") creates the society and opens its page with "Plot 7, Aundh Road, Aundh, near Bremen Chowk, Pune, Maharashtra 411007" and +919876543210 as a tel: link; an old address-less society shows "Address missing"; no horizontal overflow.
+- Found: the list's "No address" label truncated the name ("Old To…") → moved to the second line. One 404 console error on the first run did not repeat on a second run with a response listener (no 404s), so not chased.
+- By: agent (autonomous)

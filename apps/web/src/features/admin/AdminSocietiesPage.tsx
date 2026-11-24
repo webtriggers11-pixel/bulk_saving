@@ -194,13 +194,17 @@ function SocietyRow({ society }: { society: AdminSocietyDetailDto }) {
           <span className="truncate text-lead font-extrabold text-ink">{society.name}</span>
           <span className="text-meta text-ink-muted">
             {society.city} · {society.residentCount} {society.residentCount === 1 ? 'resident' : 'residents'}
+            {/* FEAT-043: on the second line, so it never squeezes the name at 390 px (browser pass). */}
+            {!hasSocietyAddress(society) && (
+              <>
+                {' · '}
+                <span className="font-bold text-amber-ink" data-testid="society-no-address">
+                  No address
+                </span>
+              </>
+            )}
           </span>
         </span>
-        {!hasSocietyAddress(society) && (
-          <span className="shrink-0 text-meta font-bold text-amber-ink" data-testid="society-no-address">
-            No address
-          </span>
-        )}
         {!society.active && (
           <span className="shrink-0 text-meta font-bold text-danger-ink" data-testid="society-inactive">
             Inactive
