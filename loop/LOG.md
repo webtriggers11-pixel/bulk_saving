@@ -2122,3 +2122,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — session — handoff
 - FEAT-045 closed on `feat/FEAT-045-check-invite-code` (not merged); BUG-032 triaged. HANDOFF.md updated.
 - By: agent (autonomous)
+
+## 2026-11-24 — Merge of FEAT-045 (+ BUG-032 triage) into `main` (owner: "merge everything into main")
+- `main` fast-forwarded 4d81437 → 3669ec7. Every local branch is now contained in `main`. Main checkout: shared rebuilt; backend compiles (`tsc -p tsconfig.build.json` clean); no migration (`migrate status` up to date). No dev backend was running on :3000. Not pushed.
+- By: agent (autonomous)
