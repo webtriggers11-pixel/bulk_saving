@@ -69,6 +69,14 @@ export function usePagedQuery<T>({ queryKey, fetchPage, limit, refetchInterval, 
   };
 }
 
+/** Thrown by {@link fetchAllPages} at its cap: retrying can't help (FEAT-044 V2 r2 P3-7). */
+export class CatalogTooLargeError extends Error {}
+
+/** React Query retry rule for a catalog walk: never retry a too-large catalog. */
+export function retryUnlessTooLarge(failureCount: number, error: Error): boolean {
+  return !(error instanceof CatalogTooLargeError) && failureCount < 3;
+}
+
 /**
  * Walk every page, for a picker over an admin-curated catalog (services, vendors: dozens to
  * hundreds; ADR-0051 §5). Capped, and LOUD at the cap (FEAT-044 V2 P2-1): past `maxPages`
@@ -84,5 +92,5 @@ export async function fetchAllPages<T>(fetchPage: (page: PageQuery) => Promise<P
     if (!page.nextCursor) return items;
     cursor = page.nextCursor;
   }
-  throw new Error(`More than ${limit * maxPages} items: this picker needs search.`);
+  throw new CatalogTooLargeError(`More than ${limit * maxPages} items: this picker needs search.`);
 }

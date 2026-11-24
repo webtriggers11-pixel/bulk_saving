@@ -75,7 +75,7 @@ import {
   updateRound,
   reopenRound,
 } from './admin.api';
-import { fetchAllPages, usePagedQuery, type Paged } from '../../lib/pages';
+import { fetchAllPages, retryUnlessTooLarge, usePagedQuery, type Paged } from '../../lib/pages';
 import { catalogQueryKey } from '../catalog/useCatalog';
 import { roundsQueryKey } from '../rounds/useRounds';
 
@@ -190,7 +190,7 @@ export function useAdminServices(filters: AdminServicesQuery = {}): Paged<AdminS
  * (ADR-0051 §5); FEAT-044 V2 P2-1: filtered on the server, not in the browser.
  */
 export function useAllServices(): UseQueryResult<AdminServiceDto[]> {
-  return useQuery({ queryKey: [...adminKeys.services, 'all-active'], queryFn: () => fetchAllPages((page) => fetchServices({ status: 'active', ...page })) });
+  return useQuery({ queryKey: [...adminKeys.services, 'all-active'], queryFn: () => fetchAllPages((page) => fetchServices({ status: 'active', ...page })), retry: retryUnlessTooLarge });
 }
 
 /** GET /admin/vendors, filtered on the server (FEAT-015). No filters = every vendor. */
@@ -207,6 +207,7 @@ export function useAllVendors(): UseQueryResult<VendorDto[]> {
   return useQuery({
     queryKey: [...adminKeys.vendors, 'all'],
     queryFn: () => fetchAllPages((page) => fetchVendors({ status: 'active', ...page })),
+    retry: retryUnlessTooLarge,
   });
 }
 

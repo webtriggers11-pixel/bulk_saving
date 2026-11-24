@@ -325,7 +325,7 @@ export const features: Feature[] = [
     what: 'Every operator list (societies, a resident\'s group buys, a round\'s participants, demand by society) loads a page at a time with search, and society pickers search as you type. Totals are counted by the database, not the browser.',
     why: 'The console should feel the same on day one and in year three.',
     section: 'operators',
-    status: 'coming-soon',
+    status: 'done',
   },
   {
     id: 'FEAT-043',

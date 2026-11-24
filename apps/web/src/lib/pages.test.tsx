@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { Page, PageQuery } from '@bulk/shared';
-import { fetchAllPages, usePagedQuery } from './pages';
+import { CatalogTooLargeError, fetchAllPages, retryUnlessTooLarge, usePagedQuery } from './pages';
 
 /** A three-page list of numbers, served by cursor like the API does. */
 function server(items: number[], limit: number) {
@@ -60,7 +60,11 @@ describe('fetchAllPages', () => {
 
   it('throws at the cap instead of truncating silently (FEAT-044 V2 P2-1)', async () => {
     const endless = vi.fn(async () => ({ items: [1], nextCursor: 'more', total: 999 }));
-    await expect(fetchAllPages(endless, 1, 3)).rejects.toThrow('More than 3 items');
+    await expect(fetchAllPages(endless, 1, 3)).rejects.toThrow(CatalogTooLargeError);
     expect(endless).toHaveBeenCalledTimes(3);
+    // V2 r2 P3-7: never retried; other errors keep the usual 3 retries.
+    expect(retryUnlessTooLarge(0, new CatalogTooLargeError('x'))).toBe(false);
+    expect(retryUnlessTooLarge(0, new Error('network'))).toBe(true);
+    expect(retryUnlessTooLarge(3, new Error('network'))).toBe(false);
   });
 });

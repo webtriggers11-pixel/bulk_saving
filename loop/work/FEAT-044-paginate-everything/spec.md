@@ -1,6 +1,6 @@
 # FEAT-044: Server-side (cursor) pagination on every list that can grow
 
-**Status:** in-progress · **Priority:** P1 · **Owner:** owner / agent · **Opened:** 2026-11-24
+**Status:** done · **Priority:** P1 · **Owner:** owner / agent · **Opened:** 2026-11-24
 
 **Owner request (2026-11-24):** "make sure … we added server side pagination for everything because later on when we have much more data it should not be lagged. So use server side pagination, use cursor … and proper working."
 
@@ -26,7 +26,7 @@ FEAT-025 (ADR-0035's `Page<T>` keyset envelope) paginated `GET /rounds`, `/round
 - [x] AC2. Every to-paginate endpoint uses the same `Page<T>` envelope, keyset on a deterministic order + `id`, `limit` 1–50, an opaque cursor, 400 on a bad cursor, filters and search applied before paging, and `total` for the filtered set.
 - [x] AC3. Web consumers use `useInfiniteQuery` + the shared "Show more (N left)" control; filters reset pages; nothing is fetched as "all then sliced" on the client.
 - [x] AC4. Indexes: Society (name, id) is a small table, sorted per page. RoundParticipant already has `@@index([roundId])`, and residentId is covered by `@@unique([roundId, residentId])`'s FK lookups. No migration was needed; revisit if a list gets slow.
-- [ ] AC5. Tests per endpoint (first page, next page, last page, bad cursor, filter + paging) + gate; V2; V3.
+- [x] AC5. Tests per endpoint (first page, next page, last page, bad cursor, filter + paging) + gate; V2; V3.
 
 
 Pickers: see ADR-0051 §3. Bounded by design: ADR-0051 §5.
