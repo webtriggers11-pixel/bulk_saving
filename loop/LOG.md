@@ -1990,3 +1990,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - What: owner wants an install ask every time the PWA opens, working on Android and iOS ("whenever user will open the PWA application show the toaster … to install"). Today only a Home card exists (resident-only, Chromium-or-iOS-Safari only, "Not now" remembered forever), so most opens show nothing.
 - Plan: root-level InstallToast with per-platform behaviour, per-visit snooze; Home card removed; Profile row unchanged. ADR-0049 amends ADR-0041 decision 4. Branch `feat/FEAT-042-install-toast`.
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-043 — triaged (queued behind FEAT-042)
+- What: owner asked mid-FEAT-042 for a detailed society address at creation plus an optional phone. Additive migration; it starts once FEAT-042 is closed (one gate at a time).
+- By: agent (autonomous)
