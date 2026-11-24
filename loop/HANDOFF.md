@@ -3,6 +3,14 @@
 > External memory between sessions. Overwritten by the session-handoff skill
 > at the end of every session; history lives in git.
 
+## Session E (2026-11-24): FEAT-045, the server checks the invite code on the invite step; BUG-032 triaged. Branch `feat/FEAT-045-check-invite-code` (off `main` 4d81437), NOT merged
+
+- **FEAT-045** (ADR-0052): `POST /auth/invite/check` → `{ valid: true }` / 400 INVALID_INVITE_CODE (unknown or inactive) / 429 INVITE_CHECK_RATE_LIMITED. Wrong codes reserve from a 20/hour per-IP-bucket Redis budget BEFORE the lookup; right codes refund. On Continue, `/onboard` asks; a wrong code stays put with "This is an invalid invite code. Check it with your society and try again." Also: "Checking…", the error clears on edit, an edit made mid-check is never advanced, and an offline check is queued.
+- Closed: V1, V2 (subagent; P2-1 + P3s taken, P3-1 accepted in the ADR), V3 identical at a47f3f8 (site 71, backend 671, web 839). No migration.
+- **To merge (owner):** fast-forward `main` to the branch, then `corepack pnpm --filter @bulk/shared build` and restart the backend (new route).
+- **BUG-032 (P2, triaged):** one gate run in three (V2 run 2) had auth 400→404 and roles 403→401; the run before it segfaulted pnpm. Shared DB/Redis family (BUG-028/031).
+- Note: `bulk_saving_postgres`/`bulk_saving_redis` were stopped at session start; the agent started them with `docker start`.
+
 ## Session D (2026-11-24): FEAT-042 install toast, FEAT-043 society address, FEAT-044 pagination everywhere; BUG-031 triaged. Stacked branches, NOT merged
 
 - **Branches** (each stacked on the previous, all off `main` 3806efd): `feat/FEAT-042-install-toast` (cffcbcc) → `feat/FEAT-043-society-address` (a4233b4) → `feat/FEAT-044-paginate-everything` (3706fea, which carries all three). All three are closed: V1, V2 (subagent, 2 rounds each), browser pass, V3 identical pairs (FEAT-042 site 71 / backend 654 / web 818; FEAT-043 71/658/825; FEAT-044 71/663/831).
