@@ -1985,3 +1985,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - `main` fast-forwarded df0486a → 803ff07. Main checkout: `pnpm install --offline`, shared build, `prisma migrate deploy` (applied `20261123090000_feat_039_cancel_reason_reopen` to the shared dev DB `bulk_saving`, additive), `prisma generate`; the running backend (:3000, watcher) reloaded.
 - Checked live: `POST /admin/rounds/:id/reopen` and `PATCH /admin/rounds/:id` → 401 (they exist); an admin session gets 200 from overview (`waitingAsks`), dashboard (`asksMostAsked`, `asksWaiting`) and rounds (`cancelReason`, `cancelledAt`, `canReopen`); web :5174 serves `/admin/requests`. Not pushed (origin refuses this credential).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-042 — opened (triage → feature)
+- What: owner wants an install ask every time the PWA opens, working on Android and iOS ("whenever user will open the PWA application show the toaster … to install"). Today only a Home card exists (resident-only, Chromium-or-iOS-Safari only, "Not now" remembered forever), so most opens show nothing.
+- Plan: root-level InstallToast with per-platform behaviour, per-visit snooze; Home card removed; Profile row unchanged. ADR-0049 amends ADR-0041 decision 4. Branch `feat/FEAT-042-install-toast`.
+- By: agent (autonomous)
