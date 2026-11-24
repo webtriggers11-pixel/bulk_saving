@@ -1994,3 +1994,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-24 — FEAT-043 — triaged (queued behind FEAT-042)
 - What: owner asked mid-FEAT-042 for a detailed society address at creation plus an optional phone. Additive migration; it starts once FEAT-042 is closed (one gate at a time).
 - By: agent (autonomous)
+
+## 2026-11-24 — FEAT-044 — triaged (queued behind FEAT-042, FEAT-043)
+- What: owner asked for server-side cursor pagination on everything. FEAT-025 covered six endpoints; this audits the rest and paginates what can grow.
+- By: agent (autonomous)
