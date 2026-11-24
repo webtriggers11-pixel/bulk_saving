@@ -278,7 +278,8 @@ export class RoundsAdminService {
    */
   private async paymentTotals(): Promise<{ collectedAmount: number; outstandingAmount: number }> {
     const statuses = PAYABLE_STATUSES as readonly string[];
-    const [row] = await this.prisma.$queryRaw<{ collected: bigint | null; outstanding: bigint | null }[]>`
+    // SUM(bigint) is numeric in Postgres → a Prisma.Decimal here (V2 P3-6).
+    const [row] = await this.prisma.$queryRaw<{ collected: Prisma.Decimal | null; outstanding: Prisma.Decimal | null }[]>`
       SELECT
         SUM(CASE WHEN p."paymentCollectedAt" IS NOT NULL THEN r."finalPrice"::bigint * p."units" ELSE 0 END) AS collected,
         SUM(CASE WHEN p."paymentCollectedAt" IS NULL THEN r."finalPrice"::bigint * p."units" ELSE 0 END) AS outstanding

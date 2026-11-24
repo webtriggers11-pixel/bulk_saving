@@ -16,6 +16,7 @@ FEAT-025 (ADR-0035's `Page<T>` keyset envelope) paginated `GET /rounds`, `/round
 | `GET /admin/residents/:id` | the user plus **every** pledge | **to paginate**: `GET /admin/residents/:id/pledges`; the detail keeps counts only |
 | `GET /admin/rounds/:id` | the round plus **every** participant | **to paginate**: `GET /admin/rounds/:id/participants`; the detail keeps totals (units, collected count) |
 | `GET /admin/dashboard` | `demandBySociety` has one row per society; payments are summed by loading every payable round's participants into memory | **to paginate** demand as `GET /admin/dashboard/demand`. Payments become one SQL aggregate (a `$queryRaw` SUM in the service; ADR-0005 allows raw SQL in services, not controllers) |
+| service / vendor pickers (`useAllServices`, `useAllVendors`) | walk every page of `/admin/services` / `/admin/vendors` | bounded by design (curated catalogs; ADR-0051 §5): services filtered to active on the server, and the walk throws past 2,000 instead of truncating (V2 P2-1) |
 | `GET /admin/overview` | `take: RECENT` (5) recent societies/users | bounded by design |
 | dashboard asks (`waitingAskGroups`) | `take: 100`, then top 20 | bounded by design (a to-do list; total `waiting` reported) |
 | `/auth/*`, `/push/*`, `/dev/*`, `/health`, `GET /residents/:id`, `GET /admin/societies/:id` | single objects | n/a |

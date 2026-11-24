@@ -148,7 +148,9 @@ describe('Pagination of admin details (FEAT-044, integration, needs DB + Redis)'
   });
 
   it('GET /admin/dashboard/demand pages every society by name with its open demand', async () => {
-    const all = await walk<AdminSocietyDemand>('/admin/dashboard/demand', 50, (d) => d.society.id);
+    // limit 2 so the walk crosses page boundaries even in a small DB (V2 P3-5).
+    const all = await walk<AdminSocietyDemand>('/admin/dashboard/demand', 2, (d) => d.society.id);
+    expect(all.pages).toBeGreaterThan(2);
     expect(all.total).toBe(await prisma.society.count());
     const mine = all.items.filter((d) => d.society.name.startsWith(tag));
     expect(mine.map((d) => d.society.name)).toEqual(['A', 'B', 'C', 'D', 'E'].map((l) => `${tag} ${l}`));
@@ -156,5 +158,47 @@ describe('Pagination of admin details (FEAT-044, integration, needs DB + Redis)'
     expect(mine[0]).toMatchObject({ openRounds: 6, unitsPledged: 10, residentsJoined: 5 });
     expect(mine[1]).toMatchObject({ openRounds: 0, unitsPledged: 0, residentsJoined: 0 });
     await get('/admin/dashboard/demand', residentToken).expect(403);
+    await get('/admin/dashboard/demand?limit=0').expect(400);
+    const gone = (await get('/admin/dashboard/demand?limit=3&cursor=no-such-id').expect(200)).body.data as Page<AdminSocietyDemand>;
+    expect(gone.items).toEqual([]);
+  });
+
+  /**
+   * V2 P2-2: the SQL payment totals, exactly. Deltas around new fixtures: only ASSIGNED /
+   * DELIVERED / RATED rounds with a final price count; paid units go to collected, unpaid to
+   * outstanding; OPEN, CANCELLED and price-less rounds add nothing.
+   */
+  it('GET /admin/dashboard payment totals are exact (finalPrice × units by paid / unpaid, payable statuses only)', async () => {
+    const totals = async () => ((await get('/admin/dashboard').expect(200)).body.data as { payments: { collectedAmount: number; outstandingAmount: number } }).payments;
+    const before = await totals();
+    const people = await prisma.resident.findMany({ where: { societyId: home.id }, take: 3, orderBy: { id: 'asc' } });
+    const paid = new Date();
+    const fixtures: Array<{ status: 'DELIVERED' | 'RATED' | 'ASSIGNED' | 'CANCELLED' | 'OPEN'; finalPrice: number | null; parts: Array<{ units: number; paid: boolean }> }> = [
+      { status: 'DELIVERED', finalPrice: 300, parts: [{ units: 2, paid: true }, { units: 1, paid: false }] }, // +600 / +300
+      { status: 'RATED', finalPrice: 250, parts: [{ units: 4, paid: true }] }, // +1000 / 0
+      { status: 'ASSIGNED', finalPrice: 100, parts: [{ units: 3, paid: false }, { units: 1, paid: false }] }, // 0 / +400
+      { status: 'ASSIGNED', finalPrice: null, parts: [{ units: 5, paid: false }] }, // no price: nothing
+      { status: 'CANCELLED', finalPrice: 999, parts: [{ units: 2, paid: true }] }, // not payable
+      { status: 'OPEN', finalPrice: 999, parts: [{ units: 2, paid: false }] }, // not payable
+    ];
+    for (const [n, f] of fixtures.entries()) {
+      const service = await prisma.service.create({ data: { name: `${tag} Pay ${n}`, slug: `${tag}-pay-${n}`, description: 'x', category: 'Home Care' } });
+      serviceIds.push(service.id);
+      await prisma.round.create({
+        data: {
+          societyId: societies[3].id, // "<tag> B": its own society, so OPEN-pair uniqueness never collides
+          serviceId: service.id,
+          status: f.status,
+          finalPrice: f.finalPrice,
+          deadline: new Date(Date.now() + 86_400_000),
+          unitsCount: f.parts.reduce((sum, p) => sum + p.units, 0),
+          tiers: { create: [{ threshold: 10, price: 500 }] },
+          participants: { create: f.parts.map((p, i) => ({ residentId: people[i].id, units: p.units, paymentCollectedAt: p.paid ? paid : null })) },
+        },
+      });
+    }
+    const after = await totals();
+    expect(after.collectedAmount - before.collectedAmount).toBe(1600);
+    expect(after.outstandingAmount - before.outstandingAmount).toBe(700);
   });
 });

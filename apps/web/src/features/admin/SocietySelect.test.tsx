@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminSocietyDetailDto } from '@bulk/shared';
 import { fetchSocieties, fetchSociety } from './admin.api';
 import { society } from './admin.fixtures';
-import { LOAD_MORE, SOCIETY_PICKER_PAGE, SocietySelect } from './SocietySelect';
+import { SOCIETY_PICKER_PAGE, SocietySelect } from './SocietySelect';
 import { page } from '../../test/page';
 
 vi.mock('./admin.api', () => ({ fetchSocieties: vi.fn(), fetchSociety: vi.fn() }));
@@ -39,21 +39,21 @@ describe('SocietySelect (FEAT-044)', () => {
     renderPicker();
     expect(await screen.findByRole('option', { name: 'Society 002' })).toBeInTheDocument();
     expect(screen.queryByRole('searchbox', { name: 'Search societies' })).toBeNull();
-    expect(screen.queryByRole('option', { name: /Show more/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Show .* more/ })).toBeNull();
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'soc_2' } });
     expect(screen.getByTestId('chosen')).toHaveTextContent('soc_2');
     expect(vi.mocked(fetchSocieties).mock.calls[0][0]).toMatchObject({ limit: SOCIETY_PICKER_PAGE });
   });
 
-  it('many societies: a search box, and "Show more" loads the next page instead of choosing it', async () => {
+  it('many societies: a search box, and a "Show more" BUTTON (not an option) loads the next page (V2 P3-2)', async () => {
     const first = Array.from({ length: 50 }, (_, i) => named(i + 1));
     vi.mocked(fetchSocieties)
       .mockResolvedValueOnce(page(first, { nextCursor: 'soc_50', total: 120 }))
       .mockResolvedValueOnce(page([named(51)], { nextCursor: null, total: 120 }));
     renderPicker();
     expect(await screen.findByRole('searchbox', { name: 'Search societies' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Show more societies (70 more)…' })).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: LOAD_MORE } });
+    expect(screen.queryByRole('option', { name: /more/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show 50 more of 70 societies' }));
     expect(screen.getByTestId('chosen')).toHaveTextContent('');
     expect(await screen.findByRole('option', { name: 'Society 051' })).toBeInTheDocument();
     expect(vi.mocked(fetchSocieties).mock.calls[1][0]).toMatchObject({ cursor: 'soc_50' });
@@ -71,6 +71,9 @@ describe('SocietySelect (FEAT-044)', () => {
         vi.advanceTimersByTime(350);
       });
       await waitFor(() => expect(vi.mocked(fetchSocieties)).toHaveBeenLastCalledWith(expect.objectContaining({ q: '411045' })));
+      // Sticky (V2 P3-1): the narrowed result (1 society) doesn't take the box away.
+      expect(await screen.findByRole('option', { name: 'Society 007' })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Search societies' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

@@ -135,7 +135,7 @@ export function AdminUsersPage() {
             <SearchField label="Search users" placeholder="Search by name or phone" value={search} onChange={setSearch} maxLength={80} />
             <Field label="Society" id="users-society">
               {(props) => (
-                <SocietySelect {...props} value={filters.society ?? ''} onChange={(id) => setFilters({ society: id || undefined })} emptyLabel="All societies" />
+                <SocietySelect {...props} value={filters.society ?? ''} onChange={(id) => setFilters({ society: id || undefined })} emptyLabel="All societies" searchLabel="Search societies to filter users" />
               )}
             </Field>
             <FilterChips label="Access" options={ROLE_CHIPS} value={role ?? ''} onChange={(next) => setFilters({ role: next || undefined })} />

@@ -358,9 +358,14 @@ function OfferingsPanel({ service }: { service: AdminServiceDto }) {
   }, [text]);
   const societies = useAdminSocieties(q ? { q } : {});
   const list = societies.data ?? [];
+  // Sticky (V2 P3-1): once there was a second page, the box stays after the last page loads.
+  const [searchable, setSearchable] = useState(false);
+  useEffect(() => {
+    if (societies.hasMore) setSearchable(true);
+  }, [societies.hasMore]);
   return (
     <div id={`offerings-${service.id}`} className="animate-rise flex flex-col gap-4">
-      {(q !== '' || (societies.total ?? 0) > list.length) && (
+      {searchable && (
         <SearchField label={`Search societies for ${service.name}`} placeholder="Search by name, city or PIN code" value={text} onChange={setText} maxLength={80} />
       )}
       {societies.isLoading && <Skeleton className="h-12" radius="tile" />}
@@ -556,6 +561,7 @@ export function AdminServicesPage() {
                   value={filters.offeredIn ?? ''}
                   onChange={(id) => setFilters({ offeredIn: id || undefined })}
                   emptyLabel="Offered anywhere or nowhere"
+                  searchLabel="Search societies a service is offered in"
                 />
               )}
             </Field>

@@ -185,9 +185,12 @@ export function useAdminServices(filters: AdminServicesQuery = {}): Paged<AdminS
   });
 }
 
-/** Every service, for a picker (the new-round form) — walks the pages (FEAT-025). */
+/**
+ * Every ACTIVE service, for the new-round picker (FEAT-025). A curated catalog, so one walk
+ * (ADR-0051 §5); FEAT-044 V2 P2-1: filtered on the server, not in the browser.
+ */
 export function useAllServices(): UseQueryResult<AdminServiceDto[]> {
-  return useQuery({ queryKey: [...adminKeys.services, 'all'], queryFn: () => fetchAllPages(fetchServices) });
+  return useQuery({ queryKey: [...adminKeys.services, 'all-active'], queryFn: () => fetchAllPages((page) => fetchServices({ status: 'active', ...page })) });
 }
 
 /** GET /admin/vendors, filtered on the server (FEAT-015). No filters = every vendor. */
@@ -433,6 +436,8 @@ export function useAdminSociety(id: string): UseQueryResult<AdminSocietyDetailDt
 function settleSociety(queryClient: QueryClient, society: AdminSocietyDetailDto): void {
   queryClient.setQueryData(adminKeys.society(society.id), society);
   void queryClient.invalidateQueries({ queryKey: adminKeys.societies });
+  // FEAT-044 V2 P3-6: demand pages list every society.
+  void queryClient.invalidateQueries({ queryKey: adminKeys.demand });
   void queryClient.invalidateQueries({ queryKey: adminKeys.overview });
 }
 

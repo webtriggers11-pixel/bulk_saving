@@ -69,15 +69,20 @@ export function usePagedQuery<T>({ queryKey, fetchPage, limit, refetchInterval, 
   };
 }
 
-/** Walk every page (for a picker that needs the whole list, e.g. vendors to assign). Capped. */
+/**
+ * Walk every page, for a picker over an admin-curated catalog (services, vendors: dozens to
+ * hundreds; ADR-0051 §5). Capped, and LOUD at the cap (FEAT-044 V2 P2-1): past `maxPages`
+ * it throws rather than hand back a silently truncated list. The picker then shows its error,
+ * which is the signal to give it search like SocietySelect.
+ */
 export async function fetchAllPages<T>(fetchPage: (page: PageQuery) => Promise<Page<T>>, limit = 50, maxPages = 40): Promise<T[]> {
   const items: T[] = [];
   let cursor: string | undefined;
   for (let n = 0; n < maxPages; n += 1) {
     const page = await fetchPage({ limit, ...(cursor ? { cursor } : {}) });
     items.push(...page.items);
-    if (!page.nextCursor) break;
+    if (!page.nextCursor) return items;
     cursor = page.nextCursor;
   }
-  return items;
+  throw new Error(`More than ${limit * maxPages} items: this picker needs search.`);
 }

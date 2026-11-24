@@ -267,7 +267,7 @@ export function RoundsPanel() {
         </Field>
         <Field label="Society">
           {(props) => (
-            <SocietySelect {...props} value={filters.societyId ?? ''} onChange={(id) => setFilters({ societyId: id || undefined })} emptyLabel="All societies" />
+            <SocietySelect {...props} value={filters.societyId ?? ''} onChange={(id) => setFilters({ societyId: id || undefined })} emptyLabel="All societies" searchLabel="Search societies to filter rounds" />
           )}
         </Field>
       </div>

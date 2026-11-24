@@ -147,10 +147,13 @@ describe('AdminRoundDetailPage', () => {
       '1 of 2 paid · ₹1,600 collected · ₹3,200 outstanding',
     );
 
+    const participantsBefore = vi.mocked(fetchRoundParticipants).mock.calls.length;
     fireEvent.click(await screen.findByRole('button', { name: 'Mark collected for Asha' }));
     await waitFor(() =>
       expect(setPaymentMock).toHaveBeenCalledWith('round_1', 'p_1', { collected: true }),
     );
+    // FEAT-044 V2 P3-5: the toggle refreshes the paged participants (same key prefix as the round).
+    await waitFor(() => expect(vi.mocked(fetchRoundParticipants).mock.calls.length).toBeGreaterThan(participantsBefore));
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Undo payment for Resident' })).toBeEnabled(),

@@ -57,4 +57,10 @@ describe('fetchAllPages', () => {
     expect(await fetchAllPages(fetchPage, 3)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(fetchPage).toHaveBeenCalledTimes(3);
   });
+
+  it('throws at the cap instead of truncating silently (FEAT-044 V2 P2-1)', async () => {
+    const endless = vi.fn(async () => ({ items: [1], nextCursor: 'more', total: 999 }));
+    await expect(fetchAllPages(endless, 1, 3)).rejects.toThrow('More than 3 items');
+    expect(endless).toHaveBeenCalledTimes(3);
+  });
 });
