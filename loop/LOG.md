@@ -2144,3 +2144,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 19c9a6e (scratch worktree, WHATSAPP_* stripped): run 1 (12:37:56–12:39:21) and run 2 (12:39:21–12:40:42), both EXIT 0 with identical results: site 71, backend 671, web 841.
 - BUG-033 → done. `main` fast-forwarded to the fix branch (FEAT-045 + BUG-033).
 - By: agent (autonomous)
+
+## 2026-11-24 — BUG-033 — deployed to the demo server
+- Server checkout fast-forwarded 4d81437 → 505c96e from a git bundle (GitHub push refused), then `deploy savebulk`: DEPLOY_DONE, services active, app 200. Live: `/auth/invite/check` answers INVALID_INVITE_CODE "This is an invalid invite code."; the web bundle carries the toast path.
+- Second cause found live: nginx blocked `location ^~ /dev/` on the API (set up 2026-11-23, "must never be reachable publicly"), so the toast still got a 404. Owner chose "Open /dev/otp only". Added `location = /dev/otp` (proxied) above the block; backup `/etc/nginx/savebulk.bak-2026-11-24`; `nginx -t` ok, reloaded. Verified: `/dev/otp` answers from the API (JSON), the CORS preflight from the app origin is allowed, `/dev/whatsapp/*` still 404. ADR-0053 updated (revisit: re-block before real residents).
+- By: agent (autonomous)

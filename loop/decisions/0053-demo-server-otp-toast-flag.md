@@ -28,6 +28,6 @@ Option 1. The flag also bypasses the `MODE !== 'test'` guard, so it must never b
 
 ## Consequences
 
-- On the demo server, `/dev/otp` is reachable through nginx (the loopback guard sees nginx's 127.0.0.1). Anyone can read any phone's code for two minutes and sign in as that person. This was stated to the owner.
+- On the demo server, nginx had blocked `/dev/` entirely (2026-11-23). On 2026-11-24 the owner chose to open `location = /dev/otp` only; the rest of `/dev/` (WhatsApp simulator) stays 404. Backup: `/etc/nginx/savebulk.bak-2026-11-24`. The deploy script writes the nginx file only once, so the change persists across deploys. `/dev/otp` is now reachable through nginx (the loopback guard sees nginx's 127.0.0.1). Anyone can read any phone's code for two minutes and sign in as that person. This was stated to the owner.
 
-**Revisit trigger (mandatory):** before any real resident uses the server, or when an SMS provider is chosen: drop the flag from the deploy, set `NODE_ENV=production`, and remove the stub route there.
+**Revisit trigger (mandatory):** before any real resident uses the server, or when an SMS provider is chosen: drop the flag from the deploy, restore the nginx `/dev/` block, set `NODE_ENV=production`, and remove the stub route there.
