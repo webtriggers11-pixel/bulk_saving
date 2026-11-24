@@ -2139,3 +2139,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Server: `/production/savebulk/deploy.sh` backed up to `deploy.sh.bak-2026-11-24`; the web build line now carries `VITE_DEV_OTP_TOAST=true`.
 - GitHub push refused (account has no write access); owner chose to ship via the server (git bundle → fast-forward the server checkout, then `deploy savebulk`).
 - By: agent (autonomous)
+
+## 2026-11-24 — BUG-033 — V3; CLOSED; merged into main
+- V3 at 19c9a6e (scratch worktree, WHATSAPP_* stripped): run 1 (12:37:56–12:39:21) and run 2 (12:39:21–12:40:42), both EXIT 0 with identical results: site 71, backend 671, web 841.
+- BUG-033 → done. `main` fast-forwarded to the fix branch (FEAT-045 + BUG-033).
+- By: agent (autonomous)
