@@ -2180,3 +2180,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 (independent, gate in wt-047 at b26eeb9): RC 0 (71/690/844), CHANGES REQUESTED. P1: `e2e-smoke.mjs` still sent 4-digit codes (two checks would fail; the gate does not run it). P2-a: ADR understated the DoS risk — every older budget is per (phone, client), so one address with fresh numbers could spend the 200/day cap in ~2 min; a cross-door phone key let a stranger lock a resident out of the society door via the admin door. P2-b: CHORE-022 row stale; ADR lacked the new admin guess bound. P3s: phone key without NODE_ENV, stale 4-digit comments/fixtures, note for old 1111 fixed codes.
 - Fixes: e2e codes 6 digits; NEW per-client daily cap (`OTP_CLIENT_DAILY_MAX`, 20) and per-(door, phone) daily key; every daily key carries NODE_ENV; ADR-0055 consequences + admin bound (2 doors × 10 × 5 = 100 guesses/day) rewritten; CHORE-022 row annotated; comments/fixtures/.env.example note. Tests for the per-client cap and per-door isolation.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-047 — V1 after V2 fixes; BUG-014 evidence
+- Gate at e452d8d/f01a580 in wt-047 (own DB): one real failure in my new per-client cap test (fixed address reused across runs; fixed in f01a580). Otherwise 404s with no error envelope in unrelated suites (round-cancel-reopen, vendors-admin, wa-login, rounds) — BUG-014. Each suite passes alone (round-cancel-reopen 3/3).
+- A/B at load avg ~6.5: baseline 3c4a963 (pre-FEAT-047) EXIT 0 then EXIT 1 (admin-auth 404); f01a580 EXIT 0 (71/691/844). Same flake on both sides, so not caused by this change. BUG-014 row updated.
+- By: agent (autonomous)
