@@ -79,7 +79,7 @@ describe('useDevOtp', () => {
     act(() => result.current.fetchFor('+919999900001'));
     act(() => result.current.clear());
     await act(async () => {
-      release({ code: '1111' });
+      release({ code: '111111' });
       await Promise.resolve();
     });
     expect(result.current.code).toBeNull();

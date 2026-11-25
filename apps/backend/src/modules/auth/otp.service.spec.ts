@@ -324,24 +324,38 @@ describe('OtpService (integration, needs Redis)', () => {
   // FEAT-047 (ADR-0055): daily caps — per phone across doors, then server-wide.
   describe('daily caps', () => {
     afterEach(() => {
+      process.env.OTP_CLIENT_DAILY_MAX = '9999999';
       process.env.OTP_PHONE_DAILY_MAX = '9999999';
       process.env.OTP_DAILY_MAX = '9999999';
       jest.restoreAllMocks();
     });
 
-    it('a phone gets OTP_PHONE_DAILY_MAX codes a day across both doors, then DAILY_LIMITED', async () => {
+    it('a phone gets OTP_PHONE_DAILY_MAX codes a day per door, then DAILY_LIMITED; the other door is unaffected', async () => {
       process.env.OTP_PHONE_DAILY_MAX = '2';
       const phone = uniquePhone();
-      expect(await service.request(societyId, phone, { clientIp: '198.51.100.1' })).toEqual({ result: 'SENT' });
+      expect(await service.request(ADMIN_OTP_SCOPE, phone, { clientIp: '198.51.100.1', dispatch: 'suppressed' })).toEqual({ result: 'SENT' });
       expect(await service.request(ADMIN_OTP_SCOPE, phone, { clientIp: '198.51.100.2', dispatch: 'suppressed' })).toEqual({ result: 'SENT' });
-      expect(await service.request(societyId, phone, { clientIp: '198.51.100.3' })).toEqual({ result: 'DAILY_LIMITED' });
+      expect(await service.request(ADMIN_OTP_SCOPE, phone, { clientIp: '198.51.100.3', dispatch: 'suppressed' })).toEqual({ result: 'DAILY_LIMITED' });
+      // V2 P2-a: spending the admin door does not lock the resident out of their society door.
+      expect(await service.request(societyId, phone, { clientIp: '198.51.100.4' })).toEqual({ result: 'SENT' });
       // another phone is unaffected
-      expect(await service.request(societyId, uniquePhone(), { clientIp: '198.51.100.4' })).toEqual({ result: 'SENT' });
+      expect(await service.request(ADMIN_OTP_SCOPE, uniquePhone(), { clientIp: '198.51.100.5', dispatch: 'suppressed' })).toEqual({ result: 'SENT' });
+    });
+
+    it('one client address gets OTP_CLIENT_DAILY_MAX codes a day across fresh phones (V2 P2-a)', async () => {
+      process.env.OTP_CLIENT_DAILY_MAX = '2';
+      const ip = `198.51.100.${10 + Math.floor(Math.random() * 200)}`;
+      await redis.del(`otp:day:${process.env.NODE_ENV}:client:${ip}:${istDay()}`);
+      expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'SENT' });
+      expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'SENT' });
+      expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'DAILY_LIMITED' });
+      // another address is unaffected
+      expect(await service.request(societyId, uniquePhone(), { clientIp: '203.0.113.77' })).toEqual({ result: 'SENT' });
     });
 
     it('the server-wide cap stops every phone once spent, and logs once', async () => {
       const day = istDay();
-      const totalKey = `otp:day:total:${process.env.NODE_ENV}:${day}`;
+      const totalKey = `otp:day:${process.env.NODE_ENV}:total:${day}`;
       const used = Number((await redis.get(totalKey)) ?? '0');
       process.env.OTP_DAILY_MAX = String(used + 1);
       const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
@@ -351,10 +365,10 @@ describe('OtpService (integration, needs Redis)', () => {
       expect(await redis.ttl(totalKey)).toBeGreaterThan(0);
     });
 
-    it('limits default to 10 per phone and 200 in total; bad values fall back', () => {
-      expect(otpDailyLimits({})).toEqual({ phone: 10, total: 200 });
-      expect(otpDailyLimits({ OTP_PHONE_DAILY_MAX: '3', OTP_DAILY_MAX: '50' })).toEqual({ phone: 3, total: 50 });
-      expect(otpDailyLimits({ OTP_PHONE_DAILY_MAX: '0', OTP_DAILY_MAX: 'x' })).toEqual({ phone: 10, total: 200 });
+    it('limits default to 20 per client, 10 per phone and 200 in total; bad values fall back', () => {
+      expect(otpDailyLimits({})).toEqual({ client: 20, phone: 10, total: 200 });
+      expect(otpDailyLimits({ OTP_CLIENT_DAILY_MAX: '5', OTP_PHONE_DAILY_MAX: '3', OTP_DAILY_MAX: '50' })).toEqual({ client: 5, phone: 3, total: 50 });
+      expect(otpDailyLimits({ OTP_PHONE_DAILY_MAX: '0', OTP_DAILY_MAX: 'x' })).toEqual({ client: 20, phone: 10, total: 200 });
     });
 
     it('days are India days', () => {

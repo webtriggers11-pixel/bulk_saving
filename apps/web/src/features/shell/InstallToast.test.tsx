@@ -183,7 +183,7 @@ describe('InstallToast (FEAT-042)', () => {
     rerender(
       <>
         <InstallToast />
-        <DevOtpToast code="1111" onUse={() => {}} onDismiss={() => {}} />
+        <DevOtpToast code="111111" onUse={() => {}} onDismiss={() => {}} />
       </>,
     );
     expect(screen.getByTestId('dev-otp-code')).toBeVisible();

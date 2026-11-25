@@ -116,20 +116,26 @@ const OTP_RESEND_HOUR_SECONDS = 60 * 60;
 
 /**
  * Daily caps (FEAT-047, ADR-0055): every code is a real SMS from one phone's SIM, which has
- * a daily limit and can be blocked by the carrier for bursts. Per phone across every door
- * (`OTP_PHONE_DAILY_MAX`, default 10), and server-wide (`OTP_DAILY_MAX`, default 200).
+ * a daily limit and can be blocked by the carrier for bursts. Three, in order:
+ *  - per client address across all phones (`OTP_CLIENT_DAILY_MAX`, default 20) — one address
+ *    cannot spend the server-wide cap with fresh numbers (V2 P2-a);
+ *  - per (door, phone) (`OTP_PHONE_DAILY_MAX`, default 10) — per door, like the guess budgets
+ *    (ADR-0027), so requests at the admin door cannot lock a resident out of their society door;
+ *  - server-wide (`OTP_DAILY_MAX`, default 200).
  * Days are India days (Asia/Kolkata), so the budget resets at local midnight.
  */
+export const OTP_CLIENT_DAILY_MAX_DEFAULT = 20;
 export const OTP_PHONE_DAILY_MAX_DEFAULT = 10;
 export const OTP_DAILY_MAX_DEFAULT = 200;
 const OTP_DAY_KEY_TTL_SECONDS = 2 * 24 * 60 * 60;
 
-export function otpDailyLimits(env: NodeJS.ProcessEnv = process.env): { phone: number; total: number } {
+export function otpDailyLimits(env: NodeJS.ProcessEnv = process.env): { client: number; phone: number; total: number } {
   const read = (raw: string | undefined, fallback: number): number => {
     const n = Number(raw?.trim());
     return Number.isInteger(n) && n > 0 ? n : fallback;
   };
   return {
+    client: read(env.OTP_CLIENT_DAILY_MAX, OTP_CLIENT_DAILY_MAX_DEFAULT),
     phone: read(env.OTP_PHONE_DAILY_MAX, OTP_PHONE_DAILY_MAX_DEFAULT),
     total: read(env.OTP_DAILY_MAX, OTP_DAILY_MAX_DEFAULT),
   };
@@ -254,14 +260,10 @@ export class OtpService {
     @Optional() @InjectQueue(OTP_SEND_QUEUE) private readonly sendQueue?: Queue<OtpSendJobData>,
   ) {}
 
-  /** Per phone, across every door (FEAT-047). */
-  private dailyPhoneKey(phone: string, day: string): string {
-    return `otp:day:phone:${phone}:${day}`;
-  }
-
-  /** Server-wide. NODE_ENV in the key so a test run never spends a dev server's budget on the shared Redis. */
-  private dailyTotalKey(day: string): string {
-    return `otp:day:total:${process.env.NODE_ENV ?? 'unset'}:${day}`;
+  // FEAT-047 daily keys. NODE_ENV in each, so a test run never spends a dev server's budget
+  // on the shared Redis.
+  private dailyKey(kind: string, day: string): string {
+    return `otp:day:${process.env.NODE_ENV ?? 'unset'}:${kind}:${day}`;
   }
 
   private otpKey(scopeId: string, phone: string): string {
@@ -365,15 +367,19 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    // FEAT-047: daily caps, per phone (every door) then server-wide. Counted only for
-    // requests every budget above let through, and the same for every caller and role.
+    // FEAT-047: daily caps — per client, per (door, phone), then server-wide. Counted only
+    // for requests every budget above let through, and the same for every caller and role.
     const limits = otpDailyLimits();
     const day = istDay();
-    const phoneDay = (await this.redis.eval(RESEND_HOURLY_LUA, 1, this.dailyPhoneKey(phone, day), String(OTP_DAY_KEY_TTL_SECONDS))) as number;
-    if (phoneDay > limits.phone) {
+    const count = async (kind: string): Promise<number> =>
+      (await this.redis.eval(RESEND_HOURLY_LUA, 1, this.dailyKey(kind, day), String(OTP_DAY_KEY_TTL_SECONDS))) as number;
+    if ((await count(`client:${client}`)) > limits.client) {
       return { result: 'DAILY_LIMITED' };
     }
-    const totalDay = (await this.redis.eval(RESEND_HOURLY_LUA, 1, this.dailyTotalKey(day), String(OTP_DAY_KEY_TTL_SECONDS))) as number;
+    if ((await count(`phone:${scopeId}:${phone}`)) > limits.phone) {
+      return { result: 'DAILY_LIMITED' };
+    }
+    const totalDay = await count('total');
     if (totalDay > limits.total) {
       if (totalDay === limits.total + 1) {
         this.logger.warn(`Server-wide daily OTP cap (${limits.total}) reached for ${day}; further requests answer OTP_DAILY_LIMIT until midnight IST.`);

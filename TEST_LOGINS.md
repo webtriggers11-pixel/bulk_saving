@@ -20,7 +20,7 @@ production. Production refuses the dev OTP settings at boot (ADR-0020, ADR-0040)
 - **Real SMS (this machine's current setting):** `NODE_ENV=production`, `OTP_DEV_LOG=false`,
   no `OTP_DEV_FIXED_CODE`, and the TextBee keys set (FEAT-046). Codes are random and arrive by
   SMS only — no toast. Sign in with a number you own: the seeded numbers below are not real
-  phones. Daily caps: 10 codes per phone, 200 in total (`OTP_PHONE_DAILY_MAX`, `OTP_DAILY_MAX`).
+  phones. Daily caps: 20 codes per client address, 10 per phone per door, 200 in total (`OTP_CLIENT_DAILY_MAX`, `OTP_PHONE_DAILY_MAX`, `OTP_DAILY_MAX`).
 - **Dev codes (no SMS):** comment out the `TEXTBEE_*` lines and set:
 
 ```env

@@ -314,9 +314,9 @@ describe('renderNotification — rules that hold for every type', () => {
   it('never leaks a phone number, an OTP or a token — none are reachable from the input', () => {
     for (const input of ALL_INPUTS) {
       const body = renderNotification(input);
-      // No 6+ digit run (a phone number); rupee amounts here are ≤ 5 digits. A 4-digit OTP
-      // (CHORE-026) can't be told from an amount by shape; it isn't reachable from the input,
-      // and the 'otp' check below guards the wording.
+      // No 6+ digit run (a phone number, or a 6-digit OTP since FEAT-047); rupee amounts here
+      // are ≤ 5 digits. An OTP isn't reachable from the input anyway, and the 'otp' check below
+      // guards the wording.
       expect(body).not.toMatch(/\d{6,}/);
       expect(body).not.toMatch(/\+\d{6,}/);
       expect(body.toLowerCase()).not.toContain('otp');

@@ -43,6 +43,7 @@ process.env.TEXTBEE_API_KEY = '';
 // ceiling between bursts); the daily caps would trip mid-run. Its behaviour is tested with explicit low limits in otp.service.spec.
 process.env.OTP_DAILY_MAX = '9999999';
 process.env.OTP_PHONE_DAILY_MAX = '9999999';
+process.env.OTP_CLIENT_DAILY_MAX = '9999999';
 process.env.TEXTBEE_DEVICE_ID = '';
 
 /**

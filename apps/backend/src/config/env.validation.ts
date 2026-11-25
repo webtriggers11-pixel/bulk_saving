@@ -73,7 +73,11 @@ export class EnvironmentVariables {
   @IsString()
   OTP_DEV_LOG?: string;
 
-  /** Daily OTP caps (FEAT-047, ADR-0055): per phone across every door, and server-wide. Defaults 10 and 200. */
+  /** Daily OTP caps (FEAT-047, ADR-0055): per client address, per (door, phone), and server-wide. Defaults 20, 10 and 200. */
+  @IsOptional()
+  @Matches(/^[1-9]\d{0,6}$/, { message: 'OTP_CLIENT_DAILY_MAX must be a positive whole number.' })
+  OTP_CLIENT_DAILY_MAX?: string;
+
   @IsOptional()
   @Matches(/^[1-9]\d{0,6}$/, { message: 'OTP_PHONE_DAILY_MAX must be a positive whole number.' })
   OTP_PHONE_DAILY_MAX?: string;
