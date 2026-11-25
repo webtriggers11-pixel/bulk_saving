@@ -7,10 +7,12 @@ import { useSignOut } from './useSignOut';
 /**
  * The one way out (FEAT-024): a tap asks first, because since BUG-017 a sign-out ends this
  * phone's lifetime session and the next sign-in costs an OTP. `icon` is the Home header's
- * control; `wide` is the Profile's full-width button. Both open the same question.
+ * control; `wide` is the Profile's full-width button; `nav` is the admin console's sidebar
+ * row (BUG-034), which lands on the admin sign-in. All open the same question.
  */
-export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
-  const signOut = useSignOut();
+export function SignOutButton({ variant, className }: { variant: 'icon' | 'wide' | 'nav'; className?: string }) {
+  const admin = variant === 'nav';
+  const signOut = useSignOut(admin ? '/admin/login' : '/onboard');
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,12 @@ export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
 
   return (
     <>
-      {variant === 'icon' ? (
+      {admin ? (
+        <button type="button" className={className} aria-haspopup="dialog" onClick={() => setAsking(true)}>
+          <Icon name="logout" size={18} strokeWidth={1.9} />
+          Log out
+        </button>
+      ) : variant === 'icon' ? (
         <Button variant="secondary" size="icon" aria-label="Log out" aria-haspopup="dialog" onClick={() => setAsking(true)}>
           <Icon name="logout" size={19} strokeWidth={2} />
         </Button>
@@ -51,7 +58,11 @@ export function SignOutButton({ variant }: { variant: 'icon' | 'wide' }) {
           setError(null);
         }}
         title="Log out of this phone?"
-        consequence="You'll need a new code by SMS to sign in again. Your pledges and ratings stay."
+        consequence={
+          admin
+            ? "You'll need a new code by SMS to sign in to the admin console again."
+            : "You'll need a new code by SMS to sign in again. Your pledges and ratings stay."
+        }
         confirmLabel="Yes, log out"
         pendingLabel="Logging out…"
         keepLabel="Stay signed in"

@@ -2245,3 +2245,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 7991559 in wt-049 (own DB): run 1 22:24:09–22:25:20 RC 0, run 2 22:25:20–22:32:33 RC 0 (slow: ~7 min, machine load), identical: site 71, backend 697, web 848.
 - FEAT-049 → done. Worktree and DB bulk_saving_feat049 removed. Server api.local.env already has SMS_NOTIFICATIONS=off; code shipped via bundle; owner runs deploy.
 - By: agent (autonomous)
+
+## 2026-11-26 — BUG-034 — opened: admin console has no Log out
+- Owner: "we noy givine logout button for admin dashboard fix this". Triaged BUG-034 (P1): AdminLayout nav has no sign-out; platform admins (no "Back to app", FEAT-036) have no exit at all.
+- By: agent (autonomous)

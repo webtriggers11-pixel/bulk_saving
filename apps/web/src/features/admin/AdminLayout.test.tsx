@@ -1,13 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AdminLayout } from './AdminLayout';
 import { fetchOverview } from './admin.api';
 
 vi.mock('./admin.api', () => ({
   fetchOverview: vi.fn().mockResolvedValue({ societies: 1, users: 1, admins: 1, openRounds: 0, waitingAsks: 0, recentSocieties: [], recentUsers: [] }),
 }));
+vi.mock('../auth/auth.api', () => ({ endSession: vi.fn().mockResolvedValue({ signedOut: true }) }));
+vi.mock('../../lib/push', () => ({ releasePushOnSignOut: vi.fn().mockResolvedValue(undefined) }));
 import { useAuthStore } from '../auth/auth.store';
 
 function renderAt(path: string) {
@@ -16,6 +18,7 @@ function renderAt(path: string) {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
+          <Route path="/admin/login" element={<p>admin sign-in page</p>} />
           <Route path="*" element={<AdminLayout title="Page">content</AdminLayout>} />
         </Routes>
       </MemoryRouter>
@@ -136,5 +139,42 @@ describe('AdminLayout — sidebar and drawer (FEAT-034)', () => {
     const nav = screen.getByRole('navigation', { name: 'Admin' });
     expect(within(nav).getByRole('link', { name: 'New round' })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: 'Rounds' })).not.toHaveAttribute('aria-current', 'page');
+  });
+});
+
+describe('AdminLayout — Log out (BUG-034)', () => {
+  const platformAdmin = {
+    status: 'authenticated' as const,
+    accessToken: 'a',
+    refreshToken: 'r',
+    resident: { id: 'res_p', societyId: null, phone: '+919999900001', name: 'Platform', role: 'SUPER_ADMIN' as const, verifiedAt: null, createdAt: '2026-11-01T00:00:00.000Z' },
+  };
+  afterEach(() => {
+    useAuthStore.setState({ status: 'unauthenticated', accessToken: null, refreshToken: null, resident: null, society: null });
+  });
+
+  it('the sidebar offers Log out, even to a platform admin with no "Back to app"', () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument();
+  });
+
+  it('the phone drawer offers Log out too', () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin/users');
+    fireEvent.click(screen.getByTestId('admin-menu-button'));
+    const drawer = screen.getByRole('dialog', { name: 'Admin menu' });
+    expect(within(drawer).getByRole('button', { name: 'Log out' })).toBeInTheDocument();
+  });
+
+  it('it asks first; confirming ends the session and lands on the admin sign-in', async () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin');
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Admin' })).getByRole('button', { name: 'Log out' }));
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, log out' }));
+    expect(await screen.findByText('admin sign-in page')).toBeInTheDocument();
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
   });
 });

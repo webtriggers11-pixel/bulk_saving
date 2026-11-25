@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/ui/page-header';
 import { cn } from '../../lib/utils';
 import { UpdatePrompt } from '../shell/UpdatePrompt';
 import { useAuthStore } from '../auth/auth.store';
+import { SignOutButton } from '../auth/SignOutButton';
 import { useAdminOverview } from './useAdmin';
 
 interface NavItem {
@@ -105,14 +106,16 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
           ))}
         </div>
       ))}
-      {!platformAdmin && (
-        <div className="mt-auto flex flex-col gap-1 border-t border-line/10 pt-4">
+      <div className="mt-auto flex flex-col gap-1 border-t border-line/10 pt-4">
+        {!platformAdmin && (
           <NavLink to="/" end className={() => linkClass({ isActive: false })} onClick={onNavigate}>
             <Icon name="back" size={18} strokeWidth={1.9} />
             Back to app
           </NavLink>
-        </div>
-      )}
+        )}
+        {/* BUG-034: every admin can leave — a platform admin had no exit at all. */}
+        <SignOutButton variant="nav" className={cn(linkClass({ isActive: false }), 'w-full text-left')} />
+      </div>
     </nav>
   );
 }

@@ -14,12 +14,13 @@ const SERVER_CAP_MS = 3_000;
  *  2. end THIS device's session on the server (BUG-017, ADR-0034) — bounded, best effort:
  *     offline, the handle stays and still honours a token this phone has now forgotten,
  *     which is the same residual a lost phone has, and the kill switch covers it;
- *  3. forget the session here, drop every cached server row (ADR-0015), go to onboarding.
+ *  3. forget the session here, drop every cached server row (ADR-0015), go to `to`
+ *     (onboarding by default; the admin console sends its operators to /admin/login, BUG-034).
  *
  * Steps 1 and 2 run while the access token still works; step 3 never waits on them past
  * their caps, so a dead network cannot keep someone signed in.
  */
-export function useSignOut(): () => Promise<void> {
+export function useSignOut(to = '/onboard'): () => Promise<void> {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const logout = useAuthStore((state) => state.logout);
@@ -40,6 +41,6 @@ export function useSignOut(): () => Promise<void> {
     }
     logout();
     queryClient.clear();
-    navigate('/onboard', { replace: true });
-  }, [logout, navigate, queryClient]);
+    navigate(to, { replace: true });
+  }, [logout, navigate, queryClient, to]);
 }
