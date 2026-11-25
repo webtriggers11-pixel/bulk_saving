@@ -2249,3 +2249,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-26 — BUG-034 — opened: admin console has no Log out
 - Owner: "we noy givine logout button for admin dashboard fix this". Triaged BUG-034 (P1): AdminLayout nav has no sign-out; platform admins (no "Back to app", FEAT-036) have no exit at all.
 - By: agent (autonomous)
+
+## 2026-11-26 — BUG-034 — fixed; V2 approved; close (V3 next)
+- Failing tests first (3 in AdminLayout.test.tsx, failed on "no Log out button"); fix f0d1075: `SignOutButton variant="nav"` in the admin nav for every admin, `useSignOut(to)` → /admin/login. V1 gate RC 0 (web 851).
+- V2 at f0d1075: APPROVED, reviewer's own gate RC 0 (site 71, backend 697, web 851); tests confirmed to fail without the fix. Folded P3s: one Escape closes only the Log out sheet, not the drawer under it (+ test, fails without fix); society-admin test; `useSignOut('/admin/login')` hook test; dropped dead `text-left`; report guard wording.
+- BUG-034 → done in registry before V3.
+- By: agent (autonomous)

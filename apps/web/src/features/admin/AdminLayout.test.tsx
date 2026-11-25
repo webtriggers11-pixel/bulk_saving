@@ -177,4 +177,23 @@ describe('AdminLayout — Log out (BUG-034)', () => {
     expect(await screen.findByText('admin sign-in page')).toBeInTheDocument();
     expect(useAuthStore.getState().status).toBe('unauthenticated');
   });
+
+  it('a society admin sees both "Back to app" and Log out', () => {
+    useAuthStore.setState({ ...platformAdmin, resident: { ...platformAdmin.resident, societyId: 'soc_1' } });
+    renderAt('/admin');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    expect(within(nav).getByRole('link', { name: 'Back to app' })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument();
+  });
+
+  it('Escape on the Log out question closes only the question, not the drawer (V2 P3-1)', async () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin');
+    fireEvent.click(screen.getByTestId('admin-menu-button'));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Admin menu' })).getByRole('button', { name: 'Log out' }));
+    await screen.findByRole('button', { name: 'Yes, log out' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Yes, log out' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Admin menu' })).toBeInTheDocument();
+  });
 });

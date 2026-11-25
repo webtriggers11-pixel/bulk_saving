@@ -99,4 +99,17 @@ describe('useSignOut (BUG-017)', () => {
     expect(endSessionMock).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/onboard', { replace: true });
   });
+
+  it('goes where the caller says: the admin console lands on /admin/login (BUG-034)', async () => {
+    endSessionMock.mockResolvedValue({ signedOut: true });
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </QueryClientProvider>
+    );
+    const { result } = renderHook(() => useSignOut('/admin/login'), { wrapper });
+    await act(() => result.current());
+    expect(navigate).toHaveBeenCalledWith('/admin/login', { replace: true });
+  });
 });

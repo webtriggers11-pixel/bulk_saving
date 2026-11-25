@@ -1,6 +1,6 @@
 # BUG-034 — Admin console has no Log out
 
-**Status:** in-progress · **Priority:** P1 · **Opened:** 2026-11-26 · **Reporter:** owner
+**Status:** done · **Priority:** P1 · **Opened:** 2026-11-26 · **Reporter:** owner
 
 ## Observed vs expected
 
@@ -23,8 +23,8 @@ No ADR decides where sign-out lives beyond FEAT-024's Home/Profile placement; AD
 
 ## Fix
 
-- **Commit:** <pending>
-- **Regression guard:** the BUG-034 tests in AdminLayout.test.tsx and useSignOut.test.tsx.
+- **Commit:** f0d1075 (fix) + V2 follow-up (Escape closes one layer, extra tests)
+- **Regression guard:** the BUG-034 tests in AdminLayout.test.tsx (sidebar, drawer, confirm → /admin/login, society admin, Escape layering) and the `useSignOut('/admin/login')` case in useSignOut.test.tsx.
 
 ## Lesson
 

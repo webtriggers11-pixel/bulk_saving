@@ -114,7 +114,7 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
           </NavLink>
         )}
         {/* BUG-034: every admin can leave — a platform admin had no exit at all. */}
-        <SignOutButton variant="nav" className={cn(linkClass({ isActive: false }), 'w-full text-left')} />
+        <SignOutButton variant="nav" className={cn(linkClass({ isActive: false }), 'w-full')} />
       </div>
     </nav>
   );
@@ -130,7 +130,9 @@ function NavDrawer({ open, onClose, returnFocus }: { open: boolean; onClose: () 
     if (!open) return;
     panel.current?.querySelector<HTMLElement>('a')?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      // BUG-034 V2 P3-1: a sheet opened from the drawer (Log out) owns Escape; close one layer.
+      const sheetOpen = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')].some((el) => el !== panel.current);
+      if (event.key === 'Escape' && !sheetOpen) onClose();
       if (event.key !== 'Tab' || !panel.current) return;
       const focusable = [...panel.current.querySelectorAll<HTMLElement>('a, button')];
       const first = focusable[0];
