@@ -249,7 +249,7 @@ export const features: Feature[] = [
     what: 'Your one-time code and round updates are sent as an SMS to your phone. Sign-in with WhatsApp is switched off for now.',
     why: 'Until now codes only reached a test channel, so nobody outside development could read theirs.',
     section: 'phone',
-    status: 'coming-soon',
+    status: 'done',
   },
   {
     id: 'FEAT-029',

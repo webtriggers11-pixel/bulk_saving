@@ -44,7 +44,7 @@ const SUPER_ADMIN_PHONE = '+919999900001';
   } catch {
     // no .env: the stub channel is bound
   }
-  if (/^\s*TEXTBEE_API_KEY\s*=\s*\S/m.test(envText) && process.env.E2E_ALLOW_REAL_SMS !== '1') {
+  if (/^[ \t]*TEXTBEE_API_KEY[ \t]*=[ \t]*\S/m.test(envText) && process.env.E2E_ALLOW_REAL_SMS !== '1') {
     console.error(
       'Refusing to run: apps/backend/.env sets TEXTBEE_API_KEY, so every OTP here would be a real SMS to a random number.\n' +
         'Comment out the TEXTBEE_* lines and restart the backend, or set E2E_ALLOW_REAL_SMS=1 if you really mean it.',

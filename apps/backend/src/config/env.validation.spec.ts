@@ -197,6 +197,7 @@ describe('TextBee SMS configuration (FEAT-046)', () => {
   it('boots with neither (stub) and with both (TextBee), optional slot and base URL', () => {
     expect(() => validateEnv({ ...base })).not.toThrow();
     expect(() => validateEnv({ ...base, TEXTBEE_API_KEY: '', TEXTBEE_DEVICE_ID: '' })).not.toThrow();
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_SIM_SLOT: '', TEXTBEE_BASE_URL: '' })).not.toThrow();
     expect(() => validateEnv({ ...base, ...full })).not.toThrow();
     expect(() => validateEnv({ ...base, ...full, TEXTBEE_SIM_SLOT: '1', TEXTBEE_BASE_URL: 'https://sms.example.com/api/v1' })).not.toThrow();
   });

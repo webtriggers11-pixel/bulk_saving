@@ -1,6 +1,6 @@
 # FEAT-046 — Real SMS through TextBee; WhatsApp sign-in switched off for now
 
-**Status:** in-review · **Priority:** P1 · **Owner:** agent (owner request) · **Opened:** 2026-11-25
+**Status:** done · **Priority:** P1 · **Owner:** agent (owner request) · **Opened:** 2026-11-25
 
 ## Problem / Why
 

@@ -178,11 +178,11 @@ export class EnvironmentVariables {
   TEXTBEE_DEVICE_ID?: string;
 
   /** Which SIM on the gateway phone sends (TextBee `simSlotIndex`); unset = the phone's default. */
-  @IsOptional()
+  @ValidateIf((env: EnvironmentVariables) => (env.TEXTBEE_SIM_SLOT ?? '').trim() !== '')
   @Matches(/^[0-3]$/, { message: 'TEXTBEE_SIM_SLOT must be a SIM slot index from 0 to 3.' })
   TEXTBEE_SIM_SLOT?: string;
 
-  @IsOptional()
+  @ValidateIf((env: EnvironmentVariables) => (env.TEXTBEE_BASE_URL ?? '').trim() !== '')
   @Matches(/^https:\/\/\S+$/, { message: 'TEXTBEE_BASE_URL must be an https:// URL.' })
   TEXTBEE_BASE_URL?: string;
 
