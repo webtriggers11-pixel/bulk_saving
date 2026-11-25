@@ -344,13 +344,16 @@ describe('OtpService (integration, needs Redis)', () => {
 
     it('one client address gets OTP_CLIENT_DAILY_MAX codes a day across fresh phones (V2 P2-a)', async () => {
       process.env.OTP_CLIENT_DAILY_MAX = '2';
-      const ip = `198.51.100.${10 + Math.floor(Math.random() * 200)}`;
-      await redis.del(`otp:day:${process.env.NODE_ENV}:client:${ip}:${istDay()}`);
+      // Fresh addresses each run: the daily keys outlive a run (2-day TTL).
+      const octet = () => 1 + Math.floor(Math.random() * 250);
+      const ip = `10.${octet()}.${octet()}.${octet()}`;
+      const other = `10.${octet()}.${octet()}.${octet()}`;
+      for (const addr of [ip, other]) await redis.del(`otp:day:${process.env.NODE_ENV}:client:${addr}:${istDay()}`);
       expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'SENT' });
       expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'SENT' });
       expect(await service.request(societyId, uniquePhone(), { clientIp: ip })).toEqual({ result: 'DAILY_LIMITED' });
       // another address is unaffected
-      expect(await service.request(societyId, uniquePhone(), { clientIp: '203.0.113.77' })).toEqual({ result: 'SENT' });
+      expect(await service.request(societyId, uniquePhone(), { clientIp: other })).toEqual({ result: 'SENT' });
     });
 
     it('the server-wide cap stops every phone once spent, and logs once', async () => {
