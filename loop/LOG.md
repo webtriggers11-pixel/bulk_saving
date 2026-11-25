@@ -2202,3 +2202,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 at 5ed06f5 (reviewer's own gate RC 0: backend 692, web 71/844): CHANGES REQUESTED. P1: OTP boxes had maxLength=6, so a pasted "482-913" became "48291" (silent wrong code). P3: failure-path masking missed the dashed form; ADR wording.
 - Fix: `otpDigits` (digits only, first 6) replaces maxLength on both doors + paste tests; `shownOtp`/`maskOtp` in notification-channel.ts used by otp.service and otp-send.processor + unit test; ADR-0056 consequences updated.
 - By: agent (autonomous)
+
+## 2026-11-25 — CHORE-028 — V2 approved; close (V3 next)
+- V2 re-review at 13c20c3 (reviewer's own gate RC 0: backend 693, web 71/846): APPROVED, no new findings. Note: the dev toast "Use" button bypasses otpDigits; harmless (server code is clean 6 digits).
+- My own gate at 13c20c3: run 1 hit BUG-014 (envelope-less 404, catalog-admin, unrelated); rerun RC 0.
+- By: agent (autonomous)
