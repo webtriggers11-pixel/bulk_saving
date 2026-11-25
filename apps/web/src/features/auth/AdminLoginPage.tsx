@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { requestAdminOtp, verifyAdminOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { OTP_CODE_LENGTH } from '@bulk/shared';
-import { OTP_PLACEHOLDER, PHONE_HINT, messageFromError } from './error-messages';
+import { OTP_PLACEHOLDER, otpDigits, PHONE_HINT, messageFromError } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
 import { useAuthMethods } from './useAuthMethods';
@@ -203,9 +203,9 @@ export function AdminLoginPage() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder={OTP_PLACEHOLDER}
-              maxLength={OTP_CODE_LENGTH}
+              // No maxLength: a pasted "482-913" from the SMS must keep all 6 digits (CHORE-028).
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setCode(otpDigits(e.target.value))}
               className="num text-center"
             />
             {verifyError && <Notice tone="error">{verifyError}</Notice>}

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import type { RedisService } from '../../redis/redis.service';
 import { devOtpEchoEnabled } from '../auth/otp.service';
-import { NotificationChannel, redactPhone } from './notification-channel';
+import { NotificationChannel, redactPhone, shownOtp } from './notification-channel';
 import { DEV_OTP_TTL_SECONDS, devOtpKey } from './stub-sms.channel';
 import type { TextbeeConfig } from './textbee.config';
 
@@ -14,8 +14,7 @@ export const TEXTBEE_TIMEOUT_MS = 10_000;
  * share it" text from the gateway SIM, while this exact wording was delivered.
  */
 export function otpMessage(code: string): string {
-  const shown = code.length === 6 ? `${code.slice(0, 3)}-${code.slice(3)}` : code;
-  return `Hi, welcome to BulkSaving. Please enter ${shown} in the app to sign in.`;
+  return `Hi, welcome to BulkSaving. Please enter ${shownOtp(code)} in the app to sign in.`;
 }
 
 type FetchFn = typeof fetch;

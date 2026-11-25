@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import type { RedisService } from '../../redis/redis.service';
 import { devOtpKey } from './stub-sms.channel';
+import { maskOtp } from './notification-channel';
 import { otpMessage, TextbeeSmsChannel } from './textbee-sms.channel';
 import { DEFAULT_TEXTBEE_BASE_URL, textbeeConfig, type TextbeeConfig } from './textbee.config';
 
@@ -70,6 +71,10 @@ describe('TextbeeSmsChannel (FEAT-046)', () => {
     expect(otpMessage('482913')).toBe('Hi, welcome to BulkSaving. Please enter 482-913 in the app to sign in.');
     expect(otpMessage('482913')).not.toMatch(/code|share/i);
     expect(otpMessage('4821')).toBe('Hi, welcome to BulkSaving. Please enter 4821 in the app to sign in.');
+  });
+
+  it('masks the code in both its bare and its SMS form (CHORE-028 V2 P3)', () => {
+    expect(maskOtp('echo: Please enter 482-913 / 482913', '482913')).toBe('echo: Please enter ****** / ******');
   });
 
   it('stashes the OTP for the dev toast only when the dev echo is on', async () => {

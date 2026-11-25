@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import { NOTIFICATION_CHANNEL, type NotificationChannel, redactPhone } from '../notifications/notification-channel';
+import { maskOtp, NOTIFICATION_CHANNEL, type NotificationChannel, redactPhone } from '../notifications/notification-channel';
 import { ResidentsService } from '../residents/residents.service';
 import { unsealOtp } from './otp-seal';
 
@@ -58,7 +58,7 @@ export class OtpSendProcessor extends WorkerHost {
       await this.channel.sendOtp(phone, code);
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : String(err);
-      const redacted = raw.split(code).join('******');
+      const redacted = maskOtp(raw, code);
       this.logger.warn(`OTP dispatch to ${redactPhone(phone)} failed: ${redacted}`);
       throw new Error(redacted);
     }

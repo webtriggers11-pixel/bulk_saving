@@ -130,6 +130,17 @@ describe('AdminLoginPage', () => {
     expect(useAuthStore.getState().resident?.role).toBe('SUPER_ADMIN');
   });
 
+  it('keeps all 6 digits when the SMS code "482-913" is pasted (CHORE-028)', async () => {
+    installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderAdminLogin();
+    await walkToCodeStep();
+
+    const box = screen.getByLabelText('6-digit code');
+    expect(box).not.toHaveAttribute('maxLength');
+    fireEvent.change(box, { target: { value: '482-913' } });
+    expect(box).toHaveValue('482913');
+  });
+
   it('a bare 10-digit admin number is sent as +91… (BUG-019)', async () => {
     installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
     renderAdminLogin();

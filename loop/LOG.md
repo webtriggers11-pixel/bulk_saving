@@ -2197,3 +2197,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Live wording test on Airtel: classic "<code> is your BulkSaving code. Do not share…" failed 5/5; "sign-in number is <code>" failed; three friendly variants delivered 3/3. Owner chose "Hi, welcome to BulkSaving. Please enter 482-913 in the app to sign in." ADR-0056 (Low confidence, revisit trigger).
 - T1 done: otpMessage reworded + unit test.
 - By: agent (autonomous)
+
+## 2026-11-25 — CHORE-028 — V2 changes requested → fixed
+- V2 at 5ed06f5 (reviewer's own gate RC 0: backend 692, web 71/844): CHANGES REQUESTED. P1: OTP boxes had maxLength=6, so a pasted "482-913" became "48291" (silent wrong code). P3: failure-path masking missed the dashed form; ADR wording.
+- Fix: `otpDigits` (digits only, first 6) replaces maxLength on both doors + paste tests; `shownOtp`/`maskOtp` in notification-channel.ts used by otp.service and otp-send.processor + unit test; ADR-0056 consequences updated.
+- By: agent (autonomous)

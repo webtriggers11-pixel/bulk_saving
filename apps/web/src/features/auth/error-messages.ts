@@ -9,6 +9,14 @@ export const INVITE_CODE_SHAPE = /^[A-Z0-9]{8}$/;
 /** FEAT-047 (ADR-0055): every sign-in code is OTP_CODE_LENGTH digits; the input shows 123456. */
 export const OTP_PLACEHOLDER = Array.from({ length: OTP_CODE_LENGTH }, (_, i) => String((i + 1) % 10)).join('');
 export const OTP_HINT = `The code is ${OTP_CODE_LENGTH} digits.`;
+/**
+ * What the code box keeps from typed or pasted text (CHORE-028): digits only, at most
+ * the code length. The SMS shows the code as `482-913`, so the box must NOT carry
+ * `maxLength` — the browser would cut the pasted 7 characters to `482-91` first.
+ */
+export function otpDigits(raw: string): string {
+  return raw.replace(/\D/g, '').slice(0, OTP_CODE_LENGTH);
+}
 
 /**
  * Map a backend auth error code to a friendly, resident-facing message. `serverMessage` is

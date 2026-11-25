@@ -26,3 +26,13 @@ export function redactPhone(phone: string): string {
   const maskCount = Math.max(phone.length - head.length - last4.length, 0);
   return `${head}${'X'.repeat(maskCount)}${last4}`;
 }
+
+/** How the code appears in the SMS: `482-913` for 6 digits, as-is otherwise. */
+export function shownOtp(code: string): string {
+  return code.length === 6 ? `${code.slice(0, 3)}-${code.slice(3)}` : code;
+}
+
+/** Masks the code — bare and as shown in the SMS — in an error text before it is logged. */
+export function maskOtp(text: string, code: string): string {
+  return text.split(shownOtp(code)).join('******').split(code).join('******');
+}

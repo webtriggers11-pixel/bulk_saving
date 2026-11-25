@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { checkInvite, requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
 import { OTP_CODE_LENGTH } from '@bulk/shared';
-import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, OTP_PLACEHOLDER, PHONE_HINT } from './error-messages';
+import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, OTP_PLACEHOLDER, otpDigits, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
 import { useAuthMethods } from './useAuthMethods';
@@ -328,10 +328,9 @@ export function OnboardingPage() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder={OTP_PLACEHOLDER}
-              // One length for every role and door (FEAT-047, ADR-0055).
-              maxLength={OTP_CODE_LENGTH}
+              // No maxLength: a pasted "482-913" from the SMS must keep all 6 digits (CHORE-028).
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setCode(otpDigits(e.target.value))}
               className="num text-center"
             />
 

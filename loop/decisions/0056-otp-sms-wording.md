@@ -30,7 +30,8 @@ Option 2. `otpMessage(code)` = `Hi, welcome to BulkSaving. Please enter ${3}-${3
 ## Consequences
 
 - The text no longer says "do not share" — a small loss of anti-phishing advice.
-- The dash makes phone OTP autofill less likely; residents type the 6 digits (the input accepts digits only, so they must leave the dash out).
+- The dash makes phone OTP autofill less likely. Pasting `482-913` works: the code boxes drop `maxLength` and keep the first 6 digits (`otpDigits`), so the browser can no longer cut the paste to `482-91` (V2 P1).
+- Error texts are masked for both forms of the code (`maskOtp`), in case a provider ever echoes the SMS back (V2 P3).
 - It is a filter workaround, not a guarantee.
 
 ## Revisit trigger

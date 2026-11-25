@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger, Optional, ServiceUnavailableException } fro
 import type { Queue } from 'bullmq';
 import { RedisService } from '../../redis/redis.service';
 import {
+  maskOtp,
   NOTIFICATION_CHANNEL,
   type NotificationChannel,
   redactPhone,
@@ -407,7 +408,7 @@ export class OtpService {
         // (the filter would echo a plain Error's text). The code is dropped so a retry
         // starts fresh; the resend budgets already spent stay spent (abuse protection).
         const raw = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`OTP delivery to ${redactPhone(phone)} failed: ${raw.split(code).join('******')}`);
+        this.logger.warn(`OTP delivery to ${redactPhone(phone)} failed: ${maskOtp(raw, code)}`);
         await this.redis.del(key);
         throw new ServiceUnavailableException({
           code: ErrorCode.OTP_DELIVERY_FAILED,

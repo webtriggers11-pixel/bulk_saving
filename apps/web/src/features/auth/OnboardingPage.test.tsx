@@ -121,6 +121,20 @@ describe('OnboardingPage', () => {
     expect(useAuthStore.getState().accessToken).toBe('access-1');
   });
 
+  it('keeps all 6 digits when the SMS code "482-913" is pasted (CHORE-028)', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    await walkToOtpStep(mock);
+
+    const box = screen.getByLabelText('6-digit code');
+    // A maxLength of 6 would make the browser cut the paste to "482-91" before onChange.
+    expect(box).not.toHaveAttribute('maxLength');
+    fireEvent.change(box, { target: { value: '482-913' } });
+    expect(box).toHaveValue('482913');
+    fireEvent.change(box, { target: { value: '482-9137' } });
+    expect(box).toHaveValue('482913');
+  });
+
   it('sends a bare number in its canonical form, and shows that form back (BUG-019)', async () => {
     const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
     renderOnboarding();
