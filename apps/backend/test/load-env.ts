@@ -32,6 +32,16 @@ process.env.NODE_ENV = 'test';
 process.env.OTP_DEV_LOG = 'false';
 
 /**
+ * Never real SMS from a test run (FEAT-046 V2 P1). A developer .env may hold the TextBee
+ * gateway keys; a suite that compiles AppModule without overriding NOTIFICATION_CHANNEL
+ * would then bind the real channel, and its queue workers could text a random test number.
+ */
+// Blank, not deleted: ConfigModule re-reads .env when AppModule loads, and dotenv only fills
+// keys absent from process.env. Blank counts as unset everywhere (validation, textbeeConfig).
+process.env.TEXTBEE_API_KEY = '';
+process.env.TEXTBEE_DEVICE_ID = '';
+
+/**
  * The suite's queues live under their own BullMQ prefix (CHORE-017). A dev server
  * (`nest start --watch`) on the same Redis consumes every queue it knows under the
  * default `bull` prefix — including the suite's OTP sends and notifications — so tests

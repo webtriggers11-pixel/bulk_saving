@@ -2155,3 +2155,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - T1: `TextbeeSmsChannel` + `textbeeConfig` + env validation (both-or-neither) + factory binding in NotificationsModule; unit tests.
 - T2: `WHATSAPP_LOGIN=off` switch (commented keys alone leave dev in stub mode, button still showing); owner's `.env` WHATSAPP_* commented + TextBee keys + switch (backup in scratchpad); `.env.example` documented; wa-login suite made hermetic to the switch.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-046 — V2 changes requested → fixed
+- V2 (independent reviewer, own worktree at 43aa341): gate RC 0 (71/684/841) but CHANGES REQUESTED. P1: tests not hermetic — `dev-otp` compiled AppModule without overriding the channel, so with the owner's TextBee keys its workers could text random test numbers. P2: the awaited resident OTP door had no retry and echoed the provider error in a 500. P2: `e2e-smoke.mjs` would text random numbers. P3s: duplicate on timeout, 4xx retried, config→module import, `.env.example` turns WhatsApp off.
+- Fixes: `load-env.ts` blanks TEXTBEE_* (blank, because ConfigModule re-reads .env; validation treats blank as unset) + an asserting test; dev-otp overrides the channel; resident door → 503 `OTP_DELIVERY_FAILED`, code dropped, no provider text (test); e2e-smoke refuses with a TextBee key set; TEXTBEE_ENV_KEYS moved into config; ADR-0054 + spec corrected, remaining P3s recorded as accepted.
+- V1 in the main tree (real keys in .env): EXIT 0 — site 71, backend 686, web 841.
+- By: agent (autonomous)

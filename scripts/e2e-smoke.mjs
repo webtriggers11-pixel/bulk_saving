@@ -23,6 +23,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? process.env.E2E_BASE_URL ?? 'http://localhost:3100';
 
@@ -30,6 +31,27 @@ const BASE = process.argv[2] ?? process.env.E2E_BASE_URL ?? 'http://localhost:31
 const SOCIETY_A = 'GREEN001';
 const SOCIETY_B = 'BLUE0002';
 const SUPER_ADMIN_PHONE = '+919999900001';
+
+/**
+ * FEAT-046 (ADR-0054): this script signs up random +9198… numbers. With the TextBee keys in
+ * the backend .env the server sends REAL SMS to those strangers, so refuse unless overridden.
+ */
+{
+  const envPath = new URL('../apps/backend/.env', import.meta.url);
+  let envText = '';
+  try {
+    envText = readFileSync(envPath, 'utf8');
+  } catch {
+    // no .env: the stub channel is bound
+  }
+  if (/^\s*TEXTBEE_API_KEY\s*=\s*\S/m.test(envText) && process.env.E2E_ALLOW_REAL_SMS !== '1') {
+    console.error(
+      'Refusing to run: apps/backend/.env sets TEXTBEE_API_KEY, so every OTP here would be a real SMS to a random number.\n' +
+        'Comment out the TEXTBEE_* lines and restart the backend, or set E2E_ALLOW_REAL_SMS=1 if you really mean it.',
+    );
+    process.exit(2);
+  }
+}
 
 const RUN = Date.now().toString().slice(-6);
 const results = [];

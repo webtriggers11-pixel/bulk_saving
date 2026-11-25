@@ -1,6 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
-import { TEXTBEE_ENV_KEYS } from '../modules/notifications/textbee.config';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min, MinLength, ValidateIf, validateSync } from 'class-validator';
 
 /** Minimum length for any signing/hashing secret. */
 const SECRET_MIN_LENGTH = 16;
@@ -169,12 +168,12 @@ export class EnvironmentVariables {
    * Real SMS through the TextBee gateway (FEAT-046, ADR-0054). Key + device id together or
    * neither (`assertTextbeeConfigComplete`); neither = the stub SMS channel.
    */
-  @IsOptional()
+  @ValidateIf((env: EnvironmentVariables) => (env.TEXTBEE_API_KEY ?? '').trim() !== '')
   @IsString()
   @MinLength(SECRET_MIN_LENGTH, { message: `TEXTBEE_API_KEY must be at least ${SECRET_MIN_LENGTH} characters.` })
   TEXTBEE_API_KEY?: string;
 
-  @IsOptional()
+  @ValidateIf((env: EnvironmentVariables) => (env.TEXTBEE_DEVICE_ID ?? '').trim() !== '')
   @Matches(/^[A-Za-z0-9]{8,64}$/, { message: 'TEXTBEE_DEVICE_ID must be the device id from the TextBee dashboard.' })
   TEXTBEE_DEVICE_ID?: string;
 
@@ -238,6 +237,9 @@ export function assertWhatsAppConfigComplete(env: Pick<EnvironmentVariables, (ty
     throw new Error(`Invalid environment configuration: WhatsApp sign-in needs all of ${WHATSAPP_ENV_KEYS.join(', ')} — missing ${missing.join(', ')}`);
   }
 }
+
+/** The variables the TextBee channel needs — together (FEAT-046). */
+export const TEXTBEE_ENV_KEYS = ['TEXTBEE_API_KEY', 'TEXTBEE_DEVICE_ID'] as const;
 
 /** Key without a device (or the other way round) would silently fall back to the stub: refuse. */
 export function assertTextbeeConfigComplete(env: Pick<EnvironmentVariables, (typeof TEXTBEE_ENV_KEYS)[number]>): void {

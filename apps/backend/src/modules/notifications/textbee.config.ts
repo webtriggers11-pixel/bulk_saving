@@ -15,9 +15,6 @@ export interface TextbeeConfig {
 
 export const DEFAULT_TEXTBEE_BASE_URL = 'https://api.textbee.dev/api/v1';
 
-/** The variables the TextBee channel needs — together. */
-export const TEXTBEE_ENV_KEYS = ['TEXTBEE_API_KEY', 'TEXTBEE_DEVICE_ID'] as const;
-
 export function textbeeConfig(env: NodeJS.ProcessEnv = process.env): TextbeeConfig | null {
   const apiKey = env.TEXTBEE_API_KEY?.trim();
   const deviceId = env.TEXTBEE_DEVICE_ID?.trim();

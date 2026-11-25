@@ -6,6 +6,8 @@ import { AppModule } from '../src/app.module';
 import { RedisService } from '../src/redis/redis.service';
 import { DevToolsModule } from '../src/modules/dev/dev-tools.module';
 import { devOtpKey } from '../src/modules/notifications/stub-sms.channel';
+import { NOTIFICATION_CHANNEL } from '../src/modules/notifications/notification-channel';
+import { textbeeConfig } from '../src/modules/notifications/textbee.config';
 import { CapturingChannel, createTestApp, randomPhone } from './helpers/test-app';
 
 /**
@@ -15,11 +17,23 @@ import { CapturingChannel, createTestApp, randomPhone } from './helpers/test-app
  * OTP_DEV_LOG=false for the suite, so the full app here is the "off" case and the "on" case
  * mounts the module directly.
  */
+describe('test runs never bind the real SMS gateway (FEAT-046 V2 P1)', () => {
+  it('load-env strips the TextBee keys, so the channel factory always picks the stub', () => {
+    expect(process.env.TEXTBEE_API_KEY ?? '').toBe('');
+    expect(process.env.TEXTBEE_DEVICE_ID ?? '').toBe('');
+    expect(textbeeConfig()).toBeNull();
+  });
+});
+
 describe('GET /dev/otp (integration, needs Redis)', () => {
   it('with the module mounted: the stashed code for a phone in any spelling; 404 when none; 400 for garbage', async () => {
     // FEAT-027: DevToolsModule now imports AuthModule (for the WhatsApp simulator), so it is
     // mounted beside the whole app rather than beside RedisModule alone.
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule, DevToolsModule] }).compile();
+    // FEAT-046 V2 P1: a capturing channel, so this app's workers can never reach a real SMS gateway.
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule, DevToolsModule] })
+      .overrideProvider(NOTIFICATION_CHANNEL)
+      .useValue(new CapturingChannel())
+      .compile();
     const app: INestApplication = moduleRef.createNestApplication();
     configureApp(app);
     await app.init();

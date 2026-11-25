@@ -16,10 +16,10 @@ Every OTP and round message has gone to the stub channel, which only logs (ADR-0
 
 - [x] AC1: With `TEXTBEE_API_KEY` + `TEXTBEE_DEVICE_ID` set, `NOTIFICATION_CHANNEL` is the TextBee channel; with neither, the stub (unchanged). Exactly one set refuses to boot.
 - [x] AC2: A send POSTs `{deviceId, recipients:[phone], message, simSlotIndex?}` with `x-api-key`; `TEXTBEE_SIM_SLOT` optional (0–3), `TEXTBEE_BASE_URL` optional (https).
-- [x] AC3: Non-2xx, network error or a 10 s timeout throws (BullMQ retries); the error never carries the code, message body or full phone.
+- [x] AC3: Non-2xx, network error or a 10 s timeout throws; the queued paths (admin OTP, round outbox) retry via BullMQ, the awaited resident door answers 503 `OTP_DELIVERY_FAILED` and drops the code. No error carries the code, message body or full phone, and no provider text reaches a client.
 - [x] AC4: The dev OTP stash (`dev:last-otp:<phone>`) still works under the dev echo, so the local toast keeps working.
 - [x] AC5: `WHATSAPP_LOGIN=off` forces WhatsApp sign-in off (no button, start routes answer WHATSAPP_LOGIN_DISABLED) even with credentials or the dev echo. The owner's `.env` has the `WHATSAPP_*` lines commented out plus `WHATSAPP_LOGIN=off`; `.env.example` documents both.
-- [x] AC6: Suites stay hermetic: integration tests still override the channel; `wa-login` ignores a developer's `WHATSAPP_LOGIN`.
+- [x] AC6: Suites stay hermetic: `load-env.ts` blanks the TextBee keys (asserted), dev-otp overrides the channel, `wa-login` ignores a developer's `WHATSAPP_LOGIN`; `e2e-smoke.mjs` refuses to run with TextBee keys set.
 
 ## Out of scope
 

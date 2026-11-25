@@ -1,3 +1,4 @@
+import { Logger, ServiceUnavailableException } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { RedisService } from '../../redis/redis.service';
 import type { Queue } from 'bullmq';
@@ -51,6 +52,25 @@ describe('OtpService (integration, needs Redis)', () => {
 
   afterAll(async () => {
     await redis.quit();
+  });
+
+  it('a provider failure on the awaited door is a clean 503 OTP_DELIVERY_FAILED and leaves no code behind (FEAT-046 V2 P2)', async () => {
+    const phone = uniquePhone();
+    let sent = '';
+    const failing: NotificationChannel = {
+      sendOtp: async (_p, code) => {
+        sent = code;
+        throw new Error(`TextBee send failed: HTTP 500 for ${code}`);
+      },
+      send: async () => undefined,
+    };
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const err = (await new OtpService(redis, failing).request(societyId, phone).catch((e: unknown) => e)) as ServiceUnavailableException;
+    expect(err).toBeInstanceOf(ServiceUnavailableException);
+    expect(err.getResponse()).toEqual({ code: 'OTP_DELIVERY_FAILED', message: expect.any(String) });
+    expect(JSON.stringify(err.getResponse())).not.toContain('TextBee');
+    expect(await service.verify(societyId, phone, sent)).not.toBe('OK');
+    jest.restoreAllMocks();
   });
 
   it('happy path: request dispatches a code, verify with it returns OK', async () => {

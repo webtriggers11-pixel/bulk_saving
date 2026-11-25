@@ -24,7 +24,9 @@ ADR-0007 put every send behind `NotificationChannel`; v1 bound a stub. ADR-0053 
 
 ## Decision
 
-- `TextbeeSmsChannel` (fetch, 10 s `AbortSignal.timeout`) throws on non-2xx/network errors with only `HTTP <status>` or the error name and a redacted phone, so ADR-0013/0027 BullMQ retries apply and no OTP lands in `failedReason`.
+- `TextbeeSmsChannel` (fetch, 10 s `AbortSignal.timeout`) throws on non-2xx/network errors with only `HTTP <status>` or the error name and a redacted phone. On the queued paths (admin OTP door, ADR-0027; round outbox, ADR-0013) BullMQ retries it and no OTP lands in `failedReason`.
+- The resident OTP door is **awaited, not queued**: a failure there blocks up to 10 s, then `OtpService` drops the stored code and answers a clean 503 `OTP_DELIVERY_FAILED` (generic message, no provider text). No automatic retry; the user taps resend (the budgets already spent stay spent). (V2 P2)
+- Test runs can never bind the real channel: `test/load-env.ts` blanks both keys (blank, because ConfigModule re-reads `.env`), and `scripts/e2e-smoke.mjs` refuses to run while the backend `.env` has a TextBee key. (V2 P1/P2)
 - Key and device id are both-or-neither at boot (same rule as ADR-0038's WhatsApp set).
 - The dev OTP stash is kept under `devOtpEchoEnabled` so the local toast still works.
 - `WHATSAPP_LOGIN=off` forces WhatsApp mode `off` (and no Cloud config) regardless of credentials or the dev echo. Commenting the `WHATSAPP_*` keys alone would only drop dev to `stub` mode, which still shows the button.
@@ -33,5 +35,7 @@ ADR-0007 put every send behind `NotificationChannel`; v1 bound a stub. ADR-0053 
 
 - With `OTP_DEV_FIXED_CODE=1111` in a dev `.env`, the real SMS says `1111`. Expected for dev.
 - The API key is a secret: only in the gitignored `.env`; never in `.env.example`.
+- A 2xx means TextBee queued the SMS on the phone, not that it was delivered. A timeout after TextBee accepted the send makes a queued retry send it twice. A 4xx (bad key, bad number) is retried like a 5xx. All accepted for v1.
+- `.env.example` ships `WHATSAPP_LOGIN=off`, so a new developer's local WhatsApp simulator is off too; delete the line to get it back.
 
 **Revisit trigger (mandatory):** first production launch (require the TextBee vars at boot under `NODE_ENV=production`, drop the demo server's ADR-0053 toast); any delivery failures in logs; volume beyond one phone's daily SMS cap; or WhatsApp sign-in coming back (remove `WHATSAPP_LOGIN=off`).

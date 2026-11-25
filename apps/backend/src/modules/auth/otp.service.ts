@@ -1,12 +1,14 @@
 import { createHmac, randomInt } from 'node:crypto';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { RedisService } from '../../redis/redis.service';
 import {
   NOTIFICATION_CHANNEL,
   type NotificationChannel,
+  redactPhone,
 } from '../notifications/notification-channel';
+import { ErrorCode } from '../../common/error-codes';
 import { sealOtp } from './otp-seal';
 import {
   OTP_SEND_ATTEMPTS,
@@ -216,6 +218,8 @@ return result`;
  */
 @Injectable()
 export class OtpService {
+  private readonly logger = new Logger(OtpService.name);
+
   constructor(
     private readonly redis: RedisService,
     @Inject(NOTIFICATION_CHANNEL) private readonly channel: NotificationChannel,
@@ -339,7 +343,20 @@ export class OtpService {
     // here: it is never returned to the caller and never logged (ADR-0020).
     const dispatch = options.dispatch ?? 'awaited';
     if (dispatch === 'awaited') {
-      await this.channel.sendOtp(phone, code);
+      try {
+        await this.channel.sendOtp(phone, code);
+      } catch (err: unknown) {
+        // FEAT-046 V2 P2: a provider failure is a clean 503, never the provider's message
+        // (the filter would echo a plain Error's text). The code is dropped so a retry
+        // starts fresh; the resend budgets already spent stay spent (abuse protection).
+        const raw = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`OTP delivery to ${redactPhone(phone)} failed: ${raw.split(code).join('******')}`);
+        await this.redis.del(key);
+        throw new ServiceUnavailableException({
+          code: ErrorCode.OTP_DELIVERY_FAILED,
+          message: 'We could not send your code right now. Please try again in a minute.',
+        });
+      }
     } else if (dispatch === 'queued') {
       if (!this.sendQueue) {
         throw new Error('OTP send queue is not configured.');
