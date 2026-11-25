@@ -29,3 +29,5 @@ Bad: a dev database reached from outside with this flag on is open to anyone who
 
 ## Revisit trigger
 If a shared dev/staging environment ever runs with `NODE_ENV=development`, drop the flag there. If guessing shows up in the verify-fail counters, raise `OTP_LENGTH` to 6 (one constant, plus the DTO and the label). CHORE-022's option 3 (alert on a LOCKED budget for a SUPER_ADMIN) is still open.
+
+**Superseded in part (2026-11-25, ADR-0055 / FEAT-047):** every OTP is now 6 digits for every role and door; the dev fixed code is 6 digits (`111111`).

@@ -17,6 +17,8 @@ export const ErrorCode = {
   OTP_RATE_LIMITED: 'OTP_RATE_LIMITED',
   /** FEAT-046: the SMS gateway refused or timed out; nothing provider-specific reaches the client. */
   OTP_DELIVERY_FAILED: 'OTP_DELIVERY_FAILED',
+  /** FEAT-047: a daily OTP cap (per phone or server-wide) is spent until midnight IST. */
+  OTP_DAILY_LIMIT: 'OTP_DAILY_LIMIT',
   /** FEAT-045 (ADR-0052): too many wrong invite codes from this client. */
   INVITE_CHECK_RATE_LIMITED: 'INVITE_CHECK_RATE_LIMITED',
   TOKEN_REVOKED: 'TOKEN_REVOKED',

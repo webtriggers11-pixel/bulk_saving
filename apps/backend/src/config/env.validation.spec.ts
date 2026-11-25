@@ -183,6 +183,23 @@ describe('WhatsApp sign-in configuration', () => {
   });
 });
 
+describe('daily OTP caps (FEAT-047)', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    JWT_ACCESS_SECRET: 'a-real-access-secret-value',
+    JWT_REFRESH_SECRET: 'a-real-refresh-secret-value',
+    OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
+  };
+  it('accepts unset or positive whole numbers, refuses anything else', () => {
+    expect(() => validateEnv({ ...base })).not.toThrow();
+    expect(() => validateEnv({ ...base, OTP_PHONE_DAILY_MAX: '10', OTP_DAILY_MAX: '200' })).not.toThrow();
+    expect(() => validateEnv({ ...base, OTP_DAILY_MAX: '0' })).toThrow(/OTP_DAILY_MAX/);
+    expect(() => validateEnv({ ...base, OTP_PHONE_DAILY_MAX: 'ten' })).toThrow(/OTP_PHONE_DAILY_MAX/);
+  });
+});
+
 describe('TextBee SMS configuration (FEAT-046)', () => {
   const base = {
     DATABASE_URL: 'postgresql://u:p@localhost:5432/db',

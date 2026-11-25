@@ -37,7 +37,7 @@ import {
   RefreshDto,
 } from './auth.dto';
 import { InviteCheckService } from './invite-check.service';
-import { ADMIN_OTP_LENGTH, ADMIN_OTP_SCOPE, OTP_LENGTH, OtpService } from './otp.service';
+import { ADMIN_OTP_SCOPE, OtpService, type OtpRequestOutcome } from './otp.service';
 
 /**
  * BUG-019: one canonical phone form before anything keys on it — the rate limiter, the OTP
@@ -49,6 +49,22 @@ function phoneOf(dto: { phone: string }): string {
     throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'phone must be a valid phone number.' });
   }
   return phone;
+}
+
+/** The two 429s an OTP request can answer (CHORE-016 budgets; FEAT-047 daily caps). */
+function throwIfLimited(outcome: OtpRequestOutcome): void {
+  if (outcome.result === 'RATE_LIMITED') {
+    throw new HttpException(
+      { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+  if (outcome.result === 'DAILY_LIMITED') {
+    throw new HttpException(
+      { code: ErrorCode.OTP_DAILY_LIMIT, message: 'Too many codes have been sent today. Please try again tomorrow.' },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
 }
 
 @Controller()
@@ -95,17 +111,9 @@ export class AuthController {
       });
     }
     // societyId is derived from the invite code, never from the request body.
-    // CHORE-026 (ADR-0040): this door issues the account's own role, so an administrator's
-    // number gets the admin-length code here too. Every caller takes the lookup; the
-    // response is the same either way.
-    const length = (await this.residents.isAdminPhone(phoneOf(dto))) ? ADMIN_OTP_LENGTH : OTP_LENGTH;
-    const outcome = await this.otp.request(society.id, phoneOf(dto), { clientIp, length });
-    if (outcome.result === 'RATE_LIMITED') {
-      throw new HttpException(
-        { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
+    // FEAT-047 (ADR-0055): one code length for every role, so no role lookup here.
+    const outcome = await this.otp.request(society.id, phoneOf(dto), { clientIp });
+    throwIfLimited(outcome);
     // Nothing but the acknowledgement: the OTP never leaves the server through this
     // response, in any environment (ADR-0020). The dev affordance lives in the stub
     // SMS channel, which production replaces.
@@ -173,18 +181,9 @@ export class AuthController {
     //  - CHORE-017 (ADR-0027): this request no longer asks whether the number is an
     //    administrator AT ALL. It queues the code for everyone; the worker asks, after
     //    the response has gone. Nothing role-dependent is left on the request path.
-    // CHORE-026 (ADR-0040): 8 digits for EVERY caller here — no role lookup on this path.
-    const outcome = await this.otp.request(ADMIN_OTP_SCOPE, phoneOf(dto), {
-      dispatch: 'queued',
-      clientIp,
-      length: ADMIN_OTP_LENGTH,
-    });
-    if (outcome.result === 'RATE_LIMITED') {
-      throw new HttpException(
-        { code: ErrorCode.OTP_RATE_LIMITED, message: 'Too many OTP requests. Try again later.' },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
+    // FEAT-047 (ADR-0055): the same code length as every door — no role lookup on this path.
+    const outcome = await this.otp.request(ADMIN_OTP_SCOPE, phoneOf(dto), { dispatch: 'queued', clientIp });
+    throwIfLimited(outcome);
     return { requested: true };
   }
 

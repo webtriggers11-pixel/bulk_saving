@@ -9,6 +9,7 @@ import {
   redactPhone,
 } from '../notifications/notification-channel';
 import { ErrorCode } from '../../common/error-codes';
+import { OTP_CODE_LENGTH } from '@bulk/shared';
 import { sealOtp } from './otp-seal';
 import {
   OTP_SEND_ATTEMPTS,
@@ -18,7 +19,7 @@ import {
 } from './otp-send.processor';
 
 /** Result of requesting an OTP. */
-export type OtpRequestResult = 'SENT' | 'RATE_LIMITED';
+export type OtpRequestResult = 'SENT' | 'RATE_LIMITED' | 'DAILY_LIMITED';
 
 /**
  * The OTP scope the admin door uses for EVERY caller (FEAT-012, ADR-0023).
@@ -65,25 +66,24 @@ export function devOtpEchoEnabled(env: NodeJS.ProcessEnv = process.env): boolean
  * DEV ONLY (CHORE-026, ADR-0040): the fixed OTP every resident and admin gets locally,
  * or null for a random one.
  *
- * `OTP_DEV_FIXED_CODE` (4 digits, e.g. `1111`) applies ONLY when NODE_ENV is exactly
+ * `OTP_DEV_FIXED_CODE` ({@link OTP_LENGTH} digits, e.g. `111111`) applies ONLY when NODE_ENV is exactly
  * `development` — not `test`, so the suites keep exercising random codes, and not unset,
  * same default-closed rule as {@link devOtpEchoEnabled}. Production refuses the variable
  * at boot (`assertProductionSafe`).
  */
 export function devFixedOtp(env: NodeJS.ProcessEnv = process.env): string | null {
   const code = env.OTP_DEV_FIXED_CODE?.trim();
-  if (env.NODE_ENV !== 'development' || !code || !/^\d{4}$/.test(code)) return null;
+  if (env.NODE_ENV !== 'development' || !code || !new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) return null;
   return code;
 }
 
 /**
- * OTP lengths (CHORE-026, ADR-0040): residents get 4 digits (owner: "only 4 digit"); an
- * administrator's number gets 8 through EITHER door (CHORE-022), because the society door
- * issues the account's own role and would otherwise be a 4-digit way into SUPER_ADMIN.
+ * One OTP length for everyone, through every door (FEAT-047, ADR-0055 — supersedes
+ * ADR-0040's 4 for residents / 8 for administrators). Six digits with the 5-try lock is
+ * ~1 in 200,000 per code, so no role needs a longer one, and no door needs a role lookup
+ * to pick a length.
  */
-export const OTP_LENGTH = 4;
-export const ADMIN_OTP_LENGTH = 8;
-export type OtpLength = typeof OTP_LENGTH | typeof ADMIN_OTP_LENGTH;
+export const OTP_LENGTH = OTP_CODE_LENGTH;
 
 /** Result of verifying an OTP. */
 export type OtpVerifyResult = 'OK' | 'INVALID' | 'EXPIRED' | 'LOCKED';
@@ -113,6 +113,32 @@ export const OTP_RESEND_PHONE_HOURLY_MAX = 10;
 export const OTP_VERIFY_FAIL_CLIENT_MAX = 10;
 export const OTP_VERIFY_FAIL_PHONE_MAX = 20;
 const OTP_RESEND_HOUR_SECONDS = 60 * 60;
+
+/**
+ * Daily caps (FEAT-047, ADR-0055): every code is a real SMS from one phone's SIM, which has
+ * a daily limit and can be blocked by the carrier for bursts. Per phone across every door
+ * (`OTP_PHONE_DAILY_MAX`, default 10), and server-wide (`OTP_DAILY_MAX`, default 200).
+ * Days are India days (Asia/Kolkata), so the budget resets at local midnight.
+ */
+export const OTP_PHONE_DAILY_MAX_DEFAULT = 10;
+export const OTP_DAILY_MAX_DEFAULT = 200;
+const OTP_DAY_KEY_TTL_SECONDS = 2 * 24 * 60 * 60;
+
+export function otpDailyLimits(env: NodeJS.ProcessEnv = process.env): { phone: number; total: number } {
+  const read = (raw: string | undefined, fallback: number): number => {
+    const n = Number(raw?.trim());
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+  };
+  return {
+    phone: read(env.OTP_PHONE_DAILY_MAX, OTP_PHONE_DAILY_MAX_DEFAULT),
+    total: read(env.OTP_DAILY_MAX, OTP_DAILY_MAX_DEFAULT),
+  };
+}
+
+/** The India calendar day, e.g. `2026-11-25` — the daily caps' bucket. */
+export function istDay(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
 
 /**
  * The rate-limit bucket for a client address (CHORE-016). IPv4 as is (an IPv4-mapped
@@ -228,6 +254,16 @@ export class OtpService {
     @Optional() @InjectQueue(OTP_SEND_QUEUE) private readonly sendQueue?: Queue<OtpSendJobData>,
   ) {}
 
+  /** Per phone, across every door (FEAT-047). */
+  private dailyPhoneKey(phone: string, day: string): string {
+    return `otp:day:phone:${phone}:${day}`;
+  }
+
+  /** Server-wide. NODE_ENV in the key so a test run never spends a dev server's budget on the shared Redis. */
+  private dailyTotalKey(day: string): string {
+    return `otp:day:total:${process.env.NODE_ENV ?? 'unset'}:${day}`;
+  }
+
   private otpKey(scopeId: string, phone: string): string {
     return `otp:${scopeId}:${phone}`;
   }
@@ -263,7 +299,7 @@ export class OtpService {
   }
 
   /**
-   * Generate + store an OTP ({@link OTP_LENGTH} digits, or `options.length`) and dispatch it via the notification channel.
+   * Generate + store an OTP ({@link OTP_LENGTH} digits) and dispatch it via the notification channel.
    * Enforces resend rate-limits atomically. Returns a result enum — never the code.
    *
    * `scopeId` is a key namespace, normally a society id.
@@ -285,7 +321,7 @@ export class OtpService {
   async request(
     scopeId: string,
     phone: string,
-    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string; length?: OtpLength } = {},
+    options: { dispatch?: 'awaited' | 'queued' | 'suppressed'; clientIp?: string } = {},
   ): Promise<OtpRequestOutcome> {
     // CHORE-016 (ADR-0027): the interval and hourly budgets are per (phone, client), so
     // one machine cannot spend an owner's budget; the ceiling below is per phone. Every
@@ -329,8 +365,23 @@ export class OtpService {
       return { result: 'RATE_LIMITED' };
     }
 
-    const length = options.length ?? OTP_LENGTH;
-    const code = devFixedOtp() ?? randomInt(0, 10 ** length).toString().padStart(length, '0');
+    // FEAT-047: daily caps, per phone (every door) then server-wide. Counted only for
+    // requests every budget above let through, and the same for every caller and role.
+    const limits = otpDailyLimits();
+    const day = istDay();
+    const phoneDay = (await this.redis.eval(RESEND_HOURLY_LUA, 1, this.dailyPhoneKey(phone, day), String(OTP_DAY_KEY_TTL_SECONDS))) as number;
+    if (phoneDay > limits.phone) {
+      return { result: 'DAILY_LIMITED' };
+    }
+    const totalDay = (await this.redis.eval(RESEND_HOURLY_LUA, 1, this.dailyTotalKey(day), String(OTP_DAY_KEY_TTL_SECONDS))) as number;
+    if (totalDay > limits.total) {
+      if (totalDay === limits.total + 1) {
+        this.logger.warn(`Server-wide daily OTP cap (${limits.total}) reached for ${day}; further requests answer OTP_DAILY_LIMIT until midnight IST.`);
+      }
+      return { result: 'DAILY_LIMITED' };
+    }
+
+    const code = devFixedOtp() ?? randomInt(0, 10 ** OTP_LENGTH).toString().padStart(OTP_LENGTH, '0');
     const key = this.otpKey(scopeId, phone);
     await this.redis
       .multi()

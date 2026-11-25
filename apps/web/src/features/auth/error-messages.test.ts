@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../lib/api';
-import { INVITE_HINT, PHONE_HINT, authErrorMessage, messageFromError } from './error-messages';
+import { INVITE_HINT, OTP_HINT, OTP_PLACEHOLDER, PHONE_HINT, authErrorMessage, messageFromError } from './error-messages';
 
 /** BUG-021: a validation refusal names the field it is about. */
 describe('authErrorMessage — validation refusals', () => {
@@ -29,5 +29,22 @@ describe('authErrorMessage — invite code', () => {
 
   it('too many wrong codes says to wait', () => {
     expect(authErrorMessage('INVITE_CHECK_RATE_LIMITED')).toMatch(/wait/);
+  });
+});
+
+describe('FEAT-047: one 6-digit code, daily caps', () => {
+  it('a short code talks about the code, not the phone', () => {
+    const msg = authErrorMessage('BAD_REQUEST', 'code must be 6 digits.');
+    expect(msg).toContain(OTP_HINT);
+    expect(msg).not.toContain(PHONE_HINT);
+  });
+
+  it('the placeholder is 6 digits', () => {
+    expect(OTP_PLACEHOLDER).toBe('123456');
+  });
+
+  it('a spent daily cap says to try tomorrow; a failed send says to retry soon', () => {
+    expect(authErrorMessage('OTP_DAILY_LIMIT')).toMatch(/tomorrow/);
+    expect(authErrorMessage('OTP_DELIVERY_FAILED')).toMatch(/could not send/);
   });
 });

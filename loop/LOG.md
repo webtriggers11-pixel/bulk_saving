@@ -2168,3 +2168,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 re-run in an isolated worktree at d2d434c with its own DB `bulk_saving_feat046`: run 1 (17:47:37–17:49:09) web failed 1 (`OnboardingPage` QUEUED offline = BUG-027, 2nd occurrence, logged; no web code touched) — so a fresh pair: run 3 (17:51:00–17:52:24) and run 4 (17:52:25–17:53:39) both EXIT 0, identical: site 71, backend 686, web 841.
 - FEAT-046 → done. Worktree and its DB removed.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-047 — opened, built (T1–T3)
+- Owner: proper OTP storage? (yes: HMAC hash in Redis, 5-min TTL, never logged/returned), make NODE_ENV production, real random OTPs, one OTP length, add a limit. Asked three choices; owner picked 6 digits, daily SMS cap (server-wide + per phone), local .env only. Triage → FEAT-047 (P1). ADR-0055 (supersedes ADR-0040's lengths).
+- T1 backend: OTP_CODE_LENGTH=6 in @bulk/shared; society door's role lookup removed; DTOs 6 digits; daily caps (INCR+EXPIRE, IST day, total key per NODE_ENV) → 429 OTP_DAILY_LIMIT; env validation; tests.
+- T2 web: 6-digit inputs/labels/placeholder from the shared constant; messages for OTP_DAILY_LIMIT, OTP_DELIVERY_FAILED and a short code.
+- T3: owner's .env NODE_ENV=production, OTP_DEV_LOG=false, fixed code commented (backup in scratchpad); validated against the production boot checks. TEST_LOGINS.md and .env.example updated.
+- By: agent (autonomous)

@@ -15,19 +15,27 @@ production. Production refuses the dev OTP settings at boot (ADR-0020, ADR-0040)
 
 > If the global `pnpm` shim is broken on this machine, use `corepack pnpm …`.
 
-`apps/backend/.env` must contain these lines (it already does on this machine):
+**Two ways to run (FEAT-047).** Every code is **6 digits**, for residents and admins alike.
+
+- **Real SMS (this machine's current setting):** `NODE_ENV=production`, `OTP_DEV_LOG=false`,
+  no `OTP_DEV_FIXED_CODE`, and the TextBee keys set (FEAT-046). Codes are random and arrive by
+  SMS only — no toast. Sign in with a number you own: the seeded numbers below are not real
+  phones. Daily caps: 10 codes per phone, 200 in total (`OTP_PHONE_DAILY_MAX`, `OTP_DAILY_MAX`).
+- **Dev codes (no SMS):** comment out the `TEXTBEE_*` lines and set:
 
 ```env
 NODE_ENV=development
-OTP_DEV_LOG=true          # turns on the dev OTP toast (GET /dev/otp)
-OTP_DEV_FIXED_CODE=1111   # every resident and admin OTP is 1111
+OTP_DEV_LOG=true            # turns on the dev OTP toast (GET /dev/otp)
+OTP_DEV_FIXED_CODE=111111   # every resident and admin OTP is 111111
 ```
+
+The rest of this page describes the dev-codes mode.
 
 ## 2. The OTP shows as a toast at the top
 
 After you tap **Send code**, a toast slides in at the **top** of the screen:
 
-> **DEV ONLY** · Your code is **1111** · [Use it]
+> **DEV ONLY** · Your code is **111111** · [Use it]
 
 Tap **Use it** to fill the code field, then tap **Verify**. The same toast appears on
 both doors: resident onboarding (`/onboard`) and admin login (`/admin/login`).
@@ -42,9 +50,9 @@ The toast only appears when **all** of these are true:
   preview/production build (:5175) leaves this code out on purpose.
 - The backend has `OTP_DEV_LOG=true` and `NODE_ENV=development`.
 - The browser and the backend are on the **same machine**. The route only answers
-  loopback callers, so a phone on the LAN won't get the toast. Type `1111` there instead.
+  loopback callers, so a phone on the LAN won't get the toast. Type `111111` there instead.
 
-If the toast doesn't show, type `1111` by hand. It always verifies in development.
+If the toast doesn't show, type `111111` by hand. It always verifies in development.
 
 ## 3. Resident logins — `http://localhost:5173/onboard`
 
@@ -90,7 +98,7 @@ Admins don't belong to a society (FEAT-036, ADR-0046). A platform admin who open
 | Platform Admin | `+919999900001` | SUPER_ADMIN | `seed` | Main admin. Not in any society (FEAT-036) |
 | Ops Admin | `+919999900209` | SUPER_ADMIN | `seed:demo` | Second admin, not in any society, so browser testing doesn't use up the main admin's OTP limit |
 
-The OTP is `1111` in dev. In other environments an admin's OTP is **8 digits** and a resident's is **4** (CHORE-026).
+The OTP is `111111` in dev-codes mode. Otherwise every code is random and **6 digits**, for admins and residents alike (FEAT-047).
 
 ## 5. The admin console (what an admin can do)
 

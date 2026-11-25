@@ -244,6 +244,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-047',
+    title: 'Every sign-in code is 6 digits, with a daily limit',
+    what: 'Residents and admins all get the same 6-digit code by SMS. A phone can get up to 10 codes a day.',
+    why: 'One length is easier to remember and strong enough for everyone, and a daily limit stops anyone flooding a number with texts.',
+    section: 'phone',
+    status: 'coming-soon',
+  },
+  {
     id: 'FEAT-046',
     title: 'Sign-in codes arrive as a real text message',
     what: 'Your one-time code and round updates are sent as an SMS to your phone. Sign-in with WhatsApp is switched off for now.',

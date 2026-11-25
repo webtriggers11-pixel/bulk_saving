@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { requestAdminOtp, verifyAdminOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { messageFromError, PHONE_HINT } from './error-messages';
+import { OTP_CODE_LENGTH } from '@bulk/shared';
+import { OTP_PLACEHOLDER, PHONE_HINT, messageFromError } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
 import { useAuthMethods } from './useAuthMethods';
@@ -192,7 +193,7 @@ export function AdminLoginPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{canonicalPhone ?? phone}</span>.
             </p>
-            <Label htmlFor="admin-code">8-digit code</Label>
+            <Label htmlFor="admin-code">{OTP_CODE_LENGTH}-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -201,8 +202,8 @@ export function AdminLoginPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="12345678"
-              maxLength={8}
+              placeholder={OTP_PLACEHOLDER}
+              maxLength={OTP_CODE_LENGTH}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"

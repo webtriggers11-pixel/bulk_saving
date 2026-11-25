@@ -39,6 +39,10 @@ process.env.OTP_DEV_LOG = 'false';
 // Blank, not deleted: ConfigModule re-reads .env when AppModule loads, and dotenv only fills
 // keys absent from process.env. Blank counts as unset everywhere (validation, textbeeConfig).
 process.env.TEXTBEE_API_KEY = '';
+// FEAT-047: the suites request hundreds of codes a day (some on one phone, clearing the hourly
+// ceiling between bursts); the daily caps would trip mid-run. Its behaviour is tested with explicit low limits in otp.service.spec.
+process.env.OTP_DAILY_MAX = '9999999';
+process.env.OTP_PHONE_DAILY_MAX = '9999999';
 process.env.TEXTBEE_DEVICE_ID = '';
 
 /**

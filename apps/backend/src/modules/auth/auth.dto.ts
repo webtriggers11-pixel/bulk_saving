@@ -1,4 +1,5 @@
 import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import { OTP_CODE_LENGTH } from '@bulk/shared';
 import type {
   AdminOtpRequestBody,
   AdminOtpVerifyBody,
@@ -12,9 +13,8 @@ const INVITE_CODE = /^[A-Z0-9]{8}$/;
 // BUG-019: formatting (spaces, dashes, brackets) is allowed in; `normalisePhone` in the
 // controller is the real check and the only thing that decides what is stored.
 export const PHONE = /^\+?[0-9][0-9\s().-]{5,24}$/;
-// CHORE-026: residents' OTPs are 4 digits, an administrator's number gets 8 (ADR-0040). Both
-// doors accept both shapes, so the format check says nothing about whose number it is.
-const OTP_CODE = /^(\d{4}|\d{8})$/;
+// FEAT-047 (ADR-0055): every OTP is OTP_CODE_LENGTH digits, for every role and door.
+const OTP_CODE = new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`);
 
 /** `POST /auth/invite/check` (FEAT-045): the code alone, in the shape every door accepts. */
 export class InviteCheckDto implements InviteCheckBody {
@@ -37,7 +37,7 @@ export class OtpVerifyDto implements OtpVerifyBody {
   @Matches(PHONE, { message: 'phone must be a valid phone number.' })
   phone!: string;
 
-  @Matches(OTP_CODE, { message: 'code must be 4 or 8 digits.' })
+  @Matches(OTP_CODE, { message: `code must be ${OTP_CODE_LENGTH} digits.` })
   code!: string;
 
   @IsOptional()
@@ -61,7 +61,7 @@ export class AdminOtpVerifyDto implements AdminOtpVerifyBody {
   @Matches(PHONE, { message: 'phone must be a valid phone number.' })
   phone!: string;
 
-  @Matches(OTP_CODE, { message: 'code must be 4 or 8 digits.' })
+  @Matches(OTP_CODE, { message: `code must be ${OTP_CODE_LENGTH} digits.` })
   code!: string;
 }
 

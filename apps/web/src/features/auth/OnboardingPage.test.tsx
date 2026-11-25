@@ -87,7 +87,7 @@ async function walkToOtpStep(mock: ReturnType<typeof installFetch>) {
   fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919876543210' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
-  await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
   expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/request'))).toBe(true);
 }
 
@@ -113,7 +113,7 @@ describe('OnboardingPage', () => {
 
     await walkToOtpStep(mock);
 
-    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
@@ -128,13 +128,13 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '99999 00201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
 
     const request = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/request'));
     expect(JSON.parse(String(request?.[1]?.body))).toEqual({ inviteCode: 'AB12CD34', phone: '+919999900201' });
     expect(screen.getByText('+919999900201')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     const verify = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
@@ -191,7 +191,7 @@ describe('OnboardingPage', () => {
       const checked = inviteCheckAnswer(url);
       if (checked) return checked;
       if (url.endsWith('/auth/otp/request')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { requested: true } } }));
-      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '6543' } } }));
+      if (url.includes('/dev/otp?phone=')) return Promise.resolve(jsonResponse({ ok: true, status: 200, body: { success: true, data: { code: '654321' } } }));
       return Promise.reject(new Error(`unexpected fetch: ${url}`));
     });
     vi.stubGlobal('fetch', mock);
@@ -201,13 +201,13 @@ describe('OnboardingPage', () => {
     fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
-    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('6543');
+    expect(await screen.findByTestId('dev-otp-code')).toHaveTextContent('654321');
     expect(screen.getByRole('status').parentElement).toHaveAttribute('data-placement', 'top');
     expect(screen.getByText('Dev only')).toBeInTheDocument();
     expect(mock.mock.calls.some(([url]) => String(url).includes('/dev/otp?phone=%2B919999900201'))).toBe(true);
 
     fireEvent.click(screen.getByTestId('dev-otp-use'));
-    expect(screen.getByLabelText('4-digit code')).toHaveValue('6543');
+    expect(screen.getByLabelText('6-digit code')).toHaveValue('654321');
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
   });
 
@@ -228,7 +228,7 @@ describe('OnboardingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(await screen.findByLabelText('Phone number'), { target: { value: '+919999900201' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await waitFor(() => expect(screen.getByLabelText('4-digit code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('6-digit code')).toBeInTheDocument());
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByTestId('dev-otp-code')).not.toBeInTheDocument();
   });
@@ -243,7 +243,7 @@ describe('OnboardingPage', () => {
 
     await walkToOtpStep(mock);
 
-    fireEvent.change(screen.getByLabelText('4-digit code'), { target: { value: '0000' } });
+    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '000000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());

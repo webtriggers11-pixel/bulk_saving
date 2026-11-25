@@ -84,8 +84,8 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     expect(requested.body).toEqual({ success: true, data: { requested: true } });
 
     const code = await waitForSend(sendsBefore, phone);
-    // CHORE-026 (ADR-0040): the admin door sends 8 digits, to every caller.
-    expect(code).toMatch(/^\d{8}$/);
+    // FEAT-047 (ADR-0055): the admin door sends the same 6 digits as every door.
+    expect(code).toMatch(/^\d{6}$/);
     expect(JSON.stringify(requested.body)).not.toContain(code);
 
     const verified = await server()
@@ -165,7 +165,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     const adminPhone = await makeAdmin();
 
     async function guessWithoutRequesting(phone: string) {
-      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '0000' });
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
       return { status: res.status, body: res.body };
     }
 
@@ -177,7 +177,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     // same for all three — because the admin door stores one for everybody.
     async function requestThenGuess(phone: string) {
       await server().post('/auth/admin/otp/request').send({ phone }).expect(200);
-      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '0000' });
+      const res = await server().post('/auth/admin/otp/verify').send({ phone, code: '000000' });
       return { status: res.status, body: res.body };
     }
 
@@ -187,14 +187,14 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
   });
 
   // CHORE-026 V2 r2 P3-5: the dev fixed code passes the OTP check, never the admin check.
-  it('in development, 1111 on the admin door still refuses a number that is not an admin', async () => {
+  it('in development, 111111 on the admin door still refuses a number that is not an admin', async () => {
     const before = { env: process.env.NODE_ENV, code: process.env.OTP_DEV_FIXED_CODE };
     process.env.NODE_ENV = 'development';
-    process.env.OTP_DEV_FIXED_CODE = '1111';
+    process.env.OTP_DEV_FIXED_CODE = '111111';
     try {
-      const res = await server().post('/auth/admin/otp/verify').send({ phone: randomPhone(), code: '1111' }).expect(403);
+      const res = await server().post('/auth/admin/otp/verify').send({ phone: randomPhone(), code: '111111' }).expect(403);
       expect(res.body.error.code).toBe(ErrorCode.NOT_AN_ADMIN);
-      const admin = await server().post('/auth/admin/otp/verify').send({ phone: await makeAdmin(), code: '1111' }).expect(200);
+      const admin = await server().post('/auth/admin/otp/verify').send({ phone: await makeAdmin(), code: '111111' }).expect(200);
       expect(admin.body.data.resident.role).toBe('SUPER_ADMIN');
     } finally {
       process.env.NODE_ENV = before.env;
@@ -210,7 +210,7 @@ describe('Admin sign-in (integration, needs DB + Redis)', () => {
     await server().post('/auth/admin/otp/request').send({ phone: unknown }).expect(200);
     const verify = await server()
       .post('/auth/admin/otp/verify')
-      .send({ phone: unknown, code: '1234' })
+      .send({ phone: unknown, code: '123456' })
       .expect(400);
     expect(verify.body.error.code).toBe(ErrorCode.OTP_INVALID);
 

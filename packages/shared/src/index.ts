@@ -942,3 +942,9 @@ export const WA_LOGIN_TTL_SECONDS = 180;
 
 /** The pre-filled message. A `const`, like `normalisePhone` — the web imports it at runtime. */
 export const whatsAppLoginMessage = (code: string): string => `My Bulk Saving login code is ${code}`;
+
+/**
+ * Every one-time passcode is this many digits, through every door, for every role
+ * (FEAT-047, ADR-0055). The API generates and validates it; the web sizes its input from it.
+ */
+export const OTP_CODE_LENGTH = 6;

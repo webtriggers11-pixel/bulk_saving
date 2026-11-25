@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { checkInvite, requestOtp, verifyOtp } from './auth.api';
 import { useAuthStore } from './auth.store';
-import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, PHONE_HINT } from './error-messages';
+import { OTP_CODE_LENGTH } from '@bulk/shared';
+import { INVITE_CODE_SHAPE, INVITE_HINT, messageFromError, OTP_PLACEHOLDER, PHONE_HINT } from './error-messages';
 import { useDevOtp } from './useDevOtp';
 import { DevOtpToast } from './DevOtpToast';
 import { useAuthMethods } from './useAuthMethods';
@@ -261,7 +262,7 @@ export function OnboardingPage() {
         {step === 'phone' && (
           <form onSubmit={submitPhone} noValidate className="field">
             <h2 className="text-title font-extrabold text-ink">What's your phone number?</h2>
-            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a 4-digit code to verify it.</p>
+            <p className="mb-6 mt-2 text-caption text-ink-muted">We'll text you a {OTP_CODE_LENGTH}-digit code to verify it.</p>
             <Label htmlFor="phone">Phone number</Label>
             <PhoneField
               emphasis="primary"
@@ -317,7 +318,7 @@ export function OnboardingPage() {
             <p className="mb-6 mt-2 text-caption text-ink-muted">
               Sent by SMS to <span className="num font-bold text-ink">{canonicalPhone ?? phone}</span>.
             </p>
-            <Label htmlFor="code">4-digit code</Label>
+            <Label htmlFor="code">{OTP_CODE_LENGTH}-digit code</Label>
             <Input
               emphasis="primary"
               textSize="code"
@@ -326,9 +327,9 @@ export function OnboardingPage() {
               name="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="1234"
-              // An administrator's number gets 8 digits here too (CHORE-026, ADR-0040).
-              maxLength={8}
+              placeholder={OTP_PLACEHOLDER}
+              // One length for every role and door (FEAT-047, ADR-0055).
+              maxLength={OTP_CODE_LENGTH}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="num text-center"
