@@ -2255,3 +2255,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 at f0d1075: APPROVED, reviewer's own gate RC 0 (site 71, backend 697, web 851); tests confirmed to fail without the fix. Folded P3s: one Escape closes only the Log out sheet, not the drawer under it (+ test, fails without fix); society-admin test; `useSignOut('/admin/login')` hook test; dropped dead `text-left`; report guard wording.
 - BUG-034 → done in registry before V3.
 - By: agent (autonomous)
+
+## 2026-11-26 — BUG-034 — V3; CLOSED
+- V3 at 196b01b (main tree): run 1 00:59:13–01:00:31 RC 0, run 2 01:00:31–01:01:38 RC 0, identical: site 71, backend 697, web 854.
+- BUG-034 → done. Not deployed; owner ships to the demo server.
+- By: agent (autonomous)
