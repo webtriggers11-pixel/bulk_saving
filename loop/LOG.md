@@ -2161,3 +2161,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Fixes: `load-env.ts` blanks TEXTBEE_* (blank, because ConfigModule re-reads .env; validation treats blank as unset) + an asserting test; dev-otp overrides the channel; resident door → 503 `OTP_DELIVERY_FAILED`, code dropped, no provider text (test); e2e-smoke refuses with a TextBee key set; TEXTBEE_ENV_KEYS moved into config; ADR-0054 + spec corrected, remaining P3s recorded as accepted.
 - V1 in the main tree (real keys in .env): EXIT 0 — site 71, backend 686, web 841.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-046 — V2 approved; V3; CLOSED
+- V2 re-review at 411f0a0, gate run by the reviewer with the owner's real TextBee keys: RC 0 (71/686/841), APPROVED. Its two new P3s fixed in d2d434c (blank SIM_SLOT/BASE_URL accepted; e2e guard regex no longer spans lines); P3-3 (resend budget after a 503) accepted per ADR-0054.
+- V3 in the main tree: both runs failed with 404s in different suites (`invite-check`, `rounds`) — the owner's `nest start --watch` on :3000 shares the dev DB and restarted at 17:46:01 when the gate rebuilt dist. BUG-028 family; logged there. Not stopped (owner's server).
+- V3 re-run in an isolated worktree at d2d434c with its own DB `bulk_saving_feat046`: run 1 (17:47:37–17:49:09) web failed 1 (`OnboardingPage` QUEUED offline = BUG-027, 2nd occurrence, logged; no web code touched) — so a fresh pair: run 3 (17:51:00–17:52:24) and run 4 (17:52:25–17:53:39) both EXIT 0, identical: site 71, backend 686, web 841.
+- FEAT-046 → done. Worktree and its DB removed.
+- By: agent (autonomous)
