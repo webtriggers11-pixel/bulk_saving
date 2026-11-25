@@ -54,6 +54,8 @@ export function authErrorMessage(code: string, serverMessage?: string): string {
       if (/inviteCode/i.test(serverMessage ?? '')) return `That invite code isn't right. ${INVITE_HINT}`;
       // FEAT-047: the code's shape (the DTO says "code must be 6 digits.").
       if (/\bcode must\b/i.test(serverMessage ?? '')) return `That code isn't complete. ${OTP_HINT}`;
+      // FEAT-048 (V2 P3): the name is required, 1-80 characters.
+      if (/^name\b/i.test(serverMessage ?? '')) return 'Please enter your name (up to 80 characters).';
       return `That doesn't look like a phone number. ${PHONE_HINT}`;
     // FEAT-035 V2 P2: an admin switched this account off.
     case 'ACCOUNT_DISABLED':

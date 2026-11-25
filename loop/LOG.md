@@ -2218,3 +2218,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - FEAT-048 triaged (P1). ADR-0057: required at web + API (trim, 1–80); per-first-sign-in rejected (would reveal membership, ADR-0027).
 - T1 done: shared type, DTO, onboarding form gating, tests (backend required-name integration test, web gating test, existing verify calls given names, e2e-smoke names). Registry flipped to done + site features.ts entry before V3 (close-registry-before-v3).
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-048 — V2 approved; close (V3 next)
+- My gate at aeeafb2: run 1 BUG-014 (envelope-less 404, invite-check, unrelated); rerun RC 0 (site 71, backend 694, web 847).
+- V2 at aeeafb2 (reviewer's own gate RC 0 first run, same counts): APPROVED, no P1/P2. P3-1 folded: a 400 about the name now says "Please enter your name (up to 80 characters)." (+ test). P3-2 (trim relies on whitelist + pipe defaults; integration test guards it; list-filters/pagination comments inaccurate for body DTOs) and P3-3 (maxLength counts UTF-16 units; browser stricter) noted, not acted on.
+- By: agent (autonomous)

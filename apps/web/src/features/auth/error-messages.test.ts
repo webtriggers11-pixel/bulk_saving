@@ -39,6 +39,11 @@ describe('FEAT-047: one 6-digit code, daily caps', () => {
     expect(msg).not.toContain(PHONE_HINT);
   });
 
+  it('a 400 about the name asks for the name, not a phone number (FEAT-048)', () => {
+    expect(authErrorMessage('BAD_REQUEST', 'name must be 1 to 80 characters.')).toBe('Please enter your name (up to 80 characters).');
+    expect(authErrorMessage('BAD_REQUEST', 'name is required.')).toBe('Please enter your name (up to 80 characters).');
+  });
+
   it('the placeholder is 6 digits', () => {
     expect(OTP_PLACEHOLDER).toBe('123456');
   });
