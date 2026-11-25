@@ -38,4 +38,6 @@ V2 (first round) found the original design weaker than this ADR claimed: every e
 - Behind a reverse proxy the per-client cap needs `TRUST_PROXY` (ADR-0027), or every caller is one client.
 - Codes already issued as 4 or 8 digits stop verifying at deploy (they expire within 5 minutes anyway).
 
-**Revisit trigger:** the server cap is reached on a normal day (raise it or add a per-IP daily cap); SMS delivery problems from carrier limits; moving to a commercial SMS provider.
+- Many Indian mobile users share one public IPv4 address through carrier NAT, and a building's Wi-Fi does too, so busy shared addresses may hit the 20/day per-client cap (V2 r2 P3).
+
+**Revisit trigger:** the server cap is reached on a normal day (raise it); real residents report OTP_DAILY_LIMIT (raise `OTP_CLIENT_DAILY_MAX`, e.g. to 100); SMS delivery problems from carrier limits; moving to a commercial SMS provider.

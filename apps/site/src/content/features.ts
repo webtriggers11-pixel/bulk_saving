@@ -249,7 +249,7 @@ export const features: Feature[] = [
     what: 'Residents and admins all get the same 6-digit code by SMS. A phone can get up to 10 codes a day.',
     why: 'One length is easier to remember and strong enough for everyone, and a daily limit stops anyone flooding a number with texts.',
     section: 'phone',
-    status: 'coming-soon',
+    status: 'done',
   },
   {
     id: 'FEAT-046',
