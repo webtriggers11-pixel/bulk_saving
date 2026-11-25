@@ -2228,3 +2228,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 8e5ef20 in wt-048 (own DB): run 1 21:57:18–21:58:33 RC 0, run 2 21:58:34–21:59:53 RC 0, identical: site 71, backend 694, web 848.
 - FEAT-048 → done. Worktree and DB bulk_saving_feat048 removed. Shipped to server checkout via bundle; owner runs deploy.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-049 — opened: only OTP SMS
+- Owner deployed 75778cd (CHORE-028 wording + FEAT-048 name live; verified: dist has new wording, verify without name → 400).
+- Owner: "only otp sms is req, rest all sms dont send for now". FEAT-049 triaged (P1). ADR-0058: switch at the outbox processor (the only non-OTP path to the channel).
+- T1 done: SMS_NOTIFICATIONS=off, env validation, integration + validation tests, .env.example; owner local .env set off. Registry done + site entry before V3.
+- By: agent (autonomous)

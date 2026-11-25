@@ -244,6 +244,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-049',
+    title: 'Only sign-in codes come by SMS for now',
+    what: 'Round updates and other messages no longer arrive as text messages. You still get them as app notifications, and your sign-in code still comes by SMS.',
+    why: 'Texts are sent from one phone with a limited number of messages, so they are kept for sign-in codes.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-048',
     title: 'Your name is asked for when you join',
     what: 'When you sign in with your society’s invite code, you type your name along with the code. You can’t continue without it.',

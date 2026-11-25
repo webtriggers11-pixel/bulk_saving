@@ -440,6 +440,24 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
       }
     });
 
+    it('SMS_NOTIFICATIONS=off: marks the row SENT without any SMS (FEAT-049)', async () => {
+      const round = await createRound();
+      const row = await stageDirect(round.id, alice);
+      process.env.SMS_NOTIFICATIONS = 'off';
+      try {
+        const result = await runSend(row.id);
+        expect(result).toEqual({ sent: true, smsSkipped: true });
+      } finally {
+        process.env.SMS_NOTIFICATIONS = '';
+      }
+      expect(channel.messagesTo(alice.phone)).toEqual([]);
+      const after = await prisma.notification.findUniqueOrThrow({ where: { id: row.id } });
+      expect(after.status).toBe(NotificationStatus.SENT);
+      // A duplicate job afterwards still sends nothing.
+      expect(await runSend(row.id)).toEqual({ sent: false, reason: 'already-terminal' });
+      expect(channel.messagesTo(alice.phone)).toEqual([]);
+    });
+
     it('a duplicate job for an already-sent row sends nothing a second time', async () => {
       const round = await createRound();
       const row = await stageDirect(round.id, alice);

@@ -14,6 +14,17 @@ import { PushService } from '../push/push.service';
 export interface NotificationSendResult {
   sent: boolean;
   reason?: 'not-found' | 'already-terminal';
+  /** True when `SMS_NOTIFICATIONS=off` skipped the SMS (push still went). */
+  smsSkipped?: true;
+}
+
+/**
+ * FEAT-049 (ADR-0058): `SMS_NOTIFICATIONS=off` stops every non-OTP SMS (round updates and
+ * the rest of the outbox). OTPs never pass through here, so sign-in SMS is unaffected.
+ * Unset or blank = on.
+ */
+export function smsNotificationsEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.SMS_NOTIFICATIONS?.trim() !== 'off';
 }
 
 /**
@@ -70,6 +81,17 @@ export class NotificationDispatchProcessor extends WorkerHost {
       this.logger.warn(
         `Push fan-out for ${notificationId} failed; SMS continues: ${err instanceof Error ? err.message : String(err)}`,
       );
+    }
+
+    if (!smsNotificationsEnabled()) {
+      // FEAT-049: the row is done (push went, the in-app record stays); no SMS is sent.
+      const marked = await this.notifications.markSent(notificationId, attempts);
+      this.logger.log(
+        `Notification ${notificationId} (${notification.type}) → SMS skipped (SMS_NOTIFICATIONS=off) for ${redactPhone(
+          notification.resident.phone,
+        )}`,
+      );
+      return marked ? { sent: true, smsSkipped: true } : { sent: false, reason: 'already-terminal' };
     }
 
     try {

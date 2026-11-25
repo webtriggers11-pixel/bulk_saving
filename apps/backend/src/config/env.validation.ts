@@ -177,6 +177,11 @@ export class EnvironmentVariables {
   @IsIn(['off', ''], { message: "WHATSAPP_LOGIN may only be 'off' (or unset/blank)." })
   WHATSAPP_LOGIN?: string;
 
+  /** `off` stops every non-OTP SMS (round updates etc.); OTP SMS still goes (FEAT-049). Unset/blank = on. */
+  @IsOptional()
+  @IsIn(['off', ''], { message: "SMS_NOTIFICATIONS may only be 'off' (or unset/blank)." })
+  SMS_NOTIFICATIONS?: string;
+
   /**
    * Real SMS through the TextBee gateway (FEAT-046, ADR-0054). Key + device id together or
    * neither (`assertTextbeeConfigComplete`); neither = the stub SMS channel.

@@ -45,6 +45,9 @@ process.env.OTP_DAILY_MAX = '9999999';
 process.env.OTP_PHONE_DAILY_MAX = '9999999';
 process.env.OTP_CLIENT_DAILY_MAX = '9999999';
 process.env.TEXTBEE_DEVICE_ID = '';
+// FEAT-049: the outbox suites assert SMS delivery; an owner .env with SMS_NOTIFICATIONS=off
+// must not change that (blank = on). The off switch is tested explicitly.
+process.env.SMS_NOTIFICATIONS = '';
 
 /**
  * The suite's queues live under their own BullMQ prefix (CHORE-017). A dev server

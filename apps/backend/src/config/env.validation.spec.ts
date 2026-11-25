@@ -230,6 +230,12 @@ describe('TextBee SMS configuration (FEAT-046)', () => {
     expect(() => validateEnv({ ...base, WHATSAPP_LOGIN: 'on' })).toThrow(/WHATSAPP_LOGIN/);
   });
 
+  it('accepts SMS_NOTIFICATIONS=off or blank and refuses anything else (FEAT-049)', () => {
+    expect(() => validateEnv({ ...base, SMS_NOTIFICATIONS: 'off' })).not.toThrow();
+    expect(() => validateEnv({ ...base, SMS_NOTIFICATIONS: '' })).not.toThrow();
+    expect(() => validateEnv({ ...base, SMS_NOTIFICATIONS: 'no' })).toThrow(/SMS_NOTIFICATIONS/);
+  });
+
   it('refuses malformed values', () => {
     expect(() => validateEnv({ ...base, ...full, TEXTBEE_SIM_SLOT: '9' })).toThrow(/TEXTBEE_SIM_SLOT/);
     expect(() => validateEnv({ ...base, ...full, TEXTBEE_BASE_URL: 'http://plain.example.com' })).toThrow(/TEXTBEE_BASE_URL/);
