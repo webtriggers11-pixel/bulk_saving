@@ -2,4 +2,4 @@
 
 - [x] T1: new `otpMessage` wording + unit test (AC1–AC3), ADR-0056
 - [x] T2: V2 review, V3 twice, close
-- [ ] T3: ship to the server (AC4)
+- [x] T3: ship to the server (AC4: code on the server checkout; owner runs deploy)
