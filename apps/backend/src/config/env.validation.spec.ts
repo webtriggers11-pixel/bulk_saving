@@ -182,3 +182,39 @@ describe('WhatsApp sign-in configuration', () => {
     expect(() => validateEnv({ ...base, ...full, WHATSAPP_APP_SECRET: 'short' })).toThrow(/WHATSAPP_APP_SECRET/);
   });
 });
+
+describe('TextBee SMS configuration (FEAT-046)', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    JWT_ACCESS_SECRET: 'a-real-access-secret-value',
+    JWT_REFRESH_SECRET: 'a-real-refresh-secret-value',
+    OTP_HASH_SECRET: 'a-real-otp-hash-secret-value',
+  };
+  const full = { TEXTBEE_API_KEY: 'txb_a-test-key-0123456789', TEXTBEE_DEVICE_ID: '0123456789abcdef01234567' };
+
+  it('boots with neither (stub) and with both (TextBee), optional slot and base URL', () => {
+    expect(() => validateEnv({ ...base })).not.toThrow();
+    expect(() => validateEnv({ ...base, ...full })).not.toThrow();
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_SIM_SLOT: '1', TEXTBEE_BASE_URL: 'https://sms.example.com/api/v1' })).not.toThrow();
+  });
+
+  it('refuses a key without a device id and the other way round', () => {
+    expect(() => validateEnv({ ...base, TEXTBEE_API_KEY: full.TEXTBEE_API_KEY })).toThrow(/missing TEXTBEE_DEVICE_ID/);
+    expect(() => validateEnv({ ...base, TEXTBEE_DEVICE_ID: full.TEXTBEE_DEVICE_ID })).toThrow(/missing TEXTBEE_API_KEY/);
+  });
+
+  it('accepts WHATSAPP_LOGIN=off and refuses anything else', () => {
+    expect(() => validateEnv({ ...base, WHATSAPP_LOGIN: 'off' })).not.toThrow();
+    expect(() => validateEnv({ ...base, WHATSAPP_LOGIN: '' })).not.toThrow();
+    expect(() => validateEnv({ ...base, WHATSAPP_LOGIN: 'on' })).toThrow(/WHATSAPP_LOGIN/);
+  });
+
+  it('refuses malformed values', () => {
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_SIM_SLOT: '9' })).toThrow(/TEXTBEE_SIM_SLOT/);
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_BASE_URL: 'http://plain.example.com' })).toThrow(/TEXTBEE_BASE_URL/);
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_DEVICE_ID: 'not a device!' })).toThrow(/TEXTBEE_DEVICE_ID/);
+    expect(() => validateEnv({ ...base, ...full, TEXTBEE_API_KEY: 'short' })).toThrow(/TEXTBEE_API_KEY/);
+  });
+});

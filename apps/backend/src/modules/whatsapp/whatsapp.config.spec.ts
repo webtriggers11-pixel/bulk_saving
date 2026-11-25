@@ -20,6 +20,13 @@ const FULL = {
 
 /** FEAT-027 (ADR-0038): the mode comes from the environment, and nowhere else. */
 describe('whatsAppLoginMode', () => {
+  it('WHATSAPP_LOGIN=off forces off, even with all five variables or the dev echo (FEAT-046)', () => {
+    expect(whatsAppLoginMode({ ...FULL, WHATSAPP_LOGIN: 'off' })).toBe('off');
+    expect(whatsAppCloudConfig({ ...FULL, WHATSAPP_LOGIN: 'off' })).toBeNull();
+    expect(whatsAppLoginMode({ OTP_DEV_LOG: 'true', NODE_ENV: 'development', WHATSAPP_LOGIN: 'off' })).toBe('off');
+    expect(whatsAppBusinessNumber({ OTP_DEV_LOG: 'true', NODE_ENV: 'development', WHATSAPP_LOGIN: 'off' })).toBeNull();
+  });
+
   it('is cloud with all five variables, with the checked Graph version by default', () => {
     expect(whatsAppLoginMode(FULL)).toBe('cloud');
     expect(whatsAppCloudConfig(FULL)?.graphVersion).toBe(DEFAULT_GRAPH_VERSION);

@@ -2149,3 +2149,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Server checkout fast-forwarded 4d81437 → 505c96e from a git bundle (GitHub push refused), then `deploy savebulk`: DEPLOY_DONE, services active, app 200. Live: `/auth/invite/check` answers INVALID_INVITE_CODE "This is an invalid invite code."; the web bundle carries the toast path.
 - Second cause found live: nginx blocked `location ^~ /dev/` on the API (set up 2026-11-23, "must never be reachable publicly"), so the toast still got a 404. Owner chose "Open /dev/otp only". Added `location = /dev/otp` (proxied) above the block; backup `/etc/nginx/savebulk.bak-2026-11-24`; `nginx -t` ok, reloaded. Verified: `/dev/otp` answers from the API (JSON), the CORS preflight from the app origin is allowed, `/dev/whatsapp/*` still 404. ADR-0053 updated (revisit: re-block before real residents).
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-046 — opened, built (T1, T2)
+- Owner: use TextBee for SMS, put it in env, comment out WhatsApp options for now. Triage → FEAT-046 (P1). ADR-0054.
+- T1: `TextbeeSmsChannel` + `textbeeConfig` + env validation (both-or-neither) + factory binding in NotificationsModule; unit tests.
+- T2: `WHATSAPP_LOGIN=off` switch (commented keys alone leave dev in stub mode, button still showing); owner's `.env` WHATSAPP_* commented + TextBee keys + switch (backup in scratchpad); `.env.example` documented; wa-login suite made hermetic to the switch.
+- By: agent (autonomous)

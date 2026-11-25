@@ -9,6 +9,8 @@ import { devOtpEchoEnabled } from '../auth/otp.service';
  *    `NODE_ENV=development|test`, ADR-0037's gate): the sender logs and stashes its prompts
  *    in Redis, and the dev-only simulator plays the WhatsApp side. Never production.
  *  - `off`: the method is not offered; the start routes answer WHATSAPP_LOGIN_DISABLED.
+ *
+ * `WHATSAPP_LOGIN=off` (FEAT-046) forces `off` whatever else is set — SMS only.
  */
 export type WhatsAppLoginMode = 'cloud' | 'stub' | 'off';
 
@@ -28,7 +30,13 @@ export const DEFAULT_GRAPH_VERSION = 'v26.0';
 /** The number the stub mode links to. Nobody is behind it; the simulator stands in for WhatsApp. */
 export const STUB_BUSINESS_NUMBER = '910000000000';
 
+/** FEAT-046: the explicit switch that turns WhatsApp sign-in off, credentials or not. */
+export function whatsAppLoginSwitchedOff(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.WHATSAPP_LOGIN?.trim() === 'off';
+}
+
 export function whatsAppCloudConfig(env: NodeJS.ProcessEnv = process.env): WhatsAppCloudConfig | null {
+  if (whatsAppLoginSwitchedOff(env)) return null;
   const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID?.trim();
   const accessToken = env.WHATSAPP_ACCESS_TOKEN?.trim();
   const appSecret = env.WHATSAPP_APP_SECRET?.trim();
@@ -48,6 +56,7 @@ export function whatsAppCloudConfig(env: NodeJS.ProcessEnv = process.env): Whats
 }
 
 export function whatsAppLoginMode(env: NodeJS.ProcessEnv = process.env): WhatsAppLoginMode {
+  if (whatsAppLoginSwitchedOff(env)) return 'off';
   if (whatsAppCloudConfig(env)) return 'cloud';
   return devOtpEchoEnabled(env) ? 'stub' : 'off';
 }

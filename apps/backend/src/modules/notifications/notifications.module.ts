@@ -2,9 +2,12 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { NotificationDispatchProcessor } from './notification-dispatch.processor';
 import { NotificationDispatchReconciler } from './notification-dispatch.reconciler';
-import { NOTIFICATION_CHANNEL } from './notification-channel';
+import { NOTIFICATION_CHANNEL, type NotificationChannel } from './notification-channel';
 import { NOTIFICATIONS_QUEUE, NotificationsService } from './notifications.service';
 import { StubSmsChannel } from './stub-sms.channel';
+import { TextbeeSmsChannel } from './textbee-sms.channel';
+import { textbeeConfig } from './textbee.config';
+import { RedisService } from '../../redis/redis.service';
 import { PushModule } from '../push/push.module';
 
 /**
@@ -20,7 +23,15 @@ import { PushModule } from '../push/push.module';
   // FEAT-020: dispatching a notification also fans it out to the resident's push devices.
   imports: [BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }), PushModule],
   providers: [
-    { provide: NOTIFICATION_CHANNEL, useClass: StubSmsChannel },
+    // FEAT-046 (ADR-0054): TextBee when TEXTBEE_API_KEY + TEXTBEE_DEVICE_ID are set, else the stub.
+    {
+      provide: NOTIFICATION_CHANNEL,
+      inject: [RedisService],
+      useFactory: (redis: RedisService): NotificationChannel => {
+        const config = textbeeConfig();
+        return config ? new TextbeeSmsChannel(config, redis) : new StubSmsChannel(redis);
+      },
+    },
     NotificationsService,
     NotificationDispatchProcessor,
     NotificationDispatchReconciler,

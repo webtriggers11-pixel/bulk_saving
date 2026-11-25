@@ -83,6 +83,11 @@ describe('Sign in with WhatsApp (integration, needs DB + Redis)', () => {
       saved[key] = process.env[key];
       process.env[key] = value;
     }
+    // FEAT-046: a developer .env may carry WHATSAPP_LOGIN=off; this suite needs cloud mode.
+    // Blank, not deleted: ConfigModule re-reads .env when the app compiles, and dotenv only
+    // fills keys that are absent from process.env.
+    saved.WHATSAPP_LOGIN = process.env.WHATSAPP_LOGIN;
+    process.env.WHATSAPP_LOGIN = '';
     sender = new CapturingWhatsAppSender('cloud');
     app = await createTestApp(new CapturingChannel(), undefined, sender);
     prisma = app.get(PrismaService);
@@ -100,7 +105,7 @@ describe('Sign in with WhatsApp (integration, needs DB + Redis)', () => {
     await clearBudgets();
     await prisma.society.delete({ where: { id: society.id } });
     await app.close();
-    for (const key of Object.keys(ENV)) {
+    for (const key of [...Object.keys(ENV), 'WHATSAPP_LOGIN']) {
       if (saved[key] === undefined) delete process.env[key];
       else process.env[key] = saved[key];
     }

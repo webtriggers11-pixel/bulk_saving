@@ -1,4 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
+import { TEXTBEE_ENV_KEYS } from '../modules/notifications/textbee.config';
 import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
 
 /** Minimum length for any signing/hashing secret. */
@@ -159,6 +160,33 @@ export class EnvironmentVariables {
   @Matches(/^[1-9]\d{6,14}$/, { message: 'WHATSAPP_BUSINESS_NUMBER must be digits with the country code and no +, e.g. 919876543210.' })
   WHATSAPP_BUSINESS_NUMBER?: string;
 
+  /** `off` turns WhatsApp sign-in off whatever else is set (FEAT-046). Unset or blank = decided by the variables below. */
+  @IsOptional()
+  @IsIn(['off', ''], { message: "WHATSAPP_LOGIN may only be 'off' (or unset/blank)." })
+  WHATSAPP_LOGIN?: string;
+
+  /**
+   * Real SMS through the TextBee gateway (FEAT-046, ADR-0054). Key + device id together or
+   * neither (`assertTextbeeConfigComplete`); neither = the stub SMS channel.
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(SECRET_MIN_LENGTH, { message: `TEXTBEE_API_KEY must be at least ${SECRET_MIN_LENGTH} characters.` })
+  TEXTBEE_API_KEY?: string;
+
+  @IsOptional()
+  @Matches(/^[A-Za-z0-9]{8,64}$/, { message: 'TEXTBEE_DEVICE_ID must be the device id from the TextBee dashboard.' })
+  TEXTBEE_DEVICE_ID?: string;
+
+  /** Which SIM on the gateway phone sends (TextBee `simSlotIndex`); unset = the phone's default. */
+  @IsOptional()
+  @Matches(/^[0-3]$/, { message: 'TEXTBEE_SIM_SLOT must be a SIM slot index from 0 to 3.' })
+  TEXTBEE_SIM_SLOT?: string;
+
+  @IsOptional()
+  @Matches(/^https:\/\/\S+$/, { message: 'TEXTBEE_BASE_URL must be an https:// URL.' })
+  TEXTBEE_BASE_URL?: string;
+
   /** Graph API version for the Cloud API calls; defaults to the version the ADR was checked against. */
   @IsOptional()
   @Matches(/^v\d{1,3}\.\d{1,2}$/, { message: 'WHATSAPP_GRAPH_VERSION must look like v26.0.' })
@@ -184,6 +212,7 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
     throw new Error(`Invalid environment configuration: ${details}`);
   }
   assertWhatsAppConfigComplete(validated);
+  assertTextbeeConfigComplete(validated);
   assertProductionSafe(validated);
   return validated;
 }
@@ -207,6 +236,15 @@ export function assertWhatsAppConfigComplete(env: Pick<EnvironmentVariables, (ty
   if (present.length > 0 && present.length < WHATSAPP_ENV_KEYS.length) {
     const missing = WHATSAPP_ENV_KEYS.filter((key) => !present.includes(key));
     throw new Error(`Invalid environment configuration: WhatsApp sign-in needs all of ${WHATSAPP_ENV_KEYS.join(', ')} — missing ${missing.join(', ')}`);
+  }
+}
+
+/** Key without a device (or the other way round) would silently fall back to the stub: refuse. */
+export function assertTextbeeConfigComplete(env: Pick<EnvironmentVariables, (typeof TEXTBEE_ENV_KEYS)[number]>): void {
+  const present = TEXTBEE_ENV_KEYS.filter((key) => (env[key] ?? '').trim().length > 0);
+  if (present.length === 1) {
+    const missing = TEXTBEE_ENV_KEYS.filter((key) => !present.includes(key));
+    throw new Error(`Invalid environment configuration: TextBee SMS needs both ${TEXTBEE_ENV_KEYS.join(' and ')} — missing ${missing.join(', ')}`);
   }
 }
 

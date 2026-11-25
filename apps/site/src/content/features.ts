@@ -244,6 +244,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-046',
+    title: 'Sign-in codes arrive as a real text message',
+    what: 'Your one-time code and round updates are sent as an SMS to your phone. Sign-in with WhatsApp is switched off for now.',
+    why: 'Until now codes only reached a test channel, so nobody outside development could read theirs.',
+    section: 'phone',
+    status: 'coming-soon',
+  },
+  {
     id: 'FEAT-029',
     title: 'A real app icon on your home screen',
     what: 'Installing gives a proper icon, a launch screen on iPhone, and long-press shortcuts straight to Services and My Requests.',
