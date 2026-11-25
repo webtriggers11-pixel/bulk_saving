@@ -66,6 +66,12 @@ describe('TextbeeSmsChannel (FEAT-046)', () => {
     expect(redis.calls).toEqual([]);
   });
 
+  it('words the OTP as the carrier-friendly sign-in prompt with the code split 3-3 (CHORE-028)', () => {
+    expect(otpMessage('482913')).toBe('Hi, welcome to BulkSaving. Please enter 482-913 in the app to sign in.');
+    expect(otpMessage('482913')).not.toMatch(/code|share/i);
+    expect(otpMessage('4821')).toBe('Hi, welcome to BulkSaving. Please enter 4821 in the app to sign in.');
+  });
+
   it('stashes the OTP for the dev toast only when the dev echo is on', async () => {
     process.env.OTP_DEV_LOG = 'true';
     process.env.NODE_ENV = 'development';

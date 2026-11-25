@@ -2191,3 +2191,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at a25b6aa in wt-047 (own DB): first pair 18:26:30–18:28:17 both EXIT 1 with envelope-less 404s in different unrelated suites (auth sign-out, pagination, societies-admin) = BUG-014; those suites pass 4/4 alone; no concurrent gate; load avg 6.5–15 from system processes. Second pair: run 3 (18:29:15–18:30:47) and run 4 (18:30:47–18:32:04) both EXIT 0, identical: site 71, backend 691, web 844.
 - FEAT-047 → done. Worktree and DB bulk_saving_feat047 removed.
 - By: agent (autonomous)
+
+## 2026-11-25 — CHORE-028 — opened: OTP SMS wording
+- Server went production with TextBee (owner ran deploy; deploy.sh template now production + appends /etc/savebulk/api.local.env). Server OTPs on Airtel (slot 1) failed; switched server + local to slot 0 (Vi).
+- Live wording test on Airtel: classic "<code> is your BulkSaving code. Do not share…" failed 5/5; "sign-in number is <code>" failed; three friendly variants delivered 3/3. Owner chose "Hi, welcome to BulkSaving. Please enter 482-913 in the app to sign in." ADR-0056 (Low confidence, revisit trigger).
+- T1 done: otpMessage reworded + unit test.
+- By: agent (autonomous)

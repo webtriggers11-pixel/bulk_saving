@@ -8,9 +8,14 @@ import type { TextbeeConfig } from './textbee.config';
 /** How long one send may take before it counts as failed (BullMQ then retries). */
 export const TEXTBEE_TIMEOUT_MS = 10_000;
 
-/** The OTP body. Short, names the product, and says not to share it. */
+/**
+ * The OTP body (CHORE-028, ADR-0056). Worded as a friendly sign-in prompt with the
+ * code split `482-913`: Airtel refused every classic "<code> is your … code. Do not
+ * share it" text from the gateway SIM, while this exact wording was delivered.
+ */
 export function otpMessage(code: string): string {
-  return `${code} is your BulkSaving code. Do not share it with anyone.`;
+  const shown = code.length === 6 ? `${code.slice(0, 3)}-${code.slice(3)}` : code;
+  return `Hi, welcome to BulkSaving. Please enter ${shown} in the app to sign in.`;
 }
 
 type FetchFn = typeof fetch;
