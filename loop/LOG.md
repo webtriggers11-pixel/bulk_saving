@@ -2207,3 +2207,8 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V2 re-review at 13c20c3 (reviewer's own gate RC 0: backend 693, web 71/846): APPROVED, no new findings. Note: the dev toast "Use" button bypasses otpDigits; harmless (server code is clean 6 digits).
 - My own gate at 13c20c3: run 1 hit BUG-014 (envelope-less 404, catalog-admin, unrelated); rerun RC 0.
 - By: agent (autonomous)
+
+## 2026-11-25 — CHORE-028 — V3; CLOSED
+- V3 at d333045 in wt-028 (own DB): run 1 21:35:49–21:36:55 RC 0, run 2 21:36:55–21:38:02 RC 0, identical: site 71, backend 693, web 846.
+- CHORE-028 → done. Worktree and DB bulk_saving_chore028 removed. Ship to server: bundle + owner runs deploy (AC4).
+- By: agent (autonomous)
