@@ -2185,3 +2185,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Gate at e452d8d/f01a580 in wt-047 (own DB): one real failure in my new per-client cap test (fixed address reused across runs; fixed in f01a580). Otherwise 404s with no error envelope in unrelated suites (round-cancel-reopen, vendors-admin, wa-login, rounds) — BUG-014. Each suite passes alone (round-cancel-reopen 3/3).
 - A/B at load avg ~6.5: baseline 3c4a963 (pre-FEAT-047) EXIT 0 then EXIT 1 (admin-auth 404); f01a580 EXIT 0 (71/691/844). Same flake on both sides, so not caused by this change. BUG-014 row updated.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-047 — V2 approved; V3; CLOSED
+- V2 re-review at 47d0376 (reviewer's own gate RC 0, 71/691/844): APPROVED. Its P3 notes folded in a25b6aa (ADR: carrier-NAT shared addresses + revisit trigger; TEST_LOGINS: raise OTP_CLIENT_DAILY_MAX for local multi-account/e2e testing). Missing-clientIp bucket left as latent (controllers always pass req.ip).
+- V3 at a25b6aa in wt-047 (own DB): first pair 18:26:30–18:28:17 both EXIT 1 with envelope-less 404s in different unrelated suites (auth sign-out, pagination, societies-admin) = BUG-014; those suites pass 4/4 alone; no concurrent gate; load avg 6.5–15 from system processes. Second pair: run 3 (18:29:15–18:30:47) and run 4 (18:30:47–18:32:04) both EXIT 0, identical: site 71, backend 691, web 844.
+- FEAT-047 → done. Worktree and DB bulk_saving_feat047 removed.
+- By: agent (autonomous)
