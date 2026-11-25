@@ -75,15 +75,22 @@ export class NotificationDispatchProcessor extends WorkerHost {
     // failing SMS provider cannot hold push back — and never let push hold SMS back either:
     // a fan-out fault is logged and the SMS still goes (V2 P2). `fanOut` claims the row once,
     // so a retry of this job after an SMS failure does not push twice.
+    // FEAT-049 (V2 P3): with SMS off, push is the ONLY delivery, so a fan-out fault rethrows
+    // and BullMQ retries the job (fanOut released its claim, so nothing is pushed twice).
+    const smsOn = smsNotificationsEnabled();
     try {
       await this.push.fanOut(notification);
     } catch (err) {
-      this.logger.warn(
-        `Push fan-out for ${notificationId} failed; SMS continues: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      const message = err instanceof Error ? err.message : String(err);
+      if (!smsOn) {
+        await this.notifications.recordAttemptFailure(notificationId, attempts, message, isFinalAttempt);
+        this.logger.warn(`Push fan-out for ${notificationId} failed with SMS off; retrying: ${message}`);
+        throw err;
+      }
+      this.logger.warn(`Push fan-out for ${notificationId} failed; SMS continues: ${message}`);
     }
 
-    if (!smsNotificationsEnabled()) {
+    if (!smsOn) {
       // FEAT-049: the row is done (push went, the in-app record stays); no SMS is sent.
       const marked = await this.notifications.markSent(notificationId, attempts);
       this.logger.log(

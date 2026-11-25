@@ -30,6 +30,7 @@ Option 1. `SMS_NOTIFICATIONS=off` (only `off`, or unset/blank = on). With it off
 
 - SENT now means "handled" when the switch is off; the log line says the SMS was skipped. No migration (no new status).
 - Rows staged while off are not re-sent when the switch is turned back on.
+- With the switch off, push is the only delivery: a push fan-out fault records the attempt and rethrows, so BullMQ retries the job (fan-out releases its claim, nothing is pushed twice). With SMS on, a fan-out fault is still only logged (FEAT-020). (V2 P3)
 - Tests blank the key (`test/load-env.ts`) so an owner `.env` with `off` cannot change the outbox suites.
 
 ## Revisit trigger

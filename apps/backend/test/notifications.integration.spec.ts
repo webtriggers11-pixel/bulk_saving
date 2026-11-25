@@ -16,6 +16,7 @@ import request from 'supertest';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { NotificationDispatchProcessor } from '../src/modules/notifications/notification-dispatch.processor';
 import { NotificationDispatchReconciler } from '../src/modules/notifications/notification-dispatch.reconciler';
+import { PushService } from '../src/modules/push/push.service';
 import {
   NOTIFICATIONS_QUEUE,
   NOTIFICATION_SEND_ATTEMPTS,
@@ -443,18 +444,51 @@ describe('Notifications outbox (integration, needs DB + Redis)', () => {
     it('SMS_NOTIFICATIONS=off: marks the row SENT without any SMS (FEAT-049)', async () => {
       const round = await createRound();
       const row = await stageDirect(round.id, alice);
+      const fanOut = jest.spyOn(app.get(PushService), 'fanOut');
+      const logged: string[] = [];
+      const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation((message) => {
+        logged.push(String(message));
+      });
       process.env.SMS_NOTIFICATIONS = 'off';
       try {
         const result = await runSend(row.id);
         expect(result).toEqual({ sent: true, smsSkipped: true });
       } finally {
         process.env.SMS_NOTIFICATIONS = '';
+        logSpy.mockRestore();
       }
+      // AC2: push still fanned out for this row (it is the only delivery now).
+      expect(fanOut).toHaveBeenCalledWith(expect.objectContaining({ id: row.id }));
+      fanOut.mockRestore();
+      // AC1: the skip is logged, with a redacted phone.
+      const skip = logged.find((line) => line.includes(row.id) && line.includes('SMS skipped'));
+      expect(skip).toBeDefined();
+      expect(skip).not.toContain(alice.phone);
+      expect(skip).toContain(alice.phone.slice(-4));
       expect(channel.messagesTo(alice.phone)).toEqual([]);
       const after = await prisma.notification.findUniqueOrThrow({ where: { id: row.id } });
       expect(after.status).toBe(NotificationStatus.SENT);
       // A duplicate job afterwards still sends nothing.
       expect(await runSend(row.id)).toEqual({ sent: false, reason: 'already-terminal' });
+      expect(channel.messagesTo(alice.phone)).toEqual([]);
+    });
+
+    it('SMS_NOTIFICATIONS=off: a push fan-out fault rethrows so BullMQ retries; the row stays PENDING (FEAT-049)', async () => {
+      const round = await createRound();
+      const row = await stageDirect(round.id, alice);
+      const fanOut = jest.spyOn(app.get(PushService), 'fanOut').mockRejectedValueOnce(new Error('redis down'));
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      process.env.SMS_NOTIFICATIONS = 'off';
+      try {
+        await expect(runSend(row.id)).rejects.toThrow('redis down');
+      } finally {
+        process.env.SMS_NOTIFICATIONS = '';
+        fanOut.mockRestore();
+        warn.mockRestore();
+      }
+      const after = await prisma.notification.findUniqueOrThrow({ where: { id: row.id } });
+      expect(after.status).toBe(NotificationStatus.PENDING);
+      expect(after.attempts).toBe(1);
       expect(channel.messagesTo(alice.phone)).toEqual([]);
     });
 

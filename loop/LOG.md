@@ -2234,3 +2234,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - Owner: "only otp sms is req, rest all sms dont send for now". FEAT-049 triaged (P1). ADR-0058: switch at the outbox processor (the only non-OTP path to the channel).
 - T1 done: SMS_NOTIFICATIONS=off, env validation, integration + validation tests, .env.example; owner local .env set off. Registry done + site entry before V3.
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-049 — V2 approved; fixes folded; close (V3 next)
+- My gate at 6dece17 RC 0 (site 71, backend 696, web 848).
+- V2 at 6dece17: code APPROVED (no other non-OTP SMS path; OTP unaffected; reconciler/duplicates safe; no UI reads notification status). Reviewer's two gates both RC 1 in unrelated suites: run 1 push.integration 404 (BUG-014 pattern), run 2 wa-login beforeEach 30 s timeout (suite 129 s) — added to BUG-014 evidence; the owner's dev servers (nest --watch, dist/main) were running; not killed (owner's).
+- Folded: P2 AC2 test (fanOut called while off) + P3 skip-log assertion; P3 with SMS off a push fan-out fault records the attempt and rethrows (BullMQ retry) + test; P3 stale comment; ADR-0058 consequence added.
+- By: agent (autonomous)
