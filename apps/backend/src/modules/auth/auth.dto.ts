@@ -1,4 +1,5 @@
-import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsString, Length, Matches } from 'class-validator';
 import { OTP_CODE_LENGTH } from '@bulk/shared';
 import type {
   AdminOtpRequestBody,
@@ -8,6 +9,8 @@ import type {
   OtpVerifyBody,
   RefreshBody,
 } from '@bulk/shared';
+
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 const INVITE_CODE = /^[A-Z0-9]{8}$/;
 // BUG-019: formatting (spaces, dashes, brackets) is allowed in; `normalisePhone` in the
@@ -40,10 +43,11 @@ export class OtpVerifyDto implements OtpVerifyBody {
   @Matches(OTP_CODE, { message: `code must be ${OTP_CODE_LENGTH} digits.` })
   code!: string;
 
-  @IsOptional()
-  @IsString()
-  @Length(1, 80)
-  name?: string;
+  /** FEAT-048 (ADR-0057): required; spaces-only is rejected after the trim. */
+  @Transform(trim)
+  @IsString({ message: 'name is required.' })
+  @Length(1, 80, { message: 'name must be 1 to 80 characters.' })
+  name!: string;
 }
 
 /**

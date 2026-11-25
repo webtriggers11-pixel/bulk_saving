@@ -2212,3 +2212,9 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at d333045 in wt-028 (own DB): run 1 21:35:49–21:36:55 RC 0, run 2 21:36:55–21:38:02 RC 0, identical: site 71, backend 693, web 846.
 - CHORE-028 → done. Worktree and DB bulk_saving_chore028 removed. Ship to server: bundle + owner runs deploy (AC4).
 - By: agent (autonomous)
+
+## 2026-11-25 — FEAT-048 — opened: onboarding name required
+- Owner: "make it slot use 1, also make onboarding name required field". Server TEXTBEE_SIM_SLOT → 1 (api.local.env + api.env, API restarted; production). Note: server build still has the pre-CHORE-028 wording until the owner deploys cc3b489.
+- FEAT-048 triaged (P1). ADR-0057: required at web + API (trim, 1–80); per-first-sign-in rejected (would reveal membership, ADR-0027).
+- T1 done: shared type, DTO, onboarding form gating, tests (backend required-name integration test, web gating test, existing verify calls given names, e2e-smoke names). Registry flipped to done + site features.ts entry before V3 (close-registry-before-v3).
+- By: agent (autonomous)

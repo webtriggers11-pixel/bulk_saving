@@ -244,6 +244,14 @@ export const features: Feature[] = [
     status: 'done',
   },
   {
+    id: 'FEAT-048',
+    title: 'Your name is asked for when you join',
+    what: 'When you sign in with your society’s invite code, you type your name along with the code. You can’t continue without it.',
+    why: 'Admins and neighbours need to see who joined each group buy, and residents who skipped the name showed up blank.',
+    section: 'phone',
+    status: 'done',
+  },
+  {
     id: 'FEAT-047',
     title: 'Every sign-in code is 6 digits, with a daily limit',
     what: 'Residents and admins all get the same 6-digit code by SMS. A phone can get up to 10 codes a day.',

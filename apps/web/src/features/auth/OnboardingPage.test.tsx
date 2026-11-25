@@ -114,11 +114,32 @@ describe('OnboardingPage', () => {
     await walkToOtpStep(mock);
 
     fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Priya Sharma' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     expect(mock.mock.calls.some(([url]) => String(url).endsWith('/auth/otp/verify'))).toBe(true);
     expect(useAuthStore.getState().accessToken).toBe('access-1');
+  });
+
+  it('needs a name before Verify is enabled, and sends it trimmed (FEAT-048)', async () => {
+    const mock = installFetch({ ok: true, status: 200, body: { success: true, data: authResult } });
+    renderOnboarding();
+    await walkToOtpStep(mock);
+
+    const verify = screen.getByRole('button', { name: 'Verify & continue' });
+    expect(screen.getByLabelText('Your name')).toBeRequired();
+    fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    expect(verify).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: '   ' } });
+    expect(verify).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: '  Priya Sharma ' } });
+    expect(verify).toBeEnabled();
+    fireEvent.click(verify);
+
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
+    const call = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
+    expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({ name: 'Priya Sharma' });
   });
 
   it('keeps all 6 digits when the SMS code "482-913" is pasted (CHORE-028)', async () => {
@@ -149,6 +170,7 @@ describe('OnboardingPage', () => {
     expect(screen.getByText('+919999900201')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Priya Sharma' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
     await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
     const verify = mock.mock.calls.find(([url]) => String(url).endsWith('/auth/otp/verify'));
@@ -258,6 +280,7 @@ describe('OnboardingPage', () => {
     await walkToOtpStep(mock);
 
     fireEvent.change(screen.getByLabelText('6-digit code'), { target: { value: '000000' } });
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Priya Sharma' } });
     fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());

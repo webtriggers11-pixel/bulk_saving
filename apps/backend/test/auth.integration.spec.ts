@@ -60,13 +60,13 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
     // The old 4-digit shape is now a format error, for everyone.
     const short = await request(app.getHttpServer())
       .post('/auth/otp/verify')
-      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode.slice(0, 4) })
+      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode.slice(0, 4), name: 'Test Resident' })
       .expect(400);
     expect(short.body.error.code).toBe('BAD_REQUEST');
 
     const ok = await request(app.getHttpServer())
       .post('/auth/otp/verify')
-      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode })
+      .send({ inviteCode: society.inviteCode, phone: adminPhone, code: adminCode, name: 'Test Resident' })
       .expect(200);
     expect(ok.body.data.resident.role).toBe('SUPER_ADMIN');
   });
@@ -121,6 +121,27 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
     expect(reuse.body.error.code).toBe(ErrorCode.TOKEN_REVOKED);
   });
 
+  it('requires a name at verify, and saves it trimmed (FEAT-048)', async () => {
+    const phone = randomPhone();
+    await request(app.getHttpServer()).post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone }).expect(200);
+    const code = channel.lastCode as string;
+
+    for (const body of [{}, { name: '   ' }, { name: 'x'.repeat(81) }]) {
+      const res = await request(app.getHttpServer())
+        .post('/auth/otp/verify')
+        .send({ inviteCode: society.inviteCode, phone, code, ...body })
+        .expect(400);
+      expect(res.body.error.code).toBe('BAD_REQUEST');
+      expect(res.body.error.message).toMatch(/name/);
+    }
+    // A rejected body never touched the OTP: the same code still signs in.
+    const ok = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ inviteCode: society.inviteCode, phone, code, name: '  Priya Sharma  ' })
+      .expect(200);
+    expect(ok.body.data.resident.name).toBe('Priya Sharma');
+  });
+
   /**
    * BUG-017 / ADR-0034: a sign-in is a session of its own, and sign-out ends only the
    * session that asks. Two devices = two verifies with the same phone.
@@ -133,7 +154,7 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       .expect(200);
     const verified = await request(app.getHttpServer())
       .post('/auth/otp/verify')
-      .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
+      .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string, name: 'Test Resident' })
       .expect(200);
     const first = verified.body.data as { accessToken: string; refreshToken: string; resident: { id: string } };
     // The second device: what a second verify does, minus the OTP (one per 30s per phone).
@@ -171,7 +192,7 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       await request(app.getHttpServer()).post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone }).expect(200);
       const res = await request(app.getHttpServer())
         .post('/auth/otp/verify')
-        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
+        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string, name: 'Test Resident' })
         .expect(200);
       ids.add(res.body.data.resident.id);
       expect(res.body.data.resident.phone).toBe(`+91${digits}`);
@@ -245,7 +266,7 @@ describe('Auth OTP flow (integration, needs DB + Redis)', () => {
       expect(channel.lastCode).toMatch(/^\d{6}$/);
       await request(app.getHttpServer())
         .post('/auth/otp/verify')
-        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string })
+        .send({ inviteCode: society.inviteCode, phone, code: channel.lastCode as string, name: 'Test Resident' })
         .expect(200);
     });
   });

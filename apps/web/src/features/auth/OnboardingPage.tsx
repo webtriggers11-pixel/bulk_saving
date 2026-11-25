@@ -89,7 +89,7 @@ export function OnboardingPage() {
 
   const verifyMutation = useMutation({
     mutationFn: () =>
-      verifyOtp({ inviteCode, phone: canonicalPhone ?? phone, code, name: name.trim() ? name.trim() : undefined }),
+      verifyOtp({ inviteCode, phone: canonicalPhone ?? phone, code, name: name.trim() }),
     onSuccess: (result) => {
       login({
         accessToken: result.accessToken,
@@ -120,7 +120,7 @@ export function OnboardingPage() {
 
   function submitOtp(event: FormEvent) {
     event.preventDefault();
-    if (code.trim().length === 0) return;
+    if (code.trim().length === 0 || name.trim().length === 0) return;
     verifyMutation.mutate();
   }
 
@@ -335,11 +335,14 @@ export function OnboardingPage() {
             />
 
             <Label htmlFor="name" className="mt-[18px]">
-              Your name <span className="font-semibold normal-case tracking-normal text-ink-soft">(optional)</span>
+              Your name
             </Label>
             <Input
               id="name"
               name="name"
+              // FEAT-048 (ADR-0057): required, so every resident is known by name.
+              required
+              maxLength={80}
               autoComplete="name"
               placeholder="e.g. Priya Sharma"
               value={name}
@@ -356,7 +359,7 @@ export function OnboardingPage() {
             <Button
               className="mt-[22px] w-full"
               type="submit"
-              disabled={verifyMutation.isPending || code.trim().length === 0}
+              disabled={verifyMutation.isPending || code.trim().length === 0 || name.trim().length === 0}
             >
               {queuedOffline
                 ? OFFLINE_WAITING_LABEL

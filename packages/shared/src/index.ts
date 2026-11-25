@@ -93,7 +93,8 @@ export interface OtpVerifyBody {
   inviteCode: string;
   phone: string;
   code: string;
-  name?: string;
+  /** Required (FEAT-048, ADR-0057): every resident is known by name; trimmed, 1-80 chars. */
+  name: string;
 }
 
 /**

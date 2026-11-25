@@ -162,7 +162,7 @@ async function login(inviteCode, phone, name) {
   const code = readDevOtp(phone);
   const verified = await api('/auth/otp/verify', {
     method: 'POST',
-    body: { inviteCode, phone, code, ...(name ? { name } : {}) },
+    body: { inviteCode, phone, code, name: name ?? 'E2E Resident' },  // name is required (FEAT-048)
     expect: 200,
   });
   return { token: verified.data.accessToken, refreshToken: verified.data.refreshToken, resident: verified.data.resident };
@@ -211,7 +211,7 @@ async function main() {
     const phone = phoneFor(4);
     const stale = await api('/auth/otp/verify', {
       method: 'POST',
-      body: { inviteCode: SOCIETY_A, phone, code: '000000' },
+      body: { inviteCode: SOCIETY_A, phone, code: '000000', name: 'E2E Resident' },
     });
     check('verifying with no outstanding OTP is 400', stale.status === 400, `status ${stale.status}`);
     check('…and reports OTP_EXPIRED', stale.error?.code === 'OTP_EXPIRED', JSON.stringify(stale.error));
@@ -227,7 +227,7 @@ async function main() {
     const wrong = real === '000000' ? '222222' : '000000';
     const verify = await api('/auth/otp/verify', {
       method: 'POST',
-      body: { inviteCode: SOCIETY_A, phone, code: wrong },
+      body: { inviteCode: SOCIETY_A, phone, code: wrong, name: 'E2E Resident' },
     });
     check('a wrong code against a live OTP is 400', verify.status === 400, `status ${verify.status}`);
     check('…and reports OTP_INVALID', verify.error?.code === 'OTP_INVALID', JSON.stringify(verify.error));

@@ -51,7 +51,7 @@ describe('Active flags (integration, needs DB)', () => {
     const req = await api().post('/auth/otp/request').send({ inviteCode, phone });
     if (req.status !== 200) return req;
     const code = [...channel.otps].reverse().find((o) => o.phone === phone)?.code;
-    return api().post('/auth/otp/verify').send({ inviteCode, phone, code });
+    return api().post('/auth/otp/verify').send({ inviteCode, phone, code, name: 'Test Resident' });
   }
 
   it('switching a resident off: their refresh dies, sign-in says ACCOUNT_DISABLED; switching back on restores sign-in', async () => {
@@ -193,7 +193,7 @@ describe('Active flags (integration, needs DB)', () => {
     await api().post('/auth/otp/request').send({ inviteCode: society.inviteCode, phone }).expect(200);
     const code = [...channel.otps].reverse().find((o) => o.phone === phone)?.code;
     await asAdmin.patch(`/admin/societies/${society.id}`, { active: false }).expect(200);
-    const res = await api().post('/auth/otp/verify').send({ inviteCode: society.inviteCode, phone, code });
+    const res = await api().post('/auth/otp/verify').send({ inviteCode: society.inviteCode, phone, code, name: 'Test Resident' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe(ErrorCode.INVALID_INVITE_CODE);
     await asAdmin.patch(`/admin/societies/${society.id}`, { active: true }).expect(200);
