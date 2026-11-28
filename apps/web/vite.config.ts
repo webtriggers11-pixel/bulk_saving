@@ -1,11 +1,13 @@
 import { fileURLToPath } from 'node:url';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { MANIFEST } from './src/pwa/manifest';
 import { REGISTER_TYPE, RUNTIME_CACHING } from './src/pwa/config';
+import { sharePreviewPlugin } from './src/pwa/share-preview';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // BUG-019: the web now imports a RUNTIME value from @bulk/shared (`normalisePhone`), not
   // only types. The package builds to CommonJS and resolves through the workspace symlink
   // to packages/shared/dist — outside node_modules, which is all Vite's CommonJS
@@ -18,6 +20,8 @@ export default defineConfig({
   optimizeDeps: { include: ['@bulk/shared'] },
   plugins: [
     react(),
+    // BUG-037: absolute og:image / og:url when the build knows the site's public origin.
+    sharePreviewPlugin(loadEnv(mode, process.cwd(), 'VITE_').VITE_PUBLIC_ORIGIN),
     VitePWA({
       registerType: REGISTER_TYPE,
       includeAssets: [
@@ -57,4 +61,4 @@ export default defineConfig({
     testTimeout: 20_000,
     hookTimeout: 20_000,
   },
-});
+}));

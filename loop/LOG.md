@@ -2284,3 +2284,7 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-28 — BUG-020 / BUG-014 — further occurrences (BUG-035 V3 run 1)
 - BUG-020: `dev-otp.integration.spec.ts` unhandled "Connection is closed" (BullMQ worker at teardown). BUG-014 family: `admin-rounds` "enqueue fails → rolled back" expected 500 got 404; `invite-check` malformed code → 404. Next three gates green.
 - By: agent (autonomous)
+
+## 2026-11-28 — BUG-037 opened
+- Triage: BUG, P1. WhatsApp share preview shows the inline theme script — index.html lacks description/og meta. Report: loop/work/BUG-037-whatsapp-preview-shows-code/report.md
+- By: agent (autonomous)
