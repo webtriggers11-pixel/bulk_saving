@@ -22,7 +22,7 @@ export function absolutiseSharePreview(html: string, origin: string | undefined)
   const imageTag = `<meta property="og:image" content="${SHARE_IMAGE}" />`;
   return html.replace(
     imageTag,
-    `<meta property="og:image" content="${trimmed}${SHARE_IMAGE}" />\n    <meta property="og:url" content="${trimmed}/" />`,
+    `<meta property="og:url" content="${trimmed}/" />\n    <meta property="og:image" content="${trimmed}${SHARE_IMAGE}" />`,
   );
 }
 

@@ -2288,3 +2288,10 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 ## 2026-11-28 — BUG-037 opened
 - Triage: BUG, P1. WhatsApp share preview shows the inline theme script — index.html lacks description/og meta. Report: loop/work/BUG-037-whatsapp-preview-shows-code/report.md
 - By: agent (autonomous)
+
+## 2026-11-28 — BUG-037 V1/V2 done; V3 blocked by BUG-014
+- V1: verify.sh RC=0 after d257b83 and 2621b0b. V2 (code-reviewer, own worktree): CHANGES REQUESTED (P1: VITE_PUBLIC_ORIGIN not wired into Dockerfile/compose/docs) → fixed in 2621b0b → APPROVED, reviewer gate RC=0 (861 web / 697 backend tests).
+- V3: three back-to-back pairs, each FIRST run red, SECOND green (RC 1/0, 1/0, 1/0). Every red is the BUG-014 envelope-less route 404 in a backend suite this web-only change doesn't touch: societies-admin "client-chosen invite code" (201→404); ratings "re-rating replaces" (200→404); rounds-edit AC4 + invite-check "active society's code". Load avg ~7–9; another project's `nest start --watch` was running on the machine.
+- New lead for BUG-014: in all three pairs the run right after an idle stretch failed and the immediate re-run passed.
+- Decision: BUG-037 stays open (the V3 rule needs two identical green runs). Close it once BUG-014 is fixed or a clean pair lands.
+- By: agent (autonomous)
