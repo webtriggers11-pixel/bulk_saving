@@ -2270,3 +2270,17 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V1: gate 1 RC 1 — backend flake (see BUG-036); gate 2 RC 1 — `phone-layout.test.ts` source guard expects `<header className=` (moved data-testid after className); gate 3 RC 0: site 71, backend 697, web 856.
 - Triaged BUG-036 (flaky concurrency join test, "Can't reach database server").
 - By: agent (autonomous)
+
+## 2026-11-28 — BUG-035 — V2 approved; close (V3 next)
+- V2 at 889d485 (reviewer's own worktree): APPROVED, gate RC 0 (site 71, backend 697, web 856); the two BUG-035 tests fail with the pre-fix files (2 failed / 16 passed). P3s noted, not folded: "Bulk Saving Admin" wraps to two lines in the phone top bar at ≤375px (no overflow; seen in the 360px check, acceptable); no direct SignOutButton unit test for `admin-icon` (covered via AdminLayout).
+- BUG-035 → done in registry before V3.
+- By: agent (autonomous)
+
+## 2026-11-28 — BUG-035 — V3; CLOSED
+- V3 at 889d485+log (main tree, no other gate or server running): first pair — run 1 (10:00:15–10:01:28) EXIT 1, backend 3 failed: `dev-otp` "Connection is closed" at teardown (BUG-020, logged) + envelope-less 404s in `admin-rounds` (rollback case) and `invite-check` (BUG-014/028 family, logged); run 2 (10:01:28–10:02:41) EXIT 0. No backend code touched. Fresh pair: run 3 (10:03:00–10:04:10) and run 4 (10:04:10–10:05:26) both EXIT 0, identical: site 71, backend 697, web 856.
+- BUG-035 → done. Not deployed; owner ships to the demo server (BUG-034 is not on it either).
+- By: agent (autonomous)
+
+## 2026-11-28 — BUG-020 / BUG-014 — further occurrences (BUG-035 V3 run 1)
+- BUG-020: `dev-otp.integration.spec.ts` unhandled "Connection is closed" (BullMQ worker at teardown). BUG-014 family: `admin-rounds` "enqueue fails → rolled back" expected 500 got 404; `invite-check` malformed code → 404. Next three gates green.
+- By: agent (autonomous)

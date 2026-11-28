@@ -1,6 +1,6 @@
 # BUG-035 — Admin Log out is not visible on the dashboard
 
-**Status:** in-progress (fix committed) · **Priority:** P1 · **Opened:** 2026-11-28 · **Reporter:** owner
+**Status:** done · **Priority:** P1 · **Opened:** 2026-11-28 · **Reporter:** owner
 
 ## Observed vs expected
 
@@ -30,7 +30,7 @@ No ADR governs sign-out placement (BUG-034 report). ADR-0022 (admin console dens
 
 ## Fix
 
-- **Commit:** <pending>
+- **Commit:** 889d485 (fix); V2 APPROVED
 - **Regression guard:** the BUG-035 tests in AdminLayout.test.tsx.
 
 ## Lesson
