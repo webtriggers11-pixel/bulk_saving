@@ -13,7 +13,7 @@ const html = readFileSync(join(WEB, 'index.html'), 'utf8');
 const head = html.slice(0, html.indexOf('</head>'));
 const beforeFirstScript = head.slice(0, head.indexOf('<script'));
 const meta = (attr: 'name' | 'property', key: string) =>
-  new RegExp(`<meta ${attr}="${key.replace(':', '\\:')}" content="([^"]+)" />`).exec(beforeFirstScript)?.[1];
+  new RegExp(`<meta ${attr}="${key}" content="([^"]+)" />`).exec(beforeFirstScript)?.[1];
 
 describe('index.html share preview (BUG-037)', () => {
   it('describes the app in plain words before any script', () => {
@@ -27,6 +27,8 @@ describe('index.html share preview (BUG-037)', () => {
     expect(meta('property', 'og:site_name')).toBe('Bulk Saving');
     expect(meta('property', 'og:title')).toBe('Bulk Saving');
     expect(meta('property', 'og:image')).toBe(SHARE_IMAGE);
+    expect(meta('property', 'og:image:width')).toBe('512');
+    expect(meta('property', 'og:image:height')).toBe('512');
     expect(meta('name', 'twitter:card')).toBe('summary');
     expect(existsSync(join(WEB, 'public', SHARE_IMAGE.replace(/^\//, '')))).toBe(true);
   });

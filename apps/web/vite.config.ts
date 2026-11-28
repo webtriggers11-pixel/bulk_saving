@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // BUG-037: absolute og:image / og:url when the build knows the site's public origin.
-    sharePreviewPlugin(loadEnv(mode, process.cwd(), 'VITE_').VITE_PUBLIC_ORIGIN),
+    sharePreviewPlugin(loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_').VITE_PUBLIC_ORIGIN),
     VitePWA({
       registerType: REGISTER_TYPE,
       includeAssets: [

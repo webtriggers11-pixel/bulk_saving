@@ -27,6 +27,9 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+# BUG-037: the public origin, so the WhatsApp/OG preview image is an absolute URL.
+ARG VITE_PUBLIC_ORIGIN
+ENV VITE_PUBLIC_ORIGIN=$VITE_PUBLIC_ORIGIN
 RUN pnpm --filter @bulk/shared build && pnpm --filter web build
 
 FROM nginx:1.27-alpine AS runtime

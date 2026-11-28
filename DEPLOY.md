@@ -79,6 +79,10 @@ the global throttler; without it, every caller looks like the proxy and shares o
 `VITE_API_URL` is baked into the PWA at **build** time, so changing it means rebuilding the
 web image.
 
+`VITE_PUBLIC_ORIGIN` (e.g. `https://app.example.com`) is also build-time: it makes the link
+preview's `og:image` absolute, which WhatsApp needs to show the icon (BUG-037). WhatsApp caches
+previews per URL, so links shared before a deploy may keep the old preview for a while.
+
 ## 2a. Sign in with WhatsApp ("Tap to verify")
 
 > Step-by-step runbook with links (test number today, production later, troubleshooting): `WHATSAPP-SETUP.md`.

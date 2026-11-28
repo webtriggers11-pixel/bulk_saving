@@ -87,6 +87,8 @@ services:
       args:
         # Baked in at build time (Vite inlines it) — rebuild to change it.
         VITE_API_URL: ${VITE_API_URL}
+        # BUG-037: absolute og:image in the link preview (optional).
+        VITE_PUBLIC_ORIGIN: ${VITE_PUBLIC_ORIGIN:-}
     restart: unless-stopped
     ports:
       - '${WEB_PORT:-8080}:80'
