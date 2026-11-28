@@ -197,3 +197,37 @@ describe('AdminLayout — Log out (BUG-034)', () => {
     expect(screen.getByRole('dialog', { name: 'Admin menu' })).toBeInTheDocument();
   });
 });
+
+describe('AdminLayout — Log out always in view (BUG-035)', () => {
+  const platformAdmin = {
+    status: 'authenticated' as const,
+    accessToken: 'a',
+    refreshToken: 'r',
+    resident: { id: 'res_p', societyId: null, phone: '+919999900001', name: 'Platform', role: 'SUPER_ADMIN' as const, verifiedAt: null, createdAt: '2026-11-01T00:00:00.000Z' },
+  };
+  afterEach(() => {
+    useAuthStore.setState({ status: 'unauthenticated', accessToken: null, refreshToken: null, resident: null, society: null });
+  });
+
+  it('the phone top bar offers Log out without opening the menu', async () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin');
+    expect(screen.queryByRole('dialog', { name: 'Admin menu' })).not.toBeInTheDocument();
+    const bar = screen.getByTestId('admin-topbar');
+    fireEvent.click(within(bar).getByRole('button', { name: 'Log out' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, log out' }));
+    expect(await screen.findByText('admin sign-in page')).toBeInTheDocument();
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+  });
+
+  it("the sidebar's Log out is pinned below the scrolling section list, not inside it", () => {
+    useAuthStore.setState(platformAdmin);
+    renderAt('/admin');
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    const list = within(nav).getByTestId('admin-nav-sections');
+    expect(list).toHaveClass('overflow-y-auto');
+    expect(within(list).getByRole('link', { name: 'Vendors' })).toBeInTheDocument();
+    const logout = within(nav).getByRole('button', { name: 'Log out' });
+    expect(list.contains(logout)).toBe(false);
+  });
+});

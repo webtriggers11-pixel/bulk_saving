@@ -78,35 +78,38 @@ function AdminNav({ label, onNavigate }: { label: string; onNavigate?: () => voi
   const waiting = useAdminOverview().data?.waitingAsks ?? 0;
   const { pathname } = useLocation();
   return (
-    <nav aria-label={label} className="flex flex-1 flex-col gap-5 overflow-y-auto">
-      {NAV_GROUPS.map((group) => (
-        <div key={group.label} className="flex flex-col gap-1">
-          <span className="px-3.5 pb-1 text-eyebrow uppercase text-ink-soft">{group.label}</span>
-          {group.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => linkClass({ isActive: isActive && !(item.except ?? []).includes(pathname) })}
-              aria-current={(item.except ?? []).includes(pathname) ? false : undefined}
-              onClick={onNavigate}
-            >
-              <Icon name={item.icon} size={18} strokeWidth={1.9} />
-              {item.label}
-              {item.to === '/admin/requests' && waiting > 0 && (
-                <span
-                  data-testid="nav-asks-badge"
-                  className="num ml-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-amber-ink/15 px-1.5 text-caption font-extrabold text-amber-ink"
-                >
-                  {waiting}
-                  <span className="sr-only"> waiting</span>
-                </span>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      ))}
-      <div className="mt-auto flex flex-col gap-1 border-t border-line/10 pt-4">
+    <nav aria-label={label} className="flex min-h-0 flex-1 flex-col gap-4">
+      {/* BUG-035: only the sections scroll; the footer (Back to app, Log out) stays in view. */}
+      <div data-testid="admin-nav-sections" className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="flex flex-col gap-1">
+            <span className="px-3.5 pb-1 text-eyebrow uppercase text-ink-soft">{group.label}</span>
+            {group.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => linkClass({ isActive: isActive && !(item.except ?? []).includes(pathname) })}
+                aria-current={(item.except ?? []).includes(pathname) ? false : undefined}
+                onClick={onNavigate}
+              >
+                <Icon name={item.icon} size={18} strokeWidth={1.9} />
+                {item.label}
+                {item.to === '/admin/requests' && waiting > 0 && (
+                  <span
+                    data-testid="nav-asks-badge"
+                    className="num ml-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-amber-ink/15 px-1.5 text-caption font-extrabold text-amber-ink"
+                  >
+                    {waiting}
+                    <span className="sr-only"> waiting</span>
+                  </span>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex shrink-0 flex-col gap-1 border-t border-line/10 pt-4">
         {!platformAdmin && (
           <NavLink to="/" end className={() => linkClass({ isActive: false })} onClick={onNavigate}>
             <Icon name="back" size={18} strokeWidth={1.9} />
@@ -220,7 +223,7 @@ export function AdminLayout({
         <SchemeToggle className="self-start" />
       </aside>
 
-      <header className="sticky top-0 z-20 border-b border-paper/80 bg-gradient-to-b from-paper/70 to-paper/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200 lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-paper/80 bg-gradient-to-b from-paper/70 to-paper/95 shadow-nav backdrop-blur-chrome backdrop-saturate-200 lg:hidden" data-testid="admin-topbar">
         <div className="flex items-center gap-3 px-4 py-2.5">
           <button
             ref={menuButton}
@@ -236,6 +239,8 @@ export function AdminLayout({
           </button>
           <Brand />
           <SchemeToggle className="ml-auto" />
+          {/* BUG-035: on a phone, Log out is one tap away on every admin screen. */}
+          <SignOutButton variant="admin-icon" />
         </div>
       </header>
       <NavDrawer open={menuOpen} onClose={closeMenu} returnFocus={menuButtonEl} />

@@ -2260,3 +2260,13 @@ Entry format (newest at the BOTTOM, so git diffs are clean):
 - V3 at 196b01b (main tree): run 1 00:59:13–01:00:31 RC 0, run 2 01:00:31–01:01:38 RC 0, identical: site 71, backend 697, web 854.
 - BUG-034 → done. Not deployed; owner ships to the demo server.
 - By: agent (autonomous)
+
+## 2026-11-28 — BUG-035 — opened: admin Log out not visible
+- Owner: "in admin dahsboard give logout button". BUG-034's Log out exists but sits at the end of the sidebar's scrolling nav (below the fold on short screens) and only in the phone drawer; not deployed to the demo server either. Triaged BUG-035 (P1): pin it outside the scroll area and add it to the phone top bar.
+- By: agent (autonomous)
+
+## 2026-11-28 — BUG-035 — fix; V1
+- Failing tests first (2 in AdminLayout.test.tsx: no `admin-topbar` with Log out, no separate `admin-nav-sections` scroller). Fix: the sidebar nav splits into a scrolling section list + a non-scrolling footer (Back to app, Log out); the phone top bar gains `SignOutButton variant="admin-icon"` (same confirm, lands on /admin/login). Headless check at 360×740 (top bar fits, no h-scroll) and 1280×620 (sections scroll, Log out pinned).
+- V1: gate 1 RC 1 — backend flake (see BUG-036); gate 2 RC 1 — `phone-layout.test.ts` source guard expects `<header className=` (moved data-testid after className); gate 3 RC 0: site 71, backend 697, web 856.
+- Triaged BUG-036 (flaky concurrency join test, "Can't reach database server").
+- By: agent (autonomous)
